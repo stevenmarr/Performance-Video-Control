@@ -63,7 +63,9 @@
         return `<span class="chip ${ok ? '' : 'warn'}" title="${esc(label(d))}${p.memories[d] ? ' · ' + esc(memName('screen', p.memories[d])) : ''}">${d}${p.memories[d] ? ':' + p.memories[d] : ''}</span>`;
       }).join('') + Object.entries(p.mvMemories || {}).map(([k, v]) => `<span class="chip mvc" title="Multiviewer ${k.slice(1)} · ${esc(memName('multiviewer', v))}">MV${k.slice(1)}:${v}</span>`).join('')
         || '<span class="chip warn">empty</span>';
-      html += `<button class="${cls.join(' ')}" data-preset="${n}" data-drop-preset="${n}"><span class="tags">${tags.join('')}</span><span class="num">${n}</span><span class="name">${esc(p.name)}</span><span class="chips">${chips}</span></button>`;
+      if (p.autoName) cls.push('auto');
+      const tip = p.autoName ? `Preset ${n} · automatic name from the device memory names · long-press or right-click to rename` : `Preset ${n} · long-press or right-click to rename`;
+      html += `<button class="${cls.join(' ')}" data-preset="${n}" data-drop-preset="${n}" title="${esc(tip)}"><span class="tags">${tags.join('')}</span><span class="num">${n}</span><span class="name">${esc(p.name)}</span><span class="chips">${chips}</span></button>`;
     }
     if (html !== gridHtml) { gridHtml = html; $('#grid').innerHTML = html; }
 
@@ -213,7 +215,7 @@
   function assignPreset(n, mem) {
     const ts = targetsFor(mem.type);
     if (!ts.length) return toast('No compatible target on this device', true);
-    const go = (target) => run(api('POST', `/api/presets/${n}/assign`, { target, type: mem.type, slot: mem.slot }).then((p) => toast(`Preset ${p.number}: ${target === 'master' ? 'Master' : target} ← ${memTxt(mem.type, mem.slot)}`)));
+    const go = (target) => run(api('POST', `/api/presets/${n}/assign`, { target, type: mem.type, slot: mem.slot }).then((p) => toast(`Preset ${p.number} · ${p.name}: ${target === 'master' ? 'Master' : target} ← ${memTxt(mem.type, mem.slot)}${p.autoName ? ' · long-press to rename' : ''}`)));
     if (ts.length === 1) return go(ts[0].key);
     const info = memIndex()[mem.key] || { seenOn: [] };
     $('#pickTitle').textContent = `Preset ${n}: put ${TYPE_NAMES[mem.type]} ${memTxt(mem.type, mem.slot)} on…`;
@@ -321,7 +323,7 @@
     const st = S.staging; const f = $('#formStage');
     const n = st.editing || (Math.max(0, ...S.presets.map((p) => p.number)) + 1);
     const p = S.presets.find((x) => x.number === n);
-    f.elements.number.value = n; f.elements.name.value = p ? p.name : `Preset ${n}`;
+    f.elements.number.value = n; f.elements.name.value = p && !p.autoName ? p.customName : (st.suggestedName || '');
     const parts = [];
     if (st.master) parts.push(`Master ${memTxt('master', st.master.slot)} (covers ${st.master.dests.join(', ') || 'none'})`);
     for (const [d, v] of Object.entries(st.memories)) parts.push(`${d} ← ${memTxt('screen', v)}`);
@@ -366,7 +368,27 @@
     $('#modeHint').textContent = HINTS[mode]; render();
   }));
 
+  // 0.3.3: rename a preset with a long-press (touch or mouse) or a right-click on its tile.
+  function renamePreset(n) {
+    const p = S.presets.find((x) => x.number === n); if (!p) return;
+    const v = prompt(`Name for preset ${n}\n(leave empty for the automatic name: "${p.derivedName || 'Preset ' + n}")`, p.autoName ? p.name : p.customName);
+    if (v === null) return;
+    run(api('PUT', `/api/presets/${n}`, { name: v }).then((r) => toast(`Preset ${r.number} · ${r.name}${r.autoName ? ' (automatic)' : ''}`)));
+  }
+  let lp = null; let lpFired = false;
+  $('#grid').addEventListener('pointerdown', (ev) => {
+    const b = ev.target.closest('[data-preset]'); lpFired = false; if (!b || armed || ev.button > 0) return;
+    const x0 = ev.clientX, y0 = ev.clientY; clearTimeout(lp && lp.t);
+    lp = { x0, y0, t: setTimeout(() => { lpFired = true; lp = null; renamePreset(Number(b.dataset.preset)); }, 600) };
+  });
+  const lpCancel = (ev) => { if (lp && (ev.type !== 'pointermove' || Math.hypot(ev.clientX - lp.x0, ev.clientY - lp.y0) > 10)) { clearTimeout(lp.t); lp = null; } };
+  for (const t of ['pointerup', 'pointercancel', 'pointerleave', 'pointermove']) $('#grid').addEventListener(t, lpCancel);
+  $('#grid').addEventListener('contextmenu', (ev) => {
+    const b = ev.target.closest('[data-preset]'); if (!b) return;
+    ev.preventDefault(); if (lpFired) return; if (lp) { clearTimeout(lp.t); lp = null; } renamePreset(Number(b.dataset.preset));
+  });
   $('#grid').addEventListener('click', (ev) => {
+    if (lpFired) { lpFired = false; ev.preventDefault(); return; } // the long-press already renamed
     const b = ev.target.closest('button'); if (!b) return;
     const n = Number(b.dataset.preset || b.dataset.empty);
     if (armed) { const m = armed; armed = null; palSig = ''; renderPalette(); applyArmed(); return assignPreset(n, m); }
@@ -427,12 +449,17 @@
     const f = $('#formSave');
     $('#saveTitle').textContent = exists ? `Overwrite preset ${n}?` : `Save preset ${n}`;
     $('#saveDests').innerHTML = `Destinations: <b>${S.selection.map((d) => `${d} ${esc(label(d))}`).join(', ')}</b>`;
-    f.elements.number.value = n; f.elements.name.value = p ? p.name : `Preset ${n}`;
+    f.elements.number.value = n; f.elements.name.value = p && !p.autoName ? p.customName : '';
+    const nameEl = f.elements.name; nameEl.dataset.auto = p && !p.autoName ? '' : '1';
+    nameEl.oninput = () => { nameEl.dataset.auto = ''; };
     slotInputs($('#saveSlots'), S.selection, null);
+    const suggest = () => { if (!nameEl.dataset.auto) return; api('POST', '/api/presets/suggest-name', { memories: readSlots(f, S.selection), destinations: S.selection }).then((r) => { if (nameEl.dataset.auto) nameEl.value = r.name; }).catch(() => {}); };
+    $('#saveSlots').oninput = suggest; suggest();
     $('#dlgSave').showModal();
     // Pre-fill slots with what the device reports on Preview (AWJ readback), if enabled.
     api('POST', '/api/capture', { destinations: S.selection }).then((c) => {
       for (const [d, v] of Object.entries(c.memories || {})) { const i = f.elements[`slot_${d}`]; if (i && !i.value) i.value = v; }
+      suggest();
     }).catch(() => {});
   }
   $('#dlgSave').addEventListener('close', () => {
@@ -448,6 +475,7 @@
     const f = $('#formEdit');
     $('#editTitle').textContent = `Preset ${p.number}`;
     f.elements.number.value = p.number; f.elements.name.value = p.name;
+    $('#editNameHint').textContent = p.autoName ? `Name is automatic (from the device memory names: "${p.derivedName || '—'}"). Type a name to fix it.` : `Automatic name would be "${p.derivedName || '—'}". Clear the name to go back to it.`;
     slotInputs($('#editSlots'), p.destinations, p.memories);
     f.elements.master.value = p.master ? p.master.slot : '';
     const md = p.master ? p.master.dests : S.destinations.map((d) => d.key);

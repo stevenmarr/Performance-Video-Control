@@ -84,3 +84,38 @@ test('#btnSettings is visible, clickable and inside the viewport at 820 and 1440
     await page.close();
   }
 });
+
+// 0.3.3 regression: "The presets in the gui (the ones dropped to the buttons) still don't display their preset names".
+test('a memory tapped onto an empty tile names the tile after the memory; long-press and right-click rename (Playwright)', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const port = 19000 + Math.floor(Math.random() * 1000);
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6ui-'));
+  const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), '--mock', '--port', String(port), '--data', data], { stdio: 'ignore' });
+  t.after(() => { srv.kill(); fs.rmSync(data, { recursive: true, force: true }); });
+  await waitHttp(`http://127.0.0.1:${port}/api/state`);
+  const browser = await pw.chromium.launch();
+  t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await page.goto(`http://127.0.0.1:${port}/`);
+  const mem = page.locator('[data-mtype=screen][data-slot="1"]');
+  await mem.waitFor();
+  const label = (await mem.locator('.nm').textContent()).trim();
+  await mem.click(); await page.click('[data-empty="20"]');
+  await page.locator('#dlgPick[open] #pickList button').first().click();
+  const tile = page.locator('[data-preset="20"]');
+  await tile.waitFor();
+  await page.waitForFunction(() => document.querySelector('[data-preset="20"] .name').textContent.trim().length > 0);
+  assert.equal((await tile.locator('.name').textContent()).trim(), label);
+  assert.equal((await tile.locator('.num').textContent()).trim(), '20');
+  const [numPx, namePx] = await tile.evaluate((e) => ['.num', '.name'].map((s) => parseFloat(getComputedStyle(e.querySelector(s)).fontSize)));
+  assert.ok(namePx > numPx, `name (${namePx}px) is more prominent than the number (${numPx}px)`);
+  // long-press -> prompt -> typed name
+  page.once('dialog', (d) => d.accept('Walk-in wide'));
+  const b = await tile.boundingBox();
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2); await page.mouse.down(); await page.waitForTimeout(800); await page.mouse.up();
+  await page.waitForFunction(() => document.querySelector('[data-preset="20"] .name').textContent.trim() === 'Walk-in wide');
+  // right-click -> prompt -> empty = automatic again
+  page.once('dialog', (d) => d.accept(''));
+  await tile.click({ button: 'right' });
+  await page.waitForFunction((l) => document.querySelector('[data-preset="20"] .name').textContent.trim() === l, label);
+  await page.close();
+});

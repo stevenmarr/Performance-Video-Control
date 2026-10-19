@@ -215,6 +215,37 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## v0.3.3: preset names on the tiles
+
+Before 0.3.3, a preset made by dropping memories on a tile, or saved without typing a name, was
+stored as "Preset 4". So the tile showed only its number, twice. The app never used the names of
+the device memories the preset holds.
+
+**Names**
+- Every filled tile shows its **name** large, with the slot number small above it.
+- A preset without a typed name has an **automatic name**, built from the device memory names
+  (AWJ §3.7) and kept up to date when a memory is renamed on the device:
+  - one memory: its name, e.g. `Keynote`
+  - a Master: the Master's name, e.g. `Show Open`
+  - several memories: joined with `+`, e.g. `IMAG L + IMAG R`
+  - a slot without a device name: `S2:M2` or `Master 7`
+  - a destination with no memory slot: `S1 snapshot`
+- Existing presets named `Preset <n>` (or with no name) are treated as automatic. They show the
+  derived name, and the stored file isn't rewritten. A name you typed is never replaced.
+
+**Saving and renaming**
+- The Save and Save-board dialogs prefill the name with the automatic one. Keep it, or leave it
+  empty, and it stays automatic; type your own to fix it.
+- To rename, **long-press** a tile (iPad) or **right-click** it (Mac). Clear the name to go back
+  to the automatic one. EDIT shows both names.
+
+**API and Companion**
+- In `/api/state` and the preset routes, `name` is the name to show. They also return
+  `customName` (what was typed, `''` when automatic), `autoName` and `derivedName`.
+- `POST /api/presets/suggest-name` with `{memories, master, mvMemories}` returns the default name.
+- Companion's `$(rs6presets:preset_N_name)` and `last_preset_name` therefore show the same name as
+  the tile, with no module update needed.
+
 ## v0.3.2: Settings button fix
 
 In 0.3.0 and 0.3.1 the **⚙ Settings** button was missing from the top bar at every width and in
@@ -397,13 +428,13 @@ This starts a simulated RS6 inside the app: REST on a random local port and AWJ 
 - AWJ subscriptions with prefix-matched push, plus "external" changes that bypass the app (used in
   tests to stand in for the RC400T or Web RCS).
 
-It also seeds 8 demo presets plus 2 combined ones (9 *Keynote + Sponsors*, 10 *Panel Master + MV*) in `./mock-data/`, kept separate from your show
+It also seeds demo presets: some with typed names, some with automatic names (3 *IMAG L + IMAG R*, 9 *Keynote + Sponsor L + Sponsor R*, 11 and 12 Master-only), and combined preset 10 *Panel Master + MV*, in `./mock-data/`, kept separate from your show
 presets. The mock implements only the documented endpoints the app uses. It's a test double, not
 an emulator of the real device.
 
 Run the automated tests (against the mock):
 ```bash
-npm test       # 106 tests; the browser check is skipped unless Playwright is installed
+npm test       # 114 tests; the browser check is skipped unless Playwright is installed
 NODE_PATH=$(npm root -g) npm test   # with `npm i -g playwright && npx playwright install chromium`
 ```
 

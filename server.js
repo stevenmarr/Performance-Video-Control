@@ -54,18 +54,21 @@ async function seed(engine) {
   const demo = [
     [1, 'Walk-in', ['S1', 'S2', 'S3'], { S1: 1, S2: 2, S3: 2 }],
     [2, 'Keynote Full', ['S1'], { S1: 10 }],
-    [3, 'IMAG Both', ['S2', 'S3'], { S2: 11, S3: 12 }],
+    // 0.3.3: '' = automatic name, derived from the device memory names (e.g. "IMAG L + IMAG R")
+    [3, '', ['S2', 'S3'], { S2: 11, S3: 12 }],
     [4, 'Panel 4-up', ['S1', 'S2', 'S3'], { S1: 20, S2: 21, S3: 21 }],
-    [5, 'Floor Logo', ['S4'], { S4: 30 }],
-    [6, 'Confidence PPT', ['A1'], { A1: 40 }],
-    [7, 'Record Clean', ['A2'], { A2: 41 }],
+    [5, '', ['S4'], { S4: 30 }],
+    [6, '', ['A1'], { A1: 40 }],
+    [7, '', ['A2'], { A2: 41 }],
     [8, 'Awards Stinger', ['S1', 'S2', 'S3', 'S4'], { S1: 50, S2: 51, S3: 51, S4: 52 }],
   ];
   for (const [number, name, destinations, memories] of demo) await engine.savePreset({ number, name, destinations, memories });
   // 0.3.0 combined presets built from the imported memories (what the board / drag-assign produces)
   const combo = [
-    [9, 'Keynote + Sponsors', [['S1', 'screen', 10], ['S2', 'screen', 32], ['S3', 'screen', 33]]],
+    [9, '', [['S1', 'screen', 10], ['S2', 'screen', 32], ['S3', 'screen', 33]]],
     [10, 'Panel Master + MV', [['master', 'master', 3], ['S4', 'screen', 30], ['M1', 'multiviewer', 2]]],
+    [11, '', [['master', 'master', 1]]],
+    [12, '', [['master', 'master', 4]]],
   ];
   for (const [number, name, items] of combo) for (const [target, type, slot] of items) engine.assignToPreset(number, { target, type, slot, name });
   engine.log('info', 'Mock mode: seeded demo presets');

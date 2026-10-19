@@ -35,8 +35,8 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;user-
 .hint{color:var(--dim);font-size:13px;margin-left:6px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:10px}
 .preset{position:relative;min-height:104px;padding:10px;border-radius:var(--r);background:var(--panel2);border:2px solid var(--line);text-align:left;display:flex;flex-direction:column;gap:4px;overflow:hidden}
-.preset .num{font-size:22px;font-weight:800;color:var(--dim)}
-.preset .name{font-size:15px;font-weight:700;line-height:1.15;word-break:break-word}
+.preset .num{font-size:12px;font-weight:800;color:var(--dim);letter-spacing:.04em}
+.preset .name{font-size:17px;font-weight:800;line-height:1.15;word-break:break-word;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .preset .chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:auto}
 .chip{font-size:10px;font-weight:800;padding:2px 5px;border-radius:4px;background:#252c35;color:#aab3bf}
 .chip.warn{background:#4b3a00;color:#ffd35c}
@@ -51,6 +51,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;user-
 .preset.is-last{box-shadow:0 0 0 3px rgba(24,195,90,.35)}
 .preset.empty{border-style:dashed;background:transparent;color:var(--dim);align-items:center;justify-content:center}
 .preset.empty .num{font-size:18px}
+.preset{-webkit-touch-callout:none}
 .preset:active{transform:scale(.98)}
 .transport{width:170px;display:flex;flex-direction:column;gap:10px}
 .btn{padding:10px 14px;border-radius:var(--r);background:var(--panel2);border:1px solid var(--line);font-weight:700}

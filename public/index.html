@@ -150,9 +150,10 @@
     <div class="note" id="saveDests"></div>
     <div class="row2">
       <label>Number <input name="number" type="number" min="1" max="9999" required></label>
-      <label>Name <input name="name" maxlength="64" required></label>
+      <label>Name <input name="name" maxlength="64" placeholder="automatic (device memory names)" autocomplete="off"></label>
     </div>
     <div class="note small">The app records which destinations are included and, for each, the Screen memory slot reported on Preview (AWJ readback) plus a snapshot of the layer sources. Save the look in the Aquilon first (Web RCS › Memories › Screen) if you want positions/sizes recalled. You can type or fix slots later in EDIT.</div>
+    <div class="note small">Name: prefilled from the device memory names. Keep it, or leave it empty, and it stays automatic and follows renames on the device; type your own to fix it.</div>
     <div id="saveSlots" class="slots"></div>
     <div class="actions">
       <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
@@ -167,8 +168,9 @@
     <h2 id="editTitle">Preset</h2>
     <div class="row2">
       <label>Number <input name="number" type="number" min="1" max="9999" required></label>
-      <label>Name <input name="name" maxlength="64" required></label>
+      <label>Name <input name="name" maxlength="64" placeholder="automatic (device memory names)" autocomplete="off"></label>
     </div>
+    <div class="note small" id="editNameHint"></div>
     <div class="section-title">Screen memory slot per destination <small>blank = use source snapshot</small></div>
     <div id="editSlots" class="slots"></div>
     <div class="section-title">Master memory <small>loads first; tick the screens it covers (not readable from the device)</small></div>
@@ -204,9 +206,10 @@
   <form method="dialog" id="formStage" class="form">
     <h2>Save the board as a preset</h2>
     <div class="note" id="stageSummary"></div>
+    <div class="note small">Name: prefilled from the device memory names. Keep it, or leave it empty, and it stays automatic; type your own to fix it.</div>
     <div class="row2">
       <label>Number <input name="number" type="number" min="1" max="9999" required></label>
-      <label>Name <input name="name" maxlength="64" required></label>
+      <label>Name <input name="name" maxlength="64" placeholder="automatic (device memory names)" autocomplete="off"></label>
     </div>
     <div class="actions">
       <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
