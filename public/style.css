@@ -90,7 +90,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#222a33;border:1px solid var(--line);padding:12px 18px;border-radius:10px;font-weight:600;z-index:10;max-width:90vw}
 .toast.err{border-color:var(--danger);color:#ff9b91}
 @media (max-width:820px){
-  .top{gap:8px}.brand{font-size:16px}.last{order:5;width:100%;font-size:13px}
+  .top{gap:8px}.brand{font-size:16px}
   .main{flex-direction:column}
   .transport{width:auto;flex-direction:row;position:sticky;bottom:0;background:var(--bg);padding:8px 0}
   .transport .btn{flex:1;min-height:72px}
@@ -135,7 +135,12 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 /* ---------- 0.3.0: branding ---------- */
 /* The logo is white on transparent. The UI has no light theme, so it sits straight on the dark header.
    If a light theme is ever added, give .pvlogo a dark backing (background:#0b0d10;padding:3px 6px). */
-.pvlogo{height:30px;width:auto;display:block}
+.pvlogo{height:30px;width:auto;max-width:22vw;object-fit:contain;object-position:left center;display:block;flex:0 1 auto;min-width:0}
+/* 0.3.2: the Settings button is pinned to the end of the first header row at every width; the logo
+   and status items shrink or wrap below it instead. */
+.top>*{min-width:0}
+#btnSettings{flex:none;margin-left:auto;white-space:nowrap;order:4}
+.top .brand,.top .pvlogo,.top #conn{order:1}.top #last,.top #master,.top #liveMode{order:2}.top .spacer{order:3}
 
 /* ---------- 0.3.0: memory palette + board (mix and match) ---------- */
 .mix{display:flex;gap:12px;align-items:flex-start}
@@ -205,7 +210,9 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .card.no-target{opacity:.45}
 .card.live-pvw{border-color:var(--pvw)}.card.live-pgm{border-color:var(--pgm)}
 .chip.mst{background:#3b2a6b;color:#e2d8ff}.chip.mvc{background:#173a6b;color:#9cc4ff}
-.ghost{position:fixed;z-index:50;pointer-events:none;padding:8px 12px;border-radius:8px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5);transform:translate(-50%,-130%);white-space:nowrap}
+/* 0.3.2: was ".ghost", which also matched every "btn ghost" button (Settings, dialog Cancel/Close) and
+   pinned them off-screen. The drag preview has its own class now. */
+.dragghost{position:fixed;z-index:50;pointer-events:none;padding:8px 12px;border-radius:8px;background:var(--accent);color:#fff;font-weight:800;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5);transform:translate(-50%,-130%);white-space:nowrap}
 body.dragging{cursor:grabbing}
 body.dragging *{cursor:grabbing !important}
 .pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
@@ -229,3 +236,5 @@ body.dragging *{cursor:grabbing !important}
 .card .xt{position:absolute;top:5px;right:6px;font-size:9px;font-weight:900;letter-spacing:.06em;padding:1px 5px;border-radius:4px;background:var(--sel);color:#1a1300}
 .card[data-seltoggle]{cursor:pointer}
 .btn.take small,.btn.cut small{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;opacity:.9;margin-top:4px;white-space:normal}
+/* 0.3.2: narrow header (iPad portrait and below): Settings stays on row 1; PVW/Master/live wrap to row 2. */
+@media (max-width:820px){.top .pvlogo{height:24px;max-width:30vw}.top #last{order:5;width:100%;font-size:13px}.top #master,.top #liveMode{order:6}}

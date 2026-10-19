@@ -215,6 +215,23 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## v0.3.2: Settings button fix
+
+In 0.3.0 and 0.3.1 the **⚙ Settings** button was missing from the top bar at every width and in
+every browser. It wasn't the layout. The CSS rule for the drag preview (`.ghost`, added in 0.3.0)
+also matched buttons styled `btn ghost`. That pinned the Settings button, and the Cancel/Close
+buttons in the dialogs, just off the top-left corner of the screen, where they couldn't be clicked.
+The drag preview now has its own class (`dragghost`).
+
+The header also got more robust:
+- Settings stays at the end of the first row at every width.
+- The logo shrinks.
+- On iPad portrait (820 px) and narrower, the PVW/Master/live readouts wrap to a second row.
+
+`/settings` still opens the settings directly. `test/ui.test.js` checks the CSS statically. When
+Playwright is available, it also checks that the button is visible and clickable inside the top
+bar at 820 and 1440 px.
+
 ## TAKE, transitions and selection (v0.3.1)
 
 v0.3.0 sent correct TAKE commands, and the device did transition, but the app's tally and memory
@@ -386,7 +403,8 @@ an emulator of the real device.
 
 Run the automated tests (against the mock):
 ```bash
-npm test       # 103 tests
+npm test       # 106 tests; the browser check is skipped unless Playwright is installed
+NODE_PATH=$(npm root -g) npm test   # with `npm i -g playwright && npx playwright install chromium`
 ```
 
 ## HTTP control API (for Companion, Stream Deck, scripts)
