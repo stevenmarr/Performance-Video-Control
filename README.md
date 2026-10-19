@@ -215,6 +215,83 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## TAKE, transitions and selection (v0.3.1)
+
+v0.3.0 sent correct TAKE commands, and the device did transition, but the app's tally and memory
+indicators then showed the wrong thing, so the transition looked broken. Screen selection could
+also seem not to stick. 0.3.1 fixes both. Everything below was checked on the **LivePremier
+Simulator 6.2.79** (Aquilon RS6), in both REST and AWJ mode.
+
+### What the device does on a TAKE (observed on the Simulator)
+
+| Command | Result |
+|---|---|
+| REST `POST /api/tpp/v1/take` `{"screenIds":[1],"auxiliaryScreenIds":[]}` (REST guide p.28) | 204; takes S1 only, with the configured transition. |
+| Same, but a list key is **missing** | Takes **all** screens (or all aux) of that kind. An empty list means none. The guide's raw-TCP example has the key `"auxiliaryScreenIds "` with a trailing space; the device ignores that key, so that request takes everything. |
+| Same, without `Content-Type: application/json` | The body is ignored and **everything** is taken. |
+| `{"screenIds":2}`, `[0]`, `[99]`, bad JSON | 400 with a text message. The device skips disabled screen IDs. |
+| REST `POST /screens/{1..24}/take`, `/auxiliary-screens/{id}/take` | 204. `0` and `25` give 400. |
+| AWJ `replace DeviceObject/$screenAuxGroup/@items/S1/control/@props/xTake` `true` (AWJ guide §3.2) | Takes S1; `A1` works the same for aux. `S0` gives error E12. No reply is sent. |
+
+The app always sends both lists, with JSON Content-Type, listing **exactly** the lit destinations
+(1-based IDs). A test checks these bytes against the guide's examples.
+
+What the device does **not** update after a TAKE (observed):
+- `presetBank/status/@props/presetId` on the side that becomes Preview keeps its old value. With
+  Preset Toggle **off**, the device copies Program's look back to Preview, but the id doesn't follow.
+- `masterPresetBank/status/@props/lastUsed` PROGRAM stays where it was.
+- A Master load doesn't change the screens' `presetId`.
+- The TBAR side (`status/@props/transition`, `AT_DOWN`/`AT_UP`) flips only when the transition
+  **ends**, after the Take duration.
+
+**Root cause (bug 1).** 0.3.0 built tally from those readbacks, and its mock faked them (it copied
+the memory id on TAKE and moved the Master to Program). On the real device, after a TAKE the app
+showed a stale preset on Preview and nothing on Program, and Master presets never went PGM.
+0.3.1 keeps an **effective tally** per destination instead:
+- The memory on each side is taken from the device's readback only when that readback **changes**
+  (a load).
+- When the TBAR side flips (a TAKE from the app, RC400T or Web RCS), the app moves the memory
+  itself: Preview's memory goes to Program. Preview keeps a copy (Preset Toggle off) or gets the old
+  Program (Preset Toggle on).
+- A Master on Preview goes to Program when one of its screens is taken.
+
+The mock now behaves like the Simulator: it rejects malformed takes the same way, can delay the
+TBAR flip, and no longer fakes those readbacks.
+
+**Root cause (bug 2).** The board's screen cards didn't show or change the TAKE selection; only the
+destination tiles at the top did. Those tiles were also rebuilt on every device push, which could
+swallow a tap. Now:
+- A tap on a **screen card** (when no memory is armed) or a destination tile toggles it.
+- Selected cards are outlined and carry a **TAKE** badge.
+- TAKE and CUT show their targets ("TAKE / CUT → S1, A1").
+- The tiles are redrawn only when something changes.
+- Recall still sets the selection to the preset's destinations. A **Master** preset uses its
+  declared Master screens, or all destinations if none are declared, so set them in EDIT.
+
+### Why selection stays in the app
+
+Neither guide documents a command to read or set the device's own screen selection (the
+transition filter). Per User Manual §4.5, the Web RCS shares it between controllers only with
+"Selection Synced to Server", through the Web RCS's internal websocket, which isn't a public API.
+Every TAKE the app sends names its screens explicitly, so the device's selection isn't needed and
+the app keeps its own. A TAKE pressed on the RC400T or in the Web RCS still uses that controller's
+selection, and the app follows the result.
+
+### Preset Toggle
+
+Set the app's **Device has Preset Toggle** setting to match the Preset Toggle switch in the Web
+RCS (Transitions, right panel). With *Settings › Also probe undocumented memory paths* on, the app reads the device's
+`control/@props/copyMode` instead. **INFERRED** path: it is in the Web RCS model and works on the
+Simulator, but it isn't in the guides.
+
+### Transition type and duration
+
+Neither is set by the API, so set them on the device:
+- **Duration:** in the Web RCS, Take button settings, global transition duration
+  (`takeUpTime`/`takeDownTime`, in tenths of a second; the Simulator defaults to 1.0 s).
+- **Effects:** per layer, opening and closing effect, speed and timing (User Manual §14.3).
+- **Take Cut** ignores effects. The app's CUT loads straight to Program instead (see Limitations).
+
 ## Install on a Mac
 
 1. Install Node.js 18 or later (the LTS release is fine), using **either**:
@@ -309,7 +386,7 @@ an emulator of the real device.
 
 Run the automated tests (against the mock):
 ```bash
-npm test       # 92 tests
+npm test       # 103 tests
 ```
 
 ## HTTP control API (for Companion, Stream Deck, scripts)
@@ -402,8 +479,9 @@ numbers refer to the *REST API Programmer's Guide*.
 
 "Documented" means the exact path and verb appear in the v6.2 AWJ guide, and a unit test checks
 the builder against the guide's printed example. **Nothing here has been verified on a real RS6 or
-on the AW Simulator.** Every behaviour was tested against the built-in mock, which implements the
-guide as written.
+on the AW Simulator** at 0.2.0. Every behaviour was tested against the built-in mock, which implements the
+guide as written. In 0.3.1 the TAKE paths and the readbacks around them were checked on the
+Simulator 6.2.79 (see [v0.3.1](#take-transitions-and-selection-v031)).
 
 | Feature | Documented in the guide | Inferred by me |
 |---|---|---|
@@ -415,7 +493,7 @@ guide as written.
 | Input backups | `get` slot sources (§6.4); `replace` `xSelectSlot` `NONE`/`1`/`2` (§6.5); `replace` `enableAutoSelect` (§6.6) | "Backup active" means `xSelectSlot` read back as anything other than `NONE`. Whether reading `xSelectSlot` (an x-prefixed request property) returns the current selection is inferred. Reading `enableAutoSelect` is inferred too. |
 | Background-set and group backups | Same, on §6.7–6.9 and §6.10–6.11 paths | Same as above. Group ids `GROUP_1…8` and background sets `1…8` are discovered by probing. |
 | Audio mutes | `get` and `replace` on the rx and tx `mute` (§5.1.2, §5.2.2) | The channel and output counts are discovered by probing, up to Settings limits. Only the device index `1` is used (no Link). |
-| **Memory import (0.3.0)** | Screen/Master labels (§3.7), last loaded (§3.11/§3.12), Master load (§3.4), MV outputs and MV load (§4.1–4.2) | **Validity** (`isValid`) and **multiviewer memory names**: paths derived from the Web RCS model, sent only with the opt-in probe. Without it, "valid" = has a name or was seen loaded. That label/status changes push through the `$bank` subscription prefix. That a Master loaded to Preview changes only its own screens (Manual §15.2, not the API guides). In the mock, a TAKE carries the Preview Master id to Program (a mock assumption; the real device's `lastUsed` behaviour on take is unverified). |
+| **Memory import (0.3.0)** | Screen/Master labels (§3.7), last loaded (§3.11/§3.12), Master load (§3.4), MV outputs and MV load (§4.1–4.2) | **Validity** (`isValid`) and **multiviewer memory names**: paths derived from the Web RCS model, sent only with the opt-in probe. Without it, "valid" = has a name or was seen loaded. That label/status changes push through the `$bank` subscription prefix. That a Master loaded to Preview changes only its own screens (Manual §15.2, not the API guides). On the Simulator a TAKE does **not** update `lastUsed`, so the app moves the Master itself (see [v0.3.1](#take-transitions-and-selection-v031)). |
 | REST fallback | Layer status and source (REST p.15), background (p.17), aux source (p.24), inputs (p.66) | REST gives tally and inputs only. Memories, backups, audio and freeze need AWJ. |
 
 ## Limitations and what's unverified
@@ -425,8 +503,8 @@ guide as written.
   so they aren't part of tally. Layer memories can't be listed or loaded. Memories still can't be
   created or saved from the API; save them in the Web RCS, then press ↻ Refresh.
 
-**I tested this against the built-in mock only. I have not run it against a real RS6 or the AW
-Simulator.** Please run a dry rehearsal before using it in a show.
+**Not yet run on a real RS6.** TAKE, recall and tally were checked on the AW Simulator 6.2.79
+(0.3.1); the rest was tested against the mock. Please run a dry rehearsal before using it in a show.
 
 - **CUT is not a native Take Cut.** Neither guide documents a Take Cut command. CUT here loads the
   Preview preset's Screen memory (or source snapshot) straight to **Program** on each lit destination
@@ -440,15 +518,15 @@ Simulator.** Please run a dry rehearsal before using it in a show.
 - **Tally.** With live state on, preset and input tally follow the device. Changes from the RC400T,
   the Web RCS and T-bar moves are picked up through the TBAR side and the last-loaded memory (see
   above). With live state off, tally is app-side, as in 0.1, and depends on the "Preset Toggle"
-  setting. A Screen memory changed by hand after loading still reports that memory's id, because the
+  setting. Since 0.3.1 the memory shown on Program/Preview after a TAKE is tracked by the app
+  (the device doesn't update it); a memory loaded elsewhere is picked up from the device. A Screen memory changed by hand after loading still reports that memory's id, because the
   device doesn't flag "modified" over AWJ.
 - **The device's own transition selection isn't changed.** Selection follows the preset *in this app*,
   and every take names its screens explicitly. The guides document no way to set the device's
   transition filter. A TAKE pressed on the RC400T still uses the RC400T's selection.
-- Unverified details: the global TAKE key `auxiliaryScreenIds` (the raw-TCP example in the guide has a
-  stray trailing space; the app uses the spelling from the parameter table and the C# sample, and
-  falls back to per-screen TAKEs on error). The AWJ aux TAKE path `$screenAuxGroup/@items/A1/...` is
-  inferred from the documented `S1` example. The AWJ `presetId` readback after a *save* (as opposed to
+- Checked on the Simulator 6.2.79 in 0.3.1: the global TAKE key `auxiliaryScreenIds` (without the
+  trailing space in the guide's raw-TCP example) and the AWJ aux TAKE path
+  `$screenAuxGroup/@items/A1/...`. The AWJ `presetId` readback after a *save* (as opposed to
   a load) isn't documented; check the slot in the Save dialog. Whether the Simulator exposes AWJ on
   10606 is also unknown.
 - Firmware: the guides target "v6.2 or higher" (AWJ) and "v4.0 or higher" (REST). The app is built

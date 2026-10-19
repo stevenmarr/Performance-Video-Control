@@ -88,7 +88,9 @@ test('Master memory: last loaded (§3.12) and labels (§3.7)', async () => {
     assert.deepEqual(engine.getState().live.lastMaster.preview, { id: 2, label: 'Keynote' });
     const mem = engine.live.memoriesView();
     assert.equal(mem.screen[10], 'Keynote'); assert.equal(mem.master[5], 'Awards'); assert.equal(mem.screen[3], undefined);
-    assert.deepEqual(mem.destinations.S1.preview, { id: 21, label: 'Panel LR' }); // master 2 = Screen memory 21 on S1 in the mock
+    // A Master load does not change the screens' presetBank/status/presetId (observed on the 6.2.79 simulator), so
+    // S1's raw Preview id stays unset; the Master itself is reported through lastUsed (§3.12).
+    assert.equal(mem.destinations.S1.preview, null);
     mock.external.setMemoryLabel(3, 'New Look');
     await until(() => engine.live.memoriesView().screen[3] === 'New Look', 2000, 'label push');
   } finally { await teardown(); }

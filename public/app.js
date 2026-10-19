@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const $ = (s) => document.querySelector(s);
-  let S = null; let gridHtml = ''; let mode = 'recall'; let editing = null; let tab = 'presets';
+  let S = null; let gridHtml = ''; let destHtml = ''; let mode = 'recall'; let editing = null; let tab = 'presets';
   const HINTS = {
     recall: 'Tap a preset to load it to Preview on its destinations.',
     save: 'Light the destinations to include, then tap an empty slot (or a preset to overwrite).',
@@ -36,14 +36,16 @@
     lmEl.textContent = modeTxt; lmEl.title = lv.error || '';
 
     const row = $('#destRow');
-    row.innerHTML = S.destinations.map((d) => `
+    const rowHtml = S.destinations.map((d) => `
       <button class="dest ${d.selected ? 'on' : ''}" data-dest="${d.key}">
         <span class="k">${d.kind === 'screen' ? 'SCREEN' : 'AUX'} ${d.id}</span>
         <span class="l">${esc(d.label)}</span>
         <span class="tl">${d.pgmPreset != null ? `<span class="p">PGM ${d.pgmPreset}</span>` : ''}${d.pvwPreset != null ? `<span class="v">PVW ${d.pvwPreset}</span>` : ''}</span>
         ${d.programMemory || d.previewMemory ? `<span class="mem"><span class="p">M${d.programMemory ? d.programMemory.id + ' ' + esc(d.programMemory.label) : '–'}</span> / <span class="v">M${d.previewMemory ? d.previewMemory.id + ' ' + esc(d.previewMemory.label) : '–'}</span></span>` : ''}
-      </button>`).join('') + `<button class="dest ctl" data-ctl="all">ALL</button><button class="dest ctl" data-ctl="none">CLEAR</button>`;
-    if (!S.destinations.length) row.insertAdjacentHTML('afterbegin', '<div class="note">No destinations yet. Check Settings and connect.</div>');
+      </button>`).join('') + `<button class="dest ctl" data-ctl="all">ALL</button><button class="dest ctl" data-ctl="none">CLEAR</button>`
+      + (S.destinations.length ? '' : '<div class="note">No destinations yet. Check Settings and connect.</div>');
+    // re-render only on change: replacing the tiles between pointerdown and pointerup would swallow the tap
+    if (rowHtml !== destHtml) { destHtml = rowHtml; row.innerHTML = rowHtml; }
 
     const byNum = new Map(S.presets.map((p) => [p.number, p]));
     const maxN = Math.max(0, ...S.presets.map((p) => p.number));
@@ -68,7 +70,12 @@
     renderPalette(); renderBoard(); applyArmed();
     renderLive();
     const a = $('#btnAuto'); a.classList.toggle('on', S.autoTake); a.innerHTML = `AUTO TAKE<br><b>${S.autoTake ? 'ON' : 'OFF'}</b>`;
-    $('#btnTake').disabled = $('#btnCut').disabled = !S.selection.length;
+    const tg = S.transitionTargets || S.selection;
+    $('#btnTake').disabled = $('#btnCut').disabled = !tg.length;
+    const tgTxt = tg.length ? tg.join(' · ') : 'nothing selected';
+    // only touch the buttons when the text changes, so a press is never interrupted by a re-render
+    if ($('#btnTake').dataset.tg !== tgTxt) { $('#btnTake').dataset.tg = tgTxt; $('#btnTake').innerHTML = `TAKE<small>${esc(tgTxt)}</small>`; $('#btnCut').innerHTML = `CUT<small>${esc(tgTxt)}</small>`; }
+    const xt = $('#xtargets'); xt.textContent = tg.length ? `TAKE / CUT → ${tg.join(', ')}` : 'TAKE / CUT → nothing selected'; xt.classList.toggle('none', !tg.length);
   }
 
   function renderLive() {
@@ -164,8 +171,9 @@
     for (const d of S.destinations) {
       const slot = st.memories[d.key];
       const cls = ['card']; if (d.previewMemory && slot && d.previewMemory.id === slot) cls.push('live-pvw'); if (d.programMemory && slot && d.programMemory.id === slot) cls.push('live-pgm');
-      html += `<div class="${cls.join(' ')}" data-drop="${d.key}" data-accept="screen">
-        <span class="k">${d.kind === 'screen' ? 'SCREEN' : 'AUX'} ${d.id}</span><span class="l">${esc(d.label)}</span>
+      if (d.selected) cls.push('sel');
+      html += `<div class="${cls.join(' ')}" data-drop="${d.key}" data-accept="screen" data-seltoggle="${d.key}" title="Tap to ${d.selected ? 'remove from' : 'add to'} the TAKE / CUT selection">
+        ${d.selected ? '<span class="xt">TAKE</span>' : ''}<span class="k">${d.kind === 'screen' ? 'SCREEN' : 'AUX'} ${d.id}</span><span class="l">${esc(d.label)}</span>
         <div class="lv">${memLine(d.programMemory, 'p', 'PGM')}${memLine(d.previewMemory, 'v', 'PVW')}</div>
         ${slotBox(d.key, 'screen', slot)}</div>`;
     }
@@ -299,7 +307,10 @@
       return run(api('POST', '/api/stage', { target: 'master', type: 'master', slot: S.staging.master.slot, dests: [...ds] }));
     }
     const card = e.target.closest('[data-drop]');
-    if (card && armed) { const m = armed; armed = null; palSig = ''; stageTo(card.dataset.drop, m); renderPalette(); applyArmed(); }
+    if (card && armed) { const m = armed; armed = null; palSig = ''; stageTo(card.dataset.drop, m); renderPalette(); applyArmed(); return; }
+    // No memory picked: a screen / aux card is a selection toggle, like the destination tiles above.
+    const sc = e.target.closest('[data-seltoggle]');
+    if (sc) return run(api('POST', `/api/destinations/${sc.dataset.seltoggle}/toggle`));
   });
   const setBoard = (show) => { $('#board').classList.toggle('collapsed', !show); $('#btnBoardToggle').textContent = show ? '▾' : '▸'; localStorage.setItem('rs6.boardHidden', show ? '' : '1'); };
   $('#btnBoardToggle').addEventListener('click', () => setBoard($('#board').classList.contains('collapsed')));

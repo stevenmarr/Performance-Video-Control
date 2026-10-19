@@ -220,3 +220,12 @@ body.dragging *{cursor:grabbing !important}
   .palette{width:auto;max-height:260px;position:static}
   .card{width:128px}
 }
+
+/* 0.3.1: transition targets (= the app's selection: what TAKE / CUT will act on) */
+.xtargets{font-size:12px;font-weight:800;color:var(--sel);letter-spacing:.04em}
+.xtargets.none{color:var(--dim);font-weight:600}
+.card.sel{border-color:var(--sel);box-shadow:0 0 0 1px var(--sel) inset;background:var(--sel-bg)}
+.card.sel .k{color:var(--sel)}
+.card .xt{position:absolute;top:5px;right:6px;font-size:9px;font-weight:900;letter-spacing:.06em;padding:1px 5px;border-radius:4px;background:var(--sel);color:#1a1300}
+.card[data-seltoggle]{cursor:pointer}
+.btn.take small,.btn.cut small{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;opacity:.9;margin-top:4px;white-space:normal}
