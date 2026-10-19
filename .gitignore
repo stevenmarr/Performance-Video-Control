@@ -1,0 +1,7 @@
+node_modules/
+presets.json
+settings.json
+*.log
+.DS_Store
+data/
+mock-data/

@@ -1,0 +1,15 @@
+{
+  "name": "rs6-presets",
+  "version": "1.0.0",
+  "description": "Barco E2-style destination-aware preset save/recall for Analog Way Aquilon RS6 (fw 6.2.x) over the documented REST and AWJ APIs.",
+  "main": "server.js",
+  "license": "MIT",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "mock": "node server.js --mock",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {}
+}

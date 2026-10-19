@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b0d10">
+<title>RS6 Presets</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">RS6 <span>PRESETS</span></div>
+  <div id="conn" class="pill off">Not connected</div>
+  <div id="last" class="last">PVW: —</div>
+  <div class="spacer"></div>
+  <button id="btnSettings" class="btn ghost">⚙ Settings</button>
+</header>
+
+<section class="dests">
+  <div class="section-title">DESTINATIONS <small>tap to toggle · Take/Cut act on the lit ones</small></div>
+  <div id="destRow" class="dest-row"></div>
+</section>
+
+<main class="main">
+  <section class="grid-wrap">
+    <div class="modes">
+      <button class="mode active" data-mode="recall">RECALL</button>
+      <button class="mode" data-mode="save">SAVE</button>
+      <button class="mode" data-mode="edit">EDIT</button>
+      <div class="hint" id="modeHint">Tap a preset to load it to Preview on its destinations.</div>
+    </div>
+    <div id="grid" class="grid"></div>
+  </section>
+
+  <aside class="transport">
+    <button id="btnTake" class="btn take">TAKE</button>
+    <button id="btnCut" class="btn cut">CUT</button>
+    <button id="btnAuto" class="btn toggle">AUTO TAKE<br><b>OFF</b></button>
+    <div class="legend">
+      <span class="lg pgm">PGM</span> on program
+      <span class="lg pvw">PVW</span> on preview
+      <span class="lg part">½</span> partial
+    </div>
+  </aside>
+</main>
+
+<section class="logwrap" id="logwrap">
+  <div class="section-title log-head" id="logToggle">LOG <small id="logCount"></small><span class="spacer"></span><button class="btn mini" id="logClear">Clear view</button></div>
+  <div id="log" class="log"></div>
+</section>
+
+<!-- Settings -->
+<dialog id="dlgSettings">
+  <form method="dialog" id="formSettings" class="form">
+    <h2>Device settings</h2>
+    <div class="note" id="mockNote" hidden>Mock mode: the app is talking to its built-in simulated RS6. Host/ports are fixed.</div>
+    <label>Device IP / host <input name="host" required placeholder="192.168.2.140 or 127.0.0.1"></label>
+    <div class="row2">
+      <label>REST / Web RCS port <input name="restPort" type="number" min="1" max="65535"></label>
+      <label>AWJ TCP port <input name="awjPort" type="number" min="1" max="65535"></label>
+    </div>
+    <div class="row2">
+      <label>Commands via
+        <select name="protocol"><option value="rest">REST (HTTP)</option><option value="awj">AWJ (TCP 10606)</option></select>
+      </label>
+      <label class="chk"><input type="checkbox" name="https"> HTTPS for REST</label>
+    </div>
+    <label class="chk"><input type="checkbox" name="awjReadback"> Use AWJ readback to detect which Screen memory is on Preview when saving</label>
+    <label>Web RCS password <input name="password" type="password" autocomplete="off" placeholder="unchanged"></label>
+    <label class="chk"><input type="checkbox" name="clearPassword"> Clear stored password</label>
+    <div class="row3">
+      <label>Scan screens <input name="maxScreens" type="number" min="1" max="24"></label>
+      <label>Scan aux <input name="maxAux" type="number" min="0" max="96"></label>
+      <label>Layers / screen <input name="maxLayers" type="number" min="1" max="128"></label>
+    </div>
+    <label class="chk"><input type="checkbox" name="presetToggle"> Device has Preset Toggle (swap) enabled — affects tally after Take</label>
+    <div class="actions">
+      <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
+      <button id="btnSaveSettings" value="save" class="btn primary">Save &amp; connect</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Save -->
+<dialog id="dlgSave">
+  <form method="dialog" id="formSave" class="form">
+    <h2 id="saveTitle">Save preset</h2>
+    <div class="note" id="saveDests"></div>
+    <div class="row2">
+      <label>Number <input name="number" type="number" min="1" max="9999" required></label>
+      <label>Name <input name="name" maxlength="64" required></label>
+    </div>
+    <div class="note small">The app records which destinations are included and, for each, the Screen memory slot reported on Preview (AWJ readback) plus a snapshot of the layer sources. Save the look in the Aquilon first (Web RCS › Memories › Screen) if you want positions/sizes recalled. You can type or fix slots later in EDIT.</div>
+    <div id="saveSlots" class="slots"></div>
+    <div class="actions">
+      <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
+      <button value="save" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Edit -->
+<dialog id="dlgEdit">
+  <form method="dialog" id="formEdit" class="form">
+    <h2 id="editTitle">Preset</h2>
+    <div class="row2">
+      <label>Number <input name="number" type="number" min="1" max="9999" required></label>
+      <label>Name <input name="name" maxlength="64" required></label>
+    </div>
+    <div class="section-title">Screen memory slot per destination <small>blank = use source snapshot</small></div>
+    <div id="editSlots" class="slots"></div>
+    <div class="btn-grid">
+      <button type="button" class="btn" data-act="update">Update (re-capture its destinations)</button>
+      <button type="button" class="btn" data-act="overwrite">Overwrite with current selection</button>
+      <button type="button" class="btn" data-act="duplicate">Duplicate</button>
+      <button type="button" class="btn danger" data-act="delete">Delete</button>
+    </div>
+    <div class="actions">
+      <button value="cancel" class="btn ghost" formnovalidate>Close</button>
+      <button value="save" class="btn primary">Save changes</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+<script src="/app.js"></script>
+</body>
+</html>
