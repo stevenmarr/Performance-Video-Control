@@ -13,6 +13,16 @@ network can open.
   the preset on Program, and a dashed tag means only some of the preset's destinations match. The last
   recalled preset is shown in the header and outlined in the grid.
 - **Update / Overwrite / Rename / Renumber / Duplicate / Delete**, plus an **Auto take on recall** toggle.
+- **Live device state (v0.2.0).** A persistent AWJ connection with subscriptions keeps the app in
+  step with the RS6, including changes made on the RC400T or the Web RCS:
+  - **real input tally** (which inputs are on Program and Preview layers)
+  - **last Screen memory** per destination and **last Master memory** with their names
+  - **input status** (label, enabled, signal, capability, scope, freeze)
+  - **input, background-set and group backups**
+  - **per-channel audio mutes**
+
+  There are tabs for **Inputs** (freeze toggle), **Backup** and **Audio**. Preset tally now follows
+  the device, not just the app.
 - A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API** for Bitfocus
   Companion (a module ships separately in `companion-module-rs6-presets`).
 
@@ -53,6 +63,65 @@ never depends on what is selected on the controller.
 Preview and save it as a Screen memory in the Web RCS (Memories tab › Screen › Save; Manual §15.3.1).
 A Master memory save with "create Screen memories" also works (§15.2.1). Then save the app preset over
 those destinations. If the app has seen the memory loaded on Preview, the slot fills in automatically.
+
+---
+
+## Live device state (v0.2.0)
+
+When **Live device state** is on (Settings; the default), the app keeps one AWJ TCP connection open
+to port 10606 alongside the REST commands:
+
+1. **Discover:**
+   - per-destination layer count: layer capability, §3.5 p.10
+   - which inputs have labels: §6.1 p.24
+   - which audio channels and backup groups answer: §5.1–5.2, §6.10
+2. **Read everything once.** Gets are pipelined, and replies are matched by path.
+3. **Subscribe** (§1.4 p.4–5) with one `replace` on `Subscriptions` listing path prefixes:
+   - per destination:
+     - `DeviceObject/$screenAuxGroup/@items/{S1}/status/@props/transition` (TBAR side, §3.8)
+     - `DeviceObject/{$screen|$auxiliary}/@items/{S1}/control/@props/label`
+     - each `…/$preset/@items/{A|B}/$layer/@items/{n|NATIVE}/source` (§3.6, §3.8–3.10)
+   - `DeviceObject/presetBank/status/presetId` (last Screen memory, §3.11)
+   - `DeviceObject/masterPresetBank/status/lastUsed` (last Master, §3.12)
+   - `DeviceObject/presetBank/$bank` and `DeviceObject/masterPresetBank/$bank` (memory labels, §3.7)
+   - `DeviceObject/$input/@items/` (inputs and input backups, §6.1, §6.4–6.6)
+   - `DeviceObject/backup/$group` (§6.10–6.11)
+   - `DeviceObject/preconfig/backgrounds/$screen/@items/{S}/$backgroundSet` (§6.7–6.9)
+   - each `DeviceObject/audio/control/$device/@items/1/$rx|$tx/…/control` (§5.1–5.2)
+
+   Every change the device pushes to the app is applied straight away and sent to browsers over SSE
+   and to Companion over long-poll. A full re-read runs every 60 s as a safety net.
+4. **Fallbacks.** If the subscription `replace` isn't echoed, the app **polls the same paths over AWJ**
+   every *Fallback poll* ms (default 1000). If AWJ can't connect at all, it **polls REST**:
+   - layer status and sources, REST p.15
+   - backgrounds, REST p.17
+   - aux sources, REST p.24
+   - inputs, REST p.66
+
+   It retries AWJ every 10 s. The header pill shows `LIVE · PUSH`, `LIVE · AWJ POLL`,
+   `LIVE · REST POLL` or `LIVE OFF`.
+
+**Program and Preview** come from the TBAR side (§3.8 p.13). With `AT_DOWN`, preset A is Program and
+B is Preview. With `AT_UP`, it's the other way round.
+**Input tally** counts an input as on Program (or Preview) when any Program (or Preview) layer, or a
+background, on any destination has `LIVE_<n>` as its source.
+**App preset tally** becomes "device-memory" tally: a destination matches a preset when the device's
+last-loaded Screen memory on that side (§3.11) equals the preset's slot. When a destination has no
+slot, the preset's layer-source snapshot is compared instead.
+
+### Path forms
+
+- **Device index.** The guide's 4.0+ notes (§1.4 p.5) say a device index was added and screens and
+  aux were split into separate lists. The device index appears in the guide **only** in system and
+  audio paths (`…/system/$device/@items/1/…`, `…/audio/control/$device/@items/1/…`). Screen, layer,
+  memory and input paths have no device segment, so the app doesn't add one.
+- **Screen and aux collections.** The guide's examples use `$screen`/`$auxiliary` for per-screen
+  objects and `$screenAuxGroup` for transition control and status. `$auxiliaryScreen` appears nowhere
+  in the v6.2 guide, so the app uses `$auxiliary`.
+- **Subscription example.** The `Subscriptions` example in §1.4 uses the pre-4.0
+  `DeviceObject/$screenGroup/…` form. It was **not copied**. The subscription prefixes above are
+  derived from the documented get/replace paths in §3, §5 and §6 (see `lib/paths.js`). Each builder
+  is unit-tested against the literal example printed in the guide (`test/paths.test.js`).
 
 ---
 
@@ -115,7 +184,19 @@ Everything still works, but you type the Screen memory slots by hand.
 - **EDIT mode**: tap a preset to rename it, renumber it, fix slots, **Update** (re-capture its own
   destinations), **Overwrite with current selection**, **Duplicate** or **Delete**.
 - **AUTO TAKE**: when on, every recall is followed immediately by a TAKE of the same destinations.
-- Destination tiles show which app preset is on PGM and PVW for each screen.
+- Destination tiles show which app preset is on PGM and PVW for each screen. They also show the
+  **last Screen memory number and name** on each side (red for PGM, green for PVW). The header shows
+  the last **Master** memory.
+- **INPUTS tab:**
+  - every input with its device label
+  - a red border when it's on Program, green when it's on Preview, and the destinations it's on
+  - FROZEN, NO SIGNAL, DISABLED and BKP badges
+  - a **FREEZE/UNFREEZE** button
+- **BACKUP tab:** PRIMARY / BACKUP 1 / BACKUP 2 and AUTO on/off for each input that has backups
+  configured, for each background set with backups, and for each backup group.
+- **AUDIO tab:** a mute button for every audio input and output channel. Red means muted.
+- **Save dialog:** the slot fields list the device's **Screen memory names** (§3.7), and each
+  destination shows which memory is on its Preview right now.
 
 ## Mock / demo mode
 
@@ -123,7 +204,13 @@ Everything still works, but you type the Screen memory slots by hand.
 node server.js --mock
 ```
 This starts a simulated RS6 inside the app: REST on a random local port and AWJ on another, with
-4 screens and 2 aux. It also seeds 8 demo presets in `./mock-data/`, kept separate from your show
+4 screens and 2 aux. It also simulates:
+- 12 labelled inputs (IN 6 has no signal, IN 8 is disabled), with backups on IN 4
+- a background-set backup on S1, and 4 backup groups
+- 4×8 audio inputs and outputs
+- named Screen and Master memories
+- AWJ subscriptions with prefix-matched push, plus "external" changes that bypass the app (used in
+  tests to stand in for the RC400T or Web RCS) It also seeds 8 demo presets in `./mock-data/`, kept separate from your show
 presets. The mock implements only the documented endpoints the app uses. It's a test double, not
 an emulator of the real device.
 
@@ -151,10 +238,25 @@ Everything returns JSON. Errors return HTTP 4xx with `{ "error": "…" }`.
 | `POST /api/presets/{n}/duplicate` | `{"toNumber"?}` | Duplicate |
 | `DELETE /api/presets/{n}` | | Delete |
 | `POST /api/capture` | `{"destinations":[…]}` | Report the Screen memory slots detected on Preview |
+| `GET /api/state?since={rev}&timeout={ms}` | | **Long-poll**: answers as soon as the state revision `rev` passes `since`, or after `timeout` (default 25 s, max 60 s) |
+| `GET /api/live` | | Live status and snapshot: `mode` (`push`/`poll-awj`/`poll-rest`/`off`), per-destination PGM/PVW layers, memory and layer-1 label; `tally`; `inputs`; `lastMaster`; `backup`; `audio` (also in `state.live`) |
+| `GET /api/tally` | | Input tally: `{program:[…], preview:[…], inputs:{n:{program:[S1…],preview:[…]}}}` |
+| `GET /api/inputs` | | Inputs: `label`, `isEnabled`, `isAvailable`, `capability`, `freeze`, `scope`, `device`, tally and `backup` |
+| `GET /api/memories` | | Screen and Master memory labels, last Master memory, last Screen memory per destination |
+| `GET /api/backup`, `GET /api/audio` | | Backup and audio state |
+| `POST /api/inputs/{n}/freeze` | `{}` to toggle, or `{"value":true}` | Freeze or unfreeze an input (*inferred write*) |
+| `POST /api/inputs/{n}/backup` | `{"slot":"NONE"\|"1"\|"2"}` | Select primary or a backup slot |
+| `POST /api/inputs/{n}/backup/mode` | `{"auto":true}` | Automatic or manual backup switching |
+| `POST /api/backgrounds/{S1}/{set}/backup` and `…/mode` | same | Background-set backup |
+| `POST /api/groups/{g}/backup` and `…/mode` | same | Group backup |
+| `POST /api/audio/{inputs\|outputs}/{n}/channels/{c}/mute` | `{}` to toggle, or `{"value":true}` | Audio channel mute |
 | `GET /api/events` | | Server-Sent Events (`state`, `log`) used by the UI |
 | `GET/POST /api/settings`, `POST /api/connect`, `GET /api/log` | | Settings, reconnect, log |
 
 Example: `curl -X POST http://<mac-ip>:8080/api/presets/3/recall`
+
+`state.rev` goes up by one on every change. Live-control writes need the AWJ connection, and return
+HTTP 409 when it's down or the device rejects the write.
 
 There is no authentication on this API. Run it only on a trusted show network.
 
@@ -174,6 +276,40 @@ Page numbers are the printed page numbers in the guides.
 | Background (snapshot) | REST `GET /screens/{id}/background-layer/presets/preview` | REST p.17 |
 | Write sources | REST `POST …/layers/{L}/presets/{target}/source`, `POST …/background-layer/presets/{target}/source` | REST p.16, p.18, p.24–25 |
 | Auth | `POST /auth/login?identifier=Admin&password=…` and then `Cookie: auth-jwt=…` | REST p.73–74 |
+| **Live (v0.2.0), all AWJ:** subscriptions | `{"op":"replace","path":"Subscriptions","value":[prefixes…]}`; the device echoes the list and then pushes `{path,value}` for any path starting with a prefix | §1.4 p.4–5 |
+| Layer and background sources, both sides | `DeviceObject/{$screen\|$auxiliary}/@items/{S1}/$preset/@items/{A\|B}/$layer/@items/{n\|NATIVE}/source/@props/inputNum` | §3.6 p.11–12, §3.8 p.13–14, §3.9–3.10 p.14–15 |
+| Layer count probe | `DeviceObject/preconfig/resources/new/$screen/@items/{S1}/$layer/@items/{n}/control/@props/capability` | §3.5 p.10 |
+| Memory labels | `DeviceObject/presetBank/$bank/@items/{n}/control/@props/label`, `DeviceObject/masterPresetBank/$bank/@items/{n}/control/@props/label` | §3.7 p.12–13 |
+| Last Screen memory per side | `DeviceObject/presetBank/status/presetId/{$screen\|$auxiliary}/@items/{S1}/$preset/@items/{A\|B}/@props/id` | §3.11 p.16 |
+| Last Master memory | `DeviceObject/masterPresetBank/status/lastUsed/$presetMode/@items/{PROGRAM\|PREVIEW}/@props/memoryId` | §3.12 p.16–17 |
+| Input status | `DeviceObject/$input/@items/IN_{n}/status/@props/isEnabled\|capability\|isAvailable\|scope`, `…/control/@props/label\|freeze`, `…/mapping/@props/device` | §6.1 p.24–25 |
+| Input backup | `…/$input/@items/IN_{n}/backup/$slot/@items/{1\|2}/control/@props/source`, `…/backup/control/@props/xSelectSlot` (`NONE`/`1`/`2`), `…/backup/control/@props/enableAutoSelect` | §6.4–6.6 p.28–29 |
+| Background-set backup | `DeviceObject/preconfig/backgrounds/$screen/@items/{S1}/$backgroundSet/@items/{set}/backup/…` (same three properties) | §6.7–6.9 p.29–30 |
+| Group backup | `DeviceObject/backup/$group/@items/GROUP_{g}/control/@props/xSelectSlot\|enableAutoSelect` | §6.10–6.11 p.30 |
+| Audio mutes | `DeviceObject/audio/control/$device/@items/1/$rx/@items/INPUT_{i}_CHANNEL_{c}/control/@props/mute`; `…/$tx/@items/OUTPUT_{o}/$channel/@items/{c}/control/@props/mute` | §5.1.1–5.1.2 p.21–22; §5.2.1–5.2.2 p.22–23 |
+| REST polling fallback | layer status and sources `GET /screens/{id}/layers/{L}/presets/{program\|preview}`, background `…/background-layer/presets/…`, aux `…/auxiliary-screens/{id}/layers/{L}/presets/…/source`, inputs `GET /inputs/{n}` | REST p.15, p.17, p.24, p.66 |
+
+The AWJ § and page numbers refer to the *AWJ Protocol Programmer's Guide v6.2*. The REST page
+numbers refer to the *REST API Programmer's Guide*.
+
+## Verified vs inferred (v0.2.0 live features)
+
+"Documented" means the exact path and verb appear in the v6.2 AWJ guide, and a unit test checks
+the builder against the guide's printed example. **Nothing here has been verified on a real RS6 or
+on the AW Simulator.** Every behaviour was tested against the built-in mock, which implements the
+guide as written.
+
+| Feature | Documented in the guide | Inferred by me |
+|---|---|---|
+| Subscriptions | `get`/`replace` on `Subscriptions`, prefix matching, `{path,value}` pushes (§1.4) | That the device accepts **many** prefixes (≈140 here) and **narrow** prefixes down to a single property. The guide's example uses only 3. Notifications for object values are flattened, in case the device sends a parent object. The app falls back to AWJ polling if the `replace` isn't echoed. |
+| Layer sources A/B and TBAR side | `get` (§3.6, §3.8) | That layer and background **sources** changed from the RC400T or Web RCS generate pushes on those paths. Layer visibility isn't documented over AWJ, so in AWJ mode an input counts on air when it's a layer source, even if that layer is closed. REST polling does exclude closed layers (REST p.15 `status`). `SCREEN_x` sources, where a screen feeds a layer, are not followed. |
+| Last Screen memory / last Master | `get` (§3.11, §3.12) | That these values update and push on every load from any controller. |
+| Memory labels | `get` (§3.7) | Reading up to 1000 Screen and 500 Master labels at startup. Fewer are read when Settings › *Memory labels to read* is lower. |
+| Input status (§6.1) | `get` on isEnabled, capability, label, isAvailable, freeze, device, scope | **Freeze write:** §6.1 documents only a `get` on `control/@props/freeze`. The app sends `replace` with `true`/`false` on the same path, and then reads it back to confirm. **Marked INFERRED.** It has been tested against the mock only. |
+| Input backups | `get` slot sources (§6.4); `replace` `xSelectSlot` `NONE`/`1`/`2` (§6.5); `replace` `enableAutoSelect` (§6.6) | "Backup active" means `xSelectSlot` read back as anything other than `NONE`. Whether reading `xSelectSlot` (an x-prefixed request property) returns the current selection is inferred. Reading `enableAutoSelect` is inferred too. |
+| Background-set and group backups | Same, on §6.7–6.9 and §6.10–6.11 paths | Same as above. Group ids `GROUP_1…8` and background sets `1…8` are discovered by probing. |
+| Audio mutes | `get` and `replace` on the rx and tx `mute` (§5.1.2, §5.2.2) | The channel and output counts are discovered by probing, up to Settings limits. Only the device index `1` is used (no Link). |
+| REST fallback | Layer status and source (REST p.15), background (p.17), aux source (p.24), inputs (p.66) | REST gives tally and inputs only. Memories, backups, audio and freeze need AWJ. |
 
 ## Limitations and what's unverified
 
@@ -189,9 +325,11 @@ Simulator.** Please run a dry rehearsal before using it in a show.
   the Web RCS.
 - **The source-snapshot fallback restores only sources and background sets**, not position, size,
   opacity, crop, masks or keying.
-- **Tally is app-side.** It reflects what *this app* recalled and took. A recall, take or T-bar move
-  from the RC400T or the Web RCS isn't seen. No tally read is documented. Use the "Preset Toggle"
-  setting to match the device so PVW tally stays correct after a TAKE.
+- **Tally.** With live state on, preset and input tally follow the device. Changes from the RC400T,
+  the Web RCS and T-bar moves are picked up through the TBAR side and the last-loaded memory (see
+  above). With live state off, tally is app-side, as in 0.1, and depends on the "Preset Toggle"
+  setting. A Screen memory changed by hand after loading still reports that memory's id, because the
+  device doesn't flag "modified" over AWJ.
 - **The device's own transition selection isn't changed.** Selection follows the preset *in this app*,
   and every take names its screens explicitly. The guides document no way to set the device's
   transition filter. A TAKE pressed on the RC400T still uses the RC400T's selection.
@@ -210,9 +348,11 @@ Simulator.** Please run a dry rehearsal before using it in a show.
 server.js            entry point (CLI flags, mock bootstrap)
 lib/engine.js        presets, selection, recall/take/cut, tally
 lib/device.js        every device call (with doc page refs)
+lib/paths.js         AWJ v6.2 path builders (one per documented path, with § and page refs)
+lib/live.js          live device state: AWJ subscriptions / AWJ poll / REST poll, tally, inputs, memories, backup, audio
 lib/rest.js          REST client (exact Content-Length, auth-jwt cookie)
 lib/awj.js           AWJ TCP client (0x04 framing)
-lib/mock.js          mock RS6 (REST + AWJ)
+lib/mock.js          mock RS6 (REST + AWJ + subscriptions/push, external-change hooks)
 lib/server.js        HTTP server, JSON API, SSE, static UI
 public/              UI (index.html, app.js, style.css)
 test/                node:test suites

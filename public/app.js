@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const $ = (s) => document.querySelector(s);
-  let S = null; let mode = 'recall'; let editing = null;
+  let S = null; let mode = 'recall'; let editing = null; let tab = 'presets';
   const HINTS = {
     recall: 'Tap a preset to load it to Preview on its destinations.',
     save: 'Light the destinations to include, then tap an empty slot (or a preset to overwrite).',
@@ -27,6 +27,13 @@
     c.className = 'pill ' + (S.connected ? 'ok' : 'off');
     c.innerHTML = (S.connected ? `${esc(S.system.type || 'Aquilon')} ${esc(ver)} · ${esc(S.settings.host)}` : `Not connected${S.lastError ? ' · ' + esc(S.lastError).slice(0, 60) : ''}`) + (S.mock ? '<span class="mock">MOCK</span>' : '');
     $('#last').textContent = S.lastRecalled ? `PVW: ${S.lastRecalled.number} · ${S.lastRecalled.name}` : 'PVW: —';
+    const lv = S.live || {}; const lm = lv.lastMaster || {};
+    const mref = (r) => (r ? `${r.id}${r.label ? ' ' + esc(r.label) : ''}` : '—');
+    $('#master').innerHTML = lv.hasMemoryInfo ? `MASTER PGM <b>${mref(lm.program)}</b> · PVW <b>${mref(lm.preview)}</b>` : '';
+    const lmEl = $('#liveMode');
+    const modeTxt = { push: 'LIVE · PUSH', 'poll-awj': 'LIVE · AWJ POLL', 'poll-rest': 'LIVE · REST POLL', off: 'LIVE OFF' }[lv.mode || 'off'];
+    lmEl.className = 'pill ' + (lv.mode === 'push' ? 'live-push' : lv.mode && lv.mode !== 'off' ? 'live-poll' : 'live-off');
+    lmEl.textContent = modeTxt; lmEl.title = lv.error || '';
 
     const row = $('#destRow');
     row.innerHTML = S.destinations.map((d) => `
@@ -34,6 +41,7 @@
         <span class="k">${d.kind === 'screen' ? 'SCREEN' : 'AUX'} ${d.id}</span>
         <span class="l">${esc(d.label)}</span>
         <span class="tl">${d.pgmPreset != null ? `<span class="p">PGM ${d.pgmPreset}</span>` : ''}${d.pvwPreset != null ? `<span class="v">PVW ${d.pvwPreset}</span>` : ''}</span>
+        ${d.programMemory || d.previewMemory ? `<span class="mem"><span class="p">M${d.programMemory ? d.programMemory.id + ' ' + esc(d.programMemory.label) : '–'}</span> / <span class="v">M${d.previewMemory ? d.previewMemory.id + ' ' + esc(d.previewMemory.label) : '–'}</span></span>` : ''}
       </button>`).join('') + `<button class="dest ctl" data-ctl="all">ALL</button><button class="dest ctl" data-ctl="none">CLEAR</button>`;
     if (!S.destinations.length) row.insertAdjacentHTML('afterbegin', '<div class="note">No destinations yet. Check Settings and connect.</div>');
 
@@ -56,8 +64,43 @@
     }
     $('#grid').innerHTML = html;
 
+    renderLive();
     const a = $('#btnAuto'); a.classList.toggle('on', S.autoTake); a.innerHTML = `AUTO TAKE<br><b>${S.autoTake ? 'ON' : 'OFF'}</b>`;
     $('#btnTake').disabled = $('#btnCut').disabled = !S.selection.length;
+  }
+
+  function renderLive() {
+    const lv = S.live || {};
+    if (tab === 'inputs') {
+      const ins = (lv.inputs || []).filter((i) => i.isEnabled !== false || i.label);
+      $('#inputsGrid').innerHTML = ins.length ? ins.map((i) => {
+        const cls = ['inp']; if (i.onProgram) cls.push('pgm'); if (i.onPreview) cls.push('pvw'); if (i.isEnabled === false) cls.push('dis');
+        const b = [];
+        if (i.onProgram) b.push('<span class="badge red">PGM</span>'); if (i.onPreview) b.push('<span class="badge green">PVW</span>');
+        if (i.freeze) b.push('<span class="badge blue">FROZEN</span>');
+        if (i.isEnabled === false) b.push('<span class="badge warn">DISABLED</span>'); else if (i.isAvailable === false) b.push('<span class="badge warn">NO SIGNAL</span>');
+        if (i.backup && i.backup.active) b.push(`<span class="badge warn">BKP ${esc(i.backup.selected)}</span>`);
+        if (i.capability) b.push(`<span class="badge">${esc(i.capability)}</span>`);
+        const where = [i.programOn.length ? 'PGM ' + i.programOn.join(',') : '', i.previewOn.length ? 'PVW ' + i.previewOn.join(',') : ''].filter(Boolean).join(' · ');
+        return `<div class="${cls.join(' ')}"><span class="num">IN ${i.number}</span><span class="name">${esc(i.label || 'Input ' + i.number)}</span><span class="badges">${b.join('')}</span><span class="where">${where}</span>
+          <button class="frz ${i.freeze ? 'on' : ''}" data-freeze="${i.number}">${i.freeze ? 'UNFREEZE' : 'FREEZE'}</button></div>`;
+      }).join('') : '<div class="empty-note">No input data (live state needs the device connection).</div>';
+    }
+    if (tab === 'backup') {
+      const bk = lv.backup || { inputs: [], backgrounds: [], groups: [] };
+      const segs = (kind, id, sel) => ['NONE', '1', '2'].map((sl) => `<button class="seg bk ${String(sel) === sl ? 'on' : ''}" data-bk="${kind}" data-id="${id}" data-slot="${sl}">${sl === 'NONE' ? 'PRIMARY' : 'BACKUP ' + sl}</button>`).join('');
+      const auto = (kind, id, on) => `<button class="seg ${on ? 'on' : ''}" data-bkmode="${kind}" data-id="${id}" data-auto="${on ? 0 : 1}">AUTO ${on ? 'ON' : 'OFF'}</button>`;
+      $('#bkInputs').innerHTML = bk.inputs.length ? bk.inputs.map((i) => `<div class="row"><span class="lbl">IN ${i.number} ${esc(i.label)}<small>B1: ${esc(i.slots[1] || 'NONE')} · B2: ${esc(i.slots[2] || 'NONE')}</small></span>${segs('input', i.number, i.selected)}${auto('input', i.number, i.auto)}</div>`).join('') : '<div class="empty-note">No input backups configured.</div>';
+      const bgs = bk.backgrounds.filter((b) => b.active || b.auto || Object.values(b.slots || {}).some((x) => x && x !== 'NONE'));
+      $('#bkBg').innerHTML = bgs.length ? bgs.map((b) => `<div class="row"><span class="lbl">${b.screen} · Background set ${b.set}<small>B1: ${esc(b.slots[1] || 'NONE')} · B2: ${esc(b.slots[2] || 'NONE')}</small></span>${segs('bg', b.screen + '/' + b.set, b.selected)}${auto('bg', b.screen + '/' + b.set, b.auto)}</div>`).join('') : '<div class="empty-note">No background set backups configured.</div>';
+      $('#bkGroups').innerHTML = bk.groups.length ? bk.groups.map((g) => `<div class="row"><span class="lbl">Group ${g.group}<small>${g.active ? 'backup ' + g.selected + ' active' : 'primary'}</small></span>${segs('group', g.group, g.selected)}${auto('group', g.group, g.auto)}</div>`).join('') : '<div class="empty-note">No backup groups found.</div>';
+    }
+    if (tab === 'audio') {
+      const au = lv.audio || { inputs: [], outputs: [] };
+      const row = (dir, idKey, x) => `<div class="row"><span class="lbl">${dir === 'inputs' ? 'Input' : 'Output'} ${x[idKey]}</span>${x.channels.map((c) => `<button class="ch ${c.mute ? 'muted' : ''}" data-audio="${dir}" data-id="${x[idKey]}" data-ch="${c.channel}">${c.channel}${c.mute ? '<br>M' : ''}</button>`).join('')}</div>`;
+      $('#audioIn').innerHTML = au.inputs.length ? au.inputs.map((x) => row('inputs', 'input', x)).join('') : '<div class="empty-note">No audio input channels found.</div>';
+      $('#audioOut').innerHTML = au.outputs.length ? au.outputs.map((x) => row('outputs', 'output', x)).join('') : '<div class="empty-note">No audio output channels found.</div>';
+    }
   }
 
   function addLog(e) {
@@ -99,6 +142,21 @@
     if (mode === 'edit' && b.dataset.preset) return openEdit(n);
   });
 
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
+    tab = b.dataset.tab;
+    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === b));
+    for (const t of ['presets', 'inputs', 'backup', 'audio']) $(`#pane-${t}`).hidden = t !== tab;
+    render();
+  }));
+  $('.main').addEventListener('click', (ev) => {
+    const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.freeze) return run(api('POST', `/api/inputs/${b.dataset.freeze}/freeze`, {}));
+    if (b.dataset.audio) return run(api('POST', `/api/audio/${b.dataset.audio}/${b.dataset.id}/channels/${b.dataset.ch}/mute`, {}));
+    const base = { input: (id) => `/api/inputs/${id}/backup`, bg: (id) => `/api/backgrounds/${id}/backup`, group: (id) => `/api/groups/${id}/backup` };
+    if (b.dataset.bk) return run(api('POST', base[b.dataset.bk](b.dataset.id), { slot: b.dataset.slot }));
+    if (b.dataset.bkmode) return run(api('POST', base[b.dataset.bkmode](b.dataset.id) + '/mode', { auto: b.dataset.auto === '1' }));
+  });
+
   $('#btnTake').addEventListener('click', () => run(api('POST', '/api/take')));
   $('#btnCut').addEventListener('click', () => run(api('POST', '/api/cut')));
   $('#btnAuto').addEventListener('click', () => run(api('POST', '/api/autotake', {})));
@@ -114,7 +172,18 @@
 
   // ---------- save ----------
   function slotInputs(container, dests, memories) {
-    container.innerHTML = dests.map((d) => `<label>${d} · ${esc(label(d))}<input type="number" min="1" max="1000" name="slot_${d}" placeholder="auto / sources" value="${memories && memories[d] ? memories[d] : ''}"></label>`).join('');
+    const dv = (k) => S.destinations.find((x) => x.key === k) || {};
+    container.innerHTML = dests.map((d) => {
+      const pv = dv(d).previewMemory;
+      return `<label>${d} · ${esc(label(d))}${pv ? ` <small>(PVW now: ${pv.id} ${esc(pv.label)})</small>` : ''}<input type="number" min="1" max="1000" list="memList" name="slot_${d}" placeholder="auto / sources" value="${memories && memories[d] ? memories[d] : ''}"></label>`;
+    }).join('');
+    loadMemList();
+  }
+  async function loadMemList() {
+    try {
+      const m = await api('GET', '/api/memories');
+      $('#memList').innerHTML = Object.entries(m.screen || {}).map(([n, l]) => `<option value="${n}">${n} · ${esc(l)}</option>`).join('');
+    } catch { /* no live data */ }
   }
   function readSlots(form, dests) {
     const m = {}; for (const d of dests) { const v = form.elements[`slot_${d}`] && form.elements[`slot_${d}`].value; if (v) m[d] = Number(v); } return m;
@@ -171,8 +240,8 @@
   async function openSettings() {
     const s = await api('GET', '/api/settings');
     const f = $('#formSettings');
-    for (const k of ['host', 'restPort', 'awjPort', 'protocol', 'maxScreens', 'maxAux', 'maxLayers']) f.elements[k].value = s[k];
-    for (const k of ['https', 'awjReadback', 'presetToggle']) f.elements[k].checked = !!s[k];
+    for (const k of ['host', 'restPort', 'awjPort', 'protocol', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels']) f.elements[k].value = s[k];
+    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled']) f.elements[k].checked = !!s[k];
     f.elements.password.value = ''; f.elements.password.placeholder = s.passwordSet ? '•••••• (unchanged)' : 'none'; f.elements.clearPassword.checked = false;
     $('#mockNote').hidden = !s.mock;
     $('#dlgSettings').showModal();
@@ -182,8 +251,8 @@
     if ($('#dlgSettings').returnValue !== 'save') return;
     const f = $('#formSettings'); const b = {};
     for (const k of ['host', 'protocol']) b[k] = f.elements[k].value.trim();
-    for (const k of ['restPort', 'awjPort', 'maxScreens', 'maxAux', 'maxLayers']) b[k] = Number(f.elements[k].value);
-    for (const k of ['https', 'awjReadback', 'presetToggle']) b[k] = f.elements[k].checked;
+    for (const k of ['restPort', 'awjPort', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels']) b[k] = Number(f.elements[k].value);
+    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled']) b[k] = f.elements[k].checked;
     if (f.elements.clearPassword.checked) b.password = ''; else if (f.elements.password.value) b.password = f.elements.password.value;
     run(api('POST', '/api/settings', b).then((st) => toast(st.connected ? 'Connected' : 'Saved, but not connected', !st.connected)));
   });

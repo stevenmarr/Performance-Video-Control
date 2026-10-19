@@ -13,6 +13,8 @@
   <div class="brand">RS6 <span>PRESETS</span></div>
   <div id="conn" class="pill off">Not connected</div>
   <div id="last" class="last">PVW: —</div>
+  <div id="master" class="master"></div>
+  <div id="liveMode" class="pill"></div>
   <div class="spacer"></div>
   <button id="btnSettings" class="btn ghost">⚙ Settings</button>
 </header>
@@ -22,8 +24,15 @@
   <div id="destRow" class="dest-row"></div>
 </section>
 
+<nav class="tabs">
+  <button class="tab active" data-tab="presets">PRESETS</button>
+  <button class="tab" data-tab="inputs">INPUTS</button>
+  <button class="tab" data-tab="backup">BACKUP</button>
+  <button class="tab" data-tab="audio">AUDIO</button>
+</nav>
+
 <main class="main">
-  <section class="grid-wrap">
+  <section class="grid-wrap" id="pane-presets">
     <div class="modes">
       <button class="mode active" data-mode="recall">RECALL</button>
       <button class="mode" data-mode="save">SAVE</button>
@@ -31,6 +40,24 @@
       <div class="hint" id="modeHint">Tap a preset to load it to Preview on its destinations.</div>
     </div>
     <div id="grid" class="grid"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-inputs" hidden>
+    <div class="section-title">INPUTS <small>red = on a Program layer · green = on a Preview layer (any screen/aux) · tap FREEZE to toggle</small></div>
+    <div id="inputsGrid" class="grid inputs"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-backup" hidden>
+    <div class="section-title">INPUT BACKUPS <small>Primary / Backup 1 / Backup 2 · AUTO = automatic switch</small></div>
+    <div id="bkInputs" class="rows"></div>
+    <div class="section-title">BACKGROUND SET BACKUPS</div>
+    <div id="bkBg" class="rows"></div>
+    <div class="section-title">GROUP BACKUPS</div>
+    <div id="bkGroups" class="rows"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-audio" hidden>
+    <div class="section-title">AUDIO INPUT CHANNELS <small>tap a channel to mute / unmute</small></div>
+    <div id="audioIn" class="rows"></div>
+    <div class="section-title">AUDIO OUTPUT CHANNELS</div>
+    <div id="audioOut" class="rows"></div>
   </section>
 
   <aside class="transport">
@@ -75,6 +102,12 @@
       <label>Layers / screen <input name="maxLayers" type="number" min="1" max="128"></label>
     </div>
     <label class="chk"><input type="checkbox" name="presetToggle"> Device has Preset Toggle (swap) enabled — affects tally after Take</label>
+    <label class="chk"><input type="checkbox" name="liveEnabled"> Live device state (AWJ push updates, polling fallback)</label>
+    <div class="row3">
+      <label>Fallback poll (ms) <input name="pollMs" type="number" min="100" max="60000"></label>
+      <label>Inputs to track <input name="maxInputs" type="number" min="1" max="256"></label>
+      <label>Memory labels to read <input name="screenMemoryLabels" type="number" min="0" max="1000"></label>
+    </div>
     <div class="actions">
       <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
       <button id="btnSaveSettings" value="save" class="btn primary">Save &amp; connect</button>
@@ -123,6 +156,7 @@
   </form>
 </dialog>
 
+<datalist id="memList"></datalist>
 <div id="toast" class="toast" hidden></div>
 <script src="/app.js"></script>
 </body>

@@ -45,7 +45,7 @@ async function main() {
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);
   });
 
-  const shutdown = async () => { server.closeClients(); server.close(); engine.device.close(); if (device) await device.stop(); process.exit(0); };
+  const shutdown = async () => { server.closeClients(); server.close(); engine.close(); if (device) await device.stop(); process.exit(0); };
   process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 }
 
