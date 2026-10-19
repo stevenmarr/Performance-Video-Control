@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// RS6 Presets: E2-style destination-aware presets for Analog Way Aquilon RS6.
+// RS6 Presets: E2-style destination-aware presets for Analog Way Aquilon RS6, built from the memories on the device.
 // Usage: node server.js [--mock] [--port 8080] [--host 0.0.0.0] [--data <dir>]
 const path = require('path');
 const os = require('os');
@@ -62,6 +62,12 @@ async function seed(engine) {
     [8, 'Awards Stinger', ['S1', 'S2', 'S3', 'S4'], { S1: 50, S2: 51, S3: 51, S4: 52 }],
   ];
   for (const [number, name, destinations, memories] of demo) await engine.savePreset({ number, name, destinations, memories });
+  // 0.3.0 combined presets built from the imported memories (what the board / drag-assign produces)
+  const combo = [
+    [9, 'Keynote + Sponsors', [['S1', 'screen', 10], ['S2', 'screen', 32], ['S3', 'screen', 33]]],
+    [10, 'Panel Master + MV', [['master', 'master', 3], ['S4', 'screen', 30], ['M1', 'multiviewer', 2]]],
+  ];
+  for (const [number, name, items] of combo) for (const [target, type, slot] of items) engine.assignToPreset(number, { target, type, slot, name });
   engine.log('info', 'Mock mode: seeded demo presets');
 }
 

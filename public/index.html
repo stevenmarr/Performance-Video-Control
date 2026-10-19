@@ -6,10 +6,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0b0d10">
 <title>RS6 Presets</title>
+<link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
+<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <header class="top">
+  <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
   <div class="brand">RS6 <span>PRESETS</span></div>
   <div id="conn" class="pill off">Not connected</div>
   <div id="last" class="last">PVW: —</div>
@@ -32,7 +36,29 @@
 </nav>
 
 <main class="main">
-  <section class="grid-wrap" id="pane-presets">
+  <section class="grid-wrap mix" id="pane-presets">
+    <aside class="palette" id="palette">
+      <div class="section-title pal-head">MEMORIES <small id="palCount"></small><span class="spacer"></span>
+        <button class="btn mini" id="btnMemRefresh" title="Re-read every memory bank from the RS6">⟳ Refresh</button>
+        <button class="btn mini" id="btnPalHide" title="Hide the memory palette">◀</button></div>
+      <div id="palTabs" class="ptabs"></div>
+      <input id="palSearch" class="pal-search" type="search" placeholder="Filter by name or slot" autocomplete="off">
+      <label class="pal-opt"><input type="checkbox" id="palAll"> show empty / unknown slots</label>
+      <div id="palList" class="pal-list"></div>
+      <div id="palFoot" class="pal-foot"></div>
+    </aside>
+    <div class="mixmain">
+      <div class="board-head">
+        <button class="btn mini" id="btnPalShow" hidden>▶ MEMORIES</button>
+        <button class="btn mini" id="btnBoardToggle" title="Show / hide the board">▾</button>
+        <div class="section-title">BOARD <small id="boardHint">drag a memory onto a screen, aux, multiviewer or MASTER · or tap a memory, then tap a target</small></div>
+        <span class="spacer"></span>
+        <button class="btn mini" id="btnStageLoad">LOAD TO PVW</button>
+        <button class="btn mini primary" id="btnStageSave">SAVE AS PRESET…</button>
+        <button class="btn mini" id="btnStageClear">CLEAR</button>
+      </div>
+      <div id="armed" class="armed" hidden></div>
+      <div id="board" class="board"></div>
     <div class="modes">
       <button class="mode active" data-mode="recall">RECALL</button>
       <button class="mode" data-mode="save">SAVE</button>
@@ -40,6 +66,7 @@
       <div class="hint" id="modeHint">Tap a preset to load it to Preview on its destinations.</div>
     </div>
     <div id="grid" class="grid"></div>
+    </div>
   </section>
   <section class="grid-wrap pane" id="pane-inputs" hidden>
     <div class="section-title">INPUTS <small>red = on a Program layer · green = on a Preview layer (any screen/aux) · tap FREEZE to toggle</small></div>
@@ -108,6 +135,7 @@
       <label>Inputs to track <input name="maxInputs" type="number" min="1" max="256"></label>
       <label>Memory labels to read <input name="screenMemoryLabels" type="number" min="0" max="1000"></label>
     </div>
+    <label class="chk"><input type="checkbox" name="memoryProbe"> Also probe undocumented memory paths (slot isValid, Multiviewer memory names). INFERRED: not in the AWJ guide</label>
     <div class="actions">
       <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
       <button id="btnSaveSettings" value="save" class="btn primary">Save &amp; connect</button>
@@ -143,7 +171,12 @@
     </div>
     <div class="section-title">Screen memory slot per destination <small>blank = use source snapshot</small></div>
     <div id="editSlots" class="slots"></div>
+    <div class="section-title">Master memory <small>loads first; tick the screens it covers (not readable from the device)</small></div>
+    <div class="row2"><label>Master slot <input name="master" type="number" min="1" max="500" placeholder="none"></label><span></span></div>
+    <div id="editMasterDests" class="chkrow"></div>
+    <div id="editMvWrap"><div class="section-title">Multiviewer memory per output</div><div id="editMv" class="slots"></div></div>
     <div class="btn-grid">
+      <button type="button" class="btn" data-act="board">Open on the board</button>
       <button type="button" class="btn" data-act="update">Update (re-capture its destinations)</button>
       <button type="button" class="btn" data-act="overwrite">Overwrite with current selection</button>
       <button type="button" class="btn" data-act="duplicate">Duplicate</button>
@@ -156,6 +189,33 @@
   </form>
 </dialog>
 
+<!-- Target picker (memory dropped on a preset) -->
+<dialog id="dlgPick">
+  <form method="dialog" class="form">
+    <h2 id="pickTitle">Assign to</h2>
+    <div class="note small" id="pickNote"></div>
+    <div id="pickList" class="pick"></div>
+    <div class="actions"><button value="cancel" class="btn ghost">Cancel</button></div>
+  </form>
+</dialog>
+
+<!-- Save board -->
+<dialog id="dlgStage">
+  <form method="dialog" id="formStage" class="form">
+    <h2>Save the board as a preset</h2>
+    <div class="note" id="stageSummary"></div>
+    <div class="row2">
+      <label>Number <input name="number" type="number" min="1" max="9999" required></label>
+      <label>Name <input name="name" maxlength="64" required></label>
+    </div>
+    <div class="actions">
+      <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
+      <button value="save" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="ghost" class="ghost" hidden></div>
 <datalist id="memList"></datalist>
 <div id="toast" class="toast" hidden></div>
 <script src="/app.js"></script>

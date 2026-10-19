@@ -1,5 +1,7 @@
 # RS6 Presets
 
+<img src="public/pv-logo.png" alt="Performance Video LLC" height="48">
+
 Barco E2-style preset save and recall for an **Analog Way Aquilon RS6** (firmware 6.2.x), in a
 browser. It runs on your Mac and serves a dark, touch-friendly UI that an iPad or phone on the same
 network can open.
@@ -23,6 +25,13 @@ network can open.
 
   There are tabs for **Inputs** (freeze toggle), **Backup** and **Audio**. Preset tally now follows
   the device, not just the app.
+- **Memory import and mix-and-match board (v0.3.0).** The app reads the RS6's own memories
+  (Screen/Aux, Master, Multiviewer) with slot, name and status, keeps them current through the AWJ
+  subscription, and shows them in a **palette grouped by type**. Drag (or tap) a memory onto a
+  **screen, aux or multiviewer card** to stage a look, or onto a **preset tile** to build it. Presets can
+  now be **combined**: a different memory per screen, plus an optional Master memory and multiviewer
+  memories. Recall loads each memory only to its own target. See
+  [Memory import and the board](#memory-import-and-the-board-v030).
 - A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API** for Bitfocus
   Companion (a module ships separately in `companion-module-rs6-presets`).
 
@@ -125,6 +134,87 @@ slot, the preset's layer-source snapshot is compared instead.
 
 ---
 
+## Memory import and the board (v0.3.0)
+
+![RS6 Presets 0.3.0 in mock mode](docs/rs6-presets-ui.png)
+
+*(Mock mode, 1366×900. Preset 10 is on Program, preset 9 on Preview, and the board holds a staged mix.)*
+
+### What is imported, and how
+
+| Memory type | Capacity (Manual §15) | Name | Valid / empty | Load | Notes |
+|---|---|---|---|---|---|
+| **Screen** (also used by **Aux**: one shared bank) | 1000 | **Documented**: `DeviceObject/presetBank/$bank/@items/{n}/control/@props/label` (AWJ §3.7) | **INFERRED** (probe only) `…/presetBank/$bank/@items/{n}/status/@props/isValid` | REST `POST /screens/{id}/load-memory`, `/auxiliary-screens/{id}/load-memory`; AWJ §3.3 | Per screen: the device's last-loaded memory on PGM and PVW (§3.11) |
+| **Master** | 500 | **Documented**: `DeviceObject/masterPresetBank/$bank/@items/{n}/control/@props/label` (§3.7) | **INFERRED** (probe only) `…/masterPresetBank/$bank/@items/{n}/status/@props/isValid` | REST `POST /load-master-memory {memoryId,target}` (p.13); AWJ `DeviceObject/masterPresetBank/control/load/$slot/@items/{n}/$preset/@items/PREVIEW\|PROGRAM/@props/xRequest` (§3.4) | Last Master on PGM/PVW (§3.12). **Which screens a Master contains cannot be read.** |
+| **Multiviewer** | 50 | **INFERRED** (probe only) `DeviceObject/monitoringBank/$bank/@items/{n}/control/@props/label` | **INFERRED** (probe only) `…/monitoringBank/$bank/@items/{n}/status/@props/isValid` | REST `POST /multiviewers/{id}/load-memory {memoryId}` (p.28); AWJ `DeviceObject/monitoringBank/control/load/$slot/@items/{n}/$output/@items/{o}/@props/xRequest` (§4.2) | Outputs: REST `GET /multiviewers/{id}` (p.27) / AWJ `$monitoring/@items/{o}/status/@props/isEnabled`, `control/@props/label` (§4.1). No "last loaded" readback exists. |
+| **Layer** | 50 | — | — | — | **No API at all** in either guide. Listed in the palette as unsupported. |
+
+- **When:** on connect (after the live read), on every subscription push of a label or status, on
+  the 60 s safety re-read, and on demand with **↻ Refresh** in the palette (`POST /api/memories/refresh`).
+- **Status without the probe.** By default the app sends **only documented commands**. Validity
+  isn't documented, so a slot is shown as **valid** when it has a name, or when the device reported it
+  as loaded somewhere (§3.11/§3.12); otherwise it's **unknown**. Each item carries `evidence`
+  (`device` / `label` / `loaded`) so you can see why. With the probe off, all 50 multiviewer slots are
+  listed as *unknown* (numbers only), because their names can only be read with the probe.
+- **Settings › Memory probe (INFERRED paths)**, default **off**. When on, the app also reads and
+  subscribes to the `isValid` and multiviewer-label paths above. They are not in the AWJ guide; they
+  are the TCP spelling of the Web RCS model names (`presetBank/bankList/items/N/status/pp/isValid`)
+  used by the open-source Bitfocus `companion-module-analogway-awj`, translated with the same rule that
+  maps the documented label path (`bankList/items → $bank/@items`, `pp → @props`). If the device
+  rejects them, the app just logs it and falls back to the label rule. **Untested on a real RS6.**
+- **REST only.** REST has no memory read at all, so if AWJ is unreachable the import fails with a
+  clear message ("memories are read over AWJ only") and the palette keeps whatever it had.
+
+### Using the board
+
+- The **palette** (left) has tabs **SCREEN/AUX · MASTER · MV · LAYER**, a search box, and a
+  *show empty/unknown* switch. Each memory shows its slot, name, status, and a PGM/PVW dot when it's
+  live on some screen.
+- The **board** has a card per screen, aux and multiviewer output, plus a **MASTER** card. Each card
+  shows the staged memory and the device's live PGM/PVW memory.
+- **Mouse:** drag a memory onto a card (or a preset tile). **Touch/tablet:** press and hold ~0.2 s,
+  then drag. The page auto-scrolls near the edges. **Click/tap fallback:** tap a memory to *arm* it
+  (blue banner), then tap a card or preset tile. Incompatible drops are refused (e.g. a Master on S1).
+- Dropping onto a **preset tile** opens a small picker for the target (S1… / A1… / Master / M1…), then
+  assigns the memory into that preset (creating it if the number is empty).
+- **LOAD TO PVW** loads the board as it stands; **SAVE AS PRESET…** saves it as a combined preset;
+  **CLEAR** empties it. EDIT › *Open on the board* copies a preset onto the board for changes.
+- Preset tiles show chips like `M:3 S4:30 MV1:2`. Tally (PVW green / PGM red, partial dashed) and the
+  last-recalled outline work as before; a Master counts as one component of the tally.
+
+### Combined presets: recall targeting
+
+A preset now holds `memories {S1: 10, S2: 32, A1: 42}`, an optional `master {slot, dests}` and
+`mvMemories {M1: 2}`. Recall (and LOAD TO PVW) runs in this order:
+
+1. **Master first**, as a Master: one Master load to Preview (REST `/load-master-memory`, AWJ §3.4).
+   Per the Manual (§15.2), the device then changes only the screens stored in that Master.
+2. **Then each Screen memory, only to its own destination** (one explicit load per screen/aux), so a
+   per-screen memory overrides what the Master put on that screen.
+3. **Then multiviewer memories**, one per output. These load straight to the output (there is no
+   Preview/Program for multiviewers), so they change immediately even before a TAKE.
+
+The app's selection becomes the Screen-memory destinations plus the Master's **dests**. Because the
+API can't tell which screens a Master contains, `master.dests` is set by you in EDIT (it defaults to
+all destinations) and is used for selection, TAKE, CUT and tally. CUT on a Master preset loads the
+Master to Program.
+
+### Preset file v2 and migration
+
+`presets.json` keeps the same shape with `"version": 2` and two new optional fields per preset,
+`master` (or `null`) and `mvMemories` (`{}`). On first start, a version-1 (0.2.0) file is copied
+once to `presets.v1.bak.json` and rewritten as version 2; every preset, slot and source snapshot is
+kept. The log shows "Migrated N presets…". 0.2.0 can't read the new fields but ignores them.
+
+### Branding
+
+The header shows the Performance Video LLC play mark and wordmark (`public/pv-logo.png`, white on the
+dark header). The favicon and Apple touch icon are the play mark alone. Contact details from the
+source artwork are deliberately left out. There is no light theme; if one is added, the logo needs a
+dark backing (see the comment in `style.css`).
+
+---
+
 ## Install on a Mac
 
 1. Install Node.js 18 or later (the LTS release is fine), using **either**:
@@ -208,15 +298,18 @@ This starts a simulated RS6 inside the app: REST on a random local port and AWJ 
 - 12 labelled inputs (IN 6 has no signal, IN 8 is disabled), with backups on IN 4
 - a background-set backup on S1, and 4 backup groups
 - 4×8 audio inputs and outputs
-- named Screen and Master memories
+- named Screen and Master memories, with some unnamed-but-valid slots (Screen 60/61, Master 7) and
+  some empty ones (v0.3.0), 2 multiviewer outputs with named MV memories, and REST/AWJ Master and MV loads
 - AWJ subscriptions with prefix-matched push, plus "external" changes that bypass the app (used in
-  tests to stand in for the RC400T or Web RCS) It also seeds 8 demo presets in `./mock-data/`, kept separate from your show
+  tests to stand in for the RC400T or Web RCS).
+
+It also seeds 8 demo presets plus 2 combined ones (9 *Keynote + Sponsors*, 10 *Panel Master + MV*) in `./mock-data/`, kept separate from your show
 presets. The mock implements only the documented endpoints the app uses. It's a test double, not
 an emulator of the real device.
 
 Run the automated tests (against the mock):
 ```bash
-npm test
+npm test       # 92 tests
 ```
 
 ## HTTP control API (for Companion, Stream Deck, scripts)
@@ -232,7 +325,7 @@ Everything returns JSON. Errors return HTTP 4xx with `{ "error": "…" }`.
 | `POST /api/destinations/{S1\|A2…}/toggle` | | Toggle one destination |
 | `POST /api/selection` | `{"destinations":["S1","S2"]}` | Set the selection |
 | `POST /api/autotake` | `{}` to toggle, or `{"value":true}` | Auto take on recall |
-| `POST /api/presets` | `{"number","name","destinations"?,"memories"?}` | Save or overwrite (default: current selection) |
+| `POST /api/presets` | `{"number","name","destinations"?,"memories"?,"master"?,"mvMemories"?}` | Save or overwrite (default: current selection) |
 | `PUT /api/presets/{n}` | `{"name"?,"newNumber"?,"memories"?}` | Rename, renumber or edit slots |
 | `POST /api/presets/{n}/update` | `{"useSelection":false}` | Re-capture (or overwrite with the selection) |
 | `POST /api/presets/{n}/duplicate` | `{"toNumber"?}` | Duplicate |
@@ -242,7 +335,16 @@ Everything returns JSON. Errors return HTTP 4xx with `{ "error": "…" }`.
 | `GET /api/live` | | Live status and snapshot: `mode` (`push`/`poll-awj`/`poll-rest`/`off`), per-destination PGM/PVW layers, memory and layer-1 label; `tally`; `inputs`; `lastMaster`; `backup`; `audio` (also in `state.live`) |
 | `GET /api/tally` | | Input tally: `{program:[…], preview:[…], inputs:{n:{program:[S1…],preview:[…]}}}` |
 | `GET /api/inputs` | | Inputs: `label`, `isEnabled`, `isAvailable`, `capability`, `freeze`, `scope`, `device`, tally and `backup` |
-| `GET /api/memories` | | Screen and Master memory labels, last Master memory, last Screen memory per destination |
+| `GET /api/memories` | | Screen and Master memory labels, last Master memory, last Screen memory per destination, plus (0.3.0) `catalog` |
+| `GET /api/memories/catalog[?all=1]` | | **0.3.0** Imported memories by type: `{types, items:{screen,master,multiviewer:[{slot,label,status,evidence,onProgram,onPreview,seenOn}]}, import:{at,error,count,probe}}`. `all=1` includes empty/unknown slots |
+| `POST /api/memories/refresh` | | **0.3.0** Re-import memories now (409 if AWJ is unreachable) |
+| `POST /api/memories/load` | `{"type":"screen"\|"master"\|"multiviewer","slot":n,"dest":"S1"\|"M1","target":"preview"\|"program"}` | **0.3.0** Load one memory now |
+| `GET /api/stage`, `DELETE /api/stage` | | **0.3.0** The board, or clear it |
+| `POST /api/stage` | `{"target":"S1"\|"A1"\|"master"\|"M1","type"?,"slot":n\|null,"dests"?}` | **0.3.0** Stage a memory on a card (`slot:null` removes it; `type` is checked against the target) |
+| `POST /api/stage/load` | `{"target":"preview"}` | **0.3.0** Load the board (Master, then screens, then MVs) |
+| `POST /api/stage/save` | `{"number"?,"name"?}` | **0.3.0** Save the board as a (combined) preset |
+| `POST /api/stage/from/{n}` | | **0.3.0** Copy preset *n* onto the board |
+| `POST /api/presets/{n}/assign` | same body as `POST /api/stage` | **0.3.0** Drag-assign a memory into preset *n* (created if missing) |
 | `GET /api/backup`, `GET /api/audio` | | Backup and audio state |
 | `POST /api/inputs/{n}/freeze` | `{}` to toggle, or `{"value":true}` | Freeze or unfreeze an input (*inferred write*) |
 | `POST /api/inputs/{n}/backup` | `{"slot":"NONE"\|"1"\|"2"}` | Select primary or a backup slot |
@@ -279,6 +381,10 @@ Page numbers are the printed page numbers in the guides.
 | **Live (v0.2.0), all AWJ:** subscriptions | `{"op":"replace","path":"Subscriptions","value":[prefixes…]}`; the device echoes the list and then pushes `{path,value}` for any path starting with a prefix | §1.4 p.4–5 |
 | Layer and background sources, both sides | `DeviceObject/{$screen\|$auxiliary}/@items/{S1}/$preset/@items/{A\|B}/$layer/@items/{n\|NATIVE}/source/@props/inputNum` | §3.6 p.11–12, §3.8 p.13–14, §3.9–3.10 p.14–15 |
 | Layer count probe | `DeviceObject/preconfig/resources/new/$screen/@items/{S1}/$layer/@items/{n}/control/@props/capability` | §3.5 p.10 |
+| **v0.3.0** Master memory load | REST `POST /load-master-memory {"memoryId":1-500,"target"}`; AWJ `DeviceObject/masterPresetBank/control/load/$slot/@items/{n}/$preset/@items/PREVIEW\|PROGRAM/@props/xRequest` | REST p.13; AWJ §3.4 p.10 |
+| **v0.3.0** Multiviewer outputs | REST `GET /multiviewers/{1..8}` (`isEnabled`, `label`); AWJ `DeviceObject/$monitoring/@items/{o}/status/@props/isEnabled`, `…/control/@props/label` | REST p.27; AWJ §4.1 p.18 |
+| **v0.3.0** Multiviewer memory load | REST `POST /multiviewers/{id}/load-memory {"memoryId":1-50}`; AWJ `DeviceObject/monitoringBank/control/load/$slot/@items/{n}/$output/@items/{o}/@props/xRequest` | REST p.28; AWJ §4.2 p.18 |
+| **v0.3.0 INFERRED, opt-in** memory validity / MV names | `…/presetBank\|masterPresetBank\|monitoringBank/$bank/@items/{n}/status/@props/isValid`, `DeviceObject/monitoringBank/$bank/@items/{n}/control/@props/label` (only with Settings › Memory probe) | **not in the guide**, see above |
 | Memory labels | `DeviceObject/presetBank/$bank/@items/{n}/control/@props/label`, `DeviceObject/masterPresetBank/$bank/@items/{n}/control/@props/label` | §3.7 p.12–13 |
 | Last Screen memory per side | `DeviceObject/presetBank/status/presetId/{$screen\|$auxiliary}/@items/{S1}/$preset/@items/{A\|B}/@props/id` | §3.11 p.16 |
 | Last Master memory | `DeviceObject/masterPresetBank/status/lastUsed/$presetMode/@items/{PROGRAM\|PREVIEW}/@props/memoryId` | §3.12 p.16–17 |
@@ -309,9 +415,15 @@ guide as written.
 | Input backups | `get` slot sources (§6.4); `replace` `xSelectSlot` `NONE`/`1`/`2` (§6.5); `replace` `enableAutoSelect` (§6.6) | "Backup active" means `xSelectSlot` read back as anything other than `NONE`. Whether reading `xSelectSlot` (an x-prefixed request property) returns the current selection is inferred. Reading `enableAutoSelect` is inferred too. |
 | Background-set and group backups | Same, on §6.7–6.9 and §6.10–6.11 paths | Same as above. Group ids `GROUP_1…8` and background sets `1…8` are discovered by probing. |
 | Audio mutes | `get` and `replace` on the rx and tx `mute` (§5.1.2, §5.2.2) | The channel and output counts are discovered by probing, up to Settings limits. Only the device index `1` is used (no Link). |
+| **Memory import (0.3.0)** | Screen/Master labels (§3.7), last loaded (§3.11/§3.12), Master load (§3.4), MV outputs and MV load (§4.1–4.2) | **Validity** (`isValid`) and **multiviewer memory names**: paths derived from the Web RCS model, sent only with the opt-in probe. Without it, "valid" = has a name or was seen loaded. That label/status changes push through the `$bank` subscription prefix. That a Master loaded to Preview changes only its own screens (Manual §15.2, not the API guides). In the mock, a TAKE carries the Preview Master id to Program (a mock assumption; the real device's `lastUsed` behaviour on take is unverified). |
 | REST fallback | Layer status and source (REST p.15), background (p.17), aux source (p.24), inputs (p.66) | REST gives tally and inputs only. Memories, backups, audio and freeze need AWJ. |
 
 ## Limitations and what's unverified
+
+- **0.3.0 memories:** the API can't read what's *inside* a Master (which screens, which Screen
+  memories), so `master.dests` is your declaration. Multiviewer memories have no last-loaded readback,
+  so they aren't part of tally. Layer memories can't be listed or loaded. Memories still can't be
+  created or saved from the API; save them in the Web RCS, then press ↻ Refresh.
 
 **I tested this against the built-in mock only. I have not run it against a real RS6 or the AW
 Simulator.** Please run a dry rehearsal before using it in a show.
@@ -346,7 +458,7 @@ Simulator.** Please run a dry rehearsal before using it in a show.
 
 ```
 server.js            entry point (CLI flags, mock bootstrap)
-lib/engine.js        presets, selection, recall/take/cut, tally
+lib/engine.js        presets (file v2 + migration), board/staging, recall/take/cut, tally
 lib/device.js        every device call (with doc page refs)
 lib/paths.js         AWJ v6.2 path builders (one per documented path, with § and page refs)
 lib/live.js          live device state: AWJ subscriptions / AWJ poll / REST poll, tally, inputs, memories, backup, audio
@@ -354,7 +466,7 @@ lib/rest.js          REST client (exact Content-Length, auth-jwt cookie)
 lib/awj.js           AWJ TCP client (0x04 framing)
 lib/mock.js          mock RS6 (REST + AWJ + subscriptions/push, external-change hooks)
 lib/server.js        HTTP server, JSON API, SSE, static UI
-public/              UI (index.html, app.js, style.css)
+public/              UI (index.html, app.js, style.css, pv-logo.png, favicons)
 test/                node:test suites
 presets.json         your presets (created on first save)
 settings.json        device settings (created on first save)
