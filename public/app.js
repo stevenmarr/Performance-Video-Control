@@ -36,14 +36,19 @@
     lmEl.textContent = modeTxt; lmEl.title = lv.error || '';
 
     const row = $('#destRow');
-    const rowHtml = S.destinations.map((d) => `
+    // 0.3.4: one column per board card: [ALL/CLEAR | MASTER] [screens + aux] [multiviewers]
+    const nMv = (S.multiviewers || []).length;
+    const cols = `repeat(${1 + S.destinations.length + nMv}, minmax(var(--colmin), 1fr))`;
+    if ($('#screens').style.getPropertyValue('--cols') !== cols) $('#screens').style.setProperty('--cols', cols);
+    const rowHtml = `<div class="dest ctlcell"><button class="ctl" data-ctl="all">ALL</button><button class="ctl" data-ctl="none">CLEAR</button></div>` + S.destinations.map((d) => `
       <button class="dest ${d.selected ? 'on' : ''}" data-dest="${d.key}">
         <span class="k">${d.kind === 'screen' ? 'SCREEN' : 'AUX'} ${d.id}</span>
         <span class="l">${esc(d.label)}</span>
         <span class="tl">${d.pgmPreset != null ? `<span class="p">PGM ${d.pgmPreset}</span>` : ''}${d.pvwPreset != null ? `<span class="v">PVW ${d.pvwPreset}</span>` : ''}</span>
         ${d.programMemory || d.previewMemory ? `<span class="mem"><span class="p">M${d.programMemory ? d.programMemory.id + ' ' + esc(d.programMemory.label) : '–'}</span> / <span class="v">M${d.previewMemory ? d.previewMemory.id + ' ' + esc(d.previewMemory.label) : '–'}</span></span>` : ''}
-      </button>`).join('') + `<button class="dest ctl" data-ctl="all">ALL</button><button class="dest ctl" data-ctl="none">CLEAR</button>`
-      + (S.destinations.length ? '' : '<div class="note">No destinations yet. Check Settings and connect.</div>');
+      </button>`).join('')
+      + (nMv ? `<div class="dest mvcell" style="grid-column:span ${nMv}"><span class="k">MULTIVIEWER</span><span>memories only · no TAKE</span></div>` : '')
+      + (S.destinations.length ? '' : '<div class="note" style="grid-column:2 / -1">No destinations yet. Check Settings and connect.</div>');
     // re-render only on change: replacing the tiles between pointerdown and pointerup would swallow the tap
     if (rowHtml !== destHtml) { destHtml = rowHtml; row.innerHTML = rowHtml; }
 
@@ -116,7 +121,7 @@
 
   // ---------- 0.3.0: memory palette + board ----------
   const TYPE_NAMES = { screen: 'SCREEN / AUX', master: 'MASTER', multiviewer: 'MULTIVIEWER', layer: 'LAYER' };
-  const ACCEPT = { screen: (k) => /^[SA]\d+$/.test(k), master: (k) => k === 'master', multiviewer: (k) => /^M\d+$/.test(k) };
+  const ACCEPT = { screen: (k) => /^[SA]\d+$/.test(k), master: (k) => k === 'master', multiviewer: (k) => /^M\d+$/.test(k), layer: () => false };
   let palTab = localStorage.getItem('rs6.palTab') || 'screen';
   let boardHtml = '';
   let palAll = false; let palQuery = ''; let palCat = null; let palSig = ''; let armed = null;
@@ -144,8 +149,11 @@
             + (i.onPreview.length ? `<span class="tag pvw" title="on Preview: ${esc(i.onPreview.join(', '))}">${i.type === 'master' ? 'PVW' : esc(i.onPreview.join(','))}</span>` : '');
           const why = { device: 'valid (isValid probe, inferred path)', label: 'has a name (assumed valid; validity is not documented)', loaded: 'reported as loaded by the device' }[i.evidence] || i.status;
           return `<div class="${cls.join(' ')}" data-mtype="${i.type}" data-slot="${i.slot}" title="${esc(TYPE_NAMES[i.type])} ${i.slot} · ${esc(why)}${i.seenOn.length ? ' · seen on ' + esc(i.seenOn.join(', ')) : ''}"><span class="s">${i.slot}</span><span class="nm">${i.label ? esc(i.label) : `<i>${i.status === 'valid' ? 'unnamed' : i.status}</i>`}</span><span class="tl">${tl}</span></div>`;
-        }).join('') : '<div class="grp-note">None found.</div>';
-      const note = t.type === 'multiviewer' && !cat.probe ? '<div class="grp-note">Multiviewer memory names and validity are not documented: all 50 slots are listed. Settings › probe (inferred) reads them.</div>' : '';
+        }).join('') : `<div class="grp-note">${t.type === 'multiviewer' && !cat.probe && !palAll
+          ? 'No Multiviewer memories known: their names and validity aren\'t in the API guides. Turn on Settings › “Also probe undocumented memory paths”, or tick “show empty / unknown slots” to list all 50.'
+          : palAll ? 'None found.' : 'None found. Tick “show empty / unknown slots” to list every slot.'}</div>`;
+      const note = t.type === 'multiviewer' && !cat.probe && palAll && list.length ? '<div class="grp-note">Multiviewer validity isn\'t documented: every slot is listed as unknown. Settings › probe (inferred) reads names and validity.</div>'
+        : t.type === 'layer' && t.supported ? '<div class="grp-note">INFERRED (not in the API guides). Tap a Layer memory to load it onto one layer.</div>' : '';
       return `<div class="grp-b">${note}${body}</div>`;
     }).join('');
     $('#palTabs').innerHTML = (cat.types || []).map((t) => `<button class="ptab ${t.type === palTab ? 'active' : ''}" data-ptab="${t.type}" title="${esc(t.note)}">${{ screen: 'SCREEN/AUX', master: 'MASTER', multiviewer: 'MV', layer: 'LAYER' }[t.type] || t.name}<span>${t.supported ? counts[t.type] : '–'}</span></button>`).join('');
@@ -261,8 +269,27 @@
     if (drag.started) { drag.el.classList.remove('dragsrc'); document.body.classList.remove('dragging'); $('#ghost').hidden = true; if (drag.hover) drag.hover.classList.remove('hover'); applyArmed(); }
     drag = null;
   }
+  // 0.3.4 Layer memories: no board / preset target; a tap opens the layer recall dialog.
+  function openLayerLoad(mem) {
+    const f = $('#formLayer'); const max = Number((S.settings && S.settings.maxLayers) || 8);
+    $('#layerTitle').textContent = `Load Layer memory ${memTxt('layer', mem.slot)}`;
+    $('#layerDest').innerHTML = S.destinations.map((d) => `<option value="${d.key}">${d.key} · ${esc(d.label)}</option>`).join('');
+    $('#layerNum').innerHTML = Array.from({ length: max }, (_, i) => `<option value="${i + 1}">Layer ${i + 1}</option>`).join('');
+    const last = JSON.parse(localStorage.getItem('rs6.layerLoad') || '{}');
+    if (last.dest && S.destinations.some((d) => d.key === last.dest)) f.elements.dest.value = last.dest;
+    if (last.layer && last.layer <= max) f.elements.layer.value = String(last.layer);
+    const dlg = $('#dlgLayer'); dlg.returnValue = '';
+    dlg.onclose = () => {
+      const tgt = dlg.returnValue; if (tgt !== 'preview' && tgt !== 'program') return;
+      const dest = f.elements.dest.value; const layer = Number(f.elements.layer.value);
+      localStorage.setItem('rs6.layerLoad', JSON.stringify({ dest, layer }));
+      run(api('POST', '/api/memories/load', { type: 'layer', slot: mem.slot, dest, layer, target: tgt }).then(() => toast(`Layer memory ${memTxt('layer', mem.slot)} → ${dest} layer ${layer} (${tgt === 'program' ? 'PGM' : 'PVW'})`)));
+    };
+    dlg.showModal();
+  }
+  $('#palList').addEventListener('click', (e) => { const it = e.target.closest('.mem[data-mtype="layer"]'); if (it) openLayerLoad(memFromEl(it)); });
   $('#palList').addEventListener('pointerdown', (e) => {
-    const it = e.target.closest('.mem'); if (!it || e.button > 0) return;
+    const it = e.target.closest('.mem'); if (!it || e.button > 0 || it.dataset.mtype === 'layer') return;
     drag = { el: it, mem: memFromEl(it), x0: e.clientX, y0: e.clientY, id: e.pointerId, pt: e.pointerType, started: false };
     if (e.pointerType !== 'mouse') { const d = drag; d.timer = setTimeout(() => { if (drag === d) startDrag(d, d.x0, d.y0); }, 200); }
   });
@@ -344,15 +371,73 @@
     box.appendChild(el); while (box.children.length > 400) box.firstChild.remove();
     if (atBottom) box.scrollTop = box.scrollHeight;
     $('#logCount').textContent = `${box.children.length} lines`;
+    $('#logLast').textContent = `${new Date(e.t).toLocaleTimeString()} ${e.msg}`; $('#logLast').className = `log-last ${e.level}`;
   }
 
   // ---------- live updates ----------
-  function connectEvents() {
-    const es = new EventSource('/api/events');
-    es.addEventListener('state', (ev) => { S = JSON.parse(ev.data); render(); });
-    es.addEventListener('log', (ev) => addLog(JSON.parse(ev.data)));
-    es.onerror = () => { $('#conn').className = 'pill off'; $('#conn').textContent = 'App server unreachable…'; };
+  // 0.3.4: robust event stream. Firefox closes an EventSource when the page goes into the back/forward cache
+  // (navigate away, then Back) and doesn't reopen it on restore; a tab frozen in the background can also come
+  // back with a stream that looks open but is dead. So: reconnect with backoff, reopen on pageshow(persisted),
+  // visibilitychange, online; refetch the state on every resume; and a watchdog reopens the stream when no
+  // event or heartbeat (the server sends `ping` every 10 s) arrived for WATCHDOG_MS.
+  const WATCHDOG_MS = Number(window.RS6_WATCHDOG_MS) || 25000;
+  const link = { es: null, lastMsg: 0, attempt: 0, retryT: null, state: 'connecting', since: Date.now() };
+  window.__rs6link = link; // for diagnostics and tests
+  function setLink(state, detail) {
+    if (link.state !== state) { link.state = state; link.since = Date.now(); }
+    const el = $('#link'); if (!el) return;
+    const txt = { ok: 'APP LINK OK', connecting: 'CONNECTING…', reconnecting: `RECONNECTING${link.attempt > 1 ? ` (${link.attempt})` : ''}…`, offline: 'OFFLINE' }[state] || state;
+    el.className = 'pill link ' + state; el.textContent = txt; el.title = detail || '';
+    document.body.classList.toggle('link-down', state !== 'ok');
+    const bn = $('#linkBanner');
+    if (bn) { bn.hidden = state === 'ok'; $('#linkMsg').textContent = state === 'offline' ? 'This device is offline. Waiting for the network…' : `Lost the connection to the RS6 Presets app${detail ? ` (${detail})` : ''}. Reconnecting${link.attempt > 1 ? `, attempt ${link.attempt}` : ''}… The display may be out of date.`; }
   }
+  function closeStream() { if (link.es) { link.es.onerror = null; link.es.onopen = null; try { link.es.close(); } catch { /* ignore */ } link.es = null; } }
+  async function refetchState() {
+    try { const st = await api('GET', '/api/state'); S = st; render(); link.lastMsg = Date.now(); return true; } catch { return false; }
+  }
+  function scheduleReconnect(why) {
+    clearTimeout(link.retryT);
+    link.attempt += 1;
+    const delay = Math.min(15000, 500 * 2 ** Math.min(link.attempt - 1, 5)) + Math.floor(Math.random() * 250);
+    setLink(navigator.onLine === false ? 'offline' : 'reconnecting', why);
+    link.pending = true;
+    link.retryT = setTimeout(() => openStream(why), delay);
+  }
+  function openStream(why) {
+    clearTimeout(link.retryT); link.pending = false; closeStream(); link.openedAt = Date.now();
+    if (navigator.onLine === false) { setLink('offline'); return; }
+    if (link.state !== 'ok') setLink(link.attempt ? 'reconnecting' : 'connecting', why);
+    const es = new EventSource('/api/events'); link.es = es;
+    const alive = () => { link.lastMsg = Date.now(); if (link.state !== 'ok') { link.attempt = 0; setLink('ok'); } };
+    es.onopen = alive;
+    es.addEventListener('state', (ev) => { alive(); S = JSON.parse(ev.data); render(); });
+    es.addEventListener('log', (ev) => { alive(); addLog(JSON.parse(ev.data)); });
+    es.addEventListener('ping', alive);
+    es.onerror = () => {
+      if (link.es !== es) return;
+      // CLOSED: the browser gave up (Firefox does after some errors) -> our own backoff. CONNECTING: the browser
+      // is retrying itself; show it, and let the watchdog step in if that never succeeds.
+      if (es.readyState === 2) scheduleReconnect('stream closed');
+      else setLink('reconnecting', 'stream interrupted');
+    };
+  }
+  function resume(why) {
+    const stale = !link.es || link.es.readyState === 2 || Date.now() - link.lastMsg > WATCHDOG_MS / 2;
+    if (stale) { link.attempt = 0; openStream(why); }
+    refetchState();
+  }
+  window.addEventListener('pageshow', (e) => { if (e.persisted) { link.attempt = 0; openStream('restored from the back/forward cache'); refetchState(); } });
+  window.addEventListener('pagehide', (e) => { if (e.persisted) { clearTimeout(link.retryT); closeStream(); } });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') resume('tab visible again'); });
+  window.addEventListener('online', () => { link.attempt = 0; openStream('back online'); refetchState(); });
+  window.addEventListener('offline', () => { setLink('offline'); });
+  window.addEventListener('focus', () => { if (link.state !== 'ok' || Date.now() - link.lastMsg > WATCHDOG_MS) resume('window focused'); });
+  setInterval(() => {
+    if (document.visibilityState !== 'visible' || link.pending) return;
+    if (Date.now() - Math.max(link.lastMsg, link.openedAt || 0) > WATCHDOG_MS) { scheduleReconnect(`no data for ${Math.round(WATCHDOG_MS / 1000)} s`); }
+  }, Math.min(5000, Math.max(250, WATCHDOG_MS / 5)));
+  function connectEvents() { openStream('start'); }
 
   // ---------- interactions ----------
   $('#destRow').addEventListener('click', (ev) => {
@@ -415,7 +500,9 @@
   $('#btnTake').addEventListener('click', () => run(api('POST', '/api/take')));
   $('#btnCut').addEventListener('click', () => run(api('POST', '/api/cut')));
   $('#btnAuto').addEventListener('click', () => run(api('POST', '/api/autotake', {})));
-  $('#logToggle').addEventListener('click', (e) => { if (e.target.id !== 'logClear') $('#logwrap').classList.toggle('collapsed'); });
+  const setLog = (open) => { $('#logwrap').classList.toggle('collapsed', !open); localStorage.setItem('rs6.logOpen', open ? '1' : ''); const box = $('#log'); if (open) box.scrollTop = box.scrollHeight; };
+  $('#logToggle').addEventListener('click', (e) => { if (e.target.id !== 'logClear') setLog($('#logwrap').classList.contains('collapsed')); });
+  setLog(!!localStorage.getItem('rs6.logOpen'));
   $('#logClear').addEventListener('click', () => { $('#log').innerHTML = ''; $('#logCount').textContent = ''; });
 
   // keyboard: Space/Enter = TAKE, C = CUT
@@ -511,7 +598,7 @@
     const s = await api('GET', '/api/settings');
     const f = $('#formSettings');
     for (const k of ['host', 'restPort', 'awjPort', 'protocol', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels']) f.elements[k].value = s[k];
-    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe']) f.elements[k].checked = !!s[k];
+    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe', 'layerMemories']) f.elements[k].checked = !!s[k];
     f.elements.password.value = ''; f.elements.password.placeholder = s.passwordSet ? '•••••• (unchanged)' : 'none'; f.elements.clearPassword.checked = false;
     $('#mockNote').hidden = !s.mock;
     $('#dlgSettings').showModal();
@@ -522,12 +609,13 @@
     const f = $('#formSettings'); const b = {};
     for (const k of ['host', 'protocol']) b[k] = f.elements[k].value.trim();
     for (const k of ['restPort', 'awjPort', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels']) b[k] = Number(f.elements[k].value);
-    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe']) b[k] = f.elements[k].checked;
+    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe', 'layerMemories']) b[k] = f.elements[k].checked;
     if (f.elements.clearPassword.checked) b.password = ''; else if (f.elements.password.value) b.password = f.elements.password.value;
     run(api('POST', '/api/settings', b).then((st) => toast(st.connected ? 'Connected' : 'Saved, but not connected', !st.connected)));
   });
   if (location.pathname === '/settings') run(openSettings());
 
   api('GET', '/api/log').then((l) => l.forEach(addLog)).catch(() => {});
+  $('#btnReconnect').addEventListener('click', () => { link.attempt = 0; openStream('manual'); refetchState(); });
   connectEvents();
 })();

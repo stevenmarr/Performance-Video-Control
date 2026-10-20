@@ -19,14 +19,12 @@
   <div id="last" class="last">PVW: —</div>
   <div id="master" class="master"></div>
   <div id="liveMode" class="pill"></div>
+  <div id="link" class="pill link connecting" title="Connection between this page and the RS6 Presets app">CONNECTING…</div>
   <div class="spacer"></div>
   <button id="btnSettings" class="btn ghost">⚙ Settings</button>
 </header>
 
-<section class="dests">
-  <div class="section-title">DESTINATIONS <small>tap a screen here or on the board to toggle · TAKE / CUT act on exactly the lit ones</small><span class="spacer"></span><span id="xtargets" class="xtargets"></span></div>
-  <div id="destRow" class="dest-row"></div>
-</section>
+<div id="linkBanner" class="link-banner" role="status" hidden><span id="linkMsg">Reconnecting…</span><button class="btn mini" id="btnReconnect" type="button">Reconnect now</button></div>
 
 <nav class="tabs">
   <button class="tab active" data-tab="presets">PRESETS</button>
@@ -48,17 +46,27 @@
       <div id="palFoot" class="pal-foot"></div>
     </aside>
     <div class="mixmain">
+      <!-- 0.3.4: destinations and the board share one column grid (#screens --cols), so each screen's
+           selection tile sits directly above its board card. -->
       <div class="board-head">
         <button class="btn mini" id="btnPalShow" hidden>▶ MEMORIES</button>
-        <button class="btn mini" id="btnBoardToggle" title="Show / hide the board">▾</button>
-        <div class="section-title">BOARD <small id="boardHint">drag (or tap) a memory onto a card · tap a screen card to (de)select it for TAKE</small></div>
+        <div class="section-title">SCREENS <small>tap a tile to select it for TAKE / CUT</small></div>
         <span class="spacer"></span>
-        <button class="btn mini" id="btnStageLoad">LOAD TO PVW</button>
-        <button class="btn mini primary" id="btnStageSave">SAVE AS PRESET…</button>
-        <button class="btn mini" id="btnStageClear">CLEAR</button>
+        <span id="xtargets" class="xtargets"></span>
       </div>
-      <div id="armed" class="armed" hidden></div>
-      <div id="board" class="board"></div>
+      <div id="screens" class="screens">
+        <div id="destRow" class="dest-row"></div>
+        <div class="board-bar">
+          <button class="btn mini" id="btnBoardToggle" title="Show / hide the board">▾</button>
+          <div class="section-title">BOARD <small id="boardHint">drag (or tap) a memory onto a card to stage a look</small></div>
+          <span class="spacer"></span>
+          <button class="btn mini" id="btnStageLoad">LOAD TO PVW</button>
+          <button class="btn mini primary" id="btnStageSave">SAVE AS PRESET…</button>
+          <button class="btn mini" id="btnStageClear">CLEAR</button>
+        </div>
+        <div id="armed" class="armed" hidden></div>
+        <div id="board" class="board"></div>
+      </div>
     <div class="modes">
       <button class="mode active" data-mode="recall">RECALL</button>
       <button class="mode" data-mode="save">SAVE</button>
@@ -99,8 +107,8 @@
   </aside>
 </main>
 
-<section class="logwrap" id="logwrap">
-  <div class="section-title log-head" id="logToggle">LOG <small id="logCount"></small><span class="spacer"></span><button class="btn mini" id="logClear">Clear view</button></div>
+<section class="logwrap collapsed" id="logwrap">
+  <div class="section-title log-head" id="logToggle">LOG <small id="logCount"></small><span class="log-last" id="logLast"></span><span class="spacer"></span><button class="btn mini" id="logClear">Clear view</button></div>
   <div id="log" class="log"></div>
 </section>
 
@@ -136,6 +144,7 @@
       <label>Memory labels to read <input name="screenMemoryLabels" type="number" min="0" max="1000"></label>
     </div>
     <label class="chk"><input type="checkbox" name="memoryProbe"> Also probe undocumented memory paths (slot isValid, Multiviewer memory names). INFERRED: not in the AWJ guide</label>
+    <label class="chk"><input type="checkbox" name="layerMemories"> Layer memories (read names + recall to one layer). INFERRED: the RS6 API guides have no Layer memory commands; uses the Web RCS model paths over AWJ</label>
     <div class="actions">
       <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
       <button id="btnSaveSettings" value="save" class="btn primary">Save &amp; connect</button>
@@ -198,6 +207,23 @@
     <div class="note small" id="pickNote"></div>
     <div id="pickList" class="pick"></div>
     <div class="actions"><button value="cancel" class="btn ghost">Cancel</button></div>
+  </form>
+</dialog>
+
+<!-- 0.3.4 Layer memory recall (INFERRED AWJ path) -->
+<dialog id="dlgLayer">
+  <form method="dialog" id="formLayer" class="form">
+    <h2 id="layerTitle">Load Layer memory</h2>
+    <div class="note small">Loads this Layer memory onto one layer of one screen / aux. INFERRED: not in the RS6 API guides (Web RCS model path, see README). Layer memories can't be part of a preset.</div>
+    <div class="row2">
+      <label>Screen / aux <select name="dest" id="layerDest"></select></label>
+      <label>Layer <select name="layer" id="layerNum"></select></label>
+    </div>
+    <div class="actions">
+      <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
+      <button value="program" class="btn">Load to PGM</button>
+      <button value="preview" class="btn primary">Load to PVW</button>
+    </div>
   </form>
 </dialog>
 

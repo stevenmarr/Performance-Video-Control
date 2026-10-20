@@ -34,7 +34,8 @@ test('import on connect (labels only, documented §3.7): named Screen + Master s
     assert.ok(!slots(cat, 'screen').includes(3) && !slots(cat, 'screen').includes(60)); // unnamed slots are not claimed valid
     assert.deepEqual(item(cat, 'screen', 10), { type: 'screen', slot: 10, label: 'Keynote', status: 'valid', evidence: 'label', seenOn: [], onProgram: [], onPreview: [] });
     assert.deepEqual(slots(cat, 'master'), [1, 2, 3, 4, 5]);
-    assert.equal(cat.items.multiviewer.length, 50); assert.ok(cat.items.multiviewer.every((i) => i.status === 'unknown' && !i.label)); // MV labels not documented
+    // 0.3.4: unknown slots are listed only with all (the palette checkbox), for Multiviewer too (MV labels not documented)
+    assert.equal(cat.items.multiviewer.length, 0);
     assert.equal(cat.types.find((t) => t.type === 'layer').supported, false);
     assert.ok(cat.import.at); assert.equal(cat.import.probe, false);
     assert.equal(awjCalls(mock, /isValid|monitoringBank\/\$bank/).length, 0);
@@ -42,6 +43,8 @@ test('import on connect (labels only, documented §3.7): named Screen + Master s
     // unknown/empty slots only with all
     const all = engine.memoryCatalog({ all: true });
     assert.equal(all.items.screen.length, 1000); assert.equal(item(all, 'screen', 3).status, 'unknown');
+    assert.equal(all.items.multiviewer.length, 50); assert.ok(all.items.multiviewer.every((i) => i.status === 'unknown' && !i.label));
+    assert.equal(awjCalls(mock, /layerBank/).length, 0); // layer memories off by default
     assert.deepEqual(engine.getState().multiviewers.map((m) => m.key), ['M1', 'M2']); // REST §5.1
   } finally { await teardown(); }
 });

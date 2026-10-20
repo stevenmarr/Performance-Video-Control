@@ -215,6 +215,54 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## v0.3.4: Layer memories, the slot checkbox, aligned layout, reconnect
+
+**1. Layer memories (INFERRED, opt-in).** Neither the AWJ nor the REST guide has any Layer memory
+command, so in 0.3.3 the LAYER tab was always empty. Settings › **Layer memories (inferred)** now
+reads and recalls them over AWJ. The paths come from the Web RCS object model, as used by the
+Bitfocus `companion-module-analogway-awj` module (`layerBank/bankList/items/N/...`). They're written
+in AWJ spelling, the same way as the documented `presetBank` load:
+
+| Purpose | Path (INFERRED, not in the guides) |
+|---|---|
+| Label | `DeviceObject/layerBank/$bank/@items/{1..50}/control/@props/label` |
+| Validity | `DeviceObject/layerBank/$bank/@items/{1..50}/status/@props/isValid` |
+| Load to one layer | `DeviceObject/layerBank/control/load/$slot/@items/{n}/$screen\|$auxiliary/@items/{S1\|A1}/$preset/@items/PREVIEW\|PROGRAM/$layer/@items/{L}/@props/xRequest` = `true` |
+
+With the setting off, the app sends none of these, and the tab shows one line saying how to turn
+it on. With it on, tap a Layer memory to choose a destination, a layer and PVW or PGM. The load always
+uses AWJ, even in REST mode, because REST has nothing equivalent. Layer memories can't be dropped into
+presets. **These paths haven't been tried on a device or on the Simulator.** Try them on the Simulator
+first. If a load fails, the device's AWJ error is shown in the log.
+
+**2. "show empty / unknown slots".** In 0.3.3, all 50 Multiviewer slots were listed whenever the memory
+probe was off, whatever the checkbox said. Now the checkbox works the same way on every tab. Unticked,
+a tab lists only memories known to exist: valid, named, or seen loaded. Ticked, it lists every slot
+and marks unknown ones. With nothing known on the MULTIVIEWER tab, a note says to turn on the probe or
+tick the box.
+
+**3. Layout.** The destination tiles and the board now share one column grid. Each screen's tile sits
+directly above its board card, at the same width. The first column holds ALL/CLEAR above MASTER, and
+the Multiviewer columns are labelled "memories only · no TAKE". The block scrolls sideways together
+when there are many screens. The tiles live in the PRESETS tab, while TAKE/CUT shows its targets on
+every tab. TAKE/CUT stays in view while scrolling. On an iPad (≤820 px) it becomes a bottom bar. The
+log is collapsed to one line by default; click it to open it, and the choice is remembered.
+
+**4. Reconnect (Firefox and others).** When you navigate away, Firefox closes the page's event stream
+for the back/forward cache, and on return the page came back with a dead stream that 0.3.3 never
+reopened. Now the page reopens the stream and refetches the full state on `pageshow`, when the tab is
+visible again, on `online`, and on focus if it's stale. It retries with backoff (0.5 s up to 15 s). The
+server sends a visible `ping` every 10 s (`RS6_SSE_HEARTBEAT_MS`), and the page reconnects if it hears
+nothing for 25 s. The header pill shows **APP LINK OK / CONNECTING… / RECONNECTING (n)… / OFFLINE**.
+While the link is down, a banner with a Reconnect button appears and the controls are dimmed.
+
+**Tests:** 124 (`node --test test/*.test.js`). The browser tests need Playwright; without it, 4 are
+skipped and 2 aren't defined.
+`NODE_PATH=/path/to/node_modules node --test test/*.test.js` after `npm i playwright && npx playwright
+install chromium firefox`. They check the tile/card alignment at 820–1920 px, the palette notes, and
+reconnect in Chromium **and Firefox**: a simulated back/forward-cache round trip, a server restart, a
+frozen stream (watchdog), offline/online, and tab visibility. Safari/WebKit wasn't tested.
+
 ## v0.3.3: preset names on the tiles
 
 Before 0.3.3, a preset made by dropping memories on a tile, or saved without typing a name, was
@@ -510,6 +558,7 @@ Page numbers are the printed page numbers in the guides.
 | **v0.3.0** Master memory load | REST `POST /load-master-memory {"memoryId":1-500,"target"}`; AWJ `DeviceObject/masterPresetBank/control/load/$slot/@items/{n}/$preset/@items/PREVIEW\|PROGRAM/@props/xRequest` | REST p.13; AWJ §3.4 p.10 |
 | **v0.3.0** Multiviewer outputs | REST `GET /multiviewers/{1..8}` (`isEnabled`, `label`); AWJ `DeviceObject/$monitoring/@items/{o}/status/@props/isEnabled`, `…/control/@props/label` | REST p.27; AWJ §4.1 p.18 |
 | **v0.3.0** Multiviewer memory load | REST `POST /multiviewers/{id}/load-memory {"memoryId":1-50}`; AWJ `DeviceObject/monitoringBank/control/load/$slot/@items/{n}/$output/@items/{o}/@props/xRequest` | REST p.28; AWJ §4.2 p.18 |
+| **v0.3.4 INFERRED, opt-in** Layer memories | `DeviceObject/layerBank/$bank/@items/{n}/control/@props/label`, `…/status/@props/isValid`; load `DeviceObject/layerBank/control/load/$slot/@items/{n}/$screen\|$auxiliary/@items/{key}/$preset/@items/PREVIEW\|PROGRAM/$layer/@items/{L}/@props/xRequest` (only with Settings › Layer memories) | **not in the guides**, see [v0.3.4](#v034-layer-memories-the-slot-checkbox-aligned-layout-reconnect) |
 | **v0.3.0 INFERRED, opt-in** memory validity / MV names | `…/presetBank\|masterPresetBank\|monitoringBank/$bank/@items/{n}/status/@props/isValid`, `DeviceObject/monitoringBank/$bank/@items/{n}/control/@props/label` (only with Settings › Memory probe) | **not in the guide**, see above |
 | Memory labels | `DeviceObject/presetBank/$bank/@items/{n}/control/@props/label`, `DeviceObject/masterPresetBank/$bank/@items/{n}/control/@props/label` | §3.7 p.12–13 |
 | Last Screen memory per side | `DeviceObject/presetBank/status/presetId/{$screen\|$auxiliary}/@items/{S1}/$preset/@items/{A\|B}/@props/id` | §3.11 p.16 |
@@ -549,7 +598,7 @@ Simulator 6.2.79 (see [v0.3.1](#take-transitions-and-selection-v031)).
 
 - **0.3.0 memories:** the API can't read what's *inside* a Master (which screens, which Screen
   memories), so `master.dests` is your declaration. Multiviewer memories have no last-loaded readback,
-  so they aren't part of tally. Layer memories can't be listed or loaded. Memories still can't be
+  so they aren't part of tally. Layer memories need the opt-in, inferred paths (v0.3.4) and can't be part of presets. Memories still can't be
   created or saved from the API; save them in the Web RCS, then press ↻ Refresh.
 
 **Not yet run on a real RS6.** TAKE, recall and tally were checked on the AW Simulator 6.2.79

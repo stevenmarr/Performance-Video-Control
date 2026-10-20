@@ -239,3 +239,54 @@ body.dragging *{cursor:grabbing !important}
 .btn.take small,.btn.cut small{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;opacity:.9;margin-top:4px;white-space:normal}
 /* 0.3.2: narrow header (iPad portrait and below): Settings stays on row 1; PVW/Master/live wrap to row 2. */
 @media (max-width:820px){.top .pvlogo{height:24px;max-width:30vw}.top #last{order:5;width:100%;font-size:13px}.top #master,.top #liveMode{order:6}}
+
+/* ---------- 0.3.4: aligned screens grid, link status, layout polish ---------- */
+/* Destinations and the board share one column grid (--cols is set from the device's screens/aux/MV
+   count), so each screen's selection tile sits directly above its board card. Too many columns for the
+   width -> the whole block scrolls sideways together and stays aligned. */
+.screens{--colmin:88px;overflow-x:auto;overflow-y:hidden;margin-bottom:12px;padding-bottom:2px}
+.screens .dest-row,.screens .board{display:grid;grid-template-columns:var(--cols,repeat(8,minmax(88px,1fr)));gap:8px;flex-wrap:nowrap}
+.screens .dest{min-width:0;min-height:72px;padding:8px 10px}
+.screens .dest .l{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.screens .dest .mem{max-width:none}
+.dest.ctlcell{padding:5px;gap:5px;justify-content:stretch;background:transparent;border-style:dashed}
+.dest.ctlcell .ctl{flex:1;border-radius:7px;background:#252c35;border:1px solid var(--line);color:var(--dim);font-weight:800;font-size:12px;letter-spacing:.06em;padding:0}
+.dest.ctlcell .ctl:active{background:#323b46}
+.dest.mvcell{background:transparent;border-style:dashed;color:var(--dim);font-size:11px;justify-content:center;gap:2px}
+.screens .card,.screens .card.master{width:auto;min-width:0}
+.screens .board{margin:0}
+.board-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 6px;position:sticky;left:0}
+.board-bar .section-title{margin:0}
+.screens .armed{margin:0 0 6px;position:sticky;left:0}
+.board-head{margin-bottom:6px}
+.palette{max-height:calc(100vh - 150px)}
+/* TAKE / CUT stay in view while the preset grid scrolls (desktop) */
+.transport{position:sticky;top:8px;align-self:flex-start;width:160px}
+.main{gap:14px}
+/* connection between this page and the app */
+.top #link{order:2}
+.pill.link.ok{background:#0e2a17;color:#6fe39b;border-color:#1f6b3a}
+.pill.link.connecting,.pill.link.reconnecting{background:#3a2a05;color:#ffd35c;border-color:#7a5a10;animation:linkpulse 1.2s ease-in-out infinite}
+.pill.link.offline{background:#2a0e10;color:#ff8a8f;border-color:#6b1f24}
+@keyframes linkpulse{50%{opacity:.55}}
+.link-banner{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#3a2a05;color:#ffd35c;border-bottom:1px solid #7a5a10;font-weight:700;font-size:13px}
+.link-banner[hidden]{display:none}
+.link-banner span{flex:1}
+body.link-down .main{opacity:.7}
+/* log: compact bar with the latest line when collapsed (default), 180 px when open */
+.logwrap{padding:6px 14px calc(6px + env(safe-area-inset-bottom))}
+.log{max-height:180px}
+.log-last{font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#7d8794;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;text-transform:none;letter-spacing:0;font-weight:400}
+.logwrap:not(.collapsed) .log-last{display:none}
+@media (min-width:1600px){ .screens{--colmin:120px} .palette{width:270px} }
+@media (max-width:1100px){ .transport{width:140px} .btn.take{font-size:26px} }
+@media (max-width:820px){
+  .screens{--colmin:74px}
+  .screens .dest{min-height:64px;padding:6px 7px}
+  .screens .dest .l{font-size:13px}
+  .card .drop{font-size:10px}
+  .transport{position:sticky;top:auto;bottom:0;width:auto;align-self:stretch;z-index:5;border-top:1px solid var(--line);margin:0 -14px;padding:8px 14px}
+  .main{padding-bottom:0}
+  .top #link{order:6}
+  .palette{max-height:260px}
+}
