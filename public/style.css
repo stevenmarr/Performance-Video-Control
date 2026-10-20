@@ -290,3 +290,57 @@ body.link-down .main{opacity:.7}
   .top #link{order:6}
   .palette{max-height:260px}
 }
+
+/* ---------- 0.4.0 ---------- */
+/* INPUTS / BACKUP / AUDIO / WEB RCS: no presets, no TAKE / CUT, full width */
+/* The PRESETS pane's own display:flex/grid rule beat the [hidden] attribute, so before 0.4.0 the screen tiles,
+   board and preset grid stayed on screen next to INPUTS / BACKUP / AUDIO. */
+.main > [hidden]{display:none !important}
+body:not(.tab-presets) .transport,
+body:not(.tab-presets) #last,
+body:not(.tab-presets) #master{display:none}
+body:not(.tab-presets) .main{gap:0}
+/* what a tap on a tile does */
+.modes-lbl{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--dim);margin-right:2px}
+.modes-sep{flex:0 0 18px}
+.mode[data-mode=move].active{background:#0f766e;border-color:#0f766e}
+.mode[data-mode=save]{border-style:dashed}
+.mode-hint{margin:-2px 0 10px;padding:7px 10px;border-radius:8px;background:var(--panel);border:1px solid var(--line);font-size:13px;color:#aab3bf;line-height:1.35}
+.mode-hint b{color:var(--text)}
+.mode-hint.m-recall{border-left:3px solid var(--accent)}
+.mode-hint.m-edit{border-left:3px solid #6b46c1}
+.mode-hint.m-move{border-left:3px solid #14b8a6}
+.mode-hint.m-save{border-left:3px solid #b7791f}
+/* a corner cue on every filled tile says what the tap will do */
+.grid .preset:not(.empty)::after{position:absolute;right:8px;bottom:6px;font-size:10px;font-weight:900;letter-spacing:.08em;color:var(--dim);opacity:.8}
+.grid.mode-recall .preset:not(.empty)::after{content:'▶ PVW'}
+.grid.mode-edit .preset:not(.empty)::after{content:'✎ EDIT';color:#b39cf0}
+.grid.mode-move .preset:not(.empty)::after{content:'⇄ MOVE';color:#5eead4}
+.grid.mode-save .preset:not(.empty)::after{content:'⤓ OVERWRITE';color:#f6c46b}
+.grid.mode-save .preset.empty{border-color:#7a5a10;color:#f6c46b}
+.grid .preset .chips{padding-right:52px}
+.grid.mode-move .preset{touch-action:none}
+.grid.mode-move.has-src .preset{border-style:dashed}
+.preset.move-src{border-color:#14b8a6 !important;border-style:solid !important;box-shadow:0 0 0 3px rgba(20,184,166,.35);background:#0b2a28}
+.grid.mode-move.has-src .preset.empty{color:#5eead4;border-color:#115e59}
+.preset.swap-hover{border-color:#14b8a6 !important;box-shadow:0 0 0 3px rgba(20,184,166,.45);transform:scale(1.02)}
+.preset.dragsrc{opacity:.45}
+/* backups: names, membership, state */
+.badge.grp{background:#10303a;color:#7dd3fc;border:1px solid #1e5566;margin-left:6px;vertical-align:middle}
+.glabel{font-weight:800}
+.gnum{font-size:10px;font-weight:800;color:var(--dim);letter-spacing:.08em;margin-left:8px}
+/* Web RCS pane */
+#pane-webrcs:not([hidden]){display:flex;flex-direction:column;gap:8px;min-height:0}
+.rcs-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rcs-bar .section-title{margin:0}
+.rcs-bar small{text-transform:none;letter-spacing:0;font-weight:600;color:#aab3bf}
+.rcs-status{font-size:10px;font-weight:900;letter-spacing:.08em;padding:4px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.rcs-status.ok{background:#0e2a17;color:#6fe39b;border-color:#1f6b3a}
+.rcs-status.warn{background:#3a2a05;color:#ffd35c;border-color:#7a5a10}
+.rcs-status.bad{background:#2a0e10;color:#ff8a8f;border-color:#6b1f24}
+.rcs-wrap{height:calc(100vh - 186px);min-height:420px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:#000;resize:vertical}
+.rcs-wrap[hidden]{display:none}
+.rcs-wrap iframe{width:100%;height:100%;border:0;display:block;background:#1d2730}
+.rcs-blocked{padding:16px;border-radius:var(--r);background:#2a0e10;border:1px solid #6b1f24;color:#ffb3b6;font-size:14px;line-height:1.6}
+.rcs-blocked[hidden]{display:none}
+@media (max-width:820px){ .rcs-wrap{height:calc(100vh - 230px)} .modes-sep{flex-basis:0} }

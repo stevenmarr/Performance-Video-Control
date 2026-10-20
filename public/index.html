@@ -31,6 +31,7 @@
   <button class="tab" data-tab="inputs">INPUTS</button>
   <button class="tab" data-tab="backup">BACKUP</button>
   <button class="tab" data-tab="audio">AUDIO</button>
+  <button class="tab" data-tab="webrcs" title="The device's own Web RCS, inside this app">WEB RCS</button>
 </nav>
 
 <main class="main">
@@ -61,18 +62,22 @@
           <div class="section-title">BOARD <small id="boardHint">drag (or tap) a memory onto a card to stage a look</small></div>
           <span class="spacer"></span>
           <button class="btn mini" id="btnStageLoad">LOAD TO PVW</button>
-          <button class="btn mini primary" id="btnStageSave">SAVE AS PRESET…</button>
+          <button class="btn mini primary" id="btnStageSave" title="Save the memories on the board (Master, Screen and Multiviewer memories) as a preset tile">SAVE BOARD AS PRESET…</button>
           <button class="btn mini" id="btnStageClear">CLEAR</button>
         </div>
         <div id="armed" class="armed" hidden></div>
         <div id="board" class="board"></div>
       </div>
-    <div class="modes">
-      <button class="mode active" data-mode="recall">RECALL</button>
-      <button class="mode" data-mode="save">SAVE</button>
-      <button class="mode" data-mode="edit">EDIT</button>
-      <div class="hint" id="modeHint">Tap a preset to load it to Preview on its destinations.</div>
+    <!-- 0.4.0: what a tap on a tile does. RECALL / EDIT / MOVE, then SAVE PVW (capture) set apart. -->
+    <div class="modes" role="toolbar" aria-label="What a tap on a preset tile does">
+      <span class="modes-lbl">TAP A TILE TO</span>
+      <button class="mode active" data-mode="recall" title="Tap a tile: load that preset to Preview on its screens (then TAKE)">RECALL</button>
+      <button class="mode" data-mode="edit" title="Tap a tile: rename it, renumber it, fix its memory slots, update, duplicate or delete it">EDIT</button>
+      <button class="mode" data-mode="move" title="Tap a tile, then tap where it goes: swaps two tiles, or moves into an empty one. With a mouse you can also just drag a tile.">MOVE ⇄</button>
+      <span class="modes-sep"></span>
+      <button class="mode" data-mode="save" title="Capture what is on Preview now on the lit screens (the Screen memory each one reports, plus a source snapshot) into the tile you tap. Use SAVE BOARD AS PRESET for Master / Multiviewer memories.">SAVE PVW → TILE</button>
     </div>
+    <div class="hint mode-hint" id="modeHint"></div>
     <div id="grid" class="grid"></div>
     </div>
   </section>
@@ -87,6 +92,19 @@
     <div id="bkBg" class="rows"></div>
     <div class="section-title">GROUP BACKUPS</div>
     <div id="bkGroups" class="rows"></div>
+  </section>
+  <section class="grid-wrap pane webrcs" id="pane-webrcs" hidden>
+    <div class="rcs-bar">
+      <div class="section-title">WEB RCS <small id="rcsUrl"></small></div>
+      <span class="spacer"></span>
+      <span id="rcsStatus" class="rcs-status"></span>
+      <button class="btn mini" id="rcsReload" title="Reload the Web RCS in this pane">⟳ Reload</button>
+      <button class="btn mini" id="rcsSide" title="Open the Web RCS in its own window, placed beside this one">⇱ Side by side</button>
+      <button class="btn mini" id="rcsTab" title="Open the Web RCS in a new browser tab">↗ New tab</button>
+      <button class="btn mini" id="rcsUnload" title="Close the Web RCS in this pane (it stays connected to the device while loaded)">✕ Unload</button>
+    </div>
+    <div id="rcsBlocked" class="rcs-blocked" hidden></div>
+    <div class="rcs-wrap" id="rcsWrap"><iframe id="rcsFrame" title="Web RCS" allow="fullscreen; clipboard-read; clipboard-write" referrerpolicy="no-referrer"></iframe></div>
   </section>
   <section class="grid-wrap pane" id="pane-audio" hidden>
     <div class="section-title">AUDIO INPUT CHANNELS <small>tap a channel to mute / unmute</small></div>
@@ -144,7 +162,6 @@
       <label>Memory labels to read <input name="screenMemoryLabels" type="number" min="0" max="1000"></label>
     </div>
     <label class="chk"><input type="checkbox" name="memoryProbe"> Also probe undocumented memory paths (slot isValid, Multiviewer memory names). INFERRED: not in the AWJ guide</label>
-    <label class="chk"><input type="checkbox" name="layerMemories"> Layer memories (read names + recall to one layer). INFERRED: the RS6 API guides have no Layer memory commands; uses the Web RCS model paths over AWJ</label>
     <div class="actions">
       <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
       <button id="btnSaveSettings" value="save" class="btn primary">Save &amp; connect</button>
@@ -207,23 +224,6 @@
     <div class="note small" id="pickNote"></div>
     <div id="pickList" class="pick"></div>
     <div class="actions"><button value="cancel" class="btn ghost">Cancel</button></div>
-  </form>
-</dialog>
-
-<!-- 0.3.4 Layer memory recall (INFERRED AWJ path) -->
-<dialog id="dlgLayer">
-  <form method="dialog" id="formLayer" class="form">
-    <h2 id="layerTitle">Load Layer memory</h2>
-    <div class="note small">Loads this Layer memory onto one layer of one screen / aux. INFERRED: not in the RS6 API guides (Web RCS model path, see README). Layer memories can't be part of a preset.</div>
-    <div class="row2">
-      <label>Screen / aux <select name="dest" id="layerDest"></select></label>
-      <label>Layer <select name="layer" id="layerNum"></select></label>
-    </div>
-    <div class="actions">
-      <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
-      <button value="program" class="btn">Load to PGM</button>
-      <button value="preview" class="btn primary">Load to PVW</button>
-    </div>
   </form>
 </dialog>
 

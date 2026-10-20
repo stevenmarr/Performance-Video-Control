@@ -2,11 +2,14 @@
 (() => {
   const $ = (s) => document.querySelector(s);
   let S = null; let gridHtml = ''; let destHtml = ''; let mode = 'recall'; let editing = null; let tab = 'presets';
+  // 0.4.0: one line that says exactly what a tap on a tile does in each mode
   const HINTS = {
-    recall: 'Tap a preset to load it to Preview on its destinations.',
-    save: 'Light the destinations to include, then tap an empty slot (or a preset to overwrite).',
-    edit: 'Tap a preset to rename, renumber, fix slots, update, duplicate or delete.',
+    recall: '<b>RECALL</b> · tap a tile to load it to <b>Preview</b> on its screens, then TAKE or CUT. Long-press or right-click a tile to rename it. With a mouse, drag a tile onto another to swap them.',
+    edit: '<b>EDIT</b> · tap a tile to rename or renumber it, fix its memory slots, update, duplicate or delete it.',
+    move: '<b>MOVE</b> · tap a tile, then tap another tile to <b>swap</b> them, or an empty tile to <b>move</b> it there. Companion buttons follow the tile number.',
+    save: '<b>SAVE PVW → TILE</b> · light the screens above, then tap an empty tile (or a preset to overwrite): it stores the Screen memory each lit screen reports on <b>Preview</b>, plus a source snapshot. For Master / Multiviewer memories use the board.',
   };
+  let moveSrc = null; // MOVE mode: the tile picked first
 
   async function api(method, path, body) {
     const r = await fetch(path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
@@ -54,11 +57,12 @@
 
     const byNum = new Map(S.presets.map((p) => [p.number, p]));
     const maxN = Math.max(0, ...S.presets.map((p) => p.number));
-    const slots = Math.max(24, Math.ceil((maxN + (mode === 'save' ? 4 : 0)) / 8) * 8);
+    const slots = Math.max(24, Math.ceil((maxN + (mode === 'save' || mode === 'move' ? 4 : 0)) / 8) * 8);
     let html = '';
+    if (moveSrc != null && !byNum.has(moveSrc)) moveSrc = null;
     for (let n = 1; n <= slots; n++) {
       const p = byNum.get(n);
-      if (!p) { html += `<button class="preset empty" data-empty="${n}" data-drop-preset="${n}"><span class="num">${n}</span>${mode === 'save' ? '<span>+ save here</span>' : ''}</button>`; continue; }
+      if (!p) { html += `<button class="preset empty" data-empty="${n}" data-drop-preset="${n}"><span class="num">${n}</span>${mode === 'save' ? '<span>+ save here</span>' : mode === 'move' && moveSrc != null ? '<span>move here</span>' : ''}</button>`; continue; }
       const cls = ['preset']; const tags = [];
       if (p.tally.pgm !== 'none') { if (p.tally.pgm === 'full') cls.push('pgm'); tags.push(`<span class="tag pgm ${p.tally.pgm === 'partial' ? 'part' : ''}">PGM</span>`); }
       if (p.tally.pvw !== 'none') { if (p.tally.pvw === 'full') cls.push('pvw'); tags.push(`<span class="tag pvw ${p.tally.pvw === 'partial' ? 'part' : ''}">PVW</span>`); }
@@ -69,10 +73,13 @@
       }).join('') + Object.entries(p.mvMemories || {}).map(([k, v]) => `<span class="chip mvc" title="Multiviewer ${k.slice(1)} · ${esc(memName('multiviewer', v))}">MV${k.slice(1)}:${v}</span>`).join('')
         || '<span class="chip warn">empty</span>';
       if (p.autoName) cls.push('auto');
+      if (moveSrc === n) cls.push('move-src');
       const tip = p.autoName ? `Preset ${n} · automatic name from the device memory names · long-press or right-click to rename` : `Preset ${n} · long-press or right-click to rename`;
       html += `<button class="${cls.join(' ')}" data-preset="${n}" data-drop-preset="${n}" title="${esc(tip)}"><span class="tags">${tags.join('')}</span><span class="num">${n}</span><span class="name">${esc(p.name)}</span><span class="chips">${chips}</span></button>`;
     }
     if (html !== gridHtml) { gridHtml = html; $('#grid').innerHTML = html; }
+    const gcls = `grid mode-${mode}${moveSrc != null ? ' has-src' : ''}`; if ($('#grid').className !== gcls) $('#grid').className = gcls;
+    renderHint();
 
     renderPalette(); renderBoard(); applyArmed();
     renderLive();
@@ -106,10 +113,13 @@
       const bk = lv.backup || { inputs: [], backgrounds: [], groups: [] };
       const segs = (kind, id, sel) => ['NONE', '1', '2'].map((sl) => `<button class="seg bk ${String(sel) === sl ? 'on' : ''}" data-bk="${kind}" data-id="${id}" data-slot="${sl}">${sl === 'NONE' ? 'PRIMARY' : 'BACKUP ' + sl}</button>`).join('');
       const auto = (kind, id, on) => `<button class="seg ${on ? 'on' : ''}" data-bkmode="${kind}" data-id="${id}" data-auto="${on ? 0 : 1}">AUTO ${on ? 'ON' : 'OFF'}</button>`;
-      $('#bkInputs').innerHTML = bk.inputs.length ? bk.inputs.map((i) => `<div class="row"><span class="lbl">IN ${i.number} ${esc(i.label)}<small>B1: ${esc(i.slots[1] || 'NONE')} · B2: ${esc(i.slots[2] || 'NONE')}</small></span>${segs('input', i.number, i.selected)}${auto('input', i.number, i.auto)}</div>`).join('') : '<div class="empty-note">No input backups configured.</div>';
-      const bgs = bk.backgrounds.filter((b) => b.active || b.auto || Object.values(b.slots || {}).some((x) => x && x !== 'NONE'));
-      $('#bkBg').innerHTML = bgs.length ? bgs.map((b) => `<div class="row"><span class="lbl">${b.screen} · Background set ${b.set}<small>B1: ${esc(b.slots[1] || 'NONE')} · B2: ${esc(b.slots[2] || 'NONE')}</small></span>${segs('bg', b.screen + '/' + b.set, b.selected)}${auto('bg', b.screen + '/' + b.set, b.auto)}</div>`).join('') : '<div class="empty-note">No background set backups configured.</div>';
-      $('#bkGroups').innerHTML = bk.groups.length ? bk.groups.map((g) => `<div class="row"><span class="lbl">Group ${g.group}<small>${g.active ? 'backup ' + g.selected + ' active' : 'primary'}</small></span>${segs('group', g.group, g.selected)}${auto('group', g.group, g.auto)}</div>`).join('') : '<div class="empty-note">No backup groups found.</div>';
+      // 0.4.0: only backups / groups that exist on the device now; groups by the name given in the Web RCS
+      const grp = (x) => (x.group ? `<span class="badge grp" title="Member of backup group ${x.group}">${esc(x.groupLabel)}</span>` : '');
+      const state = (x) => (x.active ? `<span class="badge warn">BACKUP ${esc(x.selected)} ON</span>` : '<span class="badge">PRIMARY</span>');
+      const html = (sel, h) => { if ($(sel).dataset.h !== h) { $(sel).dataset.h = h; $(sel).innerHTML = h; } };
+      html('#bkInputs', bk.inputs.length ? bk.inputs.map((i) => `<div class="row" data-bkrow="input/${i.number}"><span class="lbl">IN ${i.number} ${esc(i.label)} ${grp(i)}<small>B1: ${esc(i.slots[1] || 'NONE')} · B2: ${esc(i.slots[2] || 'NONE')} · ${state(i)}</small></span>${segs('input', i.number, i.selected)}${auto('input', i.number, i.auto)}</div>`).join('') : '<div class="empty-note">No input backups on the device.</div>');
+      html('#bkBg', bk.backgrounds.length ? bk.backgrounds.map((b) => `<div class="row" data-bkrow="bg/${b.screen}/${b.set}"><span class="lbl">${b.screen} · Background set ${b.set} ${grp(b)}<small>B1: ${esc(b.slots[1] || 'NONE')} · B2: ${esc(b.slots[2] || 'NONE')} · ${state(b)}</small></span>${segs('bg', b.screen + '/' + b.set, b.selected)}${auto('bg', b.screen + '/' + b.set, b.auto)}</div>`).join('') : '<div class="empty-note">No background set backups on the device.</div>');
+      html('#bkGroups', bk.groups.length ? bk.groups.map((g) => `<div class="row" data-bkrow="group/${g.group}"><span class="lbl"><span class="glabel">${esc(g.label)}</span>${g.customLabel ? `<span class="gnum">GROUP ${g.group}</span>` : ''}<small>${g.members.length ? esc(g.members.map((m) => m.label).join(' · ')) : 'no members'} · ${state(g)}</small></span>${segs('group', g.group, g.selected)}${auto('group', g.group, g.auto)}</div>`).join('') : '<div class="empty-note">No backup groups on the device.</div>');
     }
     if (tab === 'audio') {
       const au = lv.audio || { inputs: [], outputs: [] };
@@ -120,8 +130,8 @@
   }
 
   // ---------- 0.3.0: memory palette + board ----------
-  const TYPE_NAMES = { screen: 'SCREEN / AUX', master: 'MASTER', multiviewer: 'MULTIVIEWER', layer: 'LAYER' };
-  const ACCEPT = { screen: (k) => /^[SA]\d+$/.test(k), master: (k) => k === 'master', multiviewer: (k) => /^M\d+$/.test(k), layer: () => false };
+  const TYPE_NAMES = { screen: 'SCREEN / AUX', master: 'MASTER', multiviewer: 'MULTIVIEWER' };
+  const ACCEPT = { screen: (k) => /^[SA]\d+$/.test(k), master: (k) => k === 'master', multiviewer: (k) => /^M\d+$/.test(k) };
   let palTab = localStorage.getItem('rs6.palTab') || 'screen';
   let boardHtml = '';
   let palAll = false; let palQuery = ''; let palCat = null; let palSig = ''; let armed = null;
@@ -152,11 +162,10 @@
         }).join('') : `<div class="grp-note">${t.type === 'multiviewer' && !cat.probe && !palAll
           ? 'No Multiviewer memories known: their names and validity aren\'t in the API guides. Turn on Settings › “Also probe undocumented memory paths”, or tick “show empty / unknown slots” to list all 50.'
           : palAll ? 'None found.' : 'None found. Tick “show empty / unknown slots” to list every slot.'}</div>`;
-      const note = t.type === 'multiviewer' && !cat.probe && palAll && list.length ? '<div class="grp-note">Multiviewer validity isn\'t documented: every slot is listed as unknown. Settings › probe (inferred) reads names and validity.</div>'
-        : t.type === 'layer' && t.supported ? '<div class="grp-note">INFERRED (not in the API guides). Tap a Layer memory to load it onto one layer.</div>' : '';
+      const note = t.type === 'multiviewer' && !cat.probe && palAll && list.length ? '<div class="grp-note">Multiviewer validity isn\'t documented: every slot is listed as unknown. Settings › probe (inferred) reads names and validity.</div>' : '';
       return `<div class="grp-b">${note}${body}</div>`;
     }).join('');
-    $('#palTabs').innerHTML = (cat.types || []).map((t) => `<button class="ptab ${t.type === palTab ? 'active' : ''}" data-ptab="${t.type}" title="${esc(t.note)}">${{ screen: 'SCREEN/AUX', master: 'MASTER', multiviewer: 'MV', layer: 'LAYER' }[t.type] || t.name}<span>${t.supported ? counts[t.type] : '–'}</span></button>`).join('');
+    $('#palTabs').innerHTML = (cat.types || []).map((t) => `<button class="ptab ${t.type === palTab ? 'active' : ''}" data-ptab="${t.type}" title="${esc(t.note)}">${{ screen: 'SCREEN/AUX', master: 'MASTER', multiviewer: 'MV' }[t.type] || t.name}<span>${t.supported ? counts[t.type] : '–'}</span></button>`).join('');
     $('#palList').innerHTML = html || '<div class="empty-note">No memories imported yet.</div>';
     $('#palCount').textContent = total ? `${total}` : '';
     const im = cat.import || {}; const f = $('#palFoot');
@@ -193,7 +202,7 @@
     if (html !== boardHtml) { boardHtml = html; $('#board').innerHTML = html; }
     const n = Object.keys(st.memories).length + Object.keys(st.mvMemories).length + (st.master ? 1 : 0);
     $('#btnStageLoad').disabled = $('#btnStageSave').disabled = $('#btnStageClear').disabled = !n;
-    $('#btnStageSave').textContent = st.editing ? `SAVE TO ${st.editing}…` : 'SAVE AS PRESET…';
+    $('#btnStageSave').textContent = st.editing ? `SAVE BOARD TO ${st.editing}…` : 'SAVE BOARD AS PRESET…';
   }
 
   // armed = memory picked by a tap (click-to-assign fallback)
@@ -269,27 +278,8 @@
     if (drag.started) { drag.el.classList.remove('dragsrc'); document.body.classList.remove('dragging'); $('#ghost').hidden = true; if (drag.hover) drag.hover.classList.remove('hover'); applyArmed(); }
     drag = null;
   }
-  // 0.3.4 Layer memories: no board / preset target; a tap opens the layer recall dialog.
-  function openLayerLoad(mem) {
-    const f = $('#formLayer'); const max = Number((S.settings && S.settings.maxLayers) || 8);
-    $('#layerTitle').textContent = `Load Layer memory ${memTxt('layer', mem.slot)}`;
-    $('#layerDest').innerHTML = S.destinations.map((d) => `<option value="${d.key}">${d.key} · ${esc(d.label)}</option>`).join('');
-    $('#layerNum').innerHTML = Array.from({ length: max }, (_, i) => `<option value="${i + 1}">Layer ${i + 1}</option>`).join('');
-    const last = JSON.parse(localStorage.getItem('rs6.layerLoad') || '{}');
-    if (last.dest && S.destinations.some((d) => d.key === last.dest)) f.elements.dest.value = last.dest;
-    if (last.layer && last.layer <= max) f.elements.layer.value = String(last.layer);
-    const dlg = $('#dlgLayer'); dlg.returnValue = '';
-    dlg.onclose = () => {
-      const tgt = dlg.returnValue; if (tgt !== 'preview' && tgt !== 'program') return;
-      const dest = f.elements.dest.value; const layer = Number(f.elements.layer.value);
-      localStorage.setItem('rs6.layerLoad', JSON.stringify({ dest, layer }));
-      run(api('POST', '/api/memories/load', { type: 'layer', slot: mem.slot, dest, layer, target: tgt }).then(() => toast(`Layer memory ${memTxt('layer', mem.slot)} → ${dest} layer ${layer} (${tgt === 'program' ? 'PGM' : 'PVW'})`)));
-    };
-    dlg.showModal();
-  }
-  $('#palList').addEventListener('click', (e) => { const it = e.target.closest('.mem[data-mtype="layer"]'); if (it) openLayerLoad(memFromEl(it)); });
   $('#palList').addEventListener('pointerdown', (e) => {
-    const it = e.target.closest('.mem'); if (!it || e.button > 0 || it.dataset.mtype === 'layer') return;
+    const it = e.target.closest('.mem'); if (!it || e.button > 0) return;
     drag = { el: it, mem: memFromEl(it), x0: e.clientX, y0: e.clientY, id: e.pointerId, pt: e.pointerType, started: false };
     if (e.pointerType !== 'mouse') { const d = drag; d.timer = setTimeout(() => { if (drag === d) startDrag(d, d.x0, d.y0); }, 200); }
   });
@@ -447,11 +437,20 @@
     if (b.dataset.ctl === 'none') return run(api('POST', '/api/selection', { destinations: [] }));
   });
 
-  document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => {
-    mode = b.dataset.mode;
-    document.querySelectorAll('.mode').forEach((x) => x.classList.toggle('active', x === b));
-    $('#modeHint').textContent = HINTS[mode]; render();
-  }));
+  function renderHint() {
+    const p = moveSrc != null && S && S.presets.find((x) => x.number === moveSrc);
+    const h = mode === 'move' && p ? `<b>MOVE</b> · preset ${p.number} “${esc(p.name)}” picked. Tap where it goes: another tile swaps with it, an empty tile takes it. Tap it again (or Esc) to cancel.` : HINTS[mode];
+    const el = $('#modeHint'); if (el.dataset.h !== h) { el.dataset.h = h; el.innerHTML = h; el.className = `hint mode-hint m-${mode}`; }
+  }
+  function setMode(m) {
+    mode = m; moveSrc = null;
+    document.querySelectorAll('.mode').forEach((x) => x.classList.toggle('active', x.dataset.mode === m));
+    render();
+  }
+  document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  function swapTiles(a, b) {
+    return run(api('POST', '/api/presets/swap', { a, b }).then((r) => toast(r.swapped ? `Swapped ${a} ⇄ ${b}` : `Moved ${a} → ${b}`)));
+  }
 
   // 0.3.3: rename a preset with a long-press (touch or mouse) or a right-click on its tile.
   function renamePreset(n) {
@@ -472,22 +471,124 @@
     const b = ev.target.closest('[data-preset]'); if (!b) return;
     ev.preventDefault(); if (lpFired) return; if (lp) { clearTimeout(lp.t); lp = null; } renamePreset(Number(b.dataset.preset));
   });
+  // 0.4.0: drag a tile onto another tile to swap them, or onto an empty tile to move it. Mouse: in any mode,
+  // after 6 px. Touch / pen: in MOVE mode (elsewhere a touch drag scrolls the page and a long-press renames).
+  let tdrag = null; let tileDragDone = false;
+  $('#grid').addEventListener('pointerdown', (ev) => {
+    const b = ev.target.closest('[data-preset]'); if (!b || armed || ev.button > 0) return;
+    if (ev.pointerType !== 'mouse' && mode !== 'move') return;
+    tdrag = { n: Number(b.dataset.preset), el: b, x0: ev.clientX, y0: ev.clientY, id: ev.pointerId, started: false, hover: null };
+  });
+  const tileAt = (x, y) => { const el = document.elementFromPoint(x, y); const t = el && el.closest('#grid [data-drop-preset]'); return t; };
+  function tdragMove(ev) {
+    const d = tdrag; d.x = ev.clientX; d.y = ev.clientY;
+    const g = $('#ghost'); g.style.left = `${d.x}px`; g.style.top = `${d.y}px`;
+    const t = tileAt(d.x, d.y);
+    if (d.hover && d.hover !== t) d.hover.classList.remove('swap-hover');
+    if (t && Number(t.dataset.dropPreset) !== d.n) { t.classList.add('swap-hover'); d.hover = t; } else d.hover = null;
+  }
+  window.addEventListener('pointermove', (ev) => {
+    const d = tdrag; if (!d || ev.pointerId !== d.id) return;
+    if (!d.started) {
+      if (Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) < 6) return;
+      d.started = true; if (lp) { clearTimeout(lp.t); lp = null; }
+      d.el.classList.add('dragsrc'); document.body.classList.add('dragging', 'tile-dragging');
+      const p = S.presets.find((x) => x.number === d.n);
+      const g = $('#ghost'); g.textContent = `⇄ ${d.n} · ${p ? p.name : ''}`; g.hidden = false;
+      d.scroll = setInterval(() => { if (!tdrag || !tdrag.started) return; const h = window.innerHeight; const v = tdrag.y > h - 70 ? 14 : tdrag.y < 70 ? -14 : 0; if (v) window.scrollBy(0, v); }, 30);
+    }
+    ev.preventDefault(); tdragMove(ev);
+  }, { passive: false });
+  function tdragEnd(ev, cancel) {
+    const d = tdrag; if (!d || (ev && ev.pointerId !== d.id)) return;
+    tdrag = null;
+    if (!d.started) return;
+    clearInterval(d.scroll); d.el.classList.remove('dragsrc'); document.body.classList.remove('dragging', 'tile-dragging'); $('#ghost').hidden = true;
+    if (d.hover) d.hover.classList.remove('swap-hover');
+    tileDragDone = true; setTimeout(() => { tileDragDone = false; }, 0); // swallow the click that follows
+    if (cancel) return;
+    const t = tileAt(ev.clientX, ev.clientY); const to = t && Number(t.dataset.dropPreset);
+    if (to && to !== d.n) { moveSrc = null; swapTiles(d.n, to); }
+  }
+  window.addEventListener('pointerup', (ev) => tdragEnd(ev, false));
+  window.addEventListener('pointercancel', (ev) => tdragEnd(ev, true));
+  document.addEventListener('touchmove', (e) => { if (tdrag && tdrag.started) e.preventDefault(); }, { passive: false });
+
   $('#grid').addEventListener('click', (ev) => {
     if (lpFired) { lpFired = false; ev.preventDefault(); return; } // the long-press already renamed
+    if (tileDragDone) { ev.preventDefault(); return; } // a tile drag just ended: no recall
     const b = ev.target.closest('button'); if (!b) return;
     const n = Number(b.dataset.preset || b.dataset.empty);
     if (armed) { const m = armed; armed = null; palSig = ''; renderPalette(); applyArmed(); return assignPreset(n, m); }
+    if (mode === 'move') {
+      if (moveSrc == null) { if (b.dataset.preset) { moveSrc = n; render(); } else toast('Tap a preset first, then where it goes'); return; }
+      const from = moveSrc; moveSrc = null; render();
+      if (from !== n) swapTiles(from, n);
+      return;
+    }
     if (mode === 'recall') { if (b.dataset.preset) run(api('POST', `/api/presets/${n}/recall`)); return; }
     if (mode === 'save') return openSave(n, !!b.dataset.preset);
     if (mode === 'edit' && b.dataset.preset) return openEdit(n);
   });
 
-  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => {
-    tab = b.dataset.tab;
-    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === b));
-    for (const t of ['presets', 'inputs', 'backup', 'audio']) $(`#pane-${t}`).hidden = t !== tab;
+  // 0.4.0: INPUTS / BACKUP / AUDIO / WEB RCS hide everything that belongs to presets (screen tiles, TAKE / CUT,
+  // the PVW line) and use the full width. body.tab-<name> drives the CSS.
+  const TABS = ['presets', 'inputs', 'backup', 'audio', 'webrcs'];
+  function setTab(t) {
+    tab = TABS.includes(t) ? t : 'presets';
+    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === tab));
+    for (const x of TABS) $(`#pane-${x}`).hidden = x !== tab;
+    for (const x of TABS) document.body.classList.toggle(`tab-${x}`, x === tab);
+    if (tab === 'webrcs') openRcs(false);
     render();
-  }));
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  document.body.classList.add('tab-presets');
+
+  // ---------- 0.4.0 Web RCS pane ----------
+  // The device's Web RCS is loaded straight from the device in an <iframe> (the RS6 sends no X-Frame-Options or
+  // CSP frame-ancestors, and its WebSocket goes to the page's own host, so nothing needs proxying). The app
+  // server checks the headers once per open (GET /api/webrcs); if a unit ever refuses framing, the pane says why
+  // and offers a separate window instead.
+  let rcs = { loaded: false, info: null, url: '' };
+  const loop = (h) => /^(127\.|localhost$|\[?::1\]?$)/.test(h);
+  function rcsUrlFor(u0) {
+    const u = new URL(u0);
+    // a Simulator on the app's own computer (127.0.0.1) is that computer's address for a tablet / another PC
+    if (loop(u.hostname) && !loop(location.hostname)) u.hostname = location.hostname;
+    return u.toString();
+  }
+  async function openRcs(force) {
+    let info;
+    try { info = await api('GET', '/api/webrcs'); } catch (e) { info = { url: '', error: e.message }; }
+    rcs.info = info; rcs.url = info.url ? rcsUrlFor(info.url) : '';
+    $('#rcsUrl').textContent = rcs.url ? `${rcs.url}${info.mock ? ' · mock placeholder' : ''}` : '';
+    const st = $('#rcsStatus'); const blocked = $('#rcsBlocked');
+    const mixed = location.protocol === 'https:' && rcs.url.startsWith('http:');
+    if (info.framable === false || mixed) {
+      blocked.hidden = false; $('#rcsWrap').hidden = true; st.className = 'rcs-status bad'; st.textContent = 'CAN\'T EMBED';
+      blocked.innerHTML = `The device refuses to be shown inside another page (${esc(mixed ? 'this app is on HTTPS and the Web RCS is HTTP' : (info.blockedBy || []).join(', '))}). Open it next to the app instead: <button class="btn primary" data-rcs="side">⇱ Open side by side</button>`;
+      return;
+    }
+    blocked.hidden = true; $('#rcsWrap').hidden = false;
+    st.className = 'rcs-status ' + (info.reachable === false ? 'warn' : 'ok');
+    st.textContent = info.reachable === false ? `APP CAN'T REACH IT (${(info.error || '').slice(0, 40)})` : 'EMBEDDED';
+    st.title = info.reachable === false ? 'The app server could not reach the device web port; this browser may still reach it.' : `Headers checked: X-Frame-Options ${info.xFrameOptions || 'none'}, CSP frame-ancestors ${info.frameAncestors || 'none'}`;
+    if (rcs.url && (force || !rcs.loaded || $('#rcsFrame').dataset.src !== rcs.url)) { $('#rcsFrame').src = rcs.url; $('#rcsFrame').dataset.src = rcs.url; rcs.loaded = true; }
+  }
+  function rcsSide() {
+    if (!rcs.url) return;
+    const sw = screen.availWidth || 1440; const sh = screen.availHeight || 900;
+    const w = Math.max(640, Math.floor(sw / 2)); const left = (screen.availLeft || 0) + sw - w;
+    const win = window.open(rcs.url, 'rs6webrcs', `popup=yes,width=${w},height=${sh},left=${left},top=${screen.availTop || 0}`);
+    if (!win) toast('The browser blocked the pop-up: allow pop-ups for this page, or use ↗ New tab', true);
+    else toast('Web RCS opened on the right half of the screen: put this window on the left half');
+  }
+  $('#rcsReload').addEventListener('click', () => openRcs(true));
+  $('#rcsSide').addEventListener('click', () => rcsSide());
+  $('#rcsTab').addEventListener('click', () => { if (rcs.url) window.open(rcs.url, '_blank', 'noopener'); });
+  $('#rcsUnload').addEventListener('click', () => { $('#rcsFrame').src = 'about:blank'; $('#rcsFrame').dataset.src = ''; rcs.loaded = false; toast('Web RCS unloaded from the pane'); });
+  $('#rcsBlocked').addEventListener('click', (e) => { if (e.target.dataset.rcs === 'side') rcsSide(); });
   $('.main').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return;
     if (b.dataset.freeze) return run(api('POST', `/api/inputs/${b.dataset.freeze}/freeze`, {}));
@@ -508,6 +609,8 @@
   // keyboard: Space/Enter = TAKE, C = CUT
   document.addEventListener('keydown', (e) => {
     if (document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+    if (tab !== 'presets') return; // 0.4.0: TAKE / CUT keys only where TAKE / CUT is shown
+    if (e.key === 'Escape' && moveSrc != null) { moveSrc = null; render(); return; }
     if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); run(api('POST', '/api/take')); }
     if (e.key === 'c' || e.key === 'C') run(api('POST', '/api/cut'));
   });
@@ -531,10 +634,10 @@
     const m = {}; for (const d of dests) { const v = form.elements[`slot_${d}`] && form.elements[`slot_${d}`].value; if (v) m[d] = Number(v); } return m;
   }
   function openSave(n, exists) {
-    if (!S.selection.length) return toast('Light at least one destination first', true);
+    if (!S.selection.length) return toast('Light at least one screen above first: SAVE stores what the lit screens have on Preview', true);
     const p = S.presets.find((x) => x.number === n);
     const f = $('#formSave');
-    $('#saveTitle').textContent = exists ? `Overwrite preset ${n}?` : `Save preset ${n}`;
+    $('#saveTitle').textContent = exists ? `Overwrite tile ${n} with what is on Preview?` : `Save Preview to tile ${n}`;
     $('#saveDests').innerHTML = `Destinations: <b>${S.selection.map((d) => `${d} ${esc(label(d))}`).join(', ')}</b>`;
     f.elements.number.value = n; f.elements.name.value = p && !p.autoName ? p.customName : '';
     const nameEl = f.elements.name; nameEl.dataset.auto = p && !p.autoName ? '' : '1';
@@ -598,7 +701,7 @@
     const s = await api('GET', '/api/settings');
     const f = $('#formSettings');
     for (const k of ['host', 'restPort', 'awjPort', 'protocol', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels']) f.elements[k].value = s[k];
-    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe', 'layerMemories']) f.elements[k].checked = !!s[k];
+    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe']) f.elements[k].checked = !!s[k];
     f.elements.password.value = ''; f.elements.password.placeholder = s.passwordSet ? '•••••• (unchanged)' : 'none'; f.elements.clearPassword.checked = false;
     $('#mockNote').hidden = !s.mock;
     $('#dlgSettings').showModal();
@@ -609,7 +712,7 @@
     const f = $('#formSettings'); const b = {};
     for (const k of ['host', 'protocol']) b[k] = f.elements[k].value.trim();
     for (const k of ['restPort', 'awjPort', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels']) b[k] = Number(f.elements[k].value);
-    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe', 'layerMemories']) b[k] = f.elements[k].checked;
+    for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe']) b[k] = f.elements[k].checked;
     if (f.elements.clearPassword.checked) b.password = ''; else if (f.elements.password.value) b.password = f.elements.password.value;
     run(api('POST', '/api/settings', b).then((st) => toast(st.connected ? 'Connected' : 'Saved, but not connected', !st.connected)));
   });

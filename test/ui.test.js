@@ -164,7 +164,7 @@ test('3. layout: each destination tile sits exactly above its board card (820-19
   }
 });
 
-test('2. palette: MV tab with the box unchecked lists no unknown slots and says what to do; LAYER tab explains itself', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+test('2. palette: MV tab with the box unchecked lists no unknown slots and says what to do; no LAYER tab', { skip: pw ? false : 'playwright not installed' }, async (t) => {
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -176,8 +176,7 @@ test('2. palette: MV tab with the box unchecked lists no unknown slots and says 
   await page.waitForFunction(() => document.querySelectorAll('#palList .mem').length === 50);
   await page.uncheck('#palAll');
   await page.waitForFunction(() => document.querySelectorAll('#palList .mem').length === 0);
-  await page.click('#palTabs [data-ptab="layer"]');
-  assert.match(await page.textContent('#palList'), /no Layer memory commands/);
+  assert.equal(await page.locator('#palTabs [data-ptab="layer"]').count(), 0); // 0.4.0: Layer memories removed
 });
 
 for (const [name, type] of browsers()) {
@@ -231,3 +230,118 @@ for (const [name, type] of browsers()) {
     await linkIs('ok'); await toggleAndSee('tab visible again');
   });
 }
+
+// ---------------- 0.4.0 ----------------
+const visible = (page, sel) => page.evaluate((s) => [...document.querySelectorAll(s)].some((e) => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; }), sel);
+
+test('0.4.0 #1: INPUTS / BACKUP / AUDIO show no destinations, TAKE/CUT or presets, and use the full width', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  const browser = await launch(t, pw.chromium); if (!browser) return;
+  for (const width of [820, 1440]) {
+    const page = await browser.newPage({ viewport: { width, height: 900 } });
+    await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+    assert.ok(await visible(page, '.transport'), 'PRESETS tab has TAKE/CUT');
+    for (const tab of ['inputs', 'backup', 'audio']) {
+      await page.click(`.tab[data-tab=${tab}]`);
+      await page.waitForFunction((x) => document.body.classList.contains(`tab-${x}`), tab);
+      for (const sel of ['.transport', '#destRow', '#grid', '#board', '#last', '#master', '.modes', '#palette']) {
+        assert.equal(await visible(page, sel), false, `${width}px ${tab}: ${sel} hidden`);
+      }
+      const r = await page.evaluate((x) => { const p = document.querySelector(`#pane-${x}`).getBoundingClientRect(); return { x: p.x, w: p.width, vw: document.documentElement.clientWidth }; }, tab);
+      assert.ok(r.w >= r.vw - 60, `${width}px ${tab}: pane spans the width (${r.w} of ${r.vw})`);
+      await page.keyboard.press('Space'); await page.keyboard.press('c');
+    }
+    await page.close();
+  }
+  // Space / C on those tabs never sent a TAKE or CUT
+  const log = await (await fetch(app.base + '/api/state')).json();
+  assert.ok(!JSON.stringify(log.log || []).match(/\b(TAKE|CUT)\b.*(S1|A1)/), 'no take from the other tabs');
+});
+
+test('0.4.0 #3: drag a tile onto another swaps them; MOVE mode tap-tap moves into an empty tile', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  const browser = await launch(t, pw.chromium); if (!browser) return;
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="2"]');
+  const nameOf = async (n) => (await (await fetch(app.base + '/api/state')).json()).presets.find((p) => p.number === n)?.name;
+  const [n1, n2] = [await nameOf(1), await nameOf(2)];
+  const a = await page.locator('#grid [data-preset="1"]').boundingBox(); const b = await page.locator('#grid [data-preset="2"]').boundingBox();
+  await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
+  await page.mouse.move(a.x + a.width / 2 + 20, a.y + a.height / 2, { steps: 4 });
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 });
+  assert.equal(await page.locator('#grid .swap-hover[data-preset="2"]').count(), 1, 'target highlighted');
+  await page.mouse.up();
+  await page.waitForFunction(() => /Swapped 1 ⇄ 2/.test(document.body.innerText));
+  assert.equal(await nameOf(1), n2); assert.equal(await nameOf(2), n1);
+  // a drag is not a click: nothing went to PVW
+  assert.ok(!(await (await fetch(app.base + '/api/state')).json()).lastRecalled, 'drag did not recall');
+  // MOVE mode (iPad): tap source, tap empty target
+  await page.click('.mode[data-mode=move]');
+  assert.match(await page.textContent('#modeHint'), /MOVE/);
+  await page.click('#grid [data-preset="3"]');
+  assert.equal(await page.locator('#grid .move-src[data-preset="3"]').count(), 1);
+  await page.keyboard.press('Escape'); // cancel
+  assert.equal(await page.locator('#grid .move-src').count(), 0);
+  const n3 = await nameOf(3);
+  await page.click('#grid [data-preset="3"]'); await page.click('#grid [data-empty="20"]');
+  await page.waitForFunction(() => /Moved 3 → 20/.test(document.body.innerText));
+  assert.equal(await nameOf(20), n3); assert.equal(await nameOf(3), undefined);
+  assert.equal(await page.locator('#grid .mode-move').count() + await page.locator('#grid.mode-move').count(), 1, 'still in MOVE mode for the next one');
+});
+
+test('0.4.0 #4: the mode bar says what a tile tap does; SAVE is "SAVE PVW → TILE"', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  const browser = await launch(t, pw.chromium); if (!browser) return;
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+  assert.match(await page.textContent('.modes'), /TAP A TILE TO\s*RECALL\s*EDIT\s*MOVE ⇄\s*SAVE PVW → TILE/);
+  const expect = { recall: /Preview/, edit: /edit|rename/i, move: /swap/i, save: /overwrite[\s\S]*stores[\s\S]*Preview/ };
+  for (const [m, re] of Object.entries(expect)) {
+    await page.click(`.mode[data-mode=${m}]`);
+    assert.match(await page.textContent('#modeHint'), re, `${m} hint`);
+    assert.ok((await page.getAttribute(`.mode[data-mode=${m}]`, 'title')).length > 20, `${m} tooltip`);
+    assert.equal(await page.locator(`#grid.mode-${m}`).count(), 1, `${m} grid class (corner cue)`);
+  }
+  await page.click('.mode[data-mode=save]');
+  await page.click('#grid [data-empty="20"]'); // nothing lit yet: told why
+  await page.waitForFunction(() => /Light at least one screen above first/.test(document.body.innerText));
+  await page.click('#destRow [data-dest="S1"]'); await page.waitForSelector('#destRow .dest.on[data-dest="S1"]');
+  await page.click('#grid [data-preset="1"]');
+  await page.waitForSelector('#dlgSave[open]');
+  assert.match(await page.textContent('#saveTitle'), /Overwrite tile 1 with what is on Preview/);
+  await page.click('#dlgSave button[value=cancel]');
+  await page.click('#grid [data-empty="20"]'); await page.waitForSelector('#dlgSave[open]');
+  assert.match(await page.textContent('#saveTitle'), /Save Preview to tile 20/);
+});
+
+test('0.4.0 #5: BACKUP tab shows the group label and only existing backups', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  const browser = await launch(t, pw.chromium); if (!browser) return;
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(app.base + '/'); await page.click('.tab[data-tab=backup]');
+  await page.waitForFunction(() => /MEDIA BU/.test(document.querySelector('#pane-backup').innerText));
+  const txt = await page.textContent('#pane-backup');
+  assert.match(txt, /MEDIA BU\s*GROUP 1/);
+  assert.doesNotMatch(txt, /IN 9\b|OLD SET|Group 2\b|GROUP 2\b/);
+});
+
+test('0.4.0 #6: WEB RCS tab embeds the device page; a unit that refuses framing gets the side-window fallback', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  const browser = await launch(t, pw.chromium); if (!browser) return;
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(app.base + '/'); await page.click('.tab[data-tab=webrcs]');
+  await page.waitForFunction(() => /EMBEDDED/.test(document.querySelector('#rcsStatus').textContent));
+  const frame = page.frameLocator('#rcsFrame');
+  await frame.locator('text=Web RCS placeholder').waitFor();
+  assert.equal(await visible(page, '.transport'), false);
+  const pop = page.waitForEvent('popup'); await page.click('#rcsSide'); const w = await pop;
+  assert.match(w.url(), /^http:\/\/127\.0\.0\.1:\d+\/$/); await w.close();
+  await page.click('#rcsUnload'); assert.equal(await page.getAttribute('#rcsFrame', 'src') || '', '' || (await page.getAttribute('#rcsFrame', 'src')) || '');
+  // a unit that sends X-Frame-Options: DENY
+  const p2 = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await p2.route('**/api/webrcs', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ url: 'http://127.0.0.1:9/', reachable: true, status: 200, framable: false, blockedBy: ['X-Frame-Options: DENY'] }) }));
+  await p2.goto(app.base + '/'); await p2.click('.tab[data-tab=webrcs]');
+  await p2.waitForFunction(() => /CAN'T EMBED/.test(document.querySelector('#rcsStatus').textContent));
+  assert.ok(await visible(p2, '#rcsBlocked')); assert.match(await p2.textContent('#rcsBlocked'), /X-Frame-Options: DENY/);
+  assert.ok(await visible(p2, '#rcsSide'));
+});

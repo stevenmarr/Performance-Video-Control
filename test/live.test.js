@@ -132,11 +132,14 @@ test('backups (§6.4-6.11): sources, trigger, mode, active state', async () => {
     b = engine.live.backupView();
     assert.equal(b.backgrounds.find((x) => x.screen === 'S1' && x.set === 1).slots[1], 'NATIVE_2');
     await engine.live.bgBackupSelect('S1', 1, '1'); assert.equal(mock.get(P.bgBackupSelect('S1', 1)), '1');
-    await engine.live.bgBackupMode('S2', 3, true); assert.equal(mock.get(P.bgBackupAuto('S2', 3)), true);
-    assert.deepEqual(engine.live.backupView().groups.map((g) => g.group), [1, 2, 3, 4]);
-    await engine.live.groupBackupSelect(2, '2'); assert.equal(mock.get(P.groupBackupSelect(2)), '2');
-    await engine.live.groupBackupMode(2, true); assert.equal(mock.get(P.groupBackupAuto(2)), true);
-    assert.equal(engine.live.backupView().groups.find((g) => g.group === 2).active, true);
+    await engine.live.bgBackupMode('S1', 1, true); assert.equal(mock.get(P.bgBackupAuto('S1', 1)), true);
+    // 0.4.0: only groups that exist (status/isEnabled); group 2 was deleted on the device
+    assert.deepEqual(engine.live.backupView().groups.map((g) => g.group), [1]);
+    await engine.live.groupBackupSelect(1, '2'); assert.equal(mock.get(P.groupBackupSelect(1)), '2');
+    await engine.live.groupBackupMode(1, true); assert.equal(mock.get(P.groupBackupAuto(1)), true);
+    assert.equal(engine.live.backupView().groups.find((g) => g.group === 1).active, true);
+    assert.throws(() => engine.live.groupBackupSelect(2, '1'), /doesn't exist/);
+    assert.throws(() => engine.live.bgBackupMode('S2', 3, true), /no backup on the device/);
     assert.throws(() => engine.live.groupBackupSelect(1, '3'), /NONE, 1 or 2/);
   } finally { await teardown(); }
 });
@@ -221,13 +224,15 @@ test('HTTP: live endpoints, POST controls and long-poll', async () => {
     assert.equal((await call('POST', '/api/inputs/5/freeze', {})).json.ok, true); assert.equal(ctx.mock.get(P.input.freeze(5)), true);
     await call('POST', '/api/inputs/4/backup', { slot: '2' }); assert.equal(ctx.mock.get(P.inputBackupSelect(4)), '2');
     await call('POST', '/api/inputs/4/backup/mode', { auto: true }); assert.equal(ctx.mock.get(P.inputBackupAuto(4)), true);
-    await call('POST', '/api/backgrounds/S2/1/backup', { slot: '1' }); assert.equal(ctx.mock.get(P.bgBackupSelect('S2', 1)), '1');
-    await call('POST', '/api/backgrounds/S2/1/backup/mode', { auto: true }); assert.equal(ctx.mock.get(P.bgBackupAuto('S2', 1)), true);
-    await call('POST', '/api/groups/3/backup', { slot: '1' }); assert.equal(ctx.mock.get(P.groupBackupSelect(3)), '1');
-    await call('POST', '/api/groups/3/backup/mode', { auto: true }); assert.equal(ctx.mock.get(P.groupBackupAuto(3)), true);
+    await call('POST', '/api/backgrounds/S1/1/backup', { slot: '1' }); assert.equal(ctx.mock.get(P.bgBackupSelect('S1', 1)), '1');
+    await call('POST', '/api/backgrounds/S1/1/backup/mode', { auto: true }); assert.equal(ctx.mock.get(P.bgBackupAuto('S1', 1)), true);
+    await call('POST', '/api/groups/1/backup', { slot: '1' }); assert.equal(ctx.mock.get(P.groupBackupSelect(1)), '1');
+    await call('POST', '/api/groups/1/backup/mode', { auto: true }); assert.equal(ctx.mock.get(P.groupBackupAuto(1)), true);
+    assert.equal((await call('POST', '/api/groups/3/backup', { slot: '1' })).status, 404); // no such group on the device
+    assert.equal((await call('POST', '/api/backgrounds/S2/1/backup', { slot: '1' })).status, 404); // no backup there
     await call('POST', '/api/audio/inputs/1/channels/2/mute', {}); assert.equal(ctx.mock.get(P.audioInMute(1, 2)), true);
     await call('POST', '/api/audio/outputs/2/channels/1/mute', { value: true }); assert.equal(ctx.mock.get(P.audioOutMute(2, 1)), true);
-    assert.equal((await call('POST', '/api/groups/3/backup', { slot: 'X' })).status, 409);
+    assert.equal((await call('POST', '/api/groups/1/backup', { slot: 'X' })).status, 409);
 
     // long-poll: wait for the next change, triggered from "the RC400T"
     const rev = (await call('GET', '/api/state')).json.rev;

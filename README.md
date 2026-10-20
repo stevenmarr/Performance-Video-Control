@@ -32,6 +32,9 @@ network can open.
   now be **combined**: a different memory per screen, plus an optional Master memory and multiviewer
   memories. Recall loads each memory only to its own target. See
   [Memory import and the board](#memory-import-and-the-board-v030).
+- **v0.4.0:** **move/swap** preset tiles (drag, or MOVE mode on an iPad), clearer **SAVE PVW → TILE**,
+  backups that show only what exists on the device with **group names**, clean INPUTS/BACKUP/AUDIO
+  tabs, and the device's **Web RCS in a tab**. Layer memories were removed. See [v0.4.0](#v040-cleaner-tabs-moveswap-presets-clearer-save-real-backup-state-web-rcs-pane).
 - A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API** for Bitfocus
   Companion (a module ships separately in `companion-module-rs6-presets`).
 
@@ -136,7 +139,7 @@ slot, the preset's layer-source snapshot is compared instead.
 
 ## Memory import and the board (v0.3.0)
 
-![RS6 Presets 0.3.0 in mock mode](docs/rs6-presets-ui.png)
+![RS6 Presets 0.4.0 in mock mode](docs/rs6-presets-ui.png)
 
 *(Mock mode, 1366×900. Preset 10 is on Program, preset 9 on Preview, and the board holds a staged mix.)*
 
@@ -167,7 +170,7 @@ slot, the preset's layer-source snapshot is compared instead.
 
 ### Using the board
 
-- The **palette** (left) has tabs **SCREEN/AUX · MASTER · MV · LAYER**, a search box, and a
+- The **palette** (left) has tabs **SCREEN/AUX · MASTER · MV**, a search box, and a
   *show empty/unknown* switch. Each memory shows its slot, name, status, and a PGM/PVW dot when it's
   live on some screen.
 - The **board** has a card per screen, aux and multiviewer output, plus a **MASTER** card. Each card
@@ -177,7 +180,7 @@ slot, the preset's layer-source snapshot is compared instead.
   (blue banner), then tap a card or preset tile. Incompatible drops are refused (e.g. a Master on S1).
 - Dropping onto a **preset tile** opens a small picker for the target (S1… / A1… / Master / M1…), then
   assigns the memory into that preset (creating it if the number is empty).
-- **LOAD TO PVW** loads the board as it stands; **SAVE AS PRESET…** saves it as a combined preset;
+- **LOAD TO PVW** loads the board as it stands; **SAVE BOARD AS PRESET…** saves it as a combined preset;
   **CLEAR** empties it. EDIT › *Open on the board* copies a preset onto the board for changes.
 - Preset tiles show chips like `M:3 S4:30 MV1:2`. Tally (PVW green / PGM red, partial dashed) and the
   last-recalled outline work as before; a Master counts as one component of the tally.
@@ -215,25 +218,102 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## v0.4.0: cleaner tabs, move/swap presets, clearer SAVE, real backup state, Web RCS pane
+
+**Changelog:** **Layer memories were removed** (the 0.3.4 opt-in LAYER tab, its setting, the inferred
+`layerBank` reads and loads, its tests and docs). An old `layerMemories` setting in `settings.json` is
+ignored and dropped on the next save. Everything else is backwards compatible: same preset file, same API.
+
+**1. INPUTS, BACKUP and AUDIO are just that.** On those tabs the screen/aux tiles, the board, the preset
+grid, the mode bar, the TAKE/CUT column (and its iPad bottom bar) and the last-recalled box are all
+hidden, and the tab uses the full width. Space / Enter / C (TAKE and CUT shortcuts) work only on the
+PRESETS tab. (0.3.4's `.mix{display:flex}` rule beat the `hidden` attribute, so the PRESETS pane stayed
+visible next to the other tabs.)
+
+**2. Layer memories removed.** See the changelog above.
+
+**3. Move / swap presets.**
+- **Drag** a tile onto another tile to **swap** them, or onto an empty tile to **move** it (mouse, any mode).
+- **MOVE ⇄ mode** (for the iPad, and touch drag): tap the tile to move, then tap where it goes. Tap it
+  again or press Esc to cancel. Empty tiles show "move here", and four spare empty tiles are added at
+  the end of the grid.
+- API: `POST /api/presets/swap {"a":3,"b":7}` (or `{"from":3,"to":7}`). This is app-only, and nothing is sent to the device.
+- **The preset numbers swap, so Companion buttons follow the TILE (the slot).** A preset number *is* its
+  tile position. After swapping 3 and 7, the Companion "Recall preset 3" button, its
+  `$(rs6presets:preset_3_name)` text and its tally all refer to whatever is now in tile 3. That keeps a
+  Stream Deck page laid out like the app's grid in step with the grid. PVW/PGM tally and "last
+  recalled" move with the preset itself. Companion module 0.4.0 defines `preset_N_name` / `_summary`
+  for every tile 1..max(24, highest), so a tile emptied by a move shows "N (empty)" rather than a stale name.
+
+**4. SAVE vs RECALL vs EDIT.** The bar now reads **TAP A TILE TO: RECALL · EDIT · MOVE ⇄ | SAVE PVW → TILE**,
+with a tooltip on each button, a hint line under it, and a corner cue on every tile (▶ PVW, ✎ EDIT,
+⇄ MOVE, ⤓ OVERWRITE):
+- **RECALL** loads the tile's memories to **Preview** on its screens (then TAKE or CUT).
+- **EDIT** opens the preset: rename, renumber, per-screen Screen-memory slots, Master memory and its
+  screens, Multiviewer memories, open on the board, update (re-capture), overwrite with the selection,
+  duplicate, delete.
+- **SAVE PVW → TILE** captures the screens that are **lit** in the row above. For each, it stores the Screen
+  memory the device reports as loaded **on Preview** (AWJ readback; you can type or fix the slot in the
+  dialog), plus a snapshot of the layer sources. Tapping a used tile overwrites it (the dialog says
+  "Overwrite tile N with what is on Preview?"). It saves nothing on the device, and it stores no Master or
+  Multiviewer memories (those come from the board). It also captures no positions or sizes: save the look as a
+  Screen memory in the Web RCS first.
+- **SAVE BOARD AS PRESET…** (renamed from "Save as preset") stores what is *staged on the board*:
+  any mix of Screen, Master and Multiviewer memories. The two save paths do different things, so both stay.
+
+**5. Backups show only what exists, with group names.** 0.3.4 probed fixed slots (groups 1–8, sets 1–8)
+and took any answer to `xSelectSlot` (a write-request property) as "this backup exists and is selected".
+The device answers that path for **deleted** backups and **never-created** groups too, so old sets kept
+showing. Now (paths INFERRED from the Web RCS object model, then confirmed read-only on an RS6
+6.2.73, where they all answer):
+
+| Purpose | Path |
+|---|---|
+| Input backup exists | `DeviceObject/$input/@items/IN_{n}/backup/control/@props/enable` |
+| Input backup's group | `…/IN_{n}/backup/control/@props/group` (`GROUP_1…64` or `NONE`) |
+| Input backup active slot | `…/IN_{n}/backup/status/@props/activeSlot` |
+| Background-set backup | `DeviceObject/preconfig/backgrounds/$screen/@items/{S}/$backgroundSet/@items/{b}/backup/…` (same three) |
+| Group label | `DeviceObject/backup/$group/@items/GROUP_{g}/control/@props/label` |
+| Group exists | `…/GROUP_{g}/status/@props/isEnabled` |
+| Group active slot | `…/GROUP_{g}/status/@props/activeSlot` |
+
+- An item is listed only while `enable` / `isEnabled` is true (all 64 groups are checked). Changes
+  arrive through the existing subscription, so sets and groups appear and disappear live.
+- The active slot comes from `status/activeSlot`, not from the `xSelectSlot` request.
+- **Group rows show the label given on the device** (falling back to "Group N"), its number, and its
+  members. Input and background rows carry a badge with their group's label.
+- Selecting or switching mode on a deleted backup returns 404, and nothing is sent.
+
+**6. WEB RCS tab.** The device's own Web RCS, embedded in the app in an `<iframe>` pointed at
+`http(s)://{host}[:{port}]/` from Settings, with **Reload**, **Side by side** (opens it in a window on the
+right half of the screen), **New tab** and **Unload** buttons. Evidence that a direct iframe works,
+from read-only checks of an RS6 on firmware 6.2.73:
+- `GET /` returns 200 with **no `X-Frame-Options` and no `Content-Security-Policy`**.
+- The Web RCS bundle opens its WebSocket to `ws(s)://${location.host}`, i.e. same-origin with the device
+  page, which is still true inside a frame. It has no frame-busting (its only `window.top` use is
+  inside a map library).
+- A test page on another origin that iframed the unit got the fully live Web RCS inside the frame.
+
+![The WEB RCS tab in mock mode (placeholder page)](docs/webrcs-pane-mock.png)
+
+So no proxy is needed. A `/rcs/` sub-path proxy would actually break it, because the Web RCS uses
+absolute paths and `location.host` for its socket. Each time the tab opens, the app re-checks the headers
+(`GET /api/webrcs`, one read-only GET of the device root). If a future firmware sends
+`X-Frame-Options`/`frame-ancestors`, or the page is https while the device is http, the tab says
+why and offers the side-window and new-tab buttons instead. In mock mode the frame shows a placeholder page.
+
+**Tests:** 137 with Playwright (`test/v040.test.js` plus the 0.4.0 browser tests in `test/ui.test.js`):
+- swap and move, plus their errors and tally mapping
+- no layer traffic
+- backups: only existing items, group labels and members, live delete/add/rename/delete-group on the mock,
+  404 on deleted items, `activeSlot` over `xSelectSlot`
+- framing verdicts and `/api/webrcs` against a mock that sends DENY / frame-ancestors
+- the mode bar labels and hints
+- browser checks: the INPUTS/BACKUP/AUDIO tabs are clean and full width, drag-swap and MOVE tap-tap work, and the Web RCS tab embeds (or explains why not)
+
 ## v0.3.4: Layer memories, the slot checkbox, aligned layout, reconnect
 
-**1. Layer memories (INFERRED, opt-in).** Neither the AWJ nor the REST guide has any Layer memory
-command, so in 0.3.3 the LAYER tab was always empty. Settings › **Layer memories (inferred)** now
-reads and recalls them over AWJ. The paths come from the Web RCS object model, as used by the
-Bitfocus `companion-module-analogway-awj` module (`layerBank/bankList/items/N/...`). They're written
-in AWJ spelling, the same way as the documented `presetBank` load:
-
-| Purpose | Path (INFERRED, not in the guides) |
-|---|---|
-| Label | `DeviceObject/layerBank/$bank/@items/{1..50}/control/@props/label` |
-| Validity | `DeviceObject/layerBank/$bank/@items/{1..50}/status/@props/isValid` |
-| Load to one layer | `DeviceObject/layerBank/control/load/$slot/@items/{n}/$screen\|$auxiliary/@items/{S1\|A1}/$preset/@items/PREVIEW\|PROGRAM/$layer/@items/{L}/@props/xRequest` = `true` |
-
-With the setting off, the app sends none of these, and the tab shows one line saying how to turn
-it on. With it on, tap a Layer memory to choose a destination, a layer and PVW or PGM. The load always
-uses AWJ, even in REST mode, because REST has nothing equivalent. Layer memories can't be dropped into
-presets. **These paths haven't been tried on a device or on the Simulator.** Try them on the Simulator
-first. If a load fails, the device's AWJ error is shown in the log.
+**1. Layer memories (INFERRED, opt-in).** Removed in 0.4.0; see the [v0.4.0 changelog](#v040-cleaner-tabs-moveswap-presets-clearer-save-real-backup-state-web-rcs-pane).
 
 **2. "show empty / unknown slots".** In 0.3.3, all 50 Multiviewer slots were listed whenever the memory
 probe was off, whatever the checkbox said. Now the checkbox works the same way on every tab. Unticked,
@@ -442,8 +522,11 @@ Everything still works, but you type the Screen memory slots by hand.
 
 - **RECALL mode** (the default): tap a preset to load it to Preview on its destinations. TAKE (or the
   space bar) and CUT (or the C key) act on the lit destinations.
-- **SAVE mode**: light the destinations you want, then tap an empty slot (or an existing preset to
-  overwrite it). Pick a number and name, and check or type the Screen memory slot for each destination.
+- **SAVE PVW → TILE mode**: light the destinations you want, then tap an empty tile (or an existing preset to
+  overwrite it). It stores the Screen memory each lit screen has **on Preview**. Pick a number and name, and
+  check or type the Screen memory slot for each destination.
+- **MOVE ⇄ mode** (0.4.0): tap a tile, then tap where it goes. Another preset swaps with it, and an empty
+  tile takes it. With a mouse you can also just drag a tile onto another, in any mode.
 - **EDIT mode**: tap a preset to rename it, renumber it, fix slots, **Update** (re-capture its own
   destinations), **Overwrite with current selection**, **Duplicate** or **Delete**.
 - **AUTO TAKE**: when on, every recall is followed immediately by a TAKE of the same destinations.
@@ -504,6 +587,8 @@ Everything returns JSON. Errors return HTTP 4xx with `{ "error": "…" }`.
 | `POST /api/presets/{n}/update` | `{"useSelection":false}` | Re-capture (or overwrite with the selection) |
 | `POST /api/presets/{n}/duplicate` | `{"toNumber"?}` | Duplicate |
 | `DELETE /api/presets/{n}` | | Delete |
+| `POST /api/presets/swap` | `{"a":3,"b":7}` or `{"from":3,"to":7}` | **0.4.0** Swap two tiles, or move into an empty one (numbers swap; Companion buttons follow the tile) |
+| `GET /api/webrcs` | | **0.4.0** Web RCS URL and whether its headers allow embedding (`framable`, `blockedBy`) |
 | `POST /api/capture` | `{"destinations":[…]}` | Report the Screen memory slots detected on Preview |
 | `GET /api/state?since={rev}&timeout={ms}` | | **Long-poll**: answers as soon as the state revision `rev` passes `since`, or after `timeout` (default 25 s, max 60 s) |
 | `GET /api/live` | | Live status and snapshot: `mode` (`push`/`poll-awj`/`poll-rest`/`off`), per-destination PGM/PVW layers, memory and layer-1 label; `tally`; `inputs`; `lastMaster`; `backup`; `audio` (also in `state.live`) |
@@ -558,7 +643,6 @@ Page numbers are the printed page numbers in the guides.
 | **v0.3.0** Master memory load | REST `POST /load-master-memory {"memoryId":1-500,"target"}`; AWJ `DeviceObject/masterPresetBank/control/load/$slot/@items/{n}/$preset/@items/PREVIEW\|PROGRAM/@props/xRequest` | REST p.13; AWJ §3.4 p.10 |
 | **v0.3.0** Multiviewer outputs | REST `GET /multiviewers/{1..8}` (`isEnabled`, `label`); AWJ `DeviceObject/$monitoring/@items/{o}/status/@props/isEnabled`, `…/control/@props/label` | REST p.27; AWJ §4.1 p.18 |
 | **v0.3.0** Multiviewer memory load | REST `POST /multiviewers/{id}/load-memory {"memoryId":1-50}`; AWJ `DeviceObject/monitoringBank/control/load/$slot/@items/{n}/$output/@items/{o}/@props/xRequest` | REST p.28; AWJ §4.2 p.18 |
-| **v0.3.4 INFERRED, opt-in** Layer memories | `DeviceObject/layerBank/$bank/@items/{n}/control/@props/label`, `…/status/@props/isValid`; load `DeviceObject/layerBank/control/load/$slot/@items/{n}/$screen\|$auxiliary/@items/{key}/$preset/@items/PREVIEW\|PROGRAM/$layer/@items/{L}/@props/xRequest` (only with Settings › Layer memories) | **not in the guides**, see [v0.3.4](#v034-layer-memories-the-slot-checkbox-aligned-layout-reconnect) |
 | **v0.3.0 INFERRED, opt-in** memory validity / MV names | `…/presetBank\|masterPresetBank\|monitoringBank/$bank/@items/{n}/status/@props/isValid`, `DeviceObject/monitoringBank/$bank/@items/{n}/control/@props/label` (only with Settings › Memory probe) | **not in the guide**, see above |
 | Memory labels | `DeviceObject/presetBank/$bank/@items/{n}/control/@props/label`, `DeviceObject/masterPresetBank/$bank/@items/{n}/control/@props/label` | §3.7 p.12–13 |
 | Last Screen memory per side | `DeviceObject/presetBank/status/presetId/{$screen\|$auxiliary}/@items/{S1}/$preset/@items/{A\|B}/@props/id` | §3.11 p.16 |
@@ -567,6 +651,8 @@ Page numbers are the printed page numbers in the guides.
 | Input backup | `…/$input/@items/IN_{n}/backup/$slot/@items/{1\|2}/control/@props/source`, `…/backup/control/@props/xSelectSlot` (`NONE`/`1`/`2`), `…/backup/control/@props/enableAutoSelect` | §6.4–6.6 p.28–29 |
 | Background-set backup | `DeviceObject/preconfig/backgrounds/$screen/@items/{S1}/$backgroundSet/@items/{set}/backup/…` (same three properties) | §6.7–6.9 p.29–30 |
 | Group backup | `DeviceObject/backup/$group/@items/GROUP_{g}/control/@props/xSelectSlot\|enableAutoSelect` | §6.10–6.11 p.30 |
+| **v0.4.0 INFERRED** backup existence, group, active slot, group label | `…/backup/control/@props/enable\|group`, `…/backup/status/@props/activeSlot` (inputs and background sets); `DeviceObject/backup/$group/@items/GROUP_{1..64}/control/@props/label`, `…/status/@props/isEnabled\|activeSlot` | **not in the guide**, from the Web RCS model and read back on a 6.2.73 unit, see [v0.4.0](#v040-cleaner-tabs-moveswap-presets-clearer-save-real-backup-state-web-rcs-pane) |
+| **v0.4.0** Web RCS framing check | one `GET /` of the device's web port; only `X-Frame-Options` and `Content-Security-Policy` are read | |
 | Audio mutes | `DeviceObject/audio/control/$device/@items/1/$rx/@items/INPUT_{i}_CHANNEL_{c}/control/@props/mute`; `…/$tx/@items/OUTPUT_{o}/$channel/@items/{c}/control/@props/mute` | §5.1.1–5.1.2 p.21–22; §5.2.1–5.2.2 p.22–23 |
 | REST polling fallback | layer status and sources `GET /screens/{id}/layers/{L}/presets/{program\|preview}`, background `…/background-layer/presets/…`, aux `…/auxiliary-screens/{id}/layers/{L}/presets/…/source`, inputs `GET /inputs/{n}` | REST p.15, p.17, p.24, p.66 |
 
@@ -588,8 +674,8 @@ Simulator 6.2.79 (see [v0.3.1](#take-transitions-and-selection-v031)).
 | Last Screen memory / last Master | `get` (§3.11, §3.12) | That these values update and push on every load from any controller. |
 | Memory labels | `get` (§3.7) | Reading up to 1000 Screen and 500 Master labels at startup. Fewer are read when Settings › *Memory labels to read* is lower. |
 | Input status (§6.1) | `get` on isEnabled, capability, label, isAvailable, freeze, device, scope | **Freeze write:** §6.1 documents only a `get` on `control/@props/freeze`. The app sends `replace` with `true`/`false` on the same path, and then reads it back to confirm. **Marked INFERRED.** It has been tested against the mock only. |
-| Input backups | `get` slot sources (§6.4); `replace` `xSelectSlot` `NONE`/`1`/`2` (§6.5); `replace` `enableAutoSelect` (§6.6) | "Backup active" means `xSelectSlot` read back as anything other than `NONE`. Whether reading `xSelectSlot` (an x-prefixed request property) returns the current selection is inferred. Reading `enableAutoSelect` is inferred too. |
-| Background-set and group backups | Same, on §6.7–6.9 and §6.10–6.11 paths | Same as above. Group ids `GROUP_1…8` and background sets `1…8` are discovered by probing. |
+| Input backups | `get` slot sources (§6.4); `replace` `xSelectSlot` `NONE`/`1`/`2` (§6.5); `replace` `enableAutoSelect` (§6.6) | Since 0.4.0, "exists" is `backup/control/@props/enable` and "active" is `backup/status/@props/activeSlot` other than `NONE` (**INFERRED** paths, read back on a 6.2.73 unit). `xSelectSlot` is only the request; the device answers it even for deleted backups, which caused 0.3.4's stale rows. Reading `enableAutoSelect` is inferred too. |
+| Background-set and group backups | Same, on §6.7–6.9 and §6.10–6.11 paths | Same as above; groups exist while `status/@props/isEnabled` is true and are named by `control/@props/label` (**INFERRED**). All 64 groups are checked; background sets `1…8` are discovered by probing. |
 | Audio mutes | `get` and `replace` on the rx and tx `mute` (§5.1.2, §5.2.2) | The channel and output counts are discovered by probing, up to Settings limits. Only the device index `1` is used (no Link). |
 | **Memory import (0.3.0)** | Screen/Master labels (§3.7), last loaded (§3.11/§3.12), Master load (§3.4), MV outputs and MV load (§4.1–4.2) | **Validity** (`isValid`) and **multiviewer memory names**: paths derived from the Web RCS model, sent only with the opt-in probe. Without it, "valid" = has a name or was seen loaded. That label/status changes push through the `$bank` subscription prefix. That a Master loaded to Preview changes only its own screens (Manual §15.2, not the API guides). On the Simulator a TAKE does **not** update `lastUsed`, so the app moves the Master itself (see [v0.3.1](#take-transitions-and-selection-v031)). |
 | REST fallback | Layer status and source (REST p.15), background (p.17), aux source (p.24), inputs (p.66) | REST gives tally and inputs only. Memories, backups, audio and freeze need AWJ. |
@@ -598,7 +684,7 @@ Simulator 6.2.79 (see [v0.3.1](#take-transitions-and-selection-v031)).
 
 - **0.3.0 memories:** the API can't read what's *inside* a Master (which screens, which Screen
   memories), so `master.dests` is your declaration. Multiviewer memories have no last-loaded readback,
-  so they aren't part of tally. Layer memories need the opt-in, inferred paths (v0.3.4) and can't be part of presets. Memories still can't be
+  so they aren't part of tally. Layer memories aren't supported (removed in 0.4.0). Memories still can't be
   created or saved from the API; save them in the Web RCS, then press ↻ Refresh.
 
 **Not yet run on a real RS6.** TAKE, recall and tally were checked on the AW Simulator 6.2.79
