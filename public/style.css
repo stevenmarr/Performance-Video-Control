@@ -344,3 +344,31 @@ body:not(.tab-presets) .main{gap:0}
 .rcs-blocked{padding:16px;border-radius:var(--r);background:#2a0e10;border:1px solid #6b1f24;color:#ffb3b6;font-size:14px;line-height:1.6}
 .rcs-blocked[hidden]{display:none}
 @media (max-width:820px){ .rcs-wrap{height:calc(100vh - 230px)} .modes-sep{flex-basis:0} }
+
+/* ---------- 0.5.0: show files, preset pages, undo ---------- */
+.show-btn{display:inline-flex;align-items:center;gap:6px;max-width:min(30vw,320px);padding:6px 10px;font-weight:700}
+.show-btn .show-k{font-size:10px;letter-spacing:.1em;color:var(--dim)}
+.show-btn #showName{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.show-btn .dirty{color:var(--sel);font-size:14px;line-height:1}
+dialog.wide{width:min(820px,96vw)}
+.show-cur{margin:8px 0}
+.show-list{display:flex;flex-direction:column;gap:6px;margin:6px 0 10px;max-height:40vh;overflow:auto}
+.show-row{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 8px}
+.show-row.cur{border-color:var(--accent)}
+.show-row .sh-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.show-row .sh-main b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.show-row .sh-main small{color:var(--dim)}
+.actions.left{justify-content:flex-start;flex-wrap:wrap}
+.actions .spacer{flex:1}
+.note.warn{color:#ffcf7a;border-color:#6b4f12}
+.datadir{margin-top:6px}
+.datadir code,#shDir{word-break:break-all;color:var(--text)}
+label.btn{cursor:pointer}
+.pager{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.pager .pg{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 12px;min-height:40px;font-weight:700;font-size:13px;cursor:pointer}
+.pager .pg small{margin-left:6px;font-size:10px;color:var(--dim)}
+.pager .pg.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.pager .pg.on small{color:#e6efff}
+.undo-bar{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--accent);border-radius:10px;padding:8px 12px;box-shadow:0 6px 24px rgba(0,0,0,.5)}
+.undo-bar[hidden]{display:none}
+@media (max-width:820px){.undo-bar{bottom:120px}.show-btn{max-width:40vw}}

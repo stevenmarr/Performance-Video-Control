@@ -35,10 +35,14 @@ network can open.
 - **v0.4.0:** **move/swap** preset tiles (drag, or MOVE mode on an iPad), clearer **SAVE PVW → TILE**,
   backups that show only what exists on the device with **group names**, clean INPUTS/BACKUP/AUDIO
   tabs, and the device's **Web RCS in a tab**. Layer memories were removed. See [v0.4.0](#v040-cleaner-tabs-moveswap-presets-clearer-save-real-backup-state-web-rcs-pane).
+- **v0.5.0:** **your setup survives updates**: presets and settings live in a per-user data folder,
+  not in the app folder, and the first start of a new version copies them from the old copy. **Show files**
+  (Save / Save as / Open, a library with backups, autosave), **24/48/72/96 tiles** with a pager, the fix for
+  **tiles re-ordering after switching tabs**, and `GET /api/version` for Companion. See [v0.5.0](#v050-persistence-show-files-more-tiles-reorder-fix).
 - A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API** for Bitfocus
   Companion (a module ships separately in `companion-module-rs6-presets`).
 
-No dependencies, no build step. You need Node.js 18 or later.
+No dependencies, no build step. You need Node.js 16 or later (tested on 16 and 20).
 
 ---
 
@@ -217,6 +221,92 @@ source artwork are deliberately left out. There is no light theme; if one is add
 dark backing (see the comment in `style.css`).
 
 ---
+
+## v0.5.0: persistence, show files, more tiles, reorder fix
+
+### Your data no longer lives in the app folder
+
+Before 0.5.0, `presets.json` and `settings.json` were written next to `server.js`. Every new release was
+a fresh unzipped folder, so it started with no presets and no RS6 connection. That's why each update
+meant re-linking the RS6 and rebuilding the tiles.
+
+From 0.5.0, the data folder is per user and survives updates:
+
+| OS | Data folder |
+|---|---|
+| macOS | `~/Library/Application Support/RS6 Presets` |
+| Linux | `~/.config/rs6-presets` (or `$XDG_CONFIG_HOME/rs6-presets`) |
+| Windows | `%APPDATA%\RS6 Presets` |
+
+`--data <dir>` and `RS6_DATA_DIR=<dir>` still override it. `--mock` keeps using `<app>/mock-data`,
+so demo data never mixes with the real show.
+
+**Automatic migration.** On the first start with an empty data folder, the app looks for older copies
+and **copies** (never moves) `settings.json` and `presets.json` from the best one. It checks the app's own
+folder, then any `rs6-presets*` folder next to it, in `~/Downloads`, `~/Dropbox/Downloads` and `~/Desktop`.
+A copy with presets wins, and the newest wins among those. The terminal log names the source, and so does
+**Settings › Data folder**, which also notes `migrated-from.json`. The old folders are left untouched, and
+later starts don't migrate again.
+
+### Show files
+
+A **show** is one file (`.rs6show`, JSON) holding everything needed to rebuild the setup: the presets
+(slots and names), tile count, selection defaults, Master coverage, the board, and the app settings
+(transition, auto take, live mode, ...). Click the show name in the header (● = unsaved changes) for:
+
+- **Save show** and **Save show as…**, to the library in `<data folder>/shows/`
+- **Open**, **Rename**, **Duplicate**, **Download** and **Delete** in the library list
+- **Upload…**, which takes a `.rs6show`, an older `presets.json` (v1 or v2), or a config export
+- **New show**, which starts empty and keeps the connection
+- **Backups**: before a show is opened over the current state, the current state is saved to
+  `shows/backups/` (the last 30 are kept, and can be opened or downloaded from the same dialog)
+
+Include the device connection (host, ports, protocol) with the **Include device connection** checkbox.
+The **Web RCS password is never saved in a show** unless you also tick **Include password**, which shows
+a warning, because a show file is meant to be copied around. In the app, the password stays in
+`settings.json` and is never sent to a browser.
+
+Opening a show **sends nothing to the RS6**. It replaces presets and settings in the app only. If the
+show has a different device connection, the app asks whether to switch to it. Switching reconnects, but
+still loads nothing. Files are version-checked: a newer format is refused with a clear message, older
+files are migrated, and bad entries are skipped with a warning.
+
+**Autosave:** the working state (presets, settings, selection, board, current show name) is saved
+continuously, so a restart or a new version reopens where you left off. Saving to a show file is only
+needed to keep named versions or move a setup to another Mac.
+
+### More tiles
+
+**Settings › Preset tiles**: 24, 48 (default), 72 or 96. The grid shows pages of 24 with a pager
+(`1–24`, `25–48`, … with a count of used tiles, plus `ALL`). The pager has large buttons for the iPad, and the
+page is remembered. In MOVE mode you can pick a tile, switch pages and drop it there. Slots go up to 96 in
+the API, the files and the Companion module (higher numbers still work through the API).
+
+### Tiles re-ordering after switching tabs (fixed)
+
+Cause: **MOVE mode** (and the tile picked up in it) stayed active after you left the PRESETS tab. When
+you came back, the next taps meant "move here", not "recall", so tiles swapped places. Tiles were always
+drawn at their slot. What changed was their numbers, saved by those swaps. A slightly sloppy mouse
+click could also start a drag-swap.
+
+Fix: leaving the PRESETS tab ends MOVE/SAVE mode. MOVE mode ends by itself after 60 s idle. A mouse needs
+14 px of movement before a drag starts. Every swap shows an **UNDO** bar for 8 s. A browser regression
+test (Chromium and Firefox, iPad and desktop sizes) checks that the tile order is the same after leaving
+and returning to the tab.
+
+### Companion
+
+`GET /api/version` returns `{app, appVersion, apiVersion: 5, features}`, and `apiVersion`, `tileCount`
+and `show` are also in `/api/state`. Companion module **0.5.0** expects API 5 and shows a warning status
+when the app is older or newer. Upgrading the module keeps its connection and buttons. Import the new
+package, then click the pencil next to the version on the connection and pick 0.5.0.
+
+### Upgrading to 0.5.0
+
+1. Leave your old `rs6-presets` folder where it is (Downloads, Dropbox/Downloads, or next to the new one).
+2. Unzip 0.5.0 and run `node server.js` as before. The first start copies your presets and settings into
+   the data folder and prints where they came from.
+3. Check **Settings › Data folder**. From now on, any later version finds the same data with no copying.
 
 ## v0.4.0: cleaner tabs, move/swap presets, clearer SAVE, real backup state, Web RCS pane
 
@@ -470,10 +560,10 @@ Neither is set by the API, so set them on the device:
 
 ## Install on a Mac
 
-1. Install Node.js 18 or later (the LTS release is fine), using **either**:
+1. Install Node.js 16 or later (the LTS release is fine), using **either**:
    - the macOS installer from <https://nodejs.org> (choose the LTS `.pkg`; it runs natively on Apple Silicon), **or**
    - Homebrew: `brew install node`
-2. Check it: `node -v` should print v18 or later.
+2. Check it: `node -v` should print v16 or later.
 3. Unzip `rs6-presets.zip` somewhere, for example `~/RS6`, then:
 
 ```bash
@@ -486,7 +576,7 @@ On an iPad or phone, open the `http://<your-mac-ip>:8080` address printed in the
 the home screen for a full-screen app.
 
 Options: `--port 8080`, `--host 0.0.0.0` (the default, so it listens on the LAN), `--data <dir>`
-(where `presets.json` and `settings.json` live; the default is the app folder), and `--mock`.
+(where your data lives; the default is the per-user data folder, see [v0.5.0](#v050-persistence-show-files-more-tiles-reorder-fix)), and `--mock`.
 
 ### macOS firewall prompt
 The first time it runs, macOS may ask **"Do you want the application 'node' to accept incoming
@@ -589,6 +679,17 @@ Everything returns JSON. Errors return HTTP 4xx with `{ "error": "…" }`.
 | `DELETE /api/presets/{n}` | | Delete |
 | `POST /api/presets/swap` | `{"a":3,"b":7}` or `{"from":3,"to":7}` | **0.4.0** Swap two tiles, or move into an empty one (numbers swap; Companion buttons follow the tile) |
 | `GET /api/webrcs` | | **0.4.0** Web RCS URL and whether its headers allow embedding (`framable`, `blockedBy`) |
+| `GET /api/version` | | **0.5.0** `{app, appVersion, apiVersion, features}` (Companion checks this) |
+| `GET /api/shows` | | **0.5.0** Show library, backups, current show (`name`, `dirty`) and folder |
+| `POST /api/shows/save` | `{"name"?,"asNew"?,"includeConnection"?,"includePassword"?}` | **0.5.0** Save the current state as a show |
+| `POST /api/shows/new` | `{"name"?}` | **0.5.0** Start a new empty show (backs up the current one) |
+| `POST /api/shows/upload` | `{"content":"…","name"?}` | **0.5.0** Add a `.rs6show`/`presets.json`/config export to the library |
+| `POST /api/shows/preview` | `{"id"}` or `{"id","backup":true}` or `{"content"}` | **0.5.0** What opening would change (counts, `connectionDiffers`, warnings) |
+| `POST /api/shows/open` | same, plus `"applyConnection"?` | **0.5.0** Open a show (backup first; nothing is sent to the device) |
+| `GET /api/show/export[?connection=1[&password=1]]` | | **0.5.0** Download the current state as a `.rs6show` |
+| `GET /api/shows/{id}/file[?backup=1]` | | **0.5.0** Download a library show or backup |
+| `POST /api/shows/{id}/rename`, `…/duplicate` | `{"name"}` | **0.5.0** Rename / duplicate a show |
+| `DELETE /api/shows/{id}[?backup=1]` | | **0.5.0** Delete a show or backup |
 | `POST /api/capture` | `{"destinations":[…]}` | Report the Screen memory slots detected on Preview |
 | `GET /api/state?since={rev}&timeout={ms}` | | **Long-poll**: answers as soon as the state revision `rev` passes `since`, or after `timeout` (default 25 s, max 60 s) |
 | `GET /api/live` | | Live status and snapshot: `mode` (`push`/`poll-awj`/`poll-rest`/`off`), per-destination PGM/PVW layers, memory and layer-1 label; `tally`; `inputs`; `lastMaster`; `backup`; `audio` (also in `state.live`) |
@@ -730,8 +831,13 @@ lib/mock.js          mock RS6 (REST + AWJ + subscriptions/push, external-change 
 lib/server.js        HTTP server, JSON API, SSE, static UI
 public/              UI (index.html, app.js, style.css, pv-logo.png, favicons)
 test/                node:test suites
-presets.json         your presets (created on first save)
-settings.json        device settings (created on first save)
+lib/datadir.js       per-user data folder + first-start migration from older copies (0.5.0)
+lib/shows.js         show file format, validation/migration, show library (0.5.0)
+
+<data folder>/presets.json    your presets
+<data folder>/settings.json   device + app settings (the password stays here)
+<data folder>/working.json    autosaved working state (current show, selection, board)
+<data folder>/shows/          show library (*.rs6show) and shows/backups/
 ```
 
 MIT licensed. See `LICENSE`.

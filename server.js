@@ -7,6 +7,7 @@ const os = require('os');
 const { Engine } = require('./lib/engine');
 const { createServer } = require('./lib/server');
 const { MockAquilon } = require('./lib/mock');
+const { resolveDataDir, migrateLegacy } = require('./lib/datadir');
 
 function arg(name, def) {
   const i = process.argv.indexOf(`--${name}`);
@@ -19,7 +20,13 @@ async function main() {
   const mock = !!arg('mock', false) || process.env.RS6_MOCK === '1';
   const port = Number(arg('port', process.env.PORT || 8080));
   const bind = arg('host', process.env.HOST || '0.0.0.0');
-  const dataDir = path.resolve(arg('data', process.env.RS6_DATA_DIR || (mock ? path.join(__dirname, 'mock-data') : __dirname)));
+  // 0.5.0: data lives in a per-user folder outside the app folder (lib/datadir.js), so updates keep it.
+  const where = resolveDataDir({ argData: arg('data', null), mock, appDir: __dirname });
+  const dataDir = where.dir;
+  let migration = { migrated: false };
+  if (where.source === 'default') {
+    try { migration = migrateLegacy({ dataDir, appDir: __dirname }); } catch (e) { migration = { migrated: false, error: e.message }; console.error(`Data migration failed: ${e.message}`); }
+  }
 
   let settingsOverride = {};
   let device = null;
@@ -31,7 +38,9 @@ async function main() {
     console.log(`MOCK device running: REST http://127.0.0.1:${restPort}  AWJ tcp 127.0.0.1:${awjPort}`);
   }
 
-  const engine = new Engine({ dataDir, settingsOverride });
+  const engine = new Engine({ dataDir, settingsOverride, dataInfo: { source: where.source, migration } });
+  if (migration.migrated) engine.log('info', `First start of this version: copied ${migration.files.join(' + ')} from ${migration.from} (the old copy was left as it was)`);
+  else if (where.source === 'default' && migration.reason === 'no older copy found') engine.log('info', 'First start: no older copy with presets found; starting empty');
   if (mock) {
     const origUpdate = engine.updateSettings.bind(engine);
     engine.updateSettings = (patch) => { origUpdate({ ...patch, ...settingsOverride }); };

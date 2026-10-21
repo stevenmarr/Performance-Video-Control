@@ -345,3 +345,146 @@ test('0.4.0 #6: WEB RCS tab embeds the device page; a unit that refuses framing 
   assert.ok(await visible(p2, '#rcsBlocked')); assert.match(await p2.textContent('#rcsBlocked'), /X-Frame-Options: DENY/);
   assert.ok(await visible(p2, '#rcsSide'));
 });
+
+// ---------------- 0.5.0 ----------------
+const stateOf = async (app) => (await fetch(app.base + '/api/state')).json();
+const layout = (st) => st.presets.map((p) => `${p.number}:${p.name}`).join('|');
+// each tile's number and its position inside the grid (page scroll doesn't matter)
+const tileOrder = (page) => page.evaluate(() => { const g = document.querySelector('#grid').getBoundingClientRect(); return [...document.querySelectorAll('#grid > *')].map((e) => {
+  const r = e.getBoundingClientRect(); return `${e.dataset.preset || '-' + e.dataset.empty}@${Math.round(r.x - g.x)},${Math.round(r.y - g.y)}`;
+}).join(' '); });
+
+test('0.5.0 #2: leaving PRESETS and coming back never re-orders tiles; MOVE ends on a tab switch; taps then recall', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  for (const [name, type] of browsers()) {
+    const browser = await launch(t, type); if (!browser) return;
+    for (const width of [820, 1440]) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+      const data0 = layout(await stateOf(app)); const tiles0 = await tileOrder(page);
+      // plain round trip through every tab
+      for (const tb of ['inputs', 'backup', 'audio', 'webrcs', 'presets']) { await page.click(`.tab[data-tab=${tb}]`); await page.waitForTimeout(150); }
+      assert.equal(await tileOrder(page), tiles0, `${name} ${width}: tiles at the same place`);
+      // the reported case: MOVE mode with a tile picked, leave, come back, tap tiles meaning to recall
+      await page.click('.mode[data-mode=move]'); await page.click('#grid [data-preset="6"]');
+      assert.equal(await page.locator('#grid .move-src').count(), 1);
+      for (const tb of ['inputs', 'backup', 'audio', 'webrcs', 'presets']) { await page.click(`.tab[data-tab=${tb}]`); await page.waitForTimeout(100); }
+      assert.equal(await page.locator('.mode.active').getAttribute('data-mode'), 'recall', `${name} ${width}: back in RECALL`);
+      assert.equal(await page.locator('#grid .move-src').count(), 0);
+      for (const n of [2, 4, 5]) { await page.click(`#grid [data-preset="${n}"]`); await page.waitForTimeout(120); }
+      await page.click('#grid [data-empty="16"]');
+      await page.waitForTimeout(300);
+      const st = await stateOf(app);
+      assert.equal(layout(st), data0, `${name} ${width}: no preset moved`);
+      assert.equal(st.lastRecalled.number, 5, 'the taps recalled');
+      assert.equal(await tileOrder(page), tiles0);
+      // a sloppy mouse click (10 px) is not a drag
+      const a = await page.locator('#grid [data-preset="1"]').boundingBox();
+      await page.mouse.move(a.x + a.width - 6, a.y + 20); await page.mouse.down(); await page.mouse.move(a.x + a.width + 4, a.y + 20, { steps: 3 }); await page.mouse.up();
+      await page.waitForTimeout(250);
+      assert.equal(layout(await stateOf(app)), data0, `${name} ${width}: a 10 px wobble did not swap 1 and 2`);
+      await page.close();
+    }
+  }
+});
+
+test('0.5.0 #2: MOVE mode ends by itself when idle; a swap can be undone', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  const browser = await launch(t, pw.chromium); if (!browser) return;
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.addInitScript(() => { window.RS6_MOVE_IDLE_MS = 700; });
+  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+  const data0 = layout(await stateOf(app));
+  assert.equal(await page.isVisible('#undoBar'), false, 'no empty UNDO bar before any swap');
+  await page.click('.mode[data-mode=move]');
+  await page.waitForFunction(() => document.querySelector('.mode.active').dataset.mode === 'recall', null, { timeout: 3000 });
+  await page.click('.mode[data-mode=move]');
+  await page.click('#grid [data-preset="1"]'); await page.click('#grid [data-preset="2"]');
+  await page.waitForFunction(() => /Swapped 1 ⇄ 2/.test(document.querySelector('#undoBar').textContent));
+  assert.notEqual(layout(await stateOf(app)), data0);
+  await page.click('#undoBar button');
+  await page.waitForFunction(() => /Undone/.test(document.querySelector('#toast').textContent));
+  assert.equal(layout(await stateOf(app)), data0);
+  assert.equal(await page.isVisible('#undoBar'), false, 'UNDO bar hidden again after undo');
+});
+
+test('0.5.0 #3: 48 tiles by default, 96 from Settings, pages of 24 work on an iPad', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  const browser = await launch(t, pw.chromium); if (!browser) return;
+  const ctx = await browser.newContext({ viewport: { width: 820, height: 1180 }, hasTouch: true, isMobile: true });
+  const page = await ctx.newPage();
+  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+  assert.equal(await page.locator('#grid > *').count(), 48);
+  assert.equal(await page.locator('#pager .pg').count(), 3); // ALL, 1–24, 25–48
+  await page.click('#btnSettings'); await page.waitForSelector('#dlgSettings[open]');
+  await page.selectOption('#formSettings select[name=tileCount]', '96');
+  await page.click('#btnSaveSettings');
+  await page.waitForFunction(() => document.querySelectorAll('#grid > *').length === 96);
+  assert.match(await page.textContent('#pager'), /ALL\s*1–24\s*\d*\s*25–48\s*49–72\s*73–96/);
+  await page.tap('#pager [data-page="4"]');
+  await page.waitForFunction(() => document.querySelectorAll('#grid > *').length === 24);
+  assert.equal(await page.locator('#grid > *').first().getAttribute('data-empty'), '73');
+  // a preset can be moved to tile 96 across pages (MOVE: pick on page 1, tap on page 4)
+  await page.tap('#pager [data-page="1"]');
+  await page.tap('.mode[data-mode=move]'); await page.tap('#grid [data-preset="3"]');
+  await page.tap('#pager [data-page="4"]'); await page.tap('#grid [data-empty="96"]');
+  await page.waitForFunction(() => document.querySelector('#grid [data-preset="96"]'));
+  assert.ok((await stateOf(app)).presets.some((p) => p.number === 96));
+  const pb = await page.locator('#pager [data-page="1"]').boundingBox(); assert.ok(pb.height >= 40, 'page buttons are finger-sized');
+  // the page choice survives a reload
+  await page.reload(); await page.waitForSelector('#grid [data-preset="96"]');
+  assert.equal(await page.locator('#grid > *').count(), 24);
+});
+
+test('0.5.0 shows: header name + unsaved dot, Save, Save as, Open with confirmation (nothing sent), Settings shows the data folder', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const app = await appFixture(t);
+  const browser = await launch(t, pw.chromium); if (!browser) return;
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+  assert.equal(await page.textContent('#showName'), 'Untitled show');
+  assert.ok(await page.isVisible('#showDirty'), 'seeded presets are unsaved');
+  await page.click('#btnShow'); await page.waitForSelector('#dlgShows[open]');
+  page.once('dialog', (d) => d.accept('Gala'));
+  await page.click('#shSaveAs');
+  await page.waitForFunction(() => document.querySelector('#showName').textContent === 'Gala');
+  await page.waitForFunction(() => document.querySelector('#showDirty').hidden);
+  assert.match(await page.textContent('#shList'), /Gala.*12 presets.*48 tiles/s);
+  // password box needs the connection box, and warns
+  assert.ok(await page.isDisabled('#shPass'));
+  await page.check('#shConn'); page.once('dialog', (d) => d.accept()); await page.check('#shPass');
+  assert.ok(await page.isVisible('#shPassWarn'));
+  await page.uncheck('#shConn'); assert.ok(!(await page.isChecked('#shPass')));
+  await page.click('#dlgShows button[value=close]');
+  // change something -> dot
+  await fetch(app.base + '/api/presets/swap', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ a: 1, b: 2 }) });
+  await page.waitForFunction(() => !document.querySelector('#showDirty').hidden);
+  // open Gala: confirm dialog names the unsaved changes; cancel keeps everything
+  await page.click('#btnShow'); await page.waitForSelector('#dlgShows[open] .show-row');
+  let msg = '';
+  page.once('dialog', (d) => { msg = d.message(); d.dismiss(); });
+  await page.click('.show-row[data-id="Gala"] [data-sh=open]');
+  await page.waitForTimeout(300);
+  assert.match(msg, /Open show "Gala".*UNSAVED.*backup.*Nothing is sent to the RS6/s);
+  assert.equal((await stateOf(app)).presets.find((p) => p.number === 1).name, 'Keynote Full');
+  page.once('dialog', (d) => d.accept());
+  await page.click('.show-row[data-id="Gala"] [data-sh=open]');
+  await page.waitForFunction(() => document.querySelector('#showDirty').hidden);
+  assert.equal((await stateOf(app)).presets.find((p) => p.number === 1).name, 'Walk-in');
+  assert.match(await page.textContent('#shBackups summary'), /Automatic backups \(1/);
+  await page.click('#dlgShows button[value=close]');
+  // download the current show
+  const [dl] = await Promise.all([page.waitForEvent('download'), (async () => { await page.click('#btnShow'); await page.click('#shExport'); })()]);
+  assert.equal(dl.suggestedFilename(), 'Gala.rs6show');
+  const body = JSON.parse(fs.readFileSync(await dl.path(), 'utf8')); assert.equal(body.format, 'rs6-presets-show'); assert.equal(body.connection, null);
+  // upload a file (an old presets.json)
+  const f = path.join(app.data, 'old-presets.json');
+  fs.writeFileSync(f, JSON.stringify({ version: 2, presets: [{ number: 40, name: 'From 0.4', destinations: ['S1'], memories: { S1: 10 } }] }));
+  page.once('dialog', (d) => d.dismiss()); // "open now?" -> no
+  await page.setInputFiles('#shUpload', f);
+  await page.waitForFunction(() => /converted from presets\.json/.test(document.querySelector('#toast').textContent));
+  await page.waitForFunction(() => document.querySelectorAll('#shList .show-row').length === 2);
+  await page.click('#dlgShows button[value=close]');
+  // Settings shows the data folder
+  await page.click('#btnSettings'); await page.waitForSelector('#dlgSettings[open]');
+  assert.equal(await page.textContent('#dataDirPath'), app.data);
+});

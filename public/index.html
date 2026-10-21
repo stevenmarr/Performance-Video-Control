@@ -15,6 +15,7 @@
 <header class="top">
   <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
   <div class="brand">RS6 <span>PRESETS</span></div>
+  <button id="btnShow" class="btn ghost show-btn" title="Show file: save, save as, open, download, upload"><span class="show-k">SHOW</span> <span id="showName">Untitled show</span><span id="showDirty" class="dirty" title="Unsaved changes" hidden>●</span></button>
   <div id="conn" class="pill off">Not connected</div>
   <div id="last" class="last">PVW: —</div>
   <div id="master" class="master"></div>
@@ -78,6 +79,7 @@
       <button class="mode" data-mode="save" title="Capture what is on Preview now on the lit screens (the Screen memory each one reports, plus a source snapshot) into the tile you tap. Use SAVE BOARD AS PRESET for Master / Multiviewer memories.">SAVE PVW → TILE</button>
     </div>
     <div class="hint mode-hint" id="modeHint"></div>
+    <div id="pager" class="pager" role="tablist" aria-label="Preset pages" hidden></div>
     <div id="grid" class="grid"></div>
     </div>
   </section>
@@ -161,11 +163,44 @@
       <label>Inputs to track <input name="maxInputs" type="number" min="1" max="256"></label>
       <label>Memory labels to read <input name="screenMemoryLabels" type="number" min="0" max="1000"></label>
     </div>
+    <div class="row2">
+      <label>Preset tiles <select name="tileCount"><option value="24">24</option><option value="48">48</option><option value="72">72</option><option value="96">96</option></select></label>
+      <div class="note small" style="align-self:end">Presets above the count still show. Pages of 24 match a Stream Deck XL page.</div>
+    </div>
     <label class="chk"><input type="checkbox" name="memoryProbe"> Also probe undocumented memory paths (slot isValid, Multiviewer memory names). INFERRED: not in the AWJ guide</label>
+    <div class="datadir note small">Data folder (settings, presets, shows; kept across app updates): <code id="dataDirPath"></code> <span id="dataDirMig"></span>
+      <div class="actions left"><button type="button" class="btn mini" id="btnSettingsShows">SHOW FILES · EXPORT / IMPORT…</button></div></div>
     <div class="actions">
       <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
       <button id="btnSaveSettings" value="save" class="btn primary">Save &amp; connect</button>
     </div>
+  </form>
+</dialog>
+
+<!-- 0.5.0 Show files -->
+<dialog id="dlgShows" class="wide">
+  <form method="dialog" class="form" id="formShows">
+    <h2>Show files</h2>
+    <div class="note">A show holds every preset at its tile position, the tile count, the TAKE selection, the board and the app settings. Opening one changes this app only: <b>nothing is sent to the RS6</b>. The current show is also autosaved all the time, so a restart or a new app version reopens it.</div>
+    <div class="show-cur"><span>Current: <b id="shCurName"></b> <span id="shCurState" class="small"></span></span></div>
+    <div class="row2">
+      <label class="chk"><input type="checkbox" id="shConn"> Include the device connection (host, ports, protocol)</label>
+      <label class="chk"><input type="checkbox" id="shPass" disabled> Include the Web RCS password</label>
+    </div>
+    <div class="note warn small" id="shPassWarn" hidden>⚠ The password is stored in plain text in the show file. Anyone with the file can read it. Leave this off unless you need it.</div>
+    <div class="actions left">
+      <button type="button" class="btn primary" id="shSave">SAVE</button>
+      <button type="button" class="btn" id="shSaveAs">SAVE AS…</button>
+      <button type="button" class="btn" id="shNew">NEW (EMPTY)…</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn" id="shExport" title="Download the current state as a .rs6show file">⤓ DOWNLOAD CURRENT</button>
+      <label class="btn" id="shUploadLbl" title="Add a .rs6show (or an old presets.json) to the library">⤒ UPLOAD…<input type="file" id="shUpload" accept=".rs6show,.json,application/json" hidden></label>
+    </div>
+    <h3>Library</h3>
+    <div id="shList" class="show-list"></div>
+    <details id="shBackups"><summary>Automatic backups (made before a show is opened)</summary><div id="shBkList" class="show-list"></div></details>
+    <div class="note small">Folder: <code id="shDir"></code></div>
+    <div class="actions"><button value="close" class="btn ghost">Close</button></div>
   </form>
 </dialog>
 
@@ -247,6 +282,7 @@
 <div id="ghost" class="dragghost" hidden></div>
 <datalist id="memList"></datalist>
 <div id="toast" class="toast" hidden></div>
+<div id="undoBar" class="undo-bar" role="status" hidden></div>
 <script src="/app.js"></script>
 </body>
 </html>

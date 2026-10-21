@@ -10,6 +10,9 @@
     save: '<b>SAVE PVW → TILE</b> · light the screens above, then tap an empty tile (or a preset to overwrite): it stores the Screen memory each lit screen reports on <b>Preview</b>, plus a source snapshot. For Master / Multiviewer memories use the board.',
   };
   let moveSrc = null; // MOVE mode: the tile picked first
+  // 0.5.0 preset pages: 0 = all tiles (scroll), else pages of 24 (a Stream Deck XL page)
+  const PAGE = 24;
+  let page = Number(localStorage.getItem('rs6.page') || 0) || 0;
 
   async function api(method, path, body) {
     const r = await fetch(path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
@@ -29,6 +32,11 @@
     const ver = S.system && S.system.version ? (typeof S.system.version === 'object' ? `${S.system.version.major}.${S.system.version.minor}.${S.system.version.patch}` : S.system.version) : '';
     c.className = 'pill ' + (S.connected ? 'ok' : 'off');
     c.innerHTML = (S.connected ? `${esc(S.system.type || 'Aquilon')} ${esc(ver)} · ${esc(S.settings.host)}` : `Not connected${S.lastError ? ' · ' + esc(S.lastError).slice(0, 60) : ''}`) + (S.mock ? '<span class="mock">MOCK</span>' : '');
+    if (S.show) {
+      if ($('#showName').textContent !== S.show.name) $('#showName').textContent = S.show.name;
+      $('#showDirty').hidden = !S.show.dirty;
+      $('#btnShow').title = `Show "${S.show.name}"${S.show.dirty ? ' · unsaved changes (autosaved as the working state; SAVE to keep it in the library)' : ' · saved'} · click to save, open, download or upload shows`;
+    }
     $('#last').textContent = S.lastRecalled ? `PVW: ${S.lastRecalled.number} · ${S.lastRecalled.name}` : 'PVW: —';
     const lv = S.live || {}; const lm = lv.lastMaster || {};
     const mref = (r) => (r ? `${r.id}${r.label ? ' ' + esc(r.label) : ''}` : '—');
@@ -57,10 +65,21 @@
 
     const byNum = new Map(S.presets.map((p) => [p.number, p]));
     const maxN = Math.max(0, ...S.presets.map((p) => p.number));
-    const slots = Math.max(24, Math.ceil((maxN + (mode === 'save' || mode === 'move' ? 4 : 0)) / 8) * 8);
+    // 0.5.0: the tile count is a setting (24/48/72/96); presets above it still show. Tiles are ALWAYS laid out by
+    // their number (tile n = preset n), never by list order.
+    const tiles = Number(S.tileCount) || 48;
+    const slots = Math.max(tiles, Math.ceil((maxN + (mode === 'save' || mode === 'move' ? 4 : 0)) / 8) * 8);
+    const pages = Math.ceil(slots / PAGE);
+    if (page > pages) page = 0;
+    const pagerHtml = pages > 1 ? [`<button class="pg ${page === 0 ? 'on' : ''}" data-page="0">ALL</button>`].concat(Array.from({ length: pages }, (_, i) => {
+      const lo = i * PAGE + 1; const hi = Math.min(slots, (i + 1) * PAGE); const used = S.presets.filter((p) => p.number >= lo && p.number <= hi).length;
+      return `<button class="pg ${page === i + 1 ? 'on' : ''}" data-page="${i + 1}" title="${used} preset${used === 1 ? '' : 's'}">${lo}–${hi}${used ? `<small>${used}</small>` : ''}</button>`;
+    })).join('') : '';
+    const pg = $('#pager'); if (pg.dataset.h !== pagerHtml) { pg.dataset.h = pagerHtml; pg.innerHTML = pagerHtml; pg.hidden = !pagerHtml; }
+    const from = page ? (page - 1) * PAGE + 1 : 1; const to = page ? Math.min(slots, page * PAGE) : slots;
     let html = '';
     if (moveSrc != null && !byNum.has(moveSrc)) moveSrc = null;
-    for (let n = 1; n <= slots; n++) {
+    for (let n = from; n <= to; n++) {
       const p = byNum.get(n);
       if (!p) { html += `<button class="preset empty" data-empty="${n}" data-drop-preset="${n}"><span class="num">${n}</span>${mode === 'save' ? '<span>+ save here</span>' : mode === 'move' && moveSrc != null ? '<span>move here</span>' : ''}</button>`; continue; }
       const cls = ['preset']; const tags = [];
@@ -442,14 +461,35 @@
     const h = mode === 'move' && p ? `<b>MOVE</b> · preset ${p.number} “${esc(p.name)}” picked. Tap where it goes: another tile swaps with it, an empty tile takes it. Tap it again (or Esc) to cancel.` : HINTS[mode];
     const el = $('#modeHint'); if (el.dataset.h !== h) { el.dataset.h = h; el.innerHTML = h; el.className = `hint mode-hint m-${mode}`; }
   }
+  let moveIdle = null;
+  const MOVE_IDLE_MS = Number(window.RS6_MOVE_IDLE_MS) || 60000;
+  function touchMove() { // MOVE mode ends by itself after a minute without a MOVE tap
+    clearTimeout(moveIdle);
+    if (mode === 'move') moveIdle = setTimeout(() => { if (mode === 'move') { setMode('recall'); toast('MOVE mode ended (idle): taps recall again'); } }, MOVE_IDLE_MS);
+  }
   function setMode(m) {
-    mode = m; moveSrc = null;
+    mode = m; moveSrc = null; touchMove();
     document.querySelectorAll('.mode').forEach((x) => x.classList.toggle('active', x.dataset.mode === m));
     render();
   }
   document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
-  function swapTiles(a, b) {
-    return run(api('POST', '/api/presets/swap', { a, b }).then((r) => toast(r.swapped ? `Swapped ${a} ⇄ ${b}` : `Moved ${a} → ${b}`)));
+  $('#pager').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-page]'); if (!b) return;
+    page = Number(b.dataset.page) || 0; localStorage.setItem('rs6.page', String(page)); render();
+  });
+  function swapTiles(a, b, undo = false) {
+    touchMove();
+    return run(api('POST', '/api/presets/swap', { a, b }).then((r) => {
+      const msg = undo ? `Undone: ${a} ⇄ ${b}` : r.swapped ? `Swapped ${a} ⇄ ${b}` : `Moved ${a} → ${b}`;
+      toast(msg);
+      if (!undo) showUndo(msg, () => swapTiles(b, a, true));
+    }));
+  }
+  // 0.5.0: every swap / move can be undone for a few seconds
+  function showUndo(msg, fn) {
+    const u = $('#undoBar'); u.innerHTML = `<span>${esc(msg)}</span><button class="btn mini" type="button">UNDO</button>`; u.hidden = false;
+    u.querySelector('button').onclick = () => { u.hidden = true; clearTimeout(showUndo._t); fn(); };
+    clearTimeout(showUndo._t); showUndo._t = setTimeout(() => { u.hidden = true; }, 8000);
   }
 
   // 0.3.3: rename a preset with a long-press (touch or mouse) or a right-click on its tile.
@@ -490,7 +530,7 @@
   window.addEventListener('pointermove', (ev) => {
     const d = tdrag; if (!d || ev.pointerId !== d.id) return;
     if (!d.started) {
-      if (Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) < 6) return;
+      if (Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) < (ev.pointerType === 'mouse' ? 14 : 8)) return; // 0.5.0: a sloppy click is not a drag
       d.started = true; if (lp) { clearTimeout(lp.t); lp = null; }
       d.el.classList.add('dragsrc'); document.body.classList.add('dragging', 'tile-dragging');
       const p = S.presets.find((x) => x.number === d.n);
@@ -521,6 +561,7 @@
     const n = Number(b.dataset.preset || b.dataset.empty);
     if (armed) { const m = armed; armed = null; palSig = ''; renderPalette(); applyArmed(); return assignPreset(n, m); }
     if (mode === 'move') {
+      touchMove();
       if (moveSrc == null) { if (b.dataset.preset) { moveSrc = n; render(); } else toast('Tap a preset first, then where it goes'); return; }
       const from = moveSrc; moveSrc = null; render();
       if (from !== n) swapTiles(from, n);
@@ -536,6 +577,9 @@
   const TABS = ['presets', 'inputs', 'backup', 'audio', 'webrcs'];
   function setTab(t) {
     tab = TABS.includes(t) ? t : 'presets';
+    // 0.5.0 fix: MOVE (and SAVE) used to stay on across tab switches, so taps meant as RECALL on the way back
+    // picked and moved tiles ("the presets are re ordered"). Leaving PRESETS always returns to RECALL.
+    if (tab !== 'presets' && (mode === 'move' || mode === 'save')) setMode('recall');
     document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === tab));
     for (const x of TABS) $(`#pane-${x}`).hidden = x !== tab;
     for (const x of TABS) document.body.classList.toggle(`tab-${x}`, x === tab);
@@ -702,6 +746,9 @@
     const f = $('#formSettings');
     for (const k of ['host', 'restPort', 'awjPort', 'protocol', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels']) f.elements[k].value = s[k];
     for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe']) f.elements[k].checked = !!s[k];
+    f.elements.tileCount.value = String(s.tileCount || 48);
+    $('#dataDirPath').textContent = (S && S.dataDir) || '';
+    $('#dataDirMig').textContent = S && S.dataMigration && S.dataMigration.migrated ? `· copied from ${S.dataMigration.from} on first start` : '';
     f.elements.password.value = ''; f.elements.password.placeholder = s.passwordSet ? '•••••• (unchanged)' : 'none'; f.elements.clearPassword.checked = false;
     $('#mockNote').hidden = !s.mock;
     $('#dlgSettings').showModal();
@@ -711,11 +758,88 @@
     if ($('#dlgSettings').returnValue !== 'save') return;
     const f = $('#formSettings'); const b = {};
     for (const k of ['host', 'protocol']) b[k] = f.elements[k].value.trim();
-    for (const k of ['restPort', 'awjPort', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels']) b[k] = Number(f.elements[k].value);
+    for (const k of ['restPort', 'awjPort', 'maxScreens', 'maxAux', 'maxLayers', 'pollMs', 'maxInputs', 'screenMemoryLabels', 'tileCount']) b[k] = Number(f.elements[k].value);
     for (const k of ['https', 'awjReadback', 'presetToggle', 'liveEnabled', 'memoryProbe']) b[k] = f.elements[k].checked;
     if (f.elements.clearPassword.checked) b.password = ''; else if (f.elements.password.value) b.password = f.elements.password.value;
     run(api('POST', '/api/settings', b).then((st) => toast(st.connected ? 'Connected' : 'Saved, but not connected', !st.connected)));
   });
+  // ---------- 0.5.0 show files ----------
+  const fmtTime = (iso) => { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); };
+  async function openShows() {
+    const r = await api('GET', '/api/shows');
+    $('#shCurName').textContent = r.current.name;
+    $('#shCurState').textContent = r.current.dirty ? '● unsaved changes' : r.current.inLibrary ? `saved ${fmtTime(r.current.savedAt)}` : '';
+    $('#shDir').textContent = r.dir;
+    const row = (x, bk) => `<div class="show-row ${!bk && x.id === r.current.id ? 'cur' : ''}" data-id="${esc(x.id)}" data-bk="${bk ? 1 : ''}">
+      <div class="sh-main"><b>${esc(x.name || x.id)}</b><small>${x.error ? 'unreadable file' : `${x.presets ?? '?'} presets · ${x.tileCount || '?'} tiles${x.hasConnection ? ` · ${esc(x.host)}` : ''}${x.hasPassword ? ' · 🔑 password' : ''} · ${fmtTime(x.savedAt || x.modified)}`}</small></div>
+      <button type="button" class="btn mini" data-sh="open">OPEN</button>
+      ${bk ? '' : '<button type="button" class="btn mini" data-sh="rename">RENAME</button><button type="button" class="btn mini" data-sh="duplicate">DUPLICATE</button>'}
+      <button type="button" class="btn mini" data-sh="download" title="Download the .rs6show file">⤓</button>
+      <button type="button" class="btn mini danger" data-sh="delete">DELETE</button></div>`;
+    $('#shList').innerHTML = r.shows.length ? r.shows.map((x) => row(x, false)).join('') : '<div class="note small">No saved shows yet. SAVE puts the current one here.</div>';
+    $('#shBkList').innerHTML = r.backups.length ? r.backups.map((x) => row(x, true)).join('') : '<div class="note small">None yet.</div>';
+    $('#shBackups').querySelector('summary').textContent = `Automatic backups (${r.backups.length}, made before a show is opened)`;
+    if (!$('#dlgShows').open) $('#dlgShows').showModal();
+  }
+  $('#btnShow').addEventListener('click', () => run(openShows()));
+  $('#btnSettingsShows').addEventListener('click', () => { $('#dlgSettings').close('cancel'); run(openShows()); });
+  $('#shConn').addEventListener('change', () => { $('#shPass').disabled = !$('#shConn').checked; if (!$('#shConn').checked) $('#shPass').checked = false; $('#shPassWarn').hidden = !$('#shPass').checked; });
+  $('#shPass').addEventListener('change', () => {
+    if ($('#shPass').checked && !confirm('Include the Web RCS password in the show file?\n\nIt is stored in plain text: anyone who gets the file can read it.')) $('#shPass').checked = false;
+    $('#shPassWarn').hidden = !$('#shPass').checked;
+  });
+  const saveOpts = () => ({ includeConnection: $('#shConn').checked, includePassword: $('#shConn').checked && $('#shPass').checked });
+  $('#shSave').addEventListener('click', () => run(api('POST', '/api/shows/save', saveOpts()).then((r) => { toast(`Saved show "${r.name}"`); return openShows(); })));
+  $('#shSaveAs').addEventListener('click', () => {
+    const name = prompt('Save the show as:', S && S.show ? S.show.name : ''); if (name === null || !name.trim()) return;
+    run(api('POST', '/api/shows/save', { ...saveOpts(), name: name.trim(), asNew: true }).then((r) => { toast(`Saved show "${r.name}"`); return openShows(); }));
+  });
+  $('#shNew').addEventListener('click', () => {
+    if (!confirm(`Start a new, empty show?\n\nAll presets are cleared from the app (the RS6 is not touched). The current state "${S.show.name}" is backed up first${S.show.dirty ? ' (it has unsaved changes)' : ''}.`)) return;
+    const name = prompt('Name of the new show:', 'Untitled show'); if (name === null) return;
+    run(api('POST', '/api/shows/new', { name }).then((r) => { toast(`New show "${r.name}"`); return openShows(); }));
+  });
+  $('#shExport').addEventListener('click', () => {
+    const o = saveOpts(); location.href = `/api/show/export?connection=${o.includeConnection ? 1 : 0}&password=${o.includePassword ? 1 : 0}`;
+  });
+  $('#shUpload').addEventListener('change', async (ev) => {
+    const file = ev.target.files && ev.target.files[0]; ev.target.value = ''; if (!file) return;
+    const content = await file.text();
+    run(api('POST', '/api/shows/upload', { content }).then(async (r) => {
+      toast(`Added "${r.name}" to the library${r.migratedFrom ? ` (converted from ${r.migratedFrom})` : ''}`);
+      await openShows();
+      if (confirm(`Open "${r.name}" now?`)) await openShowFlow({ id: r.id });
+    }));
+  });
+  // Open: confirm, ask about a different connection, open (app config only), then reconnect only if chosen.
+  async function openShowFlow(ref) {
+    const pv = await api('POST', '/api/shows/preview', ref);
+    const cur = S && S.show;
+    const lines = [`Open show "${pv.name}"? (${pv.presets} presets, ${pv.tileCount} tiles${pv.savedAt ? `, saved ${fmtTime(pv.savedAt)}` : ''})`,
+      '', `It replaces the current show "${cur ? cur.name : ''}"${cur && cur.dirty ? ', which has UNSAVED changes' : ''}. A backup of the current state is made first.`,
+      'Nothing is sent to the RS6.'];
+    if (pv.warnings && pv.warnings.length) lines.push('', 'Notes: ' + pv.warnings.join('; '));
+    if (!confirm(lines.join('\n'))) return;
+    let applyConnection = false;
+    if (pv.connectionDiffers && !(S && S.mock)) {
+      applyConnection = confirm(`This show was saved for the device at ${pv.connection.host}:${pv.connection.restPort}; the app is set to ${pv.current.host}:${pv.current.restPort}.\n\nOK = switch to ${pv.connection.host} and reconnect\nCancel = keep the current connection`);
+    }
+    const r = await api('POST', '/api/shows/open', { ...ref, applyConnection });
+    toast(`Opened "${r.name}"`);
+    if (r.connectionChanged) await api('POST', '/api/connect');
+    if ($('#dlgShows').open) await openShows();
+  }
+  $('#dlgShows').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-sh]'); if (!b) return;
+    const rowEl = b.closest('.show-row'); const id = rowEl.dataset.id; const bk = !!rowEl.dataset.bk; const act = b.dataset.sh;
+    const name = rowEl.querySelector('b').textContent;
+    if (act === 'open') return run(openShowFlow({ id, backup: bk }));
+    if (act === 'download') { location.href = `/api/shows/${encodeURIComponent(id)}/file${bk ? '?backup=1' : ''}`; return; }
+    if (act === 'rename') { const n = prompt('Rename show:', name); if (n === null || !n.trim()) return; return run(api('POST', `/api/shows/${encodeURIComponent(id)}/rename`, { name: n.trim() }).then(openShows)); }
+    if (act === 'duplicate') { const n = prompt('Name of the copy:', `${name} copy`); if (n === null) return; return run(api('POST', `/api/shows/${encodeURIComponent(id)}/duplicate`, { name: n.trim() }).then(openShows)); }
+    if (act === 'delete') { if (!confirm(`Delete ${bk ? 'the backup' : 'the show'} "${name}" from the library? This can't be undone.`)) return; return run(api('DELETE', `/api/shows/${encodeURIComponent(id)}${bk ? '?backup=1' : ''}`).then(openShows)); }
+  });
+
   if (location.pathname === '/settings') run(openSettings());
 
   api('GET', '/api/log').then((l) => l.forEach(addLog)).catch(() => {});

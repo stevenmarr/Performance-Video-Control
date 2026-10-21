@@ -5,3 +5,6 @@ settings.json
 .DS_Store
 data/
 mock-data/
+working.json
+migrated-from.json
+shows/
