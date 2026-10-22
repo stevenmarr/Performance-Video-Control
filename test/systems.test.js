@@ -294,6 +294,7 @@ test('safety: E2 / PixelHue code, mocks and tests name no private-network device
   const root = path.join(__dirname, '..');
   const files = ['lib/systems.js', 'lib/drivers/common.js', 'lib/drivers/e2.js', 'lib/drivers/pixelhue.js', 'lib/drivers/rs6.js', 'lib/mocks/e2.js', 'lib/mocks/pixelhue.js', 'test/systems.test.js', 'test/ui-systems.test.js', 'public/sys.js',
     'lib/drivers/atem.js', 'lib/drivers/atem-proto.js', 'lib/drivers/ptz.js', 'lib/mocks/atem.js', 'lib/mocks/ptz.js', 'public/atem.js', 'public/ptz.js', 'test/atem.test.js', 'test/ptz.test.js', 'lib/drivers/ptz-commands.js', 'lib/drivers/panasonic-data.js', 'tools/gen-panasonic-data.mjs',
+    'lib/drivers/pixera.js', 'lib/drivers/millumin.js', 'lib/drivers/osc.js', 'lib/mocks/pixera.js', 'lib/mocks/millumin.js', 'public/pixera.js', 'public/millumin.js', 'test/media.test.js',
     'lib/companion/index.js', 'lib/companion/model.js', 'lib/companion/pageset.js', 'lib/companion/surfaces.js', 'public/companion.js', 'test/companion-pages.test.js', 'test/fixtures/companion-input.json'];
   for (const f of files) {
     const src = fs.readFileSync(path.join(root, f), 'utf8');

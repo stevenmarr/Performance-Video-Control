@@ -226,11 +226,11 @@ dark backing (see the comment in `style.css`).
 
 The SYSTEMS page used to arm one system and hide every other tab. Each system that already has an
 address keeps its own group on the tab bar: **RS6**, then **E2 / PixelHue**, then **ATEM**, then
-**PTZ**. Open a group's tab to drive that system (header pill, TAKE, bus). The others stay put, so
-RS6 and ATEM are controlled without coming back here to pick one. **ADD TO DESK** is only for a
-system that is not up yet. **REMOVE** drops one; the last system on the desk cannot be removed.
-Removing a system never sends anything to a device. The system cards wrap instead of squeezing
-every system onto one row, and a connection form stays inside its own card.
+**PTZ**, then **Pixera**, then **Millumin**. Open a group's tab to drive that system. The others stay
+put, so an RS6 and a media server are controlled without coming back here to pick one. **ADD TO DESK**
+is only for a system that is not up yet. **REMOVE** drops one; the last system on the desk cannot be
+removed. Removing a system never sends anything to a device. The system cards wrap instead of
+squeezing every system onto one row, and a connection form stays inside its own card.
 
 `GET /api/sys` adds `armed` (system ids, in desk order). `active` is still the focused system, so
 Companion and `/api/sys/:sys/...` are unchanged. `POST /api/sys/active` adds that system to the desk
@@ -240,6 +240,12 @@ A `systems.json` written before this has no `armed`. The first start of this ver
 every system that already has an address on the desk, then saves that list. A later **REMOVE** stays
 off. Show files stay format 2 and may include `armed`. A show without it changes only which system
 is focused.
+
+**Pixera** (AV Stumpfl) and **Millumin** are media servers, each with its own tab group. Pixera is JSON-RPC
+over TCP on the port chosen in Pixera (default 1400): TIMELINES is play / pause / stop / toggle per timeline,
+CUES is next / previous cue and apply a cue by name. Millumin is OSC over UDP (default port 5000): COLUMNS is
+launch / stop / next / previous, play / pause and go to time; LAYER is the selected layer's media and opacity.
+Neither is contacted until it has an address, and neither joins the desk until then.
 
 ---
 

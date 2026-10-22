@@ -54,6 +54,12 @@
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
   <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
   <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras" data-sys="ptz">CAMERAS</button>
+  <span class="tab-group x-only pixera-grp" data-grp="pixera">PIXERA</span>
+  <button class="tab x-only" data-tab="pxplay" data-cap="pixeraTransport" data-sys="pixera">TIMELINES</button>
+  <button class="tab x-only" data-tab="pxcues" data-cap="pixeraCues" data-sys="pixera">CUES</button>
+  <span class="tab-group x-only millumin-grp" data-grp="millumin">MILLUMIN</span>
+  <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin">COLUMNS</button>
+  <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
 </nav>
 
 <main class="main">
@@ -139,7 +145,7 @@
   <!-- 0.6.0 SYSTEMS dashboard: one card per system, live status, connection, and the switch between them -->
   <section class="grid-wrap pane dash" id="pane-system" hidden>
     <div class="dash-head">
-      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Every system that already has an address keeps its own tab group. RS6 and ATEM stay up together — open that group's tab to drive it. This page does not switch between them. REMOVE only takes a group off the bar.</div></div>
+      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Every system that already has an address keeps its own tab group. RS6, ATEM, Pixera and Millumin stay up together — open that group's tab to drive it. This page does not switch between them. REMOVE only takes a group off the bar.</div></div>
       <span class="spacer"></span>
       <div class="dash-tools"><div id="dashSummary" class="dash-summary"></div>
         <div class="seg-row" role="group" aria-label="Card size"><button class="mode" data-density="cards" type="button">CARDS</button><button class="mode" data-density="compact" type="button">COMPACT</button></div></div>
@@ -300,6 +306,67 @@
       <button class="btn mini primary">ADD CAMERA</button></form>
     <div class="section-title" style="margin-top:18px">COMMAND REFERENCE <small>every command the dashboard can send to the selected camera, with its source (Companion module action or Panasonic spec)</small></div>
     <div id="ptzRef" class="rows ref"></div>
+  </section>
+
+  <!-- 0.9.4 AV Stumpfl Pixera (public/pixera.js): JSON-RPC over TCP, port 1400 -->
+  <section class="grid-wrap pane" id="pane-pxplay" hidden>
+    <div class="board-head"><div class="section-title">PIXERA TIMELINES <small id="pxInfo">transport per timeline</small></div><span class="spacer"></span>
+      <button class="btn mini" id="pxRefresh" type="button">⟳ REFRESH</button></div>
+    <div id="pxList" class="rows"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-pxcues" hidden>
+    <div class="board-head"><div class="section-title">PIXERA CUES <small id="pxCueInfo">step the selected timeline, or apply a cue by name</small></div><span class="spacer"></span>
+      <div id="pxCueTl" class="seg-row"></div></div>
+    <div class="media-actions">
+      <button class="btn" id="pxPrev" type="button">⏮ PREVIOUS CUE</button>
+      <button class="btn primary" id="pxNext" type="button">NEXT CUE ⏭</button>
+      <label class="chk"><input type="checkbox" id="pxIgnore"> Ignore cue properties</label>
+    </div>
+    <form id="pxApply" class="row media-apply"><span class="lbl">Apply a cue<small>Pixera.Compound.applyCueOnTimeline · blend is seconds, optional</small></span>
+      <input name="timeline" placeholder="Timeline name" autocomplete="off" spellcheck="false"><input name="cue" placeholder="Cue name" autocomplete="off" spellcheck="false">
+      <input name="blend" type="number" min="0" step="0.1" placeholder="blend s" class="slot-in"><button class="btn mini primary">APPLY</button></form>
+    <div id="pxCueNow" class="note"></div>
+  </section>
+
+  <!-- 0.9.4 Millumin (public/millumin.js): OSC over UDP, port 5000 -->
+  <section class="grid-wrap pane" id="pane-mlcol" hidden>
+    <div class="board-head"><div class="section-title">MILLUMIN COLUMNS <small id="mlInfo">OSC to the board</small></div><span class="spacer"></span><span id="mlNow" class="xtargets"></span></div>
+    <div class="media-actions">
+      <button class="btn" data-ml="previousColumn" type="button">⏮ PREVIOUS</button>
+      <button class="btn primary" data-ml="nextColumn" type="button">NEXT ⏭</button>
+      <button class="btn" data-ml="play" type="button">▶ PLAY</button>
+      <button class="btn" data-ml="pause" type="button">❚❚ PAUSE</button>
+      <button class="btn" data-ml="playOrPause" type="button">⏯ PLAY / PAUSE</button>
+      <button class="btn danger" data-ml="stopColumn" type="button">■ STOP COLUMN</button>
+    </div>
+    <form id="mlLaunch" class="row media-apply"><span class="lbl">Launch a column<small>a column index, or its name</small></span>
+      <input name="column" placeholder="Index or name" autocomplete="off" spellcheck="false"><button class="btn mini primary" value="launch">LAUNCH</button>
+      <button class="btn mini" value="toggle" type="submit">LAUNCH OR STOP</button></form>
+    <form id="mlTime" class="row media-apply"><span class="lbl">Go to time<small>seconds, on the board's timeline</small></span>
+      <input name="time" type="number" min="0" step="0.1" placeholder="seconds" class="slot-in"><button class="btn mini">GO</button></form>
+    <div class="media-actions">
+      <button class="btn mini" data-ml="enterFullscreen" type="button">FULLSCREEN</button>
+      <button class="btn mini" data-ml="exitFullscreen" type="button">EXIT FULLSCREEN</button>
+      <button class="btn mini" data-ml="displayTestCard" type="button">TEST CARD</button>
+      <button class="btn mini" data-ml="hideTestCard" type="button">HIDE TEST CARD</button>
+    </div>
+  </section>
+  <section class="grid-wrap pane" id="pane-mllayer" hidden>
+    <div class="section-title">MILLUMIN SELECTED LAYER <small>select a layer, then start, pause or stop its media</small></div>
+    <form id="mlLayer" class="row media-apply"><span class="lbl">Select<small>a layer index or name · a board index or name</small></span>
+      <input name="layer" placeholder="Layer" autocomplete="off" spellcheck="false"><button class="btn mini" value="layer">SELECT LAYER</button>
+      <input name="board" placeholder="Board" autocomplete="off" spellcheck="false"><button class="btn mini" value="board">SELECT BOARD</button></form>
+    <div class="media-actions">
+      <button class="btn primary" data-ml="startMedia" type="button">▶ START MEDIA</button>
+      <button class="btn" data-ml="startOrPauseMedia" type="button">⏯ START / PAUSE</button>
+      <button class="btn" data-ml="pauseMedia" type="button">❚❚ PAUSE MEDIA</button>
+      <button class="btn danger" data-ml="stopMedia" type="button">■ STOP MEDIA</button>
+    </div>
+    <form id="mlMedia" class="row media-apply"><span class="lbl">Start a specific media<small>its index or name, on the selected layer</small></span>
+      <input name="media" placeholder="Index or name" autocomplete="off" spellcheck="false"><button class="btn mini primary">START</button></form>
+    <form id="mlOpacity" class="row media-apply"><span class="lbl">Layer opacity<small>0 to 1</small></span>
+      <input name="opacity" type="number" min="0" max="1" step="0.05" placeholder="1.0" class="slot-in"><button class="btn mini">SET</button></form>
+    <div id="mlLayerNow" class="note"></div>
   </section>
 
   <aside class="transport xtransport">
@@ -486,6 +553,8 @@
 <script src="/sys.js"></script>
 <script src="/atem.js"></script>
 <script src="/ptz.js"></script>
+<script src="/pixera.js"></script>
+<script src="/millumin.js"></script>
 <script src="/companion.js"></script>
 </body>
 </html>

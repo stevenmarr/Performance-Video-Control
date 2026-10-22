@@ -13,6 +13,8 @@ const { SystemManager } = require('./lib/systems');
 const { MockE2 } = require('./lib/mocks/e2');
 const { MockAtem } = require('./lib/mocks/atem');
 const { MockPTZ } = require('./lib/mocks/ptz');
+const { MockPixera } = require('./lib/mocks/pixera');
+const { MockMillumin } = require('./lib/mocks/millumin');
 const { MockPixelHue } = require('./lib/mocks/pixelhue');
 
 function arg(name, def) {
@@ -65,6 +67,10 @@ async function main() {
     sysOverrides.ptz = { cameras: [] };
     for (const [i, [name, model]] of cams.entries()) { const m = new MockPTZ({ model, title: name.toUpperCase().replace(/\s+/g, '-') }); sysOverrides.ptz.cameras.push({ id: `cam${i + 1}`, name, host: '127.0.0.1', port: await m.start(0) }); sysMocks.push(m); }
     console.log(`MOCK ATEM udp 127.0.0.1:${sysOverrides.atem.port}  MOCK PTZ cameras ${sysOverrides.ptz.cameras.map((c) => c.port).join(', ')}`);
+    // 0.9.4: a mock Pixera (TCP JSON-RPC) and a mock Millumin (UDP OSC), both on 127.0.0.1
+    const pixera = new MockPixera(); sysOverrides.pixera = { host: '127.0.0.1', port: await pixera.start(0) }; sysMocks.push(pixera);
+    const millumin = new MockMillumin(); sysOverrides.millumin = { host: '127.0.0.1', port: await millumin.start(0) }; sysMocks.push(millumin);
+    console.log(`MOCK Pixera tcp 127.0.0.1:${sysOverrides.pixera.port}  MOCK Millumin osc 127.0.0.1:${sysOverrides.millumin.port}`);
   }
   const systems = new SystemManager({ dataDir, engine, overrides: sysOverrides });
   const server = createServer(engine, systems);

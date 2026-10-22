@@ -15,9 +15,9 @@
   const base = () => `/api/sys/${SYS.active}`;
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS && SYS.systems[SYS.active] ? SYS.systems[SYS.active].kind : 'rs6');
-  const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ' };
-  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'aaux', 'amacros'], ptz: ['pctl', 'pcams'] };
-  const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl' };
+  const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
+  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'aaux', 'amacros'], ptz: ['pctl', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'] };
+  const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
   const RS6TABS = KIND_TABS.rs6;
@@ -93,6 +93,8 @@
       if (pillView.kind === 'preset') last = pillView.lastRecalled ? `PVW: ${pillView.lastRecalled.number} · ${pillView.lastRecalled.name}` : 'PVW: —';
       else if (pillView.kind === 'atem' && pillView.inputs && pillView.inputs.length) { const nm = (id) => { const i = pillView.inputs.find((x) => x.id === id); return i ? i.short : '—'; }; last = `PGM ${nm(pillView.program)} · PVW ${nm(pillView.preview)}`; }
       else if (pillView.kind === 'ptz') { const c2 = (pillView.cameras || []).find((x) => x.id === pillView.selected); last = c2 ? `CAM: ${c2.name}` : 'CAM: —'; }
+      else if (pillView.kind === 'pixera') { const t = (pillView.timelines || []).find((x) => x.selected); last = t ? `${t.name}: ${(t.transport || '—').toUpperCase()}` : 'TIMELINE: —'; }
+      else if (pillView.kind === 'millumin') last = pillView.running ? `COL: ${pillView.columnName || pillView.column || '—'}` : 'COL: —';
       $('#xlast').textContent = last;
     }
     // a tab whose system left the desk goes home; a deep link to a system not yet armed brings it on
@@ -148,10 +150,12 @@
       ? f('operatorId', 'Operator (multi-op)', 'text', c.operatorId, 'none', dis, 'inputmode="numeric"') + f('transTime', 'TAKE time (frames)', 'text', c.transTime, 'device default', dis, 'inputmode="numeric"')
       : s.key === 'pixelhue' ? f('prefix', 'API path prefix', 'text', c.prefix, '/pixelhue', dis) + f('time', 'TAKE time (ms)', 'text', c.time, 'device default', dis, 'inputmode="numeric"')
         : f('me', 'M/E driven', 'number', c.me, '1', dis, 'min="1" max="4"') + '<span></span>';
-    const defPort = { e2: 9999, pixelhue: 8088, atem: 9910 }[s.key];
+    const defPort = { e2: 9999, pixelhue: 8088, atem: 9910, pixera: 1400, millumin: 5000 }[s.key];
+    const hostPh = { e2: 'E2 host unit IP', atem: 'ATEM IP', pixera: 'Pixera IP', millumin: 'Millumin Mac IP' }[s.key] || 'switcher IP';
+    const portLbl = s.key === 'atem' ? 'UDP port' : s.key === 'millumin' ? 'OSC port' : s.key === 'pixera' ? 'API port' : 'Port';
     return `<form class="form conn-form" data-sys="${s.key}">
-      <div class="row2">${f('host', 'IP address', 'text', c.host, s.key === 'e2' ? 'E2 host unit IP' : s.key === 'atem' ? 'ATEM IP' : 'switcher IP', dis, 'autocomplete="off" spellcheck="false"')}${f('port', s.key === 'atem' ? 'UDP port' : 'Port', 'number', c.port, String(defPort), dis, 'min="1" max="65535"')}</div>
-      <div class="row2">${extra}</div>
+      <div class="row2">${f('host', 'IP address', 'text', c.host, hostPh, dis, 'autocomplete="off" spellcheck="false"')}${f('port', portLbl, 'number', c.port, String(defPort), dis, 'min="1" max="65535"')}</div>
+      ${s.key === 'atem' ? `<div class="row2">${extra}</div>` : s.key === 'pixera' || s.key === 'millumin' ? '' : `<div class="row2">${extra}</div>`}
       ${s.key === 'pixelhue' ? `<label class="chk"><input type="checkbox" name="swap" ${c.swap ? 'checked' : ''} ${dis}> Swap on TAKE / CUT (Program goes back to Preview)</label>` : ''}
       ${foot(s.key)}
     </form>`;
@@ -160,13 +164,17 @@
     const n = s.counts || {};
     const rows = s.kind === 'atem' ? [['SOURCES', n.sources], ['MACROS', n.macros], ['KEYS', n.keyers], ['AUX', n.aux]]
       : s.kind === 'ptz' ? [['CAMERAS', n.cameras], ['ONLINE', n.online], ['ON TALLY', n.tally], ['NAMED PRESETS', n.presets]]
-        : [['PRESETS', n.presets], ['DESTINATIONS', n.destinations], ['SOURCES', n.sources]].concat(s.key === 'e2' ? [['CUES', n.cues]] : []);
+        : s.kind === 'pixera' ? [['TIMELINES', n.timelines], ['PLAYING', n.playing], ['SELECTED', n.timeline ? 1 : 0], ['CUE', n.cue ? 1 : 0]]
+          : s.kind === 'millumin' ? [['COLUMN', n.column ? 1 : 0], ['LAYER', n.layer ? 1 : 0], ['RUNNING', n.running], ['OPACITY', n.opacity == null ? null : 1]]
+            : [['PRESETS', n.presets], ['DESTINATIONS', n.destinations], ['SOURCES', n.sources]].concat(s.key === 'e2' ? [['CUES', n.cues]] : []);
     return rows.map(([k, v]) => `<div class="stat"><b>${v ?? '—'}</b><span>${k}</span></div>`).join('');
   }
   function liveLine(s) {
     const n = s.counts || {};
     if (s.kind === 'atem' && n.program) return `<div class="live-line"><span class="lg pgm">PGM</span> ${esc(n.program)} <span class="lg pvw">PVW</span> ${esc(n.preview)}</div>`;
     if (s.kind === 'ptz' && (s.cameras || []).length) return `<div class="live-line cams">${s.cameras.map((c) => `<span class="cam-chip ${c.connected ? '' : 'off'} ${c.tally ? 'tally' : ''}"><span class="led ${c.connected ? 'ok' : 'off'}"></span>${esc(c.name)}</span>`).join('')}</div>`;
+    if (s.kind === 'pixera' && n.timeline) return `<div class="live-line"><span class="lg pgm">${n.playing ? 'PLAY' : 'STOP'}</span> ${esc(n.timeline)}${n.cue ? ` · ${esc(n.cue)}` : ''}</div>`;
+    if (s.kind === 'millumin' && n.column) return `<div class="live-line"><span class="lg ${n.running ? 'pgm' : 'pvw'}">${n.running ? 'RUN' : 'STOP'}</span> ${esc(String(n.column))}</div>`;
     return '';
   }
   function renderDash() {
@@ -176,7 +184,7 @@
     document.querySelectorAll('[data-density]').forEach((b) => b.classList.toggle('active', b.dataset.density === density));
     const card = (s) => {
       const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
-      const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : 'PRESETS';
+      const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : 'PRESETS';
       return `<article class="sys-card ${active ? 'active' : ''} ${on ? 'on-desk' : ''} ${st.cls}" data-card="${s.key}">
         <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
           <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}</div></div>
