@@ -175,12 +175,12 @@ test('tile count: 48 by default, 24/48/72/96 accepted, anything else falls back;
 test('GET /api/version and apiVersion in the state', async () => {
   await withApp({}, async (call) => {
     const v = (await call('GET', '/api/version')).json;
-    assert.equal(v.app, 'rs6-presets'); assert.equal(v.apiVersion, API_VERSION); assert.equal(v.apiVersion, 6);
+    assert.equal(v.app, 'rs6-presets'); assert.equal(v.apiVersion, API_VERSION); assert.equal(v.apiVersion, 7);
     assert.equal(v.appVersion, require('../package.json').version);
     for (const f of ['swap', 'tileCount', 'shows', 'longpoll']) assert.ok(v.features.includes(f), f);
     assert.deepEqual(v.tileCounts, [24, 48, 72, 96]);
     const st = (await call('GET', '/api/state')).json;
-    assert.equal(st.apiVersion, 6); assert.equal(st.appVersion, v.appVersion);
+    assert.equal(st.apiVersion, 7); for (const f of ['atem', 'ptz']) assert.ok(v.features.includes(f), f); assert.equal(st.appVersion, v.appVersion);
   });
 });
 

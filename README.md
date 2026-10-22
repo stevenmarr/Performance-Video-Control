@@ -222,6 +222,79 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## v0.7.0: Blackmagic ATEM, Panasonic PTZ cameras, SYSTEMS home
+
+The header now reads **CONTROL CENTER** (the PV logo is unchanged), and **⌂ SYSTEMS** is the landing
+page. It holds every system card, each with its live status, counts, and its own connection form (RS6
+host/ports, E2, PixelHue, ATEM, the PTZ camera list). Cards flow in one grid, and you can filter them by
+group (Presentation switchers / Production switchers / Cameras) or switch to a compact density for a big
+system list. To open a working tab directly, use a deep link: `/#presets` (RS6), `/#xpresets`, `/#atem`
+or `/#pctl`.
+
+| System | Tabs | Protocol |
+|---|---|---|
+| Blackmagic ATEM (any model) | SWITCHER, AUX, MACROS | native UDP 9910 client (Node `dgram`, no dependencies) |
+| Panasonic PTZ cameras (AW-UE / AW-HE / AW-HR / AW-UN) | PTZ CONTROL, CAM PRESETS, CAMERAS | HTTP CGI on each camera, port 80 |
+
+### ATEM
+
+- **SWITCHER** has PROGRAM and PREVIEW buses. The buttons come from the switcher's own input list,
+  with short and long names. It also has **CUT** (C), **AUTO** (Space / Enter), next-transition layers
+  (BKGD plus a TIE per upstream key), transition style (MIX / DIP / WIPE / DVE / STING), the mix rate,
+  **FTB** with its rate (it asks before going to black), USK on air / tie, and DSK tie / cut / auto.
+- **AUX** lets you pick an aux output, then tap a source; it routes immediately. **MACROS** lists the
+  switcher's used macros. Tap one to run it, or use **STOP MACRO**.
+- Status shows the model and product name, the protocol version and the PGM/PVW tally. All of these
+  come from the switcher's own state, not from what this app sent.
+- References (no code copied; the bytes were written from these sources):
+  Sofie [atem-connection](https://github.com/Sofie-Automation/sofie-atem-connection) (commit 9c77b69), for
+  the session, acks, resends and per-command byte layouts.
+  Bitfocus [companion-module-bmd-atem](https://github.com/bitfocus/companion-module-bmd-atem) (commit 95f09aa),
+  for the feature set and naming.
+  Blackmagic's [ATEM Switchers SDK](https://www.blackmagicdesign.com/developer/products/atem), for terminology.
+  Each command in `lib/drivers/atem-proto.js` names the atem-connection file it follows.
+
+### Panasonic PTZ
+
+- One PTZ system holds many cameras (up to 32). You can add, edit and remove them on the SYSTEMS card
+  or the CAMERAS tab. Each camera's status (model, name, power, tally, focus/iris mode, gain) is polled
+  from `/live/camdata.html`.
+- **PTZ CONTROL**:
+  - A hold-to-move pan/tilt pad (also the arrow keys), with HOME.
+  - Zoom and focus rockers (+ / - keys), with speed sliders for pan/tilt, zoom and focus.
+  - Power on / standby, and red / green tally.
+  - Auto focus, one-touch AF, iris and auto iris, gain, shutter and white balance.
+- **Moves stop on release.** Stop (`PTS5050`, `Z50`, `F50`) is sent on pointer up or cancel, and when
+  the window loses focus, the tab is hidden or changed, or the page is closed. While you hold, the UI
+  repeats the move every 400 ms. If no repeat arrives within 1.5 s, the server stops the camera by itself,
+  so a lost tablet never leaves a camera moving.
+- **CAM PRESETS**: 100 presets per camera on a tile grid with RECALL / STORE / RENAME.
+  - Recall is `R<nn>` and store is `M<nn>`; preset 1 is `00`. Store asks before it overwrites.
+  - The cameras don't report preset names, so the names are kept by this app, in `systems.json` and in
+    show files.
+- Every command comes from Bitfocus
+  [companion-module-panasonic-ptz](https://github.com/bitfocus/companion-module-panasonic-ptz) (v2.6.1,
+  commit 18caabf): `GET /cgi-bin/aw_ptz?cmd=%23<CMD>&res=1` and `GET /cgi-bin/aw_cam?cmd=<CMD>&res=1`.
+  The header of `lib/drivers/ptz.js` lists every command used.
+
+### Mock mode, API, shows
+
+- `--mock` also starts a mock ATEM (a Television Studio HD8 ISO: 1 M/E, 4 USK, 2 DSK, 2 aux, 4 macros)
+  and three mock Panasonic cameras, all on 127.0.0.1. In mock mode a camera can only be added on a
+  loopback address.
+- The API is now apiVersion 7, with the features `atem` and `ptz`:
+  - `POST /api/sys/atem/cmd/<name>`, where the name is one of: cut, auto, program, preview, style,
+    mixRate, ftb, ftbRate, nextSelection, uskTie, uskOnAir, dskAuto, dskOnAir, dskTie, aux, macroRun or
+    macroStop. Anything else is refused.
+  - `POST /api/sys/ptz/cameras`, plus `POST` and `DELETE /api/sys/ptz/cameras/:id`.
+  - `POST /api/sys/ptz/cmd/<name>`, where the name is one of: move, zoom, focus, stop, stopAll, home,
+    recall, store, rename, power, tally, autoFocus, oneTouchAF, iris, autoIris, gain, shutter,
+    whiteBalance, select, speeds or refresh. Pass `{cam}` to choose a camera; it defaults to the selected one.
+- Show files (still format 2) also record the PTZ preset names, speeds and selected camera. When asked,
+  they also record the camera list and the ATEM address.
+- Fix: in 0.6.0, the mode buttons of other systems (and the dashboard density buttons) also reset the RS6
+  tile mode. Each now changes only its own mode.
+
 ## v0.6.0: Control Center (RS6, Barco Event Master, PixelHue)
 
 The app is now a multi-system show control center. A **⌂ SYSTEMS** dashboard shows a card for each
@@ -234,7 +307,7 @@ which system is active. The tabs follow the active system:
 | Analog Way Aquilon RS6 | the existing RS6 UI, unchanged | REST + AWJ (as before) |
 | Barco Event Master E2 / S3 (Toolset 10.x) | PRESETS, CUES, SOURCES, STILLS, BACKUP | JSON-RPC 2.0 over HTTP, port 9999 (Barco R5919184/02) |
 | PixelHue P10 / P20 / P80 / Q8 | PRESETS, SOURCES | OpenAPI V2 over HTTP, port 8088, JWT (PixelHue API User Guide V2.0.1) |
-| Blackmagic ATEM, PTZ cameras | shown as **STUB** cards only | not built |
+| Blackmagic ATEM, PTZ cameras | shown as **STUB** cards only (built in 0.7.0) | |
 
 Your existing RS6 connection is migrated on first start (into `systems.json` in the data folder), and
 RS6 stays the active system until you choose another. Switching systems sends nothing to any device.

@@ -11,6 +11,8 @@ const { MockAquilon } = require('./lib/mock');
 const { resolveDataDir, migrateLegacy } = require('./lib/datadir');
 const { SystemManager } = require('./lib/systems');
 const { MockE2 } = require('./lib/mocks/e2');
+const { MockAtem } = require('./lib/mocks/atem');
+const { MockPTZ } = require('./lib/mocks/ptz');
 const { MockPixelHue } = require('./lib/mocks/pixelhue');
 
 function arg(name, def) {
@@ -57,6 +59,12 @@ async function main() {
     sysOverrides.pixelhue = { host: '127.0.0.1', port: await ph.start(0), prefix: '/pixelhue' };
     sysMocks.push(e2, ph);
     console.log(`MOCK E2 JSON-RPC http://127.0.0.1:${sysOverrides.e2.port}  MOCK PixelHue http://127.0.0.1:${sysOverrides.pixelhue.port}/pixelhue`);
+    // 0.7.0: a mock ATEM (UDP) and three mock Panasonic cameras (HTTP), all on 127.0.0.1
+    const atem = new MockAtem(); sysOverrides.atem = { host: '127.0.0.1', port: await atem.start(0), me: 1 }; sysMocks.push(atem);
+    const cams = [['Cam 1 Wide', 'AW-UE150'], ['Cam 2 Stage', 'AW-UE100'], ['Cam 3 Lectern', 'AW-HE130']];
+    sysOverrides.ptz = { cameras: [] };
+    for (const [i, [name, model]] of cams.entries()) { const m = new MockPTZ({ model, title: name.toUpperCase().replace(/\s+/g, '-') }); sysOverrides.ptz.cameras.push({ id: `cam${i + 1}`, name, host: '127.0.0.1', port: await m.start(0) }); sysMocks.push(m); }
+    console.log(`MOCK ATEM udp 127.0.0.1:${sysOverrides.atem.port}  MOCK PTZ cameras ${sysOverrides.ptz.cameras.map((c) => c.port).join(', ')}`);
   }
   const systems = new SystemManager({ dataDir, engine, overrides: sysOverrides });
   const server = createServer(engine, systems);

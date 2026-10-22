@@ -470,10 +470,10 @@
   }
   function setMode(m) {
     mode = m; moveSrc = null; touchMove();
-    document.querySelectorAll('.mode').forEach((x) => x.classList.toggle('active', x.dataset.mode === m));
+    document.querySelectorAll('.mode[data-mode]').forEach((x) => x.classList.toggle('active', x.dataset.mode === m));
     render();
   }
-  document.querySelectorAll('.mode').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
+  document.querySelectorAll('.mode[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
   $('#pager').addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-page]'); if (!b) return;
     page = Number(b.dataset.page) || 0; localStorage.setItem('rs6.page', String(page)); render();
@@ -576,7 +576,7 @@
   // 0.4.0: INPUTS / BACKUP / AUDIO / WEB RCS hide everything that belongs to presets (screen tiles, TAKE / CUT,
   // the PVW line) and use the full width. body.tab-<name> drives the CSS.
   // 0.6.0: + the SYSTEMS dashboard and the shared E2 / PixelHue tabs (public/sys.js renders those)
-  const TABS = ['presets', 'inputs', 'backup', 'audio', 'webrcs', 'system', 'xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'];
+  const TABS = ['presets', 'inputs', 'backup', 'audio', 'webrcs', 'system', 'xpresets', 'xcues', 'xsources', 'xstills', 'xbackup', 'atem', 'aaux', 'amacros', 'pctl', 'ppresets', 'pcams'];
   function setTab(t) {
     tab = TABS.includes(t) ? t : 'presets';
     window.dispatchEvent(new CustomEvent('cc:tab', { detail: tab }));

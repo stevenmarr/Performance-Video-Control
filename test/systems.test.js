@@ -157,7 +157,7 @@ test('first start migrates: systems.json records RS6 as the system and its conne
     assert.equal(j.active, 'rs6'); assert.equal(j.migrated.rs6.host, '192.0.2.10');
     assert.equal(j.connections.e2.host, '', 'E2 has no IP until the user sets one'); assert.equal(j.connections.e2.port, 9999);
     assert.equal(j.connections.pixelhue.port, 8088); assert.equal(j.connections.pixelhue.prefix, '/pixelhue');
-    const st = sm.getState(); assert.equal(st.active, 'rs6'); assert.equal(st.view, null); assert.equal(st.planned.length, 2);
+    const st = sm.getState(); assert.equal(st.active, 'rs6'); assert.equal(st.view, null); assert.equal(st.planned.length, 0, '0.7.0: ATEM and PTZ are real drivers now');
     sm.close();
     const again = new SystemManager({ dataDir: dir, engine: fakeEngine({ host: 'x' }), autoStart: false });
     assert.equal(again.migrated.rs6.host, '192.0.2.10', 'migration happens once'); again.close();
@@ -255,10 +255,15 @@ test('show parser: system defaults to rs6, bad sessions are cleaned, newer versi
 
 test('safety: E2 / PixelHue code, mocks and tests name no private-network device address; mocks bind loopback', () => {
   const root = path.join(__dirname, '..');
-  const files = ['lib/systems.js', 'lib/drivers/common.js', 'lib/drivers/e2.js', 'lib/drivers/pixelhue.js', 'lib/drivers/rs6.js', 'lib/mocks/e2.js', 'lib/mocks/pixelhue.js', 'test/systems.test.js', 'test/ui-systems.test.js', 'public/sys.js'];
+  const files = ['lib/systems.js', 'lib/drivers/common.js', 'lib/drivers/e2.js', 'lib/drivers/pixelhue.js', 'lib/drivers/rs6.js', 'lib/mocks/e2.js', 'lib/mocks/pixelhue.js', 'test/systems.test.js', 'test/ui-systems.test.js', 'public/sys.js',
+    'lib/drivers/atem.js', 'lib/drivers/atem-proto.js', 'lib/drivers/ptz.js', 'lib/mocks/atem.js', 'lib/mocks/ptz.js', 'public/atem.js', 'public/ptz.js', 'test/atem.test.js', 'test/ptz.test.js'];
   for (const f of files) {
     const src = fs.readFileSync(path.join(root, f), 'utf8');
     assert.doesNotMatch(src, /\b(?:10\.\d{1,3}|192\.168|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b/, `${f} must not contain a LAN address`);
   }
-  assert.match(fs.readFileSync(path.join(root, 'server.js'), 'utf8'), /new MockE2\(\)[\s\S]*127\.0\.0\.1/);
+  const srv = fs.readFileSync(path.join(root, 'server.js'), 'utf8');
+  assert.match(srv, /new MockE2\(\)[\s\S]*127\.0\.0\.1/);
+  assert.match(srv, /new MockAtem\(\); sysOverrides\.atem = \{ host: '127\.0\.0\.1'/); assert.match(srv, /host: '127\.0\.0\.1', port: await m\.start\(0\)/);
+  assert.match(fs.readFileSync(path.join(root, 'lib/mocks/atem.js'), 'utf8'), /start\(port = 0, host = '127\.0\.0\.1'\)/);
+  assert.match(fs.readFileSync(path.join(root, 'lib/mocks/ptz.js'), 'utf8'), /start\(port = 0, host = '127\.0\.0\.1'\)/);
 });

@@ -55,7 +55,7 @@ test('HTTP control API used by the UI and Companion', async () => {
 test('UI is served and SSE pushes state', async () => {
   await withApp(async (call, ctx, base) => {
     const html = await (await fetch(base + '/')).text();
-    assert.match(html, /RS6 <span>PRESETS/);
+    assert.match(html, /CONTROL <span>CENTER/);
     assert.equal((await fetch(base + '/../package.json')).status, 404);
     const ctrl = new AbortController();
     const res = await fetch(base + '/api/events', { signal: ctrl.signal });

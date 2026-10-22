@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0b0d10">
-<title>RS6 Presets · Control Center</title>
+<title>Control Center</title>
 <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -14,7 +14,7 @@
 <body>
 <header class="top">
   <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
-  <div class="brand">RS6 <span>PRESETS</span></div>
+  <div class="brand">CONTROL <span>CENTER</span></div>
   <button id="btnSystem" class="sys-badge" type="button" title="The system this app is driving. Tap for the SYSTEMS dashboard."><span class="sys-dot"></span><span id="sysBadgeName">RS6</span></button>
   <button id="btnShow" class="btn ghost show-btn" title="Show file: save, save as, open, download, upload"><span class="show-k">SHOW</span> <span id="showName">Untitled show</span><span id="showDirty" class="dirty" title="Unsaved changes" hidden>●</span></button>
   <div id="conn" class="pill off rs6-only">Not connected</div>
@@ -23,7 +23,7 @@
   <div id="last" class="last rs6-only">PVW: —</div>
   <div id="master" class="master rs6-only"></div>
   <div id="liveMode" class="pill rs6-only"></div>
-  <div id="link" class="pill link connecting" title="Connection between this page and the RS6 Presets app">CONNECTING…</div>
+  <div id="link" class="pill link connecting" title="Connection between this page and the Control Center app">CONNECTING…</div>
   <div class="spacer"></div>
   <button id="btnSettings" class="btn ghost">⚙ Settings</button>
 </header>
@@ -42,6 +42,12 @@
   <button class="tab x-only" data-tab="xsources" data-cap="sources">SOURCES</button>
   <button class="tab x-only" data-tab="xstills" data-cap="stills">STILLS</button>
   <button class="tab x-only" data-tab="xbackup" data-cap="backups">BACKUP</button>
+  <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher">SWITCHER</button>
+  <button class="tab x-only" data-tab="aaux" data-cap="atemAux">AUX</button>
+  <button class="tab x-only" data-tab="amacros" data-cap="atemMacros">MACROS</button>
+  <button class="tab x-only" data-tab="pctl" data-cap="ptzControl">PTZ CONTROL</button>
+  <button class="tab x-only" data-tab="ppresets" data-cap="ptzPresets">CAM PRESETS</button>
+  <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras">CAMERAS</button>
 </nav>
 
 <main class="main">
@@ -127,13 +133,16 @@
   <!-- 0.6.0 SYSTEMS dashboard: one card per system, live status, connection, and the switch between them -->
   <section class="grid-wrap pane dash" id="pane-system" hidden>
     <div class="dash-head">
-      <div><div class="dash-title">CONTROL CENTER</div><div class="dash-sub">Choose the system this app drives. Each system keeps its own connection, TAKE selection and tile layout; switching never sends anything to a device.</div></div>
+      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Home of the control center: every system's live status and connection settings. Choose the one this surface drives with USE THIS SYSTEM; each keeps its own connection, selection and layout, and switching never sends anything to a device.</div></div>
       <span class="spacer"></span>
+      <div class="dash-tools"><div id="dashSummary" class="dash-summary"></div>
+        <div class="seg-row" role="group" aria-label="Card size"><button class="mode" data-density="cards" type="button">CARDS</button><button class="mode" data-density="compact" type="button">COMPACT</button></div></div>
       <div id="dashClock" class="dash-clock"></div>
     </div>
-    <div id="sysCards" class="sys-cards"></div>
-    <div class="section-title">MORE SYSTEMS <small>driver interface ready, drivers not built yet</small></div>
-    <div id="sysPlanned" class="sys-cards planned"></div>
+    <div id="dashGroups" class="seg-row dash-groups" role="group" aria-label="Show systems of"></div>
+    <div id="sysCards"></div>
+    <div id="sysPlannedWrap" hidden><div class="section-title">MORE SYSTEMS <small>driver interface ready, drivers not built yet</small></div>
+    <div id="sysPlanned" class="sys-cards planned"></div></div>
   </section>
 
   <!-- 0.6.0 shared switcher UI for E2 / PixelHue (public/sys.js). Same tiles, destinations and TAKE / CUT as RS6. -->
@@ -175,6 +184,93 @@
   <section class="grid-wrap pane" id="pane-xbackup" hidden>
     <div class="section-title"><span class="xsys"></span> INPUT BACKUPS <small>inputs with a backup configured on the device · PRIMARY or a backup</small></div>
     <div id="xbkList" class="rows"></div>
+  </section>
+
+  <!-- 0.7.0 Blackmagic ATEM (public/atem.js) -->
+  <section class="grid-wrap pane" id="pane-atem" hidden>
+    <div class="board-head"><div class="section-title">ATEM <small id="atemInfo"></small></div><span class="spacer"></span><span id="atemTally" class="xtargets"></span></div>
+    <div class="bus-block"><div class="bus-lbl pgm">PROGRAM</div><div id="atemPgm" class="bus"></div></div>
+    <div class="bus-block"><div class="bus-lbl pvw">PREVIEW</div><div id="atemPvw" class="bus"></div></div>
+    <div class="atem-lower">
+      <div class="panel"><div class="section-title">NEXT TRANSITION <small>BKGD and key TIE</small></div><div id="atemNext" class="seg-row"></div>
+        <div class="section-title">TRANSITION STYLE</div><div id="atemStyle" class="seg-row"></div>
+        <div class="rate-row"><label>MIX RATE <input id="atemRate" type="number" min="1" max="250" inputmode="numeric"> frames</label><button class="btn mini" id="atemRateSet" type="button">SET</button></div></div>
+      <div class="panel"><div class="section-title">UPSTREAM KEYS <small>ON AIR</small></div><div id="atemUsk" class="key-grid"></div></div>
+      <div class="panel"><div class="section-title">DOWNSTREAM KEYS</div><div id="atemDsk" class="dsk-list"></div></div>
+    </div>
+  </section>
+  <section class="grid-wrap pane" id="pane-aaux" hidden>
+    <div class="section-title">ATEM AUX OUTPUTS <small>pick an aux, then tap a source (routes immediately)</small></div>
+    <div id="atemAuxBar" class="aux-bar"></div>
+    <div id="atemAuxGrid" class="bus wide"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-amacros" hidden>
+    <div class="board-head"><div class="section-title">ATEM MACROS <small id="atemMacroInfo">tap to run</small></div><span class="spacer"></span><button class="btn mini danger" id="atemMacroStop" type="button">■ STOP MACRO</button></div>
+    <div id="atemMacros" class="grid"></div>
+  </section>
+  <aside class="transport atransport">
+    <button id="atemCut" class="btn cut">CUT</button>
+    <button id="atemAuto" class="btn take">AUTO<small id="atemAutoSub"></small></button>
+    <div class="tbar"><div id="atemBar"></div></div>
+    <button id="atemFtb" class="btn toggle">FTB<br><b id="atemFtbState">OFF</b></button>
+    <label class="rate-mini">FTB rate <input id="atemFtbRate" type="number" min="1" max="250" inputmode="numeric"></label>
+    <div class="note small">Space = AUTO · C = CUT</div>
+  </aside>
+
+  <!-- 0.7.0 Panasonic PTZ cameras (public/ptz.js) -->
+  <section class="grid-wrap pane" id="pane-pctl" hidden>
+    <div id="ptzStrip" class="cam-strip"></div>
+    <div class="ptz-body">
+      <div class="panel ptz-move">
+        <div class="section-title">PAN / TILT <small>hold to move · release stops</small></div>
+        <div id="ptzPad" class="ptz-pad">
+          <button data-pt="-1,1">↖</button><button data-pt="0,1">▲</button><button data-pt="1,1">↗</button>
+          <button data-pt="-1,0">◀</button><button data-home="1" class="home">HOME</button><button data-pt="1,0">▶</button>
+          <button data-pt="-1,-1">↙</button><button data-pt="0,-1">▼</button><button data-pt="1,-1">↘</button>
+        </div>
+        <label class="slider">PAN / TILT SPEED <input type="range" min="1" max="49" id="spPt"><b id="spPtV"></b></label>
+      </div>
+      <div class="panel ptz-lens">
+        <div class="section-title">ZOOM</div>
+        <div class="rocker"><button data-zoom="1">TELE +</button><button data-zoom="-1">WIDE −</button></div>
+        <label class="slider">ZOOM SPEED <input type="range" min="1" max="49" id="spZoom"><b id="spZoomV"></b></label>
+        <div class="section-title">FOCUS</div>
+        <div class="rocker"><button data-focus="1">FAR +</button><button data-focus="-1">NEAR −</button></div>
+        <label class="slider">FOCUS SPEED <input type="range" min="1" max="49" id="spFocus"><b id="spFocusV"></b></label>
+        <div class="seg-row"><button class="mode" id="ptzAF" type="button">AUTO FOCUS</button><button class="mode" id="ptzOTAF" type="button">ONE-TOUCH AF</button></div>
+      </div>
+      <div class="panel ptz-image">
+        <div class="section-title">CAMERA <small id="ptzCamInfo"></small></div>
+        <div class="seg-row"><button class="mode" id="ptzPowerOn" type="button">POWER ON</button><button class="mode" id="ptzStandby" type="button">STANDBY</button></div>
+        <div class="seg-row"><button class="mode tally-r" id="ptzTallyR" type="button">RED TALLY</button><button class="mode tally-g" id="ptzTallyG" type="button">GREEN TALLY</button></div>
+        <div class="section-title">EXPOSURE</div>
+        <label class="slider">IRIS <input type="range" min="0" max="99" id="ptzIris"><b id="ptzIrisV"></b></label>
+        <div class="seg-row"><button class="mode" id="ptzAutoIris" type="button">AUTO IRIS</button></div>
+        <label class="sel">GAIN <select id="ptzGain"></select></label>
+        <label class="sel">SHUTTER <select id="ptzShutter"></select></label>
+        <label class="sel">WHITE BALANCE <select id="ptzWb"></select></label>
+        <div class="note small">Gain / shutter / WB codes per series as in the Companion module; a model that lacks one answers with an error.</div>
+      </div>
+    </div>
+  </section>
+  <section class="grid-wrap pane" id="pane-ppresets" hidden>
+    <div id="ptzStrip2" class="cam-strip"></div>
+    <div class="modes" role="toolbar" aria-label="What a tap on a camera preset does">
+      <span class="modes-lbl">TAP A TILE TO</span>
+      <button class="mode active" data-pmode="recall" type="button">RECALL</button>
+      <button class="mode" data-pmode="store" type="button">STORE</button>
+      <button class="mode" data-pmode="rename" type="button">RENAME</button>
+    </div>
+    <div class="hint mode-hint" id="ptzModeHint"></div>
+    <div id="ptzPager" class="pager"></div>
+    <div id="ptzGrid" class="grid"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-pcams" hidden>
+    <div class="section-title">PTZ CAMERAS <small>every camera under this system · add, edit, remove · status polled every 3 s</small></div>
+    <div id="ptzCamList" class="rows"></div>
+    <form id="ptzAdd" class="row add-cam"><span class="lbl">Add a camera<small>Panasonic AW-UE / AW-HE, HTTP (CGI) control</small></span>
+      <input name="name" placeholder="Name" maxlength="40"><input name="host" placeholder="IP address" autocomplete="off" spellcheck="false"><input name="port" type="number" min="1" max="65535" placeholder="80" class="slot-in">
+      <button class="btn mini primary">ADD CAMERA</button></form>
   </section>
 
   <aside class="transport xtransport">
@@ -359,5 +455,7 @@
 <div id="undoBar" class="undo-bar" role="status" hidden></div>
 <script src="/app.js"></script>
 <script src="/sys.js"></script>
+<script src="/atem.js"></script>
+<script src="/ptz.js"></script>
 </body>
 </html>

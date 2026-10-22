@@ -68,7 +68,7 @@ test('#btnSettings is visible, clickable and inside the viewport at 820 and 1440
   t.after(() => browser.close());
   for (const width of [820, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
-    await page.goto(`http://127.0.0.1:${port}/`);
+    await page.goto(`http://127.0.0.1:${port}/#presets`);
     const btn = page.locator('#btnSettings');
     await btn.waitFor({ state: 'visible' });
     const box = await btn.boundingBox();
@@ -95,7 +95,7 @@ test('a memory tapped onto an empty tile names the tile after the memory; long-p
   const browser = await pw.chromium.launch();
   t.after(() => browser.close());
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto(`http://127.0.0.1:${port}/`);
+  await page.goto(`http://127.0.0.1:${port}/#presets`);
   const mem = page.locator('[data-mtype=screen][data-slot="1"]');
   await mem.waitFor();
   const label = (await mem.locator('.nm').textContent()).trim();
@@ -143,7 +143,7 @@ test('3. layout: each destination tile sits exactly above its board card (820-19
   const browser = await launch(t, pw.chromium); if (!browser) return;
   for (const width of [820, 1024, 1280, 1440, 1680, 1920]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
-    await page.goto(app.base + '/'); await page.waitForSelector('#board .card[data-drop="S1"]');
+    await page.goto(app.base + '/#presets'); await page.waitForSelector('#board .card[data-drop="S1"]');
     const r = await page.evaluate(() => {
       const box = (e) => { const b = e.getBoundingClientRect(); return { x: Math.round(b.x), w: Math.round(b.width) }; };
       const keys = [...document.querySelectorAll('#destRow [data-dest]')].map((e) => e.dataset.dest);
@@ -168,7 +168,7 @@ test('2. palette: MV tab with the box unchecked lists no unknown slots and says 
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto(app.base + '/'); await page.waitForSelector('#palTabs [data-ptab="multiviewer"]');
+  await page.goto(app.base + '/#presets'); await page.waitForSelector('#palTabs [data-ptab="multiviewer"]');
   await page.click('#palTabs [data-ptab="multiviewer"]');
   assert.equal(await page.locator('#palList .mem').count(), 0);
   assert.match(await page.textContent('#palList'), /No Multiviewer memories known.*probe.*show empty \/ unknown slots/s);
@@ -192,7 +192,7 @@ for (const [name, type] of browsers()) {
       window.EventSource.prototype = ES.prototype; Object.assign(window.EventSource, { CONNECTING: 0, OPEN: 1, CLOSED: 2 });
     });
     const page = await ctx.newPage();
-    await page.goto(app.base + '/');
+    await page.goto(app.base + '/#presets');
     const linkIs = (s, ms = 8000) => page.waitForFunction((x) => window.__rs6link && window.__rs6link.state === x, s, { timeout: ms });
     const sel = () => page.evaluate(() => document.querySelector('#destRow [data-dest="S2"]').classList.contains('on'));
     const toggleAndSee = async (what) => {
@@ -239,7 +239,7 @@ test('0.4.0 #1: INPUTS / BACKUP / AUDIO show no destinations, TAKE/CUT or preset
   const browser = await launch(t, pw.chromium); if (!browser) return;
   for (const width of [820, 1440]) {
     const page = await browser.newPage({ viewport: { width, height: 900 } });
-    await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+    await page.goto(app.base + '/#presets'); await page.waitForSelector('#grid [data-preset="1"]');
     assert.ok(await visible(page, '.transport'), 'PRESETS tab has TAKE/CUT');
     for (const tab of ['inputs', 'backup', 'audio']) {
       await page.click(`.tab[data-tab=${tab}]`);
@@ -262,7 +262,7 @@ test('0.4.0 #3: drag a tile onto another swaps them; MOVE mode tap-tap moves int
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="2"]');
+  await page.goto(app.base + '/#presets'); await page.waitForSelector('#grid [data-preset="2"]');
   const nameOf = async (n) => (await (await fetch(app.base + '/api/state')).json()).presets.find((p) => p.number === n)?.name;
   const [n1, n2] = [await nameOf(1), await nameOf(2)];
   const a = await page.locator('#grid [data-preset="1"]').boundingBox(); const b = await page.locator('#grid [data-preset="2"]').boundingBox();
@@ -293,7 +293,7 @@ test('0.4.0 #4: the mode bar says what a tile tap does; SAVE is "SAVE PVW → TI
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+  await page.goto(app.base + '/#presets'); await page.waitForSelector('#grid [data-preset="1"]');
   assert.match(await page.textContent('.modes'), /TAP A TILE TO\s*RECALL\s*EDIT\s*MOVE ⇄\s*SAVE PVW → TILE/);
   const expect = { recall: /Preview/, edit: /edit|rename/i, move: /swap/i, save: /overwrite[\s\S]*stores[\s\S]*Preview/ };
   for (const [m, re] of Object.entries(expect)) {
@@ -318,7 +318,7 @@ test('0.4.0 #5: BACKUP tab shows the group label and only existing backups', { s
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto(app.base + '/'); await page.click('.tab[data-tab=backup]');
+  await page.goto(app.base + '/#presets'); await page.click('.tab[data-tab=backup]');
   await page.waitForFunction(() => /MEDIA BU/.test(document.querySelector('#pane-backup').innerText));
   const txt = await page.textContent('#pane-backup');
   assert.match(txt, /MEDIA BU\s*GROUP 1/);
@@ -329,7 +329,7 @@ test('0.4.0 #6: WEB RCS tab embeds the device page; a unit that refuses framing 
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto(app.base + '/'); await page.click('.tab[data-tab=webrcs]');
+  await page.goto(app.base + '/#presets'); await page.click('.tab[data-tab=webrcs]');
   await page.waitForFunction(() => /EMBEDDED/.test(document.querySelector('#rcsStatus').textContent));
   const frame = page.frameLocator('#rcsFrame');
   await frame.locator('text=Web RCS placeholder').waitFor();
@@ -340,7 +340,7 @@ test('0.4.0 #6: WEB RCS tab embeds the device page; a unit that refuses framing 
   // a unit that sends X-Frame-Options: DENY
   const p2 = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await p2.route('**/api/webrcs', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ url: 'http://127.0.0.1:9/', reachable: true, status: 200, framable: false, blockedBy: ['X-Frame-Options: DENY'] }) }));
-  await p2.goto(app.base + '/'); await p2.click('.tab[data-tab=webrcs]');
+  await p2.goto(app.base + '/#presets'); await p2.click('.tab[data-tab=webrcs]');
   await p2.waitForFunction(() => /CAN'T EMBED/.test(document.querySelector('#rcsStatus').textContent));
   assert.ok(await visible(p2, '#rcsBlocked')); assert.match(await p2.textContent('#rcsBlocked'), /X-Frame-Options: DENY/);
   assert.ok(await visible(p2, '#rcsSide'));
@@ -360,7 +360,7 @@ test('0.5.0 #2: leaving PRESETS and coming back never re-orders tiles; MOVE ends
     const browser = await launch(t, type); if (!browser) return;
     for (const width of [820, 1440]) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
-      await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+      await page.goto(app.base + '/#presets'); await page.waitForSelector('#grid [data-preset="1"]');
       const data0 = layout(await stateOf(app)); const tiles0 = await tileOrder(page);
       // plain round trip through every tab
       for (const tb of ['inputs', 'backup', 'audio', 'webrcs', 'presets']) { await page.click(`.tab[data-tab=${tb}]`); await page.waitForTimeout(150); }
@@ -369,7 +369,7 @@ test('0.5.0 #2: leaving PRESETS and coming back never re-orders tiles; MOVE ends
       await page.click('.mode[data-mode=move]'); await page.click('#grid [data-preset="6"]');
       assert.equal(await page.locator('#grid .move-src').count(), 1);
       for (const tb of ['inputs', 'backup', 'audio', 'webrcs', 'presets']) { await page.click(`.tab[data-tab=${tb}]`); await page.waitForTimeout(100); }
-      assert.equal(await page.locator('.mode.active').getAttribute('data-mode'), 'recall', `${name} ${width}: back in RECALL`);
+      assert.equal(await page.locator('.mode[data-mode].active').getAttribute('data-mode'), 'recall', `${name} ${width}: back in RECALL`);
       assert.equal(await page.locator('#grid .move-src').count(), 0);
       for (const n of [2, 4, 5]) { await page.click(`#grid [data-preset="${n}"]`); await page.waitForTimeout(120); }
       await page.click('#grid [data-empty="16"]');
@@ -393,11 +393,11 @@ test('0.5.0 #2: MOVE mode ends by itself when idle; a swap can be undone', { ski
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.addInitScript(() => { window.RS6_MOVE_IDLE_MS = 700; });
-  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+  await page.goto(app.base + '/#presets'); await page.waitForSelector('#grid [data-preset="1"]');
   const data0 = layout(await stateOf(app));
   assert.equal(await page.isVisible('#undoBar'), false, 'no empty UNDO bar before any swap');
   await page.click('.mode[data-mode=move]');
-  await page.waitForFunction(() => document.querySelector('.mode.active').dataset.mode === 'recall', null, { timeout: 3000 });
+  await page.waitForFunction(() => document.querySelector('.mode[data-mode].active').dataset.mode === 'recall', null, { timeout: 3000 });
   await page.click('.mode[data-mode=move]');
   await page.click('#grid [data-preset="1"]'); await page.click('#grid [data-preset="2"]');
   await page.waitForFunction(() => /Swapped 1 ⇄ 2/.test(document.querySelector('#undoBar').textContent));
@@ -413,7 +413,7 @@ test('0.5.0 #3: 48 tiles by default, 96 from Settings, pages of 24 work on an iP
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const ctx = await browser.newContext({ viewport: { width: 820, height: 1180 }, hasTouch: true, isMobile: true });
   const page = await ctx.newPage();
-  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+  await page.goto(app.base + '/#presets'); await page.waitForSelector('#grid [data-preset="1"]');
   assert.equal(await page.locator('#grid > *').count(), 48);
   assert.equal(await page.locator('#pager .pg').count(), 3); // ALL, 1–24, 25–48
   await page.click('#btnSettings'); await page.waitForSelector('#dlgSettings[open]');
@@ -440,7 +440,7 @@ test('0.5.0 shows: header name + unsaved dot, Save, Save as, Open with confirmat
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto(app.base + '/'); await page.waitForSelector('#grid [data-preset="1"]');
+  await page.goto(app.base + '/#presets'); await page.waitForSelector('#grid [data-preset="1"]');
   assert.equal(await page.textContent('#showName'), 'Untitled show');
   assert.ok(await page.isVisible('#showDirty'), 'seeded presets are unsaved');
   await page.click('#btnShow'); await page.waitForSelector('#dlgShows[open]');
