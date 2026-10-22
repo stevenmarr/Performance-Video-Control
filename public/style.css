@@ -141,6 +141,9 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
    and status items shrink or wrap below it instead. */
 .top>*{min-width:0}
 #btnSettings{flex:none;margin-left:auto;white-space:nowrap;order:4}
+.top-end{order:4;margin-left:auto;display:flex;align-items:center;gap:10px;flex:none}
+.top-end #btnSettings{margin-left:0;order:0}
+.app-ver{font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.04em;color:var(--dim);white-space:nowrap}
 .top .brand,.top .pvlogo,.top #conn{order:1}.top #last,.top #master,.top #liveMode{order:2}.top .spacer{order:3}
 
 /* ---------- 0.3.0: memory palette + board (mix and match) ---------- */

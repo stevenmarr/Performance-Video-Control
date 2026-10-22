@@ -28,6 +28,8 @@
   // ---------- render ----------
   function render() {
     if (!S) return;
+    const av = $('#appVer');
+    if (av && S.appVersion && av.textContent !== `v${S.appVersion}`) { av.textContent = `v${S.appVersion}`; av.title = `Control Center ${S.appVersion}`; }
     const c = $('#conn');
     const ver = S.system && S.system.version ? (typeof S.system.version === 'object' ? `${S.system.version.major}.${S.system.version.minor}.${S.system.version.patch}` : S.system.version) : '';
     c.className = 'pill rs6-only ' + (S.connected ? 'ok' : 'off');
