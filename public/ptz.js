@@ -199,12 +199,12 @@
     $('#ptzPaintTabs').classList.toggle('all', all);
     let start = Math.max(0, avail.findIndex((x) => x.dataset.pane === paintTab)); let used = 0; const show = new Set();
     if (all) avail.forEach((x) => show.add(x));
-    else { for (let i = 0; i < avail.length && used < cap; i++) { const x = avail[(start + i) % avail.length]; if (used + cells(x) > cap) break; show.add(x); used += cells(x); } }
+    else { start = Math.min(start, Math.max(0, avail.length - cap)); for (let i = start; i < avail.length && used < cap; i++) { const x = avail[i]; if (used + cells(x) > cap) break; show.add(x); used += cells(x); } }
     for (const x of cards) { x.classList.toggle('hide', !show.has(x)); x.classList.toggle('wide', cells(x) === 2); }
     document.querySelectorAll('#ptzPaintTabs .ptab').forEach((b) => b.classList.toggle('on', [...show].some((x) => x.dataset.pane === b.dataset.ptab)));
     const g = document.querySelector('#pane-pctl [data-slot=paint]'); g.style.setProperty('--pcols', String(cols)); g.classList.toggle('none', !avail.length);
   }
-  new ResizeObserver(() => { const g = document.querySelector('#pane-pctl [data-slot=paint]'); const w = g.clientWidth; const n = Math.max(1, Math.floor((w + 8) / 202)); if (n !== paintCols) { paintCols = n; layoutPaint(); } }).observe(document.querySelector('#pane-pctl [data-slot=paint]'));
+  new ResizeObserver(() => { const g = document.querySelector('#pane-pctl [data-slot=paint]'); const w = g.clientWidth; const n = Math.max(1, Math.floor((w + 8) / 214)); if (n !== paintCols) { paintCols = n; layoutPaint(); } }).observe(document.querySelector('#pane-pctl [data-slot=paint]'));
   function build(c, k) {
     const sid = c.series; const used = new Set();
     for (const el of document.querySelectorAll('#pane-pctl [data-slot]')) {
