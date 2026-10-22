@@ -142,7 +142,8 @@
     ['wb', 'WHITE · BLACK', ['wbMode', 'awb', 'abb', 'colorTemp', 'varTempDown', 'varTemp', 'varTempUp']],
     ['paint', 'PAINT', ['rGain', 'bGain', 'rPed', 'gPed', 'bPed']],
     ['detail', 'DETAIL', ['detail', 'masterDetail', 'skinDetail', 'skinEffect']],
-    ['gamma', 'GAMMA · KNEE', ['gammaMode', 'gamma', 'kneeMode', 'kneePoint', 'kneeSlope']],
+    ['gamma', 'GAMMA', ['gammaMode', 'gamma']],
+    ['knee', 'KNEE', ['kneeMode', 'kneePoint', 'kneeSlope']],
     ['matrix', 'MATRIX', ['matrixType', 'adaptiveMatrix', 'matrixRG', 'matrixRB', 'matrixGR', 'matrixGB', 'matrixBR', 'matrixBG']],
     ['chroma', 'CHROMA', ['chromaLevel', 'chromaPhase']],
     ['bars', 'BARS', ['colorBars', 'colorBarsSetup', 'colorBarsTitle', 'colorBarsTone', 'colorBarsType']],
@@ -178,7 +179,7 @@
     const ops = ids.map((id) => k.ops.find((o) => o.id === id)).filter(Boolean);
     if (name === 'menu') {
       const g = (id) => { const o = ops.find((x) => x.id === id); return o ? ctlHtml(o) : '<span></span>'; };
-      return ops.length ? `<div class="menu-pad">${g('menu')}<div class="cross"><span></span>${g('menuUp')}<span></span>${g('menuLeft')}${g('menuEnter')}${g('menuRight')}<span></span>${g('menuDown')}<span></span></div>${g('menuCancel')}</div>` : '';
+      return ops.length ? `<div class="menu-pad"><div class="mp-side">${g('menu')}${g('menuCancel')}</div><div class="cross"><span></span>${g('menuUp')}<span></span>${g('menuLeft')}${g('menuEnter')}${g('menuRight')}<span></span>${g('menuDown')}<span></span></div></div>` : '';
     }
     if (name === 'limits') {
       const g = (id) => { const o = ops.find((x) => x.id === id); return o ? ctlHtml(o) : '<span></span>'; };
@@ -190,18 +191,20 @@
   function layoutPaint() {
     const cards = [...document.querySelectorAll('#pane-pctl .pcard')]; if (!cards.length) return;
     const avail = cards.filter((x) => !x.classList.contains('empty'));
-    const cells = (x) => (x.dataset.pane === 'matrix' && paintCols >= 2 ? 2 : 1);
-    const need = avail.reduce((n, x) => n + cells(x), 0); const cap = paintCols * 2;
-    const all = need <= cap;
+    // all cards fit in two rows: pick the column count that fills both rows (no empty cells); else page through them
+    const n = avail.length; const all = n <= paintCols * 2; let cols = paintCols; let wideM = false;
+    if (all && n) { const rows = n <= paintCols ? 1 : 2; cols = Math.ceil(n / rows); wideM = cols * rows - n >= 1 && cols >= 2; }
+    const cells = (x) => (x.dataset.pane === 'matrix' && wideM ? 2 : 1);
+    const cap = cols * 2;
     $('#ptzPaintTabs').classList.toggle('all', all);
     let start = Math.max(0, avail.findIndex((x) => x.dataset.pane === paintTab)); let used = 0; const show = new Set();
     if (all) avail.forEach((x) => show.add(x));
     else { for (let i = 0; i < avail.length && used < cap; i++) { const x = avail[(start + i) % avail.length]; if (used + cells(x) > cap) break; show.add(x); used += cells(x); } }
     for (const x of cards) { x.classList.toggle('hide', !show.has(x)); x.classList.toggle('wide', cells(x) === 2); }
     document.querySelectorAll('#ptzPaintTabs .ptab').forEach((b) => b.classList.toggle('on', [...show].some((x) => x.dataset.pane === b.dataset.ptab)));
-    const g = document.querySelector('#pane-pctl [data-slot=paint]'); g.style.setProperty('--pcols', String(paintCols)); g.classList.toggle('none', !avail.length);
+    const g = document.querySelector('#pane-pctl [data-slot=paint]'); g.style.setProperty('--pcols', String(cols)); g.classList.toggle('none', !avail.length);
   }
-  new ResizeObserver(() => { const g = document.querySelector('#pane-pctl [data-slot=paint]'); const w = g.clientWidth; const n = Math.max(1, Math.floor((w + 8) / 238)); if (n !== paintCols) { paintCols = n; layoutPaint(); } }).observe(document.querySelector('#pane-pctl [data-slot=paint]'));
+  new ResizeObserver(() => { const g = document.querySelector('#pane-pctl [data-slot=paint]'); const w = g.clientWidth; const n = Math.max(1, Math.floor((w + 8) / 202)); if (n !== paintCols) { paintCols = n; layoutPaint(); } }).observe(document.querySelector('#pane-pctl [data-slot=paint]'));
   function build(c, k) {
     const sid = c.series; const used = new Set();
     for (const el of document.querySelectorAll('#pane-pctl [data-slot]')) {

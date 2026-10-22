@@ -621,7 +621,7 @@ body.tab-atem .main{gap:14px}
 .cc-help{font-size:12px}
 
 /* ---------- 0.9.1 CAMERA CONTROL: full-screen RCP + joystick layout ---------- */
-.rcp-bus .cam-strip{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:6px}
+.rcp-bus .cam-strip{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px}
 .cam-strip .cam{grid-template-columns:auto 14px 1fr auto;grid-template-rows:auto auto;column-gap:7px;min-width:0;padding:6px 10px}
 .cam-strip .cam .kn{grid-row:1 / span 2;font:900 11px/1 ui-monospace,Menlo,monospace;color:#5d6d82;border:1px solid #2d3743;border-radius:5px;padding:3px 5px}
 .cam-strip .cam.on .kn{color:#dfe3ff;border-color:var(--accent)}
@@ -632,7 +632,7 @@ body.tab-atem .main{gap:14px}
 .cam-strip .cam .mr em.pg{background:var(--pgm);color:#fff}.cam-strip .cam .mr em.pv{background:var(--pvw);color:#04140a}
 .cam-strip .cam small{grid-column:3 / span 2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rcp-read{margin:4px 0 8px;padding:4px}
-.rcp{gap:8px;grid-template-columns:300px 214px 272px minmax(0,1fr) minmax(0,1fr);
+.rcp{gap:8px;grid-template-columns:300px 214px 330px minmax(0,1fr) minmax(0,1fr);
   grid-template-areas:"joy lens iris paint paint" "presets presets presets view sys"}
 .rcp>.panel{padding:10px;display:flex;flex-direction:column}
 .rcp-view{grid-area:view}
@@ -715,3 +715,36 @@ body.tab-atem .main{gap:14px}
   .rcp{grid-template-columns:270px 196px 250px minmax(0,1fr);grid-template-areas:"joy lens iris sys" "paint paint paint paint" "presets presets presets view"}
 }
 @media (max-width:860px){ .rcp{grid-template-columns:1fr 1fr;grid-template-areas:"joy joy" "lens iris" "paint paint" "presets presets" "view sys"} }
+
+/* 0.9.1 fill: the joystick, rockers, preset grid and notes take the height their row gives them */
+.joy-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.rcp-joy .joy{margin:2px auto 6px}
+.rockers{flex:1;min-height:0}.rock{min-height:0}.rock .rk-track{flex:1;height:auto;min-height:150px}
+.rcp-presets .thumbs{flex:1;grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:minmax(52px,1fr)}
+.rcp-presets .thumb{aspect-ratio:auto;min-height:52px}
+.knob.big{width:128px}.knob.big svg{width:108px;height:108px}.knob.big>b{top:44px;font-size:20px}
+.rcp-iris .rcp-ctl{justify-content:space-between}
+.sys-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;flex:1}
+.sys-col{display:flex;flex-direction:column;min-width:0}
+.sub-t.first{margin-top:6px;border-top:0;padding-top:0}
+.pmem{grid-template-columns:1fr 1fr}
+.pcard .ctl-b{flex:0 1 auto}
+@media (max-width:860px){ .sys-cols{grid-template-columns:1fr} }
+.pcard .knob{width:70px}.pcard .knob svg{width:56px;height:56px}.pcard .knob>b{top:22px;font-size:11px}
+.pcard .pc-b{gap:4px 2px}
+.rcp-iris [data-slot=exposure]{flex:1;align-content:space-evenly}
+.rcp-sys [data-slot=tracking]{flex-direction:row}
+.rcp-sys .sys-row{flex-wrap:nowrap;justify-content:space-between}
+.rcp-sys .sys-row [data-slot=tracking] .ctl-t{flex:0 1 auto}
+.rcp-sys [data-slot=tracking]{flex-direction:column;flex:0 0 auto}
+.rcp-sys [data-slot=menu] .menu-pad{gap:6px;flex-wrap:nowrap}
+.rcp-sys [data-slot=menu] .menu-pad>.ctl-t,.rcp-sys [data-slot=menu] .menu-pad>.ctl-b{min-width:0}
+.rcp-sys [data-slot=tally] .ctl-t{flex:1 1 30%}
+.rcp-sys .ctl-t{padding:5px 8px}.rcp-sys .ctl-t b{font-size:12px}
+.menu-pad .mp-side{display:flex;flex-direction:column;gap:6px}
+.rcp-sys .sys-row{flex-wrap:wrap;justify-content:flex-start;gap:8px}
+.rcp-sys .sys-row>[data-slot=menu]{flex:0 0 auto}
+.rcp-sys .sys-row>[data-slot=tracking]{flex:1 1 90px;flex-direction:column}
+.rcp-sys .sys-row>[data-slot=tracking] .ctl-t{flex:0 0 auto;width:100%}
+.pcard[data-pane=matrix] .ctl-t{flex:1 1 100%}
+.rcp-bus .cam-strip{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
