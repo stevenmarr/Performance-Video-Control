@@ -224,18 +224,22 @@ dark backing (see the comment in `style.css`).
 
 ## Several systems online at once
 
-The SYSTEMS page used to arm one system and hide every other tab. **ADD TO DESK** leaves a system
-online next to the ones already there. The tab bar groups them: RS6, then E2 / PixelHue, then ATEM,
-then PTZ. Opening a group's tab focuses that system (header pill, TAKE, bus) without taking the
-others off. **REMOVE** drops one; the last system on the desk cannot be removed. The system cards
-wrap instead of squeezing every system onto one row, and a connection form stays inside its own card.
+The SYSTEMS page used to arm one system and hide every other tab. Each system that already has an
+address keeps its own group on the tab bar: **RS6**, then **E2 / PixelHue**, then **ATEM**, then
+**PTZ**. Open a group's tab to drive that system (header pill, TAKE, bus). The others stay put, so
+RS6 and ATEM are controlled without coming back here to pick one. **ADD TO DESK** is only for a
+system that is not up yet. **REMOVE** drops one; the last system on the desk cannot be removed.
+Removing a system never sends anything to a device. The system cards wrap instead of squeezing
+every system onto one row, and a connection form stays inside its own card.
 
 `GET /api/sys` adds `armed` (system ids, in desk order). `active` is still the focused system, so
 Companion and `/api/sys/:sys/...` are unchanged. `POST /api/sys/active` adds that system to the desk
 and focuses it. `POST /api/sys/armed` with `{system, on}` adds (and focuses) or removes one.
 
-A `systems.json` written before this has no `armed` and comes back as just its active system. Show
-files stay format 2 and may include `armed`. A show without it changes only which system is focused.
+A `systems.json` written before this has no `armed`. The first start of this version puts RS6 and
+every system that already has an address on the desk, then saves that list. A later **REMOVE** stays
+off. Show files stay format 2 and may include `armed`. A show without it changes only which system
+is focused.
 
 ---
 

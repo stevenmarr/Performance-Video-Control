@@ -193,19 +193,21 @@ test('manager: selection, recall, TAKE tally, dim filter, MOVE / swap, persisten
   } finally { await stop(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('desk: several systems stay online, an old file stays single-system, a show without a desk does not clear it', async () => {
+test('desk: configured systems stay on the tab bar, an explicit desk is kept, a show without a desk does not clear it', async () => {
   const dir = tmp();
   try {
-    fs.writeFileSync(path.join(dir, 'systems.json'), JSON.stringify({ version: 1, active: 'atem', connections: {}, sessions: {} }));
+    fs.writeFileSync(path.join(dir, 'systems.json'), JSON.stringify({ version: 1, active: 'rs6', connections: { atem: { host: '192.0.2.70', port: 9910 }, e2: { host: '' } }, sessions: {} }));
     const sm = new SystemManager({ dataDir: dir, engine: fakeEngine(), autoStart: false });
-    assert.deepEqual(sm.getState().armed, ['atem'], 'a file from before the desk is that one system');
-    await sm.setActive('rs6');
-    assert.deepEqual(sm.cfg.armed, ['rs6', 'atem']);
+    assert.deepEqual(sm.getState().armed, ['rs6', 'atem'], 'an older file puts RS6 and every addressed system on the desk');
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'systems.json'), 'utf8')).armed, ['rs6', 'atem']);
+    await sm.setActive('e2');
+    assert.deepEqual(sm.cfg.armed, ['rs6', 'e2', 'atem']);
     await sm.setArmed('ptz', true);
-    assert.equal(sm.cfg.active, 'ptz'); assert.deepEqual(sm.cfg.armed, ['rs6', 'atem', 'ptz']);
+    assert.equal(sm.cfg.active, 'ptz'); assert.deepEqual(sm.cfg.armed, ['rs6', 'e2', 'atem', 'ptz']);
     await sm.setArmed('atem', false);
-    assert.deepEqual(sm.cfg.armed, ['rs6', 'ptz']); assert.equal(sm.cfg.active, 'ptz', 'removing another system keeps the focus');
+    assert.deepEqual(sm.cfg.armed, ['rs6', 'e2', 'ptz']); assert.equal(sm.cfg.active, 'ptz', 'removing another system keeps the focus');
     await sm.setArmed('ptz', false);
+    await sm.setArmed('e2', false);
     assert.equal(sm.cfg.active, 'rs6'); assert.deepEqual(sm.cfg.armed, ['rs6']);
     await assert.rejects(() => sm.setArmed('rs6', false), /only system/);
     await sm.setArmed('atem', true); await sm.setArmed('e2', true);
@@ -215,7 +217,16 @@ test('desk: several systems stay online, an old file stays single-system, a show
     assert.ok(sm.cfg.armed.includes('pixelhue'));
     sm.applyShowPart({ system: 'rs6', armed: ['rs6', 'atem'], systems: {} });
     assert.deepEqual(sm.cfg.armed, ['rs6', 'atem']); assert.equal(sm.cfg.active, 'rs6');
+    sm.updateConnection('pixelhue', { host: '192.0.2.40', port: 8088 });
+    assert.deepEqual(sm.cfg.armed, ['rs6', 'pixelhue', 'atem'], 'saving an address puts that system on the desk without stealing focus');
+    assert.equal(sm.cfg.active, 'rs6');
     sm.close();
+    const kept = new SystemManager({ dataDir: dir, engine: fakeEngine(), autoStart: false });
+    assert.deepEqual(kept.cfg.armed, ['rs6', 'pixelhue', 'atem'], 'the saved desk is not rebuilt on the next start');
+    await kept.setArmed('atem', false); await kept.setArmed('pixelhue', false); kept.close();
+    const removed = new SystemManager({ dataDir: dir, engine: fakeEngine(), autoStart: false });
+    assert.deepEqual(removed.cfg.armed, ['rs6'], 'REMOVE stays off');
+    removed.close();
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
