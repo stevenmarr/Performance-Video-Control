@@ -227,11 +227,9 @@ dark backing (see the comment in `style.css`).
 The SYSTEMS page used to arm one system and hide every other tab. Each system that already has an
 address keeps its own group on the tab bar: **RS6**, then **E2 / PixelHue**, then **ATEM**, then
 **PTZ**, then **Pixera**, then **Millumin**. Open a group's tab to drive that system. The others stay
-put, so an RS6 and a media server are controlled without coming back here to pick one. **CONFIGURE**
-on every card (including the compact layout) opens that system's address. **ADD TO DESK** is for a
-system that already has an address and is not up yet; it also opens that system's tab. Once it is
-on the desk the same corner button becomes **OPEN** and goes to those tabs. **REMOVE** drops one;
-the last system on the desk cannot be removed. Removing a system never sends anything to a device. The system cards wrap instead of
+put, so an RS6 and a media server are controlled without coming back here to pick one. Each card has
+one **ADD TO DESK** (or **OPEN**, once it is on the desk — that button switches to the system's tabs)
+and one **CONFIGURE** section for the address. **REMOVE** drops one; the last system on the desk cannot be removed. Removing a system never sends anything to a device. The system cards wrap instead of
 squeezing every system onto one row, and a connection form stays inside its own card.
 
 `GET /api/sys` adds `armed` (system ids, in desk order). `active` is still the focused system, so
