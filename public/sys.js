@@ -185,16 +185,20 @@
     const card = (s) => {
       const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
       const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : 'PRESETS';
+      // Unconfigured: the only useful action is the address. Configured: ADD puts it on the bar and opens it.
+      // On the desk the same button stays a button (it used to turn into a badge that did nothing).
+      const head = !s.configured
+        ? `<button type="button" class="btn mini primary" data-config="${s.key}">CONFIGURE</button>`
+        : `<button type="button" class="btn mini primary" data-use="${s.key}" data-open="${s.key}">${on ? 'OPEN' : 'ADD TO DESK'}</button>`;
+      const connOpen = openDet.has(s.key) || (!s.configured && density !== 'compact');
       return `<article class="sys-card ${active ? 'active' : ''} ${on ? 'on-desk' : ''} ${st.cls}" data-card="${s.key}">
         <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
-          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}</div></div>
-          ${on
-            ? `<span class="badge-active">${active ? 'OPEN' : 'ON DESK'}</span>`
-            : `<button type="button" class="btn mini primary" data-use="${s.key}">ADD TO DESK</button>`}</header>
+          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${on ? `<span class="desk-tag">${active ? 'OPEN' : 'ON DESK'}</span>` : ''}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}</div></div>
+          ${head}</header>
         ${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<div class="err small">${esc(s.status.error).slice(0, 140)}</div>` : ''}
         <div class="stats">${statsOf(s)}</div>${liveLine(s)}
-        <div class="actions left">${on ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}">OPEN ${open} →</button><button type="button" class="btn mini" data-armoff="${s.key}">REMOVE</button>` : ''}</div>
-        <details data-det="${s.key}" ${openDet.has(s.key) || !s.configured ? 'open' : ''}><summary>Connection${s.key === 'ptz' ? ' · cameras' : ''}</summary>${connForm(s)}</details>
+        <div class="actions left">${on ? `<button type="button" class="btn mini" data-open="${s.key}">OPEN ${open} →</button><button type="button" class="btn mini" data-armoff="${s.key}">REMOVE</button>` : ''}<button type="button" class="btn mini" data-config="${s.key}">CONFIGURE</button></div>
+        <details data-det="${s.key}" ${connOpen ? 'open' : ''}><summary>Connection${s.key === 'ptz' ? ' · cameras' : ''}</summary>${connForm(s)}</details>
       </article>`;
     };
     // one flowing grid (scales to many cards); group chips filter it; the active system always comes first
@@ -216,6 +220,14 @@
   const camRow = (el) => ({ name: el.querySelector('[name=name]').value.trim(), host: el.querySelector('[name=host]').value.trim(), port: Number(el.querySelector('[name=port]').value) || 80 });
   $('#sysCards').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.config) {
+      const det = b.closest('.sys-card') && b.closest('.sys-card').querySelector('details');
+      if (!det) return;
+      det.open = true; openDet.add(b.dataset.config); localStorage.setItem('cc.det', JSON.stringify([...openDet]));
+      const host = det.querySelector('input[name=host], input[name=name]'); if (host) host.focus();
+      det.scrollIntoView({ block: 'nearest' });
+      return;
+    }
     if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); toast(`${st.systems[b.dataset.armoff].short} left the desk`); }).catch((e) => toast(e.message, true)));
     if (b.dataset.use) return run(api('POST', '/api/sys/active', { system: b.dataset.use }).then((st) => { onSys(st); if (b.dataset.open) CC.setTab(HOME_TAB[st.systems[b.dataset.use].kind]); else toast(`${st.systems[b.dataset.use].short} is on the desk`); }));
     if (b.dataset.open) { const k = SYS.systems[b.dataset.open].kind; return CC.setTab(HOME_TAB[k]); }

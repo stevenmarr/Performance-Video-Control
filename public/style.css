@@ -456,7 +456,8 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .sys-card .stat{background:#0f1318;border:1px solid #232a33;border-radius:9px;padding:8px 10px;display:flex;flex-direction:column;min-width:0}
 .sys-card .stat b{font:800 20px/1.1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}.sys-card .stat span{font-size:9px;font-weight:800;letter-spacing:.12em;color:var(--dim);margin-top:2px;overflow-wrap:anywhere}
 .sys-card details{min-width:0}
-.sys-card details summary{cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--dim)}
+.sys-card details summary{cursor:pointer;font-size:11px;font-weight:800;letter-spacing:.1em;color:#cfe2ff;display:inline-flex;align-items:center;padding:7px 10px;border:1px solid #2a3a4e;border-radius:8px;background:#101722;width:fit-content}
+.desk-tag{font-size:9px;font-weight:900;letter-spacing:.12em;color:#9cc4ff;border:1px solid #27405f;border-radius:99px;padding:1px 6px}
 .sys-card .conn-form{margin-top:8px;gap:8px;padding:8px 0 0;min-width:0}
 .sys-card .conn-form label{font-size:12px;min-width:0;overflow-wrap:anywhere}
 .sys-card .row2,.sys-card .row3{grid-template-columns:repeat(2,minmax(0,1fr));min-width:0}
@@ -483,7 +484,7 @@ body.tab-atem #xlast,body.tab-aaux #xlast,body.tab-amacros #xlast,body.tab-pctl 
 .sys-group{margin-bottom:6px}
 .sys-cards.compact{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
 .sys-cards.compact{grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr))}
-.sys-cards.compact .stats,.sys-cards.compact details,.sys-cards.compact .live-line{display:none}
+.sys-cards.compact .stats,.sys-cards.compact .live-line{display:none}
 .sys-cards.compact .sys-card{padding:10px 12px;gap:6px}
 .sys-cards.compact .mono{width:36px;height:36px;font-size:12px}
 .live-line{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;font-weight:800}
