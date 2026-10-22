@@ -1,6 +1,6 @@
 {
   "name": "rs6-presets",
-  "version": "0.9.6",
+  "version": "0.9.7",
   "description": "Show control center: Barco E2-style destination-aware presets for Analog Way Aquilon RS6, plus Barco Event Master (E2 / S3), PixelHue, Blackmagic ATEM switchers, Panasonic PTZ cameras, AV Stumpfl Pixera and Millumin, over their documented protocols.",
   "main": "server.js",
   "license": "MIT",

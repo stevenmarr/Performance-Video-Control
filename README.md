@@ -228,16 +228,23 @@ The SYSTEMS page used to arm one system and hide every other tab. Each system th
 address keeps its own group on the tab bar: **RS6**, then **E2 / PixelHue**, then **ATEM**, then
 **PTZ**, then **Pixera**, then **Millumin**. Open a group's tab to drive that system. The others stay
 put, so an RS6 and a media server are controlled without coming back here to pick one. Each card has
-one **ADD TO DESK** (or **OPEN**, once it is on the desk — that button switches to the system's tabs)
-and one **CONFIGURE** section for the address. **REMOVE** drops one; the last system on the desk cannot be removed. Removing a system never sends anything to a device. The system cards wrap instead of
+one **ADD TO DESK**. Once that system is on the desk the same corner button becomes **REMOVE FROM DESK**
+(it does not turn into Open — the tabs, and **OPEN PRESETS →** / **OPEN SWITCHER →** on the card, already
+do that). **ADD TO DESK AS SIMULATOR** starts that system's built-in fixture on 127.0.0.1, puts it on the
+desk next to the live systems, and does not write the fixture into `systems.json` or a show. It is not
+offered for the RS6, and not while that system is already on the desk or while the whole app is in
+`--mock`. **REMOVE FROM DESK** stops the fixture and puts the saved address back. The last real system
+on the desk cannot be removed. Removing a system never sends anything to a device. The system cards wrap instead of
 squeezing every system onto one row, and a connection form stays inside its own card.
 
 `GET /api/sys` adds `armed` (system ids, in desk order). `active` is still the focused system, so
 Companion and `/api/sys/:sys/...` are unchanged. `POST /api/sys/active` adds that system to the desk
 and focuses it. `POST /api/sys/armed` with `{system, on}` adds (and focuses) or removes one.
+`POST /api/sys/:sys/simulate` puts that system on the desk against its loopback fixture. The fixture is
+not stored.
 
 A `systems.json` written before this has no `armed`. The first start of this version puts RS6 and
-every system that already has an address on the desk, then saves that list. A later **REMOVE** stays
+every system that already has an address on the desk, then saves that list. A later **REMOVE FROM DESK** stays
 off. Show files stay format 2 and may include `armed`. A show without it changes only which system
 is focused.
 
@@ -245,7 +252,8 @@ is focused.
 over TCP on the port chosen in Pixera (default 1400): TIMELINES is play / pause / stop / toggle per timeline,
 CUES is next / previous cue and apply a cue by name. Millumin is OSC over UDP (default port 5000): COLUMNS is
 launch / stop / next / previous, play / pause and go to time; LAYER is the selected layer's media and opacity.
-Neither is contacted until it has an address, and neither joins the desk until then.
+Neither is contacted until it has an address, and neither joins the desk until **ADD TO DESK** or
+**ADD TO DESK AS SIMULATOR**. A simulator does not replace an address already saved for that system.
 
 ---
 

@@ -128,7 +128,7 @@
   const f = (name, label, type, val, ph, dis, extra = '') => `<label>${label}<input name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${esc(ph)}" ${dis} ${extra}></label>`;
   function connForm(s) {
     const c = s.connection || {}; const dis = c.mock ? 'disabled' : '';
-    const foot = (k) => `<div class="actions left">${c.mock ? '<span class="note small">Mock mode: connected to the built-in mock, fixed.</span>' : '<button class="btn mini primary" value="save">SAVE &amp; CONNECT</button>'}
+    const foot = (k) => `<div class="actions left">${c.simulator ? '<span class="note small">Simulator on 127.0.0.1. It is not saved. REMOVE FROM DESK to use a real address.</span>' : c.mock ? '<span class="note small">Mock mode: connected to the built-in mock, fixed.</span>' : '<button class="btn mini primary" value="save">SAVE &amp; CONNECT</button>'}
       <button type="button" class="btn mini" data-reconnect="${k}" ${s.configured ? '' : 'disabled'}>⟳ RECONNECT</button></div>`;
     if (s.key === 'rs6') {
       return `<form class="form conn-form" data-sys="rs6">
@@ -185,18 +185,23 @@
     const card = (s) => {
       const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
       const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : 'PRESETS';
-      // One corner button: ADD TO DESK, or OPEN once it is on the desk (OPEN is a button, it switches tabs).
-      // One CONFIGURE disclosure. Compact used to hide it; extra CONFIGURE buttons were the duplicate.
+      // Corner button: ADD TO DESK, or REMOVE FROM DESK once it is on the desk. Opening stays on the
+      // tabs and on OPEN {home} → (that button keeps data-use so the desk tests still find one control).
       const head = on
-        ? `<button type="button" class="btn mini primary" data-use="${s.key}" data-open="${s.key}">OPEN</button>`
+        ? `<button type="button" class="btn mini danger" data-armoff="${s.key}">REMOVE FROM DESK</button>`
         : `<button type="button" class="btn mini primary" data-use="${s.key}">ADD TO DESK</button>`;
+      const sim = !on && s.key !== 'rs6' && !(s.connection && s.connection.mock)
+        ? `<button type="button" class="btn mini" data-sim="${s.key}">ADD TO DESK AS SIMULATOR</button>` : '';
+      const actions = on
+        ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}">OPEN ${open} →</button>`
+        : sim;
       return `<article class="sys-card ${active ? 'active' : ''} ${on ? 'on-desk' : ''} ${st.cls}" data-card="${s.key}">
         <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
           <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}</div></div>
           ${head}</header>
         ${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<div class="err small">${esc(s.status.error).slice(0, 140)}</div>` : ''}
         <div class="stats">${statsOf(s)}</div>${liveLine(s)}
-        <div class="actions left">${on ? `<button type="button" class="btn mini" data-open="${s.key}">OPEN ${open} →</button><button type="button" class="btn mini" data-armoff="${s.key}">REMOVE</button>` : ''}</div>
+        ${actions ? `<div class="actions left">${actions}</div>` : ''}
         <details data-det="${s.key}" ${openDet.has(s.key) ? 'open' : ''}><summary>CONFIGURE</summary>${connForm(s)}</details>
       </article>`;
     };
@@ -220,6 +225,7 @@
   $('#sysCards').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return;
     if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); toast(`${st.systems[b.dataset.armoff].short} left the desk`); }).catch((e) => toast(e.message, true)));
+    if (b.dataset.sim) return run(api('POST', `/api/sys/${b.dataset.sim}/simulate`).then((st) => { onSys(st); toast(`${st.systems[b.dataset.sim].short} simulator is on the desk`); }).catch((e) => toast(e.message, true)));
     if (b.dataset.use) return run(api('POST', '/api/sys/active', { system: b.dataset.use }).then((st) => { onSys(st); if (b.dataset.open) CC.setTab(HOME_TAB[st.systems[b.dataset.use].kind]); else toast(`${st.systems[b.dataset.use].short} is on the desk`); }));
     if (b.dataset.open) { const k = SYS.systems[b.dataset.open].kind; return CC.setTab(HOME_TAB[k]); }
     if (b.dataset.rs6set) return $('#btnSettings').click();

@@ -442,8 +442,10 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .sys-card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:#3a4350}
 .sys-card.ok::before{background:#2bd46b}.sys-card.off::before{background:#ff4d55}
 .sys-card.active{border-color:#3b8cff;box-shadow:0 0 0 1px #3b8cff inset,0 8px 30px rgba(59,140,255,.12)}
-.sys-card header{display:flex;align-items:center;gap:12px;min-width:0}
+.sys-card header{display:flex;align-items:center;gap:12px;min-width:0;flex-wrap:wrap}
 .sys-card header .btn,.sys-card header .badge-active,.sys-card header .badge-stub{flex-shrink:0}
+.sys-card header .ttl{flex:1 1 160px}
+.sys-card header .btn{margin-left:auto;white-space:nowrap}
 .sys-card .mono{width:46px;height:46px;border-radius:10px;display:grid;place-items:center;background:#0f1318;border:1px solid #2f3946;font-weight:900;letter-spacing:.06em;color:#9cc4ff;font-size:14px;flex-shrink:0}
 .sys-card .ttl{flex:1;min-width:0}.sys-card .nm{font-weight:800;font-size:16px;overflow-wrap:anywhere}
 .sys-card .st{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--dim);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
