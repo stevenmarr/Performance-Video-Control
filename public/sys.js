@@ -1,7 +1,8 @@
 'use strict';
-// Control Center (0.6.0, 0.7.0): the SYSTEMS home page (dashboard + every connection setting) and the shared
-// preset-switcher UI for E2 / PixelHue. RS6 keeps its own tabs (public/app.js); ATEM and PTZ have theirs
-// (public/atem.js, public/ptz.js), fed from here through window.CCSYS. State arrives as the `sys` event on the
+// Control Center (0.6.0, 0.7.0, 0.9.1): the SYSTEMS home page (dashboard + every connection setting) and the shared
+// preset-switcher UI for E2 / PixelHue. Several systems stay on the desk at once; their tabs stay grouped in the
+// bar. `active` is the system the open tab is driving. RS6 keeps its own tabs (public/app.js); ATEM and PTZ have
+// theirs (public/atem.js, public/ptz.js), fed from here through window.CCSYS. State arrives as the `sys` event on the
 // event stream app.js opens (window 'cc:sys'), and from GET /api/sys.
 (() => {
   const $ = (s) => document.querySelector(s);
@@ -17,9 +18,12 @@
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ' };
   const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'aaux', 'amacros'], ptz: ['pctl', 'pcams'] };
   const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl' };
+  const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
   const RS6TABS = KIND_TABS.rs6;
   const listeners = [];
+  const armed = () => (SYS && SYS.armed) || (SYS ? [SYS.active] : ['rs6']);
+  const armedOf = (kindName) => armed().filter((k) => SYS.systems[k] && SYS.systems[k].kind === kindName);
   const HINTS = {
     recall: '<b>RECALL → PVW</b> · tap a tile to recall that preset to <b>Preview</b> on the destinations stored in it, then TAKE or CUT the selected destinations.',
     program: '<b>RECALL → PGM</b> · tap a tile to recall straight to <b>Program</b>, without a transition. The app asks first.',
@@ -38,34 +42,77 @@
   const ver = (v) => (v && typeof v === 'object' ? `${v.major}.${v.minor}.${v.patch}` : v || '');
 
   // ---------- system switch / chrome ----------
+  // One preset pane is shared by E2 and PixelHue, so that group shows the focused one when it is a preset
+  // system, otherwise the first armed preset system that has the tab.
+  function ownerOf(tabName, cap) {
+    const kn = TAB_KIND[tabName];
+    const list = armedOf(kn);
+    if (!list.length) return null;
+    if (kn !== 'preset') return list[0];
+    const focused = SYS.systems[SYS.active] && SYS.systems[SYS.active].kind === 'preset' ? SYS.active : list[0];
+    const has = (k) => { const c = (SYS.views && SYS.views[k] && SYS.views[k].capabilities) || (SYS.systems[k] && SYS.systems[k].capabilities) || {}; return !cap || c[cap]; };
+    if (has(focused)) return focused;
+    return list.find((k) => has(k)) || null;
+  }
   function applyChrome() {
-    const a = SYS.active; const sysInfo = SYS.systems[a];
-    for (const k of Object.keys(SYS.systems)) document.body.classList.toggle(`sys-${k}`, k === a);
+    const a = SYS.active; const sysInfo = SYS.systems[a]; const on = new Set(armed());
+    for (const k of Object.keys(SYS.systems)) {
+      document.body.classList.toggle(`sys-${k}`, k === a);
+      document.body.classList.toggle(`arm-${k}`, on.has(k));
+    }
     for (const k of Object.keys(KIND_TABS)) document.body.classList.toggle(`kind-${k}`, k === kind());
     document.body.classList.toggle('sys-x', isX());
     const st = statusOf(sysInfo);
-    $('#sysBadgeName').textContent = sysInfo.short; $('#btnSystem').className = `sys-badge ${st.cls}`;
-    $('#btnSystem').title = `${sysInfo.label} · ${st.txt} · tap for the SYSTEMS dashboard`;
+    const badge = armed().map((k) => SYS.systems[k].short).join(' · ');
+    $('#sysBadgeName').textContent = badge; $('#btnSystem').className = `sys-badge ${st.cls}`;
+    $('#btnSystem').title = `On the desk: ${armed().map((k) => SYS.systems[k].label).join(', ')} · open: ${sysInfo.label} (${st.txt}) · tap for SYSTEMS`;
+    document.querySelectorAll('.tab-group').forEach((g) => { g.hidden = !armedOf(g.dataset.grp).length; });
+    document.querySelectorAll('.tab-group .grp-btn').forEach((b) => { b.hidden = !on.has(b.dataset.focus); b.classList.toggle('on', b.dataset.focus === a); });
+    document.querySelectorAll('.tab[data-sys]').forEach((t) => {
+      const owner = ownerOf(t.dataset.tab, t.dataset.cap);
+      t.hidden = !owner;
+      if (owner) t.dataset.owner = owner;
+    });
     document.querySelectorAll('.xsys').forEach((e) => { e.textContent = sysInfo.short; });
-    if (isX() && V) {
-      const caps = V.capabilities || {};
-      document.querySelectorAll('.tab.x-only').forEach((t) => { t.hidden = !caps[t.dataset.cap]; });
-      const c = $('#xconn'); const s = V.status || {};
+    const pillFor = () => {
+      const tab = CC.getTab();
+      if (tab === 'system' || !TAB_KIND[tab] || TAB_KIND[tab] === 'rs6') return null;
+      const el = document.querySelector(`.tab[data-tab="${tab}"]`);
+      return ownerOf(tab, el && el.dataset.cap) || a;
+    };
+    const pillSys = pillFor();
+    const pillView = pillSys && pillSys !== 'rs6' ? ((SYS.views && SYS.views[pillSys]) || (pillSys === a ? V : null)) : null;
+    const pillInfo = pillSys ? SYS.systems[pillSys] : sysInfo;
+    if (pillView && pillInfo) {
+      const c = $('#xconn'); const s = pillView.status || {};
       c.className = `pill x-only ${s.connected ? 'ok' : 'off'}`;
-      const where = V.system === 'ptz' ? `${s.online || 0}/${s.total || 0} cameras` : esc(V.connection.host || '');
-      const model = (s.info && s.info.model) || ''; const short = model.toUpperCase().startsWith(String(sysInfo.short).toUpperCase()) ? '' : sysInfo.short; // "ATEM ATEM ..." -> "ATEM ..."
-      c.innerHTML = (s.connected ? `${esc(short)} ${V.system === 'ptz' ? '' : `${esc(model)} ${esc(ver(s.info && s.info.version))} · `}${where}` : `${esc(sysInfo.short)} not connected${s.error ? ' · ' + esc(s.error).slice(0, 50) : ''}`) + (V.connection.mock ? '<span class="mock">MOCK</span>' : '');
+      const where = pillView.system === 'ptz' ? `${s.online || 0}/${s.total || 0} cameras` : esc(pillView.connection.host || '');
+      const model = (s.info && s.info.model) || ''; const short = model.toUpperCase().startsWith(String(pillInfo.short).toUpperCase()) ? '' : pillInfo.short;
+      c.innerHTML = (s.connected ? `${esc(short)} ${pillView.system === 'ptz' ? '' : `${esc(model)} ${esc(ver(s.info && s.info.version))} · `}${where}` : `${esc(pillInfo.short)} not connected${s.error ? ' · ' + esc(s.error).slice(0, 50) : ''}`) + (pillView.connection.mock ? '<span class="mock">MOCK</span>' : '');
       let last = '';
-      if (V.kind === 'preset') last = V.lastRecalled ? `PVW: ${V.lastRecalled.number} · ${V.lastRecalled.name}` : 'PVW: —';
-      else if (V.kind === 'atem' && V.inputs && V.inputs.length) { const nm = (id) => { const i = V.inputs.find((x) => x.id === id); return i ? i.short : '—'; }; last = `PGM ${nm(V.program)} · PVW ${nm(V.preview)}`; }
-      else if (V.kind === 'ptz') { const c2 = (V.cameras || []).find((x) => x.id === V.selected); last = c2 ? `CAM: ${c2.name}` : 'CAM: —'; }
+      if (pillView.kind === 'preset') last = pillView.lastRecalled ? `PVW: ${pillView.lastRecalled.number} · ${pillView.lastRecalled.name}` : 'PVW: —';
+      else if (pillView.kind === 'atem' && pillView.inputs && pillView.inputs.length) { const nm = (id) => { const i = pillView.inputs.find((x) => x.id === id); return i ? i.short : '—'; }; last = `PGM ${nm(pillView.program)} · PVW ${nm(pillView.preview)}`; }
+      else if (pillView.kind === 'ptz') { const c2 = (pillView.cameras || []).find((x) => x.id === pillView.selected); last = c2 ? `CAM: ${c2.name}` : 'CAM: —'; }
       $('#xlast').textContent = last;
     }
-    // the current tab must belong to the active system
-    const tab = CC.getTab(); const k = kind();
-    if (tab !== 'system' && !KIND_TABS[k].includes(tab)) CC.setTab(HOME_TAB[k]);
-    else if (isX() && V && KIND_TABS[k].includes(tab)) { const t = document.querySelector(`.tab[data-tab=${tab}]`); if (t && t.hidden) CC.setTab(HOME_TAB[k]); }
+    // a tab whose system left the desk goes home; a deep link to a system not yet armed brings it on
+    const tab = CC.getTab(); const kn = TAB_KIND[tab];
+    if (tab !== 'system' && kn && !armedOf(kn).length) {
+      if (!landed) return armForTab(tab);
+      const home = armedOf('rs6').length ? 'presets' : (armed()[0] ? HOME_TAB[SYS.systems[armed()[0]].kind] : 'system');
+      CC.setTab(home);
+    } else if (kn) {
+      const cur = document.querySelector(`.tab[data-tab="${tab}"]`);
+      const homeEl = document.querySelector(`.tab[data-tab="${HOME_TAB[kn]}"]`);
+      if (cur && cur.hidden) CC.setTab(homeEl && !homeEl.hidden ? HOME_TAB[kn] : 'system');
+    }
     landed = true;
+  }
+  function armForTab(tab) {
+    const kn = TAB_KIND[tab];
+    const sys = kn === 'preset' ? 'e2' : Object.keys(SYS.systems).find((k) => SYS.systems[k].kind === kn);
+    if (!sys || armed().includes(sys)) { landed = true; return; }
+    run(api('POST', '/api/sys/active', { system: sys }).then((st) => { landed = true; onSys(st); }));
   }
   // Landing: the SYSTEMS page is home. A deep link (/#presets, /#xpresets, /#atem, ...) opens that tab instead.
   (() => {
@@ -128,14 +175,17 @@
     $('#dashSummary').innerHTML = `<b>${all.length}</b> systems · <span class="ok">${sts.filter((x) => x.cls === 'ok').length} online</span> · <span class="off">${sts.filter((x) => x.cls === 'off' || x.cls === 'warn').length} offline / degraded</span> · <span class="idle">${sts.filter((x) => x.cls === 'idle').length} not configured</span>`;
     document.querySelectorAll('[data-density]').forEach((b) => b.classList.toggle('active', b.dataset.density === density));
     const card = (s) => {
-      const st = statusOf(s); const active = SYS.active === s.key; const info = (s.status && s.status.info) || {};
-      return `<article class="sys-card ${active ? 'active' : ''} ${st.cls}" data-card="${s.key}">
+      const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
+      const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : 'PRESETS';
+      return `<article class="sys-card ${active ? 'active' : ''} ${on ? 'on-desk' : ''} ${st.cls}" data-card="${s.key}">
         <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
           <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}</div></div>
-          ${active ? '<span class="badge-active">ACTIVE</span>' : `<button type="button" class="btn mini primary" data-use="${s.key}">USE THIS SYSTEM</button>`}</header>
+          ${on
+            ? `<span class="badge-active">${active ? 'OPEN' : 'ON DESK'}</span>`
+            : `<button type="button" class="btn mini primary" data-use="${s.key}">ADD TO DESK</button>`}</header>
         ${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<div class="err small">${esc(s.status.error).slice(0, 140)}</div>` : ''}
         <div class="stats">${statsOf(s)}</div>${liveLine(s)}
-        ${active ? `<div class="actions left"><button type="button" class="btn mini" data-open="${s.key}">OPEN ${s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : 'PRESETS'} →</button></div>` : ''}
+        <div class="actions left">${on ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}">OPEN ${open} →</button><button type="button" class="btn mini" data-armoff="${s.key}">REMOVE</button>` : ''}</div>
         <details data-det="${s.key}" ${openDet.has(s.key) || !s.configured ? 'open' : ''}><summary>Connection${s.key === 'ptz' ? ' · cameras' : ''}</summary>${connForm(s)}</details>
       </article>`;
     };
@@ -144,7 +194,7 @@
     if (groupSel !== 'all' && !groups.some((g) => g.name === groupSel)) groupSel = 'all';
     const chip = (key, label, n) => `<button class="mode ${groupSel === key ? 'active' : ''}" data-group="${esc(key)}" type="button">${esc(label)} <small>${n}</small></button>`;
     set($('#dashGroups'), 'groups', chip('all', 'ALL', all.length) + groups.map((g) => chip(g.name, g.name.toUpperCase(), g.systems.length)).join(''));
-    const keys = (groupSel === 'all' ? groups.flatMap((g) => g.systems) : groups.find((g) => g.name === groupSel).systems).slice().sort((x, y) => (x === SYS.active ? -1 : y === SYS.active ? 1 : 0));
+    const keys = (groupSel === 'all' ? groups.flatMap((g) => g.systems) : groups.find((g) => g.name === groupSel).systems).slice().sort((x, y) => (armed().includes(x) === armed().includes(y) ? (x === SYS.active ? -1 : y === SYS.active ? 1 : 0) : armed().includes(x) ? -1 : 1));
     const cards = `<div class="sys-cards ${density}">${keys.map((k) => card(SYS.systems[k])).join('')}</div>`;
     // keep a focused connection form from being replaced while typing
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#sysCards')) set($('#sysCards'), 'cards', cards);
@@ -158,7 +208,8 @@
   const camRow = (el) => ({ name: el.querySelector('[name=name]').value.trim(), host: el.querySelector('[name=host]').value.trim(), port: Number(el.querySelector('[name=port]').value) || 80 });
   $('#sysCards').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return;
-    if (b.dataset.use) return run(api('POST', '/api/sys/active', { system: b.dataset.use }).then((st) => { onSys(st); toast(`Now driving: ${st.systems[st.active].label}`); }));
+    if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); toast(`${st.systems[b.dataset.armoff].short} left the desk`); }).catch((e) => toast(e.message, true)));
+    if (b.dataset.use) return run(api('POST', '/api/sys/active', { system: b.dataset.use }).then((st) => { onSys(st); if (b.dataset.open) CC.setTab(HOME_TAB[st.systems[b.dataset.use].kind]); else toast(`${st.systems[b.dataset.use].short} is on the desk`); }));
     if (b.dataset.open) { const k = SYS.systems[b.dataset.open].kind; return CC.setTab(HOME_TAB[k]); }
     if (b.dataset.rs6set) return $('#btnSettings').click();
     if (b.dataset.reconnect) return run(api('POST', `/api/sys/${b.dataset.reconnect}/connect`).then(() => toast('Connected')));
@@ -316,7 +367,7 @@
     }
     for (const fn of listeners) { try { fn(V, t, SYS); } catch (e) { console.error(e); } }
   }
-  function onSys(st) { if (!st || (SYS && st.rev < SYS.rev && st.active === SYS.active)) return; SYS = st; V = st.view; renderAll(); }
+  function onSys(st) { if (!st || (SYS && st.rev < SYS.rev && st.active === SYS.active && JSON.stringify(st.armed) === JSON.stringify(SYS.armed))) return; SYS = st; V = st.view; renderAll(); }
   async function refetch() { try { onSys(await api('GET', '/api/sys')); } catch { /* the stream will bring it */ } }
   window.addEventListener('cc:sys', (e) => onSys(e.detail));
   // for public/atem.js and public/ptz.js

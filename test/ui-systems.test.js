@@ -29,7 +29,9 @@ test('Control Center: dashboard, E2 presets (dim, recall, TAKE), PixelHue, back 
   await page.click('[data-use=e2]');
   await page.waitForFunction(() => document.body.classList.contains('sys-x'));
   assert.equal(await page.locator('.tab[data-tab=xcues]').isVisible(), true);
-  assert.equal(await page.locator('.tab[data-tab=presets]').isVisible(), false, 'RS6 tabs hidden while E2 is active');
+  assert.equal(await page.locator('.tab[data-tab=presets]').isVisible(), true, 'RS6 stays on the desk when E2 is added');
+  assert.equal(await page.locator('.tab-group[data-grp=rs6]').isVisible(), true);
+  assert.equal(await page.locator('.tab-group[data-grp=preset]').isVisible(), true);
   await page.click('.tab[data-tab=xpresets]');
   await page.locator('#xgrid .preset[data-key]').first().waitFor();
   // select only Screen 4: S1-only presets dim
@@ -104,7 +106,9 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   assert.equal(await moving(), false, 'blur: stopped');
   await page.mouse.up();
   await page.click('.tab[data-tab=system]'); await page.click('[data-use=rs6]');
-  await page.waitForFunction(() => document.body.classList.contains('kind-rs6'));
+  await page.waitForFunction(() => document.body.classList.contains('kind-rs6') && document.body.classList.contains('arm-atem') && document.body.classList.contains('arm-ptz'));
+  assert.equal(await page.locator('.tab[data-tab=atem]').isVisible(), true, 'ATEM tabs stay grouped while RS6 is open');
+  assert.equal(await page.locator('.tab[data-tab=pctl]').isVisible(), true, 'PTZ tabs stay grouped while RS6 is open');
   assert.deepEqual(errors, []);
 });
 

@@ -15,7 +15,7 @@
 <header class="top">
   <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
   <div class="brand">CONTROL <span>CENTER</span></div>
-  <button id="btnSystem" class="sys-badge" type="button" title="The system this app is driving. Tap for the SYSTEMS dashboard."><span class="sys-dot"></span><span id="sysBadgeName">RS6</span></button>
+  <button id="btnSystem" class="sys-badge" type="button" title="Systems on the desk. Tap for the SYSTEMS dashboard."><span class="sys-dot"></span><span id="sysBadgeName">RS6</span></button>
   <button id="btnShow" class="btn ghost show-btn" title="Show file: save, save as, open, download, upload"><span class="show-k">SHOW</span> <span id="showName">Untitled show</span><span id="showDirty" class="dirty" title="Unsaved changes" hidden>●</span></button>
   <div id="conn" class="pill off rs6-only">Not connected</div>
   <div id="xconn" class="pill off x-only">Not connected</div>
@@ -31,22 +31,26 @@
 <div id="linkBanner" class="link-banner" role="status" hidden><span id="linkMsg">Reconnecting…</span><button class="btn mini" id="btnReconnect" type="button">Reconnect now</button></div>
 
 <nav class="tabs">
-  <button class="tab tab-home" data-tab="system" title="SYSTEMS: choose the switcher this app drives, its connection and live status">⌂ SYSTEMS</button>
-  <button class="tab active rs6-only" data-tab="presets">PRESETS</button>
-  <button class="tab rs6-only" data-tab="inputs">INPUTS</button>
-  <button class="tab rs6-only" data-tab="backup">BACKUP</button>
-  <button class="tab rs6-only" data-tab="audio">AUDIO</button>
-  <button class="tab rs6-only" data-tab="webrcs" title="The device's own Web RCS, inside this app">WEB RCS</button>
-  <button class="tab x-only" data-tab="xpresets" data-cap="presets">PRESETS</button>
-  <button class="tab x-only" data-tab="xcues" data-cap="cues">CUES</button>
-  <button class="tab x-only" data-tab="xsources" data-cap="sources">SOURCES</button>
-  <button class="tab x-only" data-tab="xstills" data-cap="stills">STILLS</button>
-  <button class="tab x-only" data-tab="xbackup" data-cap="backups">BACKUP</button>
-  <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher">SWITCHER</button>
-  <button class="tab x-only" data-tab="aaux" data-cap="atemAux">AUX</button>
-  <button class="tab x-only" data-tab="amacros" data-cap="atemMacros">MACROS</button>
-  <button class="tab x-only" data-tab="pctl" data-cap="ptzControl">CAMERA CONTROL</button>
-  <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras">CAMERAS</button>
+  <button class="tab tab-home" data-tab="system" title="SYSTEMS: which systems are on the desk, their connections and live status">⌂ SYSTEMS</button>
+  <span class="tab-group rs6-only" data-grp="rs6">RS6</span>
+  <button class="tab active rs6-only" data-tab="presets" data-sys="rs6">PRESETS</button>
+  <button class="tab rs6-only" data-tab="inputs" data-sys="rs6">INPUTS</button>
+  <button class="tab rs6-only" data-tab="backup" data-sys="rs6">BACKUP</button>
+  <button class="tab rs6-only" data-tab="audio" data-sys="rs6">AUDIO</button>
+  <button class="tab rs6-only" data-tab="webrcs" data-sys="rs6" title="The device's own Web RCS, inside this app">WEB RCS</button>
+  <span class="tab-group x-only preset-grp" data-grp="preset"><button type="button" class="grp-btn" data-focus="e2">E2</button><button type="button" class="grp-btn" data-focus="pixelhue">PIXELHUE</button></span>
+  <button class="tab x-only" data-tab="xpresets" data-cap="presets" data-sys="preset">PRESETS</button>
+  <button class="tab x-only" data-tab="xcues" data-cap="cues" data-sys="preset">CUES</button>
+  <button class="tab x-only" data-tab="xsources" data-cap="sources" data-sys="preset">SOURCES</button>
+  <button class="tab x-only" data-tab="xstills" data-cap="stills" data-sys="preset">STILLS</button>
+  <button class="tab x-only" data-tab="xbackup" data-cap="backups" data-sys="preset">BACKUP</button>
+  <span class="tab-group x-only atem-grp" data-grp="atem">ATEM</span>
+  <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher" data-sys="atem">SWITCHER</button>
+  <button class="tab x-only" data-tab="aaux" data-cap="atemAux" data-sys="atem">AUX</button>
+  <button class="tab x-only" data-tab="amacros" data-cap="atemMacros" data-sys="atem">MACROS</button>
+  <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
+  <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
+  <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras" data-sys="ptz">CAMERAS</button>
 </nav>
 
 <main class="main">
@@ -132,7 +136,7 @@
   <!-- 0.6.0 SYSTEMS dashboard: one card per system, live status, connection, and the switch between them -->
   <section class="grid-wrap pane dash" id="pane-system" hidden>
     <div class="dash-head">
-      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Home of the control center: every system's live status and connection settings. Choose the one this surface drives with USE THIS SYSTEM; each keeps its own connection, selection and layout, and switching never sends anything to a device.</div></div>
+      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Home of the control center: every system's live status and connection settings. ADD TO DESK keeps a system's tabs on the bar next to the others — RS6 and ATEM can both stay up. OPEN focuses that system. Taking one off never sends anything to a device.</div></div>
       <span class="spacer"></span>
       <div class="dash-tools"><div id="dashSummary" class="dash-summary"></div>
         <div class="seg-row" role="group" aria-label="Card size"><button class="mode" data-density="cards" type="button">CARDS</button><button class="mode" data-density="compact" type="button">COMPACT</button></div></div>

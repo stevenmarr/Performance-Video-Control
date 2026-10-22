@@ -157,7 +157,7 @@ test('first start migrates: systems.json records RS6 as the system and its conne
     assert.equal(j.active, 'rs6'); assert.equal(j.migrated.rs6.host, '192.0.2.10');
     assert.equal(j.connections.e2.host, '', 'E2 has no IP until the user sets one'); assert.equal(j.connections.e2.port, 9999);
     assert.equal(j.connections.pixelhue.port, 8088); assert.equal(j.connections.pixelhue.prefix, '/pixelhue');
-    const st = sm.getState(); assert.equal(st.active, 'rs6'); assert.equal(st.view, null); assert.equal(st.planned.length, 0, '0.7.0: ATEM and PTZ are real drivers now');
+    const st = sm.getState(); assert.equal(st.active, 'rs6'); assert.deepEqual(st.armed, ['rs6']); assert.equal(st.view, null); assert.equal(st.planned.length, 0, '0.7.0: ATEM and PTZ are real drivers now');
     sm.close();
     const again = new SystemManager({ dataDir: dir, engine: fakeEngine({ host: 'x' }), autoStart: false });
     assert.equal(again.migrated.rs6.host, '192.0.2.10', 'migration happens once'); again.close();
@@ -187,10 +187,36 @@ test('manager: selection, recall, TAKE tally, dim filter, MOVE / swap, persisten
     assert.equal(sm.view('e2').presets.find((p) => p.key === 'e2:2').tile, 30);
     sm.close();
     const sm2 = new SystemManager({ dataDir: dir, engine: fakeEngine(), autoStart: false });
-    assert.equal(sm2.cfg.active, 'e2'); assert.deepEqual(sm2.cfg.sessions.e2.selection, ['S2', 'S3']); assert.equal(sm2.cfg.sessions.e2.layout['e2:2'], 30);
+    assert.equal(sm2.cfg.active, 'e2'); assert.deepEqual(sm2.cfg.armed, ['rs6', 'e2']); assert.deepEqual(sm2.cfg.sessions.e2.selection, ['S2', 'S3']); assert.equal(sm2.cfg.sessions.e2.layout['e2:2'], 30);
     sm2.close();
     await assert.rejects(sm.take('pixelhue'), /no destinations selected/);
   } finally { await stop(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('desk: several systems stay online, an old file stays single-system, a show without a desk does not clear it', async () => {
+  const dir = tmp();
+  try {
+    fs.writeFileSync(path.join(dir, 'systems.json'), JSON.stringify({ version: 1, active: 'atem', connections: {}, sessions: {} }));
+    const sm = new SystemManager({ dataDir: dir, engine: fakeEngine(), autoStart: false });
+    assert.deepEqual(sm.getState().armed, ['atem'], 'a file from before the desk is that one system');
+    await sm.setActive('rs6');
+    assert.deepEqual(sm.cfg.armed, ['rs6', 'atem']);
+    await sm.setArmed('ptz', true);
+    assert.equal(sm.cfg.active, 'ptz'); assert.deepEqual(sm.cfg.armed, ['rs6', 'atem', 'ptz']);
+    await sm.setArmed('atem', false);
+    assert.deepEqual(sm.cfg.armed, ['rs6', 'ptz']); assert.equal(sm.cfg.active, 'ptz', 'removing another system keeps the focus');
+    await sm.setArmed('ptz', false);
+    assert.equal(sm.cfg.active, 'rs6'); assert.deepEqual(sm.cfg.armed, ['rs6']);
+    await assert.rejects(() => sm.setArmed('rs6', false), /only system/);
+    await sm.setArmed('atem', true); await sm.setArmed('e2', true);
+    const part = sm.showPart(); assert.deepEqual(part.armed, ['rs6', 'e2', 'atem']); assert.equal(part.system, 'e2');
+    sm.applyShowPart({ system: 'pixelhue', systems: {} });
+    assert.equal(sm.cfg.active, 'pixelhue'); assert.ok(sm.cfg.armed.includes('atem'), 'an older show changes focus and leaves the desk');
+    assert.ok(sm.cfg.armed.includes('pixelhue'));
+    sm.applyShowPart({ system: 'rs6', armed: ['rs6', 'atem'], systems: {} });
+    assert.deepEqual(sm.cfg.armed, ['rs6', 'atem']); assert.equal(sm.cfg.active, 'rs6');
+    sm.close();
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('mock overrides fix the connection; unconfigured systems are never contacted by the poller', async () => {
@@ -219,7 +245,7 @@ test('/api/sys routes drive E2 and PixelHue; show format 2 records the system an
   try {
     let st = (await call('GET', '/api/sys')).json; assert.equal(st.active, 'rs6');
     st = (await call('POST', '/api/sys/active', { system: 'e2' })).json;
-    assert.equal(st.active, 'e2'); assert.equal(st.view.status.connected, true); assert.equal(st.view.presets.length, 15);
+    assert.equal(st.active, 'e2'); assert.deepEqual(st.armed, ['rs6', 'e2'], 'adding E2 leaves RS6 on the desk'); assert.equal(st.view.status.connected, true); assert.equal(st.view.presets.length, 15);
     assert.deepEqual((await call('POST', '/api/sys/e2/destinations/S1/toggle')).json.selection, ['S1']);
     assert.equal((await call('POST', '/api/sys/e2/presets/e2%3A1/recall', {})).json.ok, true);
     assert.deepEqual((await call('POST', '/api/sys/e2/take')).json.done, ['S1']);
@@ -232,7 +258,7 @@ test('/api/sys routes drive E2 and PixelHue; show format 2 records the system an
     // show file: v2 with system + sessions
     const saved = (await call('POST', '/api/shows/save', { name: 'E2 Gala' })).json;
     const j = JSON.parse(fs.readFileSync(path.join(ctx.dataDir, 'shows', `${saved.id}.rs6show`), 'utf8'));
-    assert.equal(j.version, 2); assert.equal(j.system, 'e2'); assert.deepEqual(j.systems.e2.selection, ['S1']);
+    assert.equal(j.version, 2); assert.equal(j.system, 'e2'); assert.deepEqual(j.armed, ['rs6', 'e2']); assert.deepEqual(j.systems.e2.selection, ['S1']);
     assert.equal(j.systems.e2.connection, undefined, 'no connection unless asked');
     // a 0.5.0 (v1) show opens as an RS6 show
     const v1 = { format: 'rs6-presets-show', version: 1, name: 'Old RS6 show', tileCount: 48, presets: [{ number: 2, name: 'A', destinations: ['S1'], memories: { S1: 3 } }] };

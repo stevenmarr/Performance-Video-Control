@@ -590,6 +590,14 @@
     render();
   }
   document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => { window.__ccTabClicked = true; setTab(b.dataset.tab); }));
+  // A grouped tab whose system is on the desk but not the one in focus: focus it, without taking the others off.
+  document.querySelector('nav.tabs').addEventListener('click', (ev) => {
+    const tab = ev.target.closest('.tab[data-owner]'); const focus = ev.target.closest('[data-focus]');
+    const sys = tab ? tab.dataset.owner : focus ? focus.dataset.focus : '';
+    const st = window.CCSYS && window.CCSYS.state();
+    if (!sys || !st || sys === 'preset' || sys === st.active || !(st.armed || []).includes(sys)) return;
+    window.CC.run(window.CC.api('POST', '/api/sys/active', { system: sys }));
+  });
   document.body.classList.add('tab-presets');
   // 0.6.0: shared helpers for public/sys.js
   window.CC = { setTab, getTab: () => tab, api, toast, run, esc };

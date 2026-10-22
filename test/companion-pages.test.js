@@ -187,7 +187,7 @@ test('/api/companion/pages: the plan per surface, files to download, bad input r
   const r = await fetch(`${B}/api/companion/pages/file?surfaces=plus&host=127.0.0.1&port=${port}&label=cc_test`);
   assert.equal(r.status, 200); assert.match(r.headers.get('content-disposition'), /attachment; filename="control-center-plus-\d{4}-\d\d-\d\d\.companionconfig"/);
   const j = await r.json(); assert.equal(j.version, 12); assert.equal(Object.values(j.instances)[0].label, 'cc_test'); assert.equal(Object.values(j.instances)[0].config.port, port);
-  assert.match(j.companionBuild, /^pv-control-center 0\.9\.0$/);
+  assert.equal(j.companionBuild, `pv-control-center ${require('../package.json').version}`);
   assert.ok(Object.values(j.pages).every((p) => p.surfaceLayout === 'streamdeck-plus'));
   const c = await fetch(`${B}/api/companion/pages/file?surfaces=xl,mk2&combined=1`); assert.equal(c.status, 200);
   assert.deepEqual([...new Set(Object.values((await c.json()).pages).map((p) => p.surfaceLayout))], ['streamdeck-xl', 'streamdeck']);
