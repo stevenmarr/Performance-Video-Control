@@ -175,12 +175,12 @@ test('tile count: 48 by default, 24/48/72/96 accepted, anything else falls back;
 test('GET /api/version and apiVersion in the state', async () => {
   await withApp({}, async (call) => {
     const v = (await call('GET', '/api/version')).json;
-    assert.equal(v.app, 'rs6-presets'); assert.equal(v.apiVersion, API_VERSION); assert.equal(v.apiVersion, 5);
+    assert.equal(v.app, 'rs6-presets'); assert.equal(v.apiVersion, API_VERSION); assert.equal(v.apiVersion, 6);
     assert.equal(v.appVersion, require('../package.json').version);
     for (const f of ['swap', 'tileCount', 'shows', 'longpoll']) assert.ok(v.features.includes(f), f);
     assert.deepEqual(v.tileCounts, [24, 48, 72, 96]);
     const st = (await call('GET', '/api/state')).json;
-    assert.equal(st.apiVersion, 5); assert.equal(st.appVersion, v.appVersion);
+    assert.equal(st.apiVersion, 6); assert.equal(st.appVersion, v.appVersion);
   });
 });
 
@@ -202,7 +202,7 @@ test('show round trip: save, change everything, open restores presets at their t
     assert.equal(saved.id, 'Conference Day 1');
     const file = path.join(dataDir, 'shows', 'Conference Day 1.rs6show');
     const j = JSON.parse(fs.readFileSync(file, 'utf8'));
-    assert.equal(j.format, 'rs6-presets-show'); assert.equal(j.version, 1); assert.equal(j.tileCount, 72);
+    assert.equal(j.format, 'rs6-presets-show'); assert.equal(j.version, 2, '0.6.0: show format 2'); assert.equal(j.system, 'rs6'); assert.equal(j.tileCount, 72);
     assert.deepEqual(j.presets.map((p) => p.number), [1, 7, 12]);
     assert.equal(j.presets[2].master.slot, 3, 'Master coverage is in the preset');
     assert.deepEqual(j.selection, ['S2']); assert.equal(j.settings.autoTake, true);

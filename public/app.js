@@ -30,7 +30,7 @@
     if (!S) return;
     const c = $('#conn');
     const ver = S.system && S.system.version ? (typeof S.system.version === 'object' ? `${S.system.version.major}.${S.system.version.minor}.${S.system.version.patch}` : S.system.version) : '';
-    c.className = 'pill ' + (S.connected ? 'ok' : 'off');
+    c.className = 'pill rs6-only ' + (S.connected ? 'ok' : 'off');
     c.innerHTML = (S.connected ? `${esc(S.system.type || 'Aquilon')} ${esc(ver)} · ${esc(S.settings.host)}` : `Not connected${S.lastError ? ' · ' + esc(S.lastError).slice(0, 60) : ''}`) + (S.mock ? '<span class="mock">MOCK</span>' : '');
     if (S.show) {
       if ($('#showName').textContent !== S.show.name) $('#showName').textContent = S.show.name;
@@ -43,7 +43,7 @@
     $('#master').innerHTML = lv.hasMemoryInfo ? `MASTER PGM <b>${mref(lm.program)}</b> · PVW <b>${mref(lm.preview)}</b>` : '';
     const lmEl = $('#liveMode');
     const modeTxt = { push: 'LIVE · PUSH', 'poll-awj': 'LIVE · AWJ POLL', 'poll-rest': 'LIVE · REST POLL', off: 'LIVE OFF' }[lv.mode || 'off'];
-    lmEl.className = 'pill ' + (lv.mode === 'push' ? 'live-push' : lv.mode && lv.mode !== 'off' ? 'live-poll' : 'live-off');
+    lmEl.className = 'pill rs6-only ' + (lv.mode === 'push' ? 'live-push' : lv.mode && lv.mode !== 'off' ? 'live-poll' : 'live-off');
     lmEl.textContent = modeTxt; lmEl.title = lv.error || '';
 
     const row = $('#destRow');
@@ -422,6 +422,7 @@
     es.onopen = alive;
     es.addEventListener('state', (ev) => { alive(); S = JSON.parse(ev.data); render(); });
     es.addEventListener('log', (ev) => { alive(); addLog(JSON.parse(ev.data)); });
+    es.addEventListener('sys', (ev) => { alive(); window.dispatchEvent(new CustomEvent('cc:sys', { detail: JSON.parse(ev.data) })); });
     es.addEventListener('ping', alive);
     es.onerror = () => {
       if (link.es !== es) return;
@@ -574,9 +575,11 @@
 
   // 0.4.0: INPUTS / BACKUP / AUDIO / WEB RCS hide everything that belongs to presets (screen tiles, TAKE / CUT,
   // the PVW line) and use the full width. body.tab-<name> drives the CSS.
-  const TABS = ['presets', 'inputs', 'backup', 'audio', 'webrcs'];
+  // 0.6.0: + the SYSTEMS dashboard and the shared E2 / PixelHue tabs (public/sys.js renders those)
+  const TABS = ['presets', 'inputs', 'backup', 'audio', 'webrcs', 'system', 'xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'];
   function setTab(t) {
     tab = TABS.includes(t) ? t : 'presets';
+    window.dispatchEvent(new CustomEvent('cc:tab', { detail: tab }));
     // 0.5.0 fix: MOVE (and SAVE) used to stay on across tab switches, so taps meant as RECALL on the way back
     // picked and moved tiles ("the presets are re ordered"). Leaving PRESETS always returns to RECALL.
     if (tab !== 'presets' && (mode === 'move' || mode === 'save')) setMode('recall');
@@ -586,8 +589,10 @@
     if (tab === 'webrcs') openRcs(false);
     render();
   }
-  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => setTab(b.dataset.tab)));
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => { window.__ccTabClicked = true; setTab(b.dataset.tab); }));
   document.body.classList.add('tab-presets');
+  // 0.6.0: shared helpers for public/sys.js
+  window.CC = { setTab, getTab: () => tab, api, toast, run, esc };
 
   // ---------- 0.4.0 Web RCS pane ----------
   // The device's Web RCS is loaded straight from the device in an <iframe> (the RS6 sends no X-Frame-Options or
@@ -653,7 +658,7 @@
   // keyboard: Space/Enter = TAKE, C = CUT
   document.addEventListener('keydown', (e) => {
     if (document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
-    if (tab !== 'presets') return; // 0.4.0: TAKE / CUT keys only where TAKE / CUT is shown
+    if (tab !== 'presets') return; // 0.4.0: TAKE / CUT keys only where TAKE / CUT is shown (sys.js: xpresets)
     if (e.key === 'Escape' && moveSrc != null) { moveSrc = null; render(); return; }
     if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); run(api('POST', '/api/take')); }
     if (e.key === 'c' || e.key === 'C') run(api('POST', '/api/cut'));

@@ -222,6 +222,67 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## v0.6.0: Control Center (RS6, Barco Event Master, PixelHue)
+
+The app is now a multi-system show control center. A **⌂ SYSTEMS** dashboard shows a card for each
+supported system, with live status (online/offline, model and firmware, and counts of presets,
+destinations, sources and cues), its connection form, and **USE THIS SYSTEM**. The header badge shows
+which system is active. The tabs follow the active system:
+
+| System | Tabs | API used |
+|---|---|---|
+| Analog Way Aquilon RS6 | the existing RS6 UI, unchanged | REST + AWJ (as before) |
+| Barco Event Master E2 / S3 (Toolset 10.x) | PRESETS, CUES, SOURCES, STILLS, BACKUP | JSON-RPC 2.0 over HTTP, port 9999 (Barco R5919184/02) |
+| PixelHue P10 / P20 / P80 / Q8 | PRESETS, SOURCES | OpenAPI V2 over HTTP, port 8088, JWT (PixelHue API User Guide V2.0.1) |
+| Blackmagic ATEM, PTZ cameras | shown as **STUB** cards only | not built |
+
+Your existing RS6 connection is migrated on first start (into `systems.json` in the data folder), and
+RS6 stays the active system until you choose another. Switching systems sends nothing to any device.
+
+### E2 / S3 and PixelHue presets
+
+- **Destinations** are toggles, like on RS6. On E2 the selected destinations are *armed*
+  (`armUnarmDestination`), so the processor's own TAKE / CUT and this app agree. On PixelHue the
+  TAKE / CUT request names the selected screens.
+- **Tap a tile** to recall that preset to Preview (`activatePreset` type 0, or `/v1/preset/apply`
+  targetRegion 4). **RECALL → PGM** sends it straight to Program after you confirm. **MOVE** rearranges
+  tiles in the app only; the preset numbers on the processor never change.
+- Neither API can recall a preset onto only *some* of its destinations: a preset always loads everything
+  stored in it. So instead, with "dim presets without the selected destinations" checked, presets that
+  touch none of the selected destinations are dimmed (like E2's own preset filter).
+- **TAKE** / **CUT** (Space / Enter / C) and AUTO TAKE work as they do on RS6. Tally (PGM/PVW on the tiles
+  and destinations) is tracked from this app's own recalls and takes, because Toolset 10.x has no push
+  notifications.
+- **E2 CUES**: play / pause / stop (`activateCue`). **SOURCES**: inputs and stills with freeze, plus aux
+  routing (`changeAuxContent`). **STILLS**: capture an input into a still slot / delete a still.
+  **BACKUP**: switch an input to main / backup 1-3 (`activateSourceMainBackup` / `resetSourceMainBackup`).
+- In E2 multi-operator mode, set the operator ID in the connection form.
+
+### Show files (format 2)
+
+Show files now record `system` (which system the show is for) plus a per-system section (destination
+selection, tile layout, tile count, auto take). Shows from 0.5.0 (format 1) still open as RS6 shows.
+Opening a show switches to its system; as before, it never sends anything to a device.
+
+### Mock mode
+
+`--mock` now also starts a mock E2 and a mock PixelHue on 127.0.0.1. Their connections are locked in
+mock mode, so a demo can never reach a real processor.
+
+### HTTP API additions (apiVersion 6)
+
+`GET /api/sys`, `POST /api/sys/active {system}`, and under `/api/sys/(e2|pixelhue)`: `GET`,
+`POST connection | connect | refresh | selection | take | cut | autotake | tiles | layout/reset`,
+`POST presets/:key/recall {target: "preview"|"program"}`, `POST presets/swap`,
+`POST destinations/:key/toggle`, `POST cues/:id/(play|pause|stop)`, `POST freeze`, `POST aux/:A/source`,
+`POST backups/:id`, `POST stills/take`, `DELETE stills/:id`. The SSE stream adds a `sys` event.
+
+### Adding a system
+
+Drivers live in `lib/drivers/` and implement one interface (see `lib/drivers/common.js`): connect,
+status, listDestinations, listPresets, recall, take, cut, and optionally sources, cues, stills and
+backups (declared in `capabilities`). The UI shows only the tabs a driver supports.
+
 ## v0.5.0: persistence, show files, more tiles, reorder fix
 
 ### Your data no longer lives in the app folder
@@ -655,7 +716,7 @@ an emulator of the real device.
 
 Run the automated tests (against the mock):
 ```bash
-npm test       # 114 tests; the browser check is skipped unless Playwright is installed
+npm test       # 167 tests; the browser checks are skipped unless Playwright is installed
 NODE_PATH=$(npm root -g) npm test   # with `npm i -g playwright && npx playwright install chromium`
 ```
 
@@ -832,11 +893,16 @@ lib/server.js        HTTP server, JSON API, SSE, static UI
 public/              UI (index.html, app.js, style.css, pv-logo.png, favicons)
 test/                node:test suites
 lib/datadir.js       per-user data folder + first-start migration from older copies (0.5.0)
-lib/shows.js         show file format, validation/migration, show library (0.5.0)
+lib/shows.js         show file format, validation/migration, show library (0.5.0; format 2 in 0.6.0)
+lib/systems.js       SystemManager: active system, connections, sessions, tally, live status (0.6.0)
+lib/drivers/         common driver interface + rs6 (adapter), e2 (Barco JSON-RPC), pixelhue (OpenAPI V2)
+lib/mocks/           mock Event Master and mock PixelHue (0.6.0)
+public/sys.js        Control Center dashboard + shared E2 / PixelHue tabs (0.6.0)
 
 <data folder>/presets.json    your presets
 <data folder>/settings.json   device + app settings (the password stays here)
 <data folder>/working.json    autosaved working state (current show, selection, board)
+<data folder>/systems.json    active system, E2 / PixelHue connections, per-system selection and tile layout
 <data folder>/shows/          show library (*.rs6show) and shows/backups/
 ```
 

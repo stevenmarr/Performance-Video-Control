@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 // RS6 Presets: E2-style destination-aware presets for Analog Way Aquilon RS6, built from the memories on the device.
+// 0.6.0: also drives Barco Event Master (E2 / S3) and PixelHue switchers (SYSTEM tab).
 // Usage: node server.js [--mock] [--port 8080] [--host 0.0.0.0] [--data <dir>]
 const path = require('path');
 const os = require('os');
@@ -8,6 +9,9 @@ const { Engine } = require('./lib/engine');
 const { createServer } = require('./lib/server');
 const { MockAquilon } = require('./lib/mock');
 const { resolveDataDir, migrateLegacy } = require('./lib/datadir');
+const { SystemManager } = require('./lib/systems');
+const { MockE2 } = require('./lib/mocks/e2');
+const { MockPixelHue } = require('./lib/mocks/pixelhue');
 
 function arg(name, def) {
   const i = process.argv.indexOf(`--${name}`);
@@ -45,7 +49,17 @@ async function main() {
     const origUpdate = engine.updateSettings.bind(engine);
     engine.updateSettings = (patch) => { origUpdate({ ...patch, ...settingsOverride }); };
   }
-  const server = createServer(engine);
+  // 0.6.0: E2 / PixelHue. In mock mode both get a built-in mock on 127.0.0.1 and their connection is fixed.
+  const sysOverrides = {}; const sysMocks = [];
+  if (mock) {
+    const e2 = new MockE2(); const ph = new MockPixelHue();
+    sysOverrides.e2 = { host: '127.0.0.1', port: await e2.start(0) };
+    sysOverrides.pixelhue = { host: '127.0.0.1', port: await ph.start(0), prefix: '/pixelhue' };
+    sysMocks.push(e2, ph);
+    console.log(`MOCK E2 JSON-RPC http://127.0.0.1:${sysOverrides.e2.port}  MOCK PixelHue http://127.0.0.1:${sysOverrides.pixelhue.port}/pixelhue`);
+  }
+  const systems = new SystemManager({ dataDir, engine, overrides: sysOverrides });
+  const server = createServer(engine, systems);
   server.listen(port, bind, async () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
     console.log(`RS6 Presets UI: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
@@ -54,7 +68,7 @@ async function main() {
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);
   });
 
-  const shutdown = async () => { server.closeClients(); server.close(); engine.close(); if (device) await device.stop(); process.exit(0); };
+  const shutdown = async () => { server.closeClients(); server.close(); systems.close(); for (const m of sysMocks) await m.stop(); engine.close(); if (device) await device.stop(); process.exit(0); };
   process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 }
 

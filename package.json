@@ -1,7 +1,7 @@
 {
   "name": "rs6-presets",
-  "version": "0.5.0",
-  "description": "Barco E2-style destination-aware preset save/recall for Analog Way Aquilon RS6 (fw 6.2.x) over the documented REST and AWJ APIs.",
+  "version": "0.6.0",
+  "description": "Show control center: Barco E2-style destination-aware presets for Analog Way Aquilon RS6, plus Barco Event Master (E2 / S3) and PixelHue switchers, over their documented APIs.",
   "main": "server.js",
   "license": "MIT",
   "private": true,
