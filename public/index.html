@@ -45,8 +45,7 @@
   <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher">SWITCHER</button>
   <button class="tab x-only" data-tab="aaux" data-cap="atemAux">AUX</button>
   <button class="tab x-only" data-tab="amacros" data-cap="atemMacros">MACROS</button>
-  <button class="tab x-only" data-tab="pctl" data-cap="ptzControl">PTZ CONTROL</button>
-  <button class="tab x-only" data-tab="ppresets" data-cap="ptzPresets">CAM PRESETS</button>
+  <button class="tab x-only" data-tab="pctl" data-cap="ptzControl">CAMERA CONTROL</button>
   <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras">CAMERAS</button>
 </nav>
 
@@ -217,53 +216,61 @@
     <div class="note small">Space = AUTO · C = CUT</div>
   </aside>
 
-  <!-- 0.7.0 Panasonic PTZ cameras (public/ptz.js) -->
+  <!-- 0.8.0 Panasonic PTZ: one CAMERA CONTROL dashboard (RP150-style joystick + RCP paint panel; public/ptz.js) -->
   <section class="grid-wrap pane" id="pane-pctl" hidden>
-    <div id="ptzStrip" class="cam-strip"></div>
-    <div class="ptz-body">
-      <div class="panel ptz-move">
-        <div class="section-title">PAN / TILT <small>hold to move · release stops</small></div>
-        <div id="ptzPad" class="ptz-pad">
-          <button data-pt="-1,1">↖</button><button data-pt="0,1">▲</button><button data-pt="1,1">↗</button>
-          <button data-pt="-1,0">◀</button><button data-home="1" class="home">HOME</button><button data-pt="1,0">▶</button>
-          <button data-pt="-1,-1">↙</button><button data-pt="0,-1">▼</button><button data-pt="1,-1">↘</button>
+    <div class="rcp-bus">
+      <div id="ptzStrip" class="cam-strip"></div>
+      <span class="spacer"></span>
+      <button class="btn rcp-allstop" id="ptzAllStop" type="button" title="Stop every camera (Esc)">■ ALL STOP</button>
+    </div>
+    <div class="rcp-read" id="ptzRead"></div>
+    <div class="rcp">
+      <div class="panel rcp-joy">
+        <div class="section-title">PAN / TILT <small>drag: speed grows with distance · release stops</small></div>
+        <div id="ptzJoy" class="joy" role="slider" aria-label="Pan / tilt joystick" tabindex="0"><div class="joy-ring"></div><div class="joy-x"></div><div class="joy-puck" id="ptzPuck"></div><span class="joy-l t">TILT +</span><span class="joy-l b">TILT −</span><span class="joy-l l">PAN −</span><span class="joy-l r">PAN +</span></div>
+        <div class="joy-foot">
+          <label class="slider">MAX SPEED <input type="range" min="1" max="49" id="spPt"><b id="spPtV"></b></label>
+          <button class="btn rcp-home" data-op="home" type="button">HOME</button>
         </div>
-        <label class="slider">PAN / TILT SPEED <input type="range" min="1" max="49" id="spPt"><b id="spPtV"></b></label>
+        <div class="joy-cmd" id="ptzJoyCmd">P 0 · T 0</div>
       </div>
-      <div class="panel ptz-lens">
-        <div class="section-title">ZOOM</div>
-        <div class="rocker"><button data-zoom="1">TELE +</button><button data-zoom="-1">WIDE −</button></div>
+      <div class="panel rcp-lens">
+        <div class="section-title">ZOOM · FOCUS</div>
+        <div class="rockers">
+          <div class="rock" id="ptzZoomR" data-axis="zoom"><span class="rk-l top">TELE</span><div class="rk-track"><div class="rk-thumb"></div></div><span class="rk-l bot">WIDE</span><b class="rk-v" id="ptzZoomV">—</b></div>
+          <div class="rock" id="ptzFocusR" data-axis="focus"><span class="rk-l top">FAR</span><div class="rk-track"><div class="rk-thumb"></div></div><span class="rk-l bot">NEAR</span><b class="rk-v" id="ptzFocusV">—</b></div>
+        </div>
         <label class="slider">ZOOM SPEED <input type="range" min="1" max="49" id="spZoom"><b id="spZoomV"></b></label>
-        <div class="section-title">FOCUS</div>
-        <div class="rocker"><button data-focus="1">FAR +</button><button data-focus="-1">NEAR −</button></div>
         <label class="slider">FOCUS SPEED <input type="range" min="1" max="49" id="spFocus"><b id="spFocusV"></b></label>
-        <div class="seg-row"><button class="mode" id="ptzAF" type="button">AUTO FOCUS</button><button class="mode" id="ptzOTAF" type="button">ONE-TOUCH AF</button></div>
+        <div class="rcp-ctl" data-slot="lens"></div>
       </div>
-      <div class="panel ptz-image">
-        <div class="section-title">CAMERA <small id="ptzCamInfo"></small></div>
-        <div class="seg-row"><button class="mode" id="ptzPowerOn" type="button">POWER ON</button><button class="mode" id="ptzStandby" type="button">STANDBY</button></div>
-        <div class="seg-row"><button class="mode tally-r" id="ptzTallyR" type="button">RED TALLY</button><button class="mode tally-g" id="ptzTallyG" type="button">GREEN TALLY</button></div>
-        <div class="section-title">EXPOSURE</div>
-        <label class="slider">IRIS <input type="range" min="0" max="99" id="ptzIris"><b id="ptzIrisV"></b></label>
-        <div class="seg-row"><button class="mode" id="ptzAutoIris" type="button">AUTO IRIS</button></div>
-        <label class="sel">GAIN <select id="ptzGain"></select></label>
-        <label class="sel">SHUTTER <select id="ptzShutter"></select></label>
-        <label class="sel">WHITE BALANCE <select id="ptzWb"></select></label>
-        <div class="note small">Gain / shutter / WB codes per series as in the Companion module; a model that lacks one answers with an error.</div>
+      <div class="panel rcp-iris">
+        <div class="section-title">IRIS · EXPOSURE</div>
+        <div class="rcp-ctl" data-slot="iris"></div>
+        <div class="rcp-ctl" data-slot="exposure"></div>
+      </div>
+      <div class="panel rcp-paint">
+        <div class="paint-tabs" id="ptzPaintTabs" role="tablist"></div>
+        <div class="rcp-ctl" data-slot="paint"></div>
+      </div>
+      <div class="panel rcp-presets">
+        <div class="section-title">PRESETS <small id="ptzPresetHint"></small></div>
+        <div class="modes" role="toolbar" aria-label="What a tap on a camera preset does">
+          <button class="mode active" data-pmode="recall" type="button">RECALL</button>
+          <button class="mode" data-pmode="store" type="button">STORE</button>
+          <button class="mode" data-pmode="rename" type="button">RENAME</button>
+          <span class="spacer"></span><div id="ptzPager" class="pager"></div>
+        </div>
+        <div id="ptzGrid" class="thumbs"></div>
+        <div class="rcp-ctl inline" data-slot="preset"></div>
+      </div>
+      <div class="panel rcp-sys">
+        <div class="section-title">CAMERA</div>
+        <div class="rcp-ctl" data-slot="system"></div>
+        <div class="section-title">OSD MENU</div>
+        <div class="rcp-ctl" data-slot="menu"></div>
       </div>
     </div>
-  </section>
-  <section class="grid-wrap pane" id="pane-ppresets" hidden>
-    <div id="ptzStrip2" class="cam-strip"></div>
-    <div class="modes" role="toolbar" aria-label="What a tap on a camera preset does">
-      <span class="modes-lbl">TAP A TILE TO</span>
-      <button class="mode active" data-pmode="recall" type="button">RECALL</button>
-      <button class="mode" data-pmode="store" type="button">STORE</button>
-      <button class="mode" data-pmode="rename" type="button">RENAME</button>
-    </div>
-    <div class="hint mode-hint" id="ptzModeHint"></div>
-    <div id="ptzPager" class="pager"></div>
-    <div id="ptzGrid" class="grid"></div>
   </section>
   <section class="grid-wrap pane" id="pane-pcams" hidden>
     <div class="section-title">PTZ CAMERAS <small>every camera under this system · add, edit, remove · status polled every 3 s</small></div>
@@ -271,6 +278,8 @@
     <form id="ptzAdd" class="row add-cam"><span class="lbl">Add a camera<small>Panasonic AW-UE / AW-HE, HTTP (CGI) control</small></span>
       <input name="name" placeholder="Name" maxlength="40"><input name="host" placeholder="IP address" autocomplete="off" spellcheck="false"><input name="port" type="number" min="1" max="65535" placeholder="80" class="slot-in">
       <button class="btn mini primary">ADD CAMERA</button></form>
+    <div class="section-title" style="margin-top:18px">COMMAND REFERENCE <small>every command the dashboard can send to the selected camera, with its source (Companion module action or Panasonic spec)</small></div>
+    <div id="ptzRef" class="rows ref"></div>
   </section>
 
   <aside class="transport xtransport">

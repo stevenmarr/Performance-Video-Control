@@ -81,13 +81,15 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   await page.click('#atemCut');
   await page.locator('#atemPgm [data-pgm="4"].on-pgm').waitFor();
   assert.equal((await api('/api/sys/atem')).program, 4);
-  // PTZ: hold the right arrow, the camera moves; release, it stops
+  // PTZ: hold the joystick to the right, the camera moves; release, it stops
   await page.click('.tab[data-tab=system]');
   await page.click('[data-use=ptz]');
   await page.click('.tab[data-tab=pctl]');
-  const right = page.locator('#ptzPad [data-pt="1,0"]'); await right.waitFor();
-  const box = await right.boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
+  const joy = page.locator('#ptzJoy'); await joy.waitFor();
+  await page.locator('#pane-pctl [data-op=iris]').waitFor();
+  const box = await joy.boundingBox();
+  const grab = async (fx, fy) => { await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); await page.mouse.move(box.x + box.width * fx, box.y + box.height * fy, { steps: 3 }); };
+  await grab(0.95, 0.5);
   const moving = async () => ((await api('/api/sys/ptz')).cameras.find((c) => c.id === 'cam1') || {}).moving;
   for (let i = 0; i < 40 && !(await moving()); i++) await new Promise((r) => setTimeout(r, 50));
   assert.equal(await moving(), true, 'held: moving');
@@ -95,7 +97,7 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   for (let i = 0; i < 40 && (await moving()); i++) await new Promise((r) => setTimeout(r, 50));
   assert.equal(await moving(), false, 'released: stopped');
   // blur while held also stops
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down();
+  await grab(0.95, 0.5);
   for (let i = 0; i < 40 && !(await moving()); i++) await new Promise((r) => setTimeout(r, 50));
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   for (let i = 0; i < 40 && (await moving()); i++) await new Promise((r) => setTimeout(r, 50));
@@ -103,5 +105,71 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   await page.mouse.up();
   await page.click('.tab[data-tab=system]'); await page.click('[data-use=rs6]');
   await page.waitForFunction(() => document.body.classList.contains('kind-rs6'));
+  assert.deepEqual(errors, []);
+});
+
+test('Control Center 0.8.0: CAMERA CONTROL dashboard: proportional joystick, rockers, RCP knobs, menu, per-model command set (Playwright)', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const port = 21000 + Math.floor(Math.random() * 1000); const B = `http://127.0.0.1:${port}`;
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6cc8-'));
+  const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), '--mock', '--port', String(port), '--host', '127.0.0.1', '--data', data], { stdio: 'ignore' });
+  t.after(() => { srv.kill(); fs.rmSync(data, { recursive: true, force: true }); });
+  await waitHttp(`${B}/api/state`);
+  const api = async (p, body) => (await fetch(B + p, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})).json();
+  await api('/api/sys/active', { system: 'ptz' });
+  const browser = await pw.chromium.launch(); t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
+  const errors = []; page.on('pageerror', (e) => errors.push(e.message));
+  await page.goto(B + '/#pctl');
+  await page.locator('#pane-pctl [data-op=rGain]').first().waitFor({ timeout: 10000 });
+  const cam = async (id = 'cam1') => (await api('/api/sys/ptz')).cameras.find((c) => c.id === id);
+  const until = async (fn, what) => { for (let i = 0; i < 60; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } throw new Error(`timed out: ${what}`); };
+  // every catalog command of this camera has a control (motion / presets have their own)
+  const cat = await (await fetch(`${B}/api/sys/ptz/cameras/cam1/catalog`)).json();
+  const ctl = new Set(await page.$$eval('#pane-pctl [data-op]', (els) => els.map((e) => e.dataset.op)));
+  const own = new Set(['move', 'zoom', 'focus', 'stop', 'recall', 'store', 'presetName', 'thumbnail', 'speeds', 'keepalive']);
+  for (const o of cat.ops) if (!own.has(o.id)) assert.ok(ctl.has(o.id), `control for ${o.id}`);
+  // proportional joystick: a small push is slow, a full push is fast (the server reports the PTS code it sent)
+  const box = await page.locator('#ptzJoy').boundingBox();
+  const cx = box.x + box.width / 2; const cy = box.y + box.height / 2;
+  await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx + box.width * 0.18, cy, { steps: 2 });
+  const slow = await until(async () => { const c = await cam(); return c.sent && c.sent.pt && c.sent.pt !== 'PTS5050' && c.sent.pt; }, 'slow move');
+  await page.mouse.move(cx + box.width * 0.5, cy - box.height * 0.5, { steps: 3 });
+  const fast = await until(async () => { const c = await cam(); return c.sent.pt !== slow && c.sent.pt; }, 'fast move');
+  const pan = (code) => Number(code.slice(3, 5)) - 50; const tilt = (code) => Number(code.slice(5, 7)) - 50;
+  assert.ok(pan(slow) > 0 && pan(slow) < 10, `slow pan ${slow}`); assert.ok(pan(fast) > pan(slow), `faster pan ${fast}`); assert.ok(tilt(fast) > 0, 'up = tilt +');
+  // hidden page stops
+  await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
+  await until(async () => !(await cam()).moving, 'hidden: stopped');
+  await page.mouse.up();
+  await page.evaluate(() => { delete document.hidden; });
+  // zoom rocker: proportional too, and releasing stops only zoom
+  const z = await page.locator('#ptzZoomR .rk-track').boundingBox();
+  await page.mouse.move(z.x + z.width / 2, z.y + z.height / 2); await page.mouse.down(); await page.mouse.move(z.x + z.width / 2, z.y + 4, { steps: 3 });
+  await until(async () => { const c = await cam(); return c.sent.z && Number(c.sent.z.slice(1)) > 60; }, 'zoom tele');
+  await page.mouse.up();
+  await until(async () => (await cam()).sent.z === 'Z50', 'zoom stopped');
+  // RCP: knob + buttons send catalog ops and the value reads back
+  const rk = page.locator('#pane-pctl [data-pane=paint] [data-op=rGain]');
+  await page.click('[data-ptab=paint]'); await rk.locator('[data-step="1"]').click(); await rk.locator('[data-step="1"]').click();
+  await until(async () => (await cam()).values.rGain === 2, 'R gain +2');
+  const kb = await rk.locator('svg').boundingBox();
+  await page.mouse.move(kb.x + kb.width / 2, kb.y + kb.height / 2); await page.mouse.down(); await page.mouse.move(kb.x + kb.width / 2, kb.y + kb.height / 2 - 30, { steps: 3 }); await page.mouse.up();
+  await until(async () => (await cam()).values.rGain > 20, 'R gain drag');
+  await page.click('[data-ptab=wb]'); await page.click('#pane-pctl [data-pane=wb] [data-op=wbMode] [data-v="9"]');
+  await until(async () => (await cam()).values.wbMode === '9', 'WB VAR');
+  await page.click('#pane-pctl [data-op=menu]'); await until(async () => (await cam()).values.menu === true, 'menu on');
+  await page.click('#pane-pctl [data-op=menuDown]'); await page.click('#pane-pctl [data-op=menu]'); await until(async () => (await cam()).values.menu === false, 'menu off');
+  await page.click('#pane-pctl [data-op=irisMode]'); await until(async () => (await cam()).values.irisMode === false, 'manual iris');
+  // presets: thumbnail tiles; STORE asks, RECALL moves
+  page.on('dialog', (d) => d.accept(d.type() === 'prompt' ? 'Lectern' : undefined));
+  await page.click('[data-pmode=store]'); await page.click('#ptzGrid [data-cp="4"]');
+  await until(async () => ((await cam()).presetNames || {})[4] === 'Lectern', 'stored');
+  await page.locator('#ptzGrid [data-cp="4"]:not(.noimg) img').waitFor({ timeout: 5000 });
+  await page.click('[data-pmode=recall]'); await page.click('#ptzGrid [data-cp="4"]'); await until(async () => (await cam()).lastPreset === 4, 'recalled');
+  // AW-HE130: no paint / menu (UE150-spec commands), its own shutter list
+  await page.click('.cam-strip [data-cam=cam3]');
+  await page.locator('#pane-pctl [data-slot=exposure] [data-op=shutter]').waitFor({ timeout: 8000 });
+  assert.equal(await page.locator('#pane-pctl [data-op=rGain]').count(), 0); assert.equal(await page.locator('#pane-pctl [data-op=menu]').count(), 0);
+  assert.equal(await page.locator('[data-ptab=paint]').isDisabled(), true);
   assert.deepEqual(errors, []);
 });

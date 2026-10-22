@@ -222,6 +222,51 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## v0.8.0: CAMERA CONTROL dashboard (RCP + joystick), Companion gateway (API 8)
+
+**CAMERA CONTROL** (PTZ) is now one dashboard laid out like a Panasonic AW-RP150/RP60 joystick controller next
+to an AW-RCP paint panel. The old CAM PRESETS tab is folded into it; the CAMERAS tab stays for adding cameras,
+the per-camera series override and a command reference.
+
+- **Camera bus** with red/green tally, model and a status strip (model, series, firmware, pan, tilt, zoom,
+  focus, iris, power, errors) read from the camera every 0.5 s while it is driven, and **ALL STOP**.
+- **Joystick**: proportional pan/tilt (dead zone, speed grows with distance from centre, max speed slider),
+  **zoom and focus rockers** with variable speed, AF/MF, one-touch / push AF, HOME.
+- **Iris / exposure**: iris knob with auto, gain, super gain, ND, shutter mode / step / synchro, master pedestal.
+- **Paint tabs**: white balance (ATW, AWB A/B, 3200K/5600K, VAR colour temperature, AWB and ABB execute),
+  R/B gain, R/G/B pedestal, detail, gamma, knee, matrix (type, adaptive, six linear terms), chroma, skin tone,
+  colour bars. What a camera shows comes from its series.
+- **Presets**: recall / store / rename, a 100-preset paged grid with thumbnails from the camera
+  (`/cgi-bin/get_preset_thumbnail`, proxied with a strict CSP), recall scope, speed / time.
+- **Camera**: power, tally, scene file, install position, OSD menu (on/off, arrows, enter, cancel).
+- **Motion safety**: releasing, blur, a hidden tab, a tab change, a camera change, Esc or closing the page
+  stops motion; the server stops a camera if its keep-alives stop for 1.5 s. Motion commands are queued per
+  camera at least 40 ms apart, and the latest pan/tilt/zoom/focus speed wins.
+
+**Command catalog.** `lib/drivers/ptz-commands.js` holds every command of bitfocus
+companion-module-panasonic-ptz 2.6.1 (aw_ptz and aw_cam, with its per-series gating generated into
+`lib/drivers/panasonic-data.js` by `tools/gen-panasonic-data.mjs`), plus AW-UE150 interface-spec commands
+offered only on the UE150 series. `docs/ptz-commands.md` lists all of them with codes and sources. The mock
+camera accepts and echoes all of them, model-aware, with the spec's error replies.
+
+**Companion gateway.** Bitfocus Companion now controls every system through this app (module
+companion-module-rs6-presets 0.6.0, "PV Control Center"). New and changed routes:
+
+| Route | What |
+| --- | --- |
+| `GET /api/sys?since=<rev>&timeout=<ms>[&views=all]` | long-poll on the multi-system state; `views=all` adds every configured system's view |
+| `GET /api/sys/views` | `{rev, active, views}` for every configured system |
+| `GET /api/sys/ptz/cameras/:id/catalog` | the commands, options and ranges this camera supports |
+| `GET /api/sys/ptz/cameras/:id/status` | fresh readout of one camera (rate-limited 250 ms) |
+| `GET /api/sys/ptz/cameras/:id/thumbnail/:n` | the camera's preset thumbnail image |
+| `POST /api/sys/ptz/cmd/op {cam, op, value}` | any catalog command |
+| `POST /api/sys/ptz/cmd/move {cam, pan, tilt, speed:true}` | proportional pan/tilt, −49..49 each (also zoom / focus `{dir, speed:true}`) |
+| `POST /api/sys/ptz/cmd/keepalive {cam}` | re-arms the dead-man while held; nothing is sent to the camera |
+| `POST /api/sys/ptz/cmd/stop {cam, axes}` | stop `pt`, `zoom`, `focus` or all |
+
+`apiVersion` is **8**; `GET /api/version` adds the features `sysLongpoll`, `sysViews`, `ptzCatalog`,
+`ptzProportional`, `ptzKeepalive`, `ptzThumbnails` and `companionGateway`.
+
 ## v0.7.0: Blackmagic ATEM, Panasonic PTZ cameras, SYSTEMS home
 
 The header now reads **CONTROL CENTER** (the PV logo is unchanged), and **⌂ SYSTEMS** is the landing

@@ -256,7 +256,7 @@ test('show parser: system defaults to rs6, bad sessions are cleaned, newer versi
 test('safety: E2 / PixelHue code, mocks and tests name no private-network device address; mocks bind loopback', () => {
   const root = path.join(__dirname, '..');
   const files = ['lib/systems.js', 'lib/drivers/common.js', 'lib/drivers/e2.js', 'lib/drivers/pixelhue.js', 'lib/drivers/rs6.js', 'lib/mocks/e2.js', 'lib/mocks/pixelhue.js', 'test/systems.test.js', 'test/ui-systems.test.js', 'public/sys.js',
-    'lib/drivers/atem.js', 'lib/drivers/atem-proto.js', 'lib/drivers/ptz.js', 'lib/mocks/atem.js', 'lib/mocks/ptz.js', 'public/atem.js', 'public/ptz.js', 'test/atem.test.js', 'test/ptz.test.js'];
+    'lib/drivers/atem.js', 'lib/drivers/atem-proto.js', 'lib/drivers/ptz.js', 'lib/mocks/atem.js', 'lib/mocks/ptz.js', 'public/atem.js', 'public/ptz.js', 'test/atem.test.js', 'test/ptz.test.js', 'lib/drivers/ptz-commands.js', 'lib/drivers/panasonic-data.js', 'tools/gen-panasonic-data.mjs'];
   for (const f of files) {
     const src = fs.readFileSync(path.join(root, f), 'utf8');
     assert.doesNotMatch(src, /\b(?:10\.\d{1,3}|192\.168|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b/, `${f} must not contain a LAN address`);
