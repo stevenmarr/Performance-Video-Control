@@ -142,6 +142,19 @@
     <div id="sysCards"></div>
     <div id="sysPlannedWrap" hidden><div class="section-title">MORE SYSTEMS <small>driver interface ready, drivers not built yet</small></div>
     <div id="sysPlanned" class="sys-cards planned"></div></div>
+    <!-- 0.9.0 Companion pages: ready-made Stream Deck pages for Steven's Companion fork -->
+    <div class="cc-pages" id="ccPages">
+      <div class="section-title">COMPANION PAGES <small>Stream Deck pages for every configured system, as a file for Companion (the feat/lcars-gui fork). Buttons are linked to the PV Control Center module's presets (module 0.7.0+), so they keep up with the app.</small></div>
+      <div id="ccSurfaces" class="cc-surfaces"></div>
+      <div class="cc-row">
+        <label>App address Companion uses <input id="ccHost" type="text" autocomplete="off" spellcheck="false"></label>
+        <label>Port <input id="ccPort" type="number" min="1" max="65535"></label>
+        <label>Companion connection label <input id="ccLabel" type="text" value="rs6presets" autocomplete="off" spellcheck="false"></label>
+        <label class="cc-check"><input id="ccCombined" type="checkbox"> One file for all ticked surfaces</label>
+      </div>
+      <div class="cc-row"><button class="btn primary" id="ccDownload" type="button">DOWNLOAD</button><button class="btn ghost" id="ccRefresh" type="button">REFRESH</button><span id="ccMsg" class="cc-msg"></span></div>
+      <div class="note cc-help">In Companion: <b>Import / Export</b> › choose the file › <b>Full Import</b> with only <b>Buttons</b> ticked › <b>IMPORT PRESERVING UNSELECTED</b>. That replaces <b>all</b> button pages in Companion (export first to keep yours); connections are kept, and a connection with the label above is reused. Then set each Stream Deck's start page to its HOME page. The file only adds this app's pages; nothing is sent to a device.</div>
+    </div>
   </section>
 
   <!-- 0.6.0 shared switcher UI for E2 / PixelHue (public/sys.js). Same tiles, destinations and TAKE / CUT as RS6. -->
@@ -466,5 +479,6 @@
 <script src="/sys.js"></script>
 <script src="/atem.js"></script>
 <script src="/ptz.js"></script>
+<script src="/companion.js"></script>
 </body>
 </html>

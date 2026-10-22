@@ -222,6 +222,48 @@ dark backing (see the comment in `style.css`).
 
 ---
 
+## v0.9.0: Companion pages for Stream Deck XL, MK.2, + and + XL
+
+**SYSTEMS › COMPANION PAGES** makes ready-made Companion pages for every configured system and downloads
+them as a `.companionconfig` file, one per Stream Deck model or one for all of them. They are made for
+Steven's Companion fork (`stevenmarr/companion`, branch `feat/lcars-gui`): each page carries the fork's page
+surface layout, so the editor draws it as that Stream Deck. Needs the PV Control Center Companion module
+0.7.0 or later.
+
+| Surface | Layout id | Keys | Strip / knobs | Content keys | Footer |
+| --- | --- | --- | --- | --- | --- |
+| Stream Deck XL | `streamdeck-xl` | 8×4 | none | rows 0-2 (24) | row 3: HOME, ◀, ▶, DEST, AUTO, STATUS, CUT, TAKE |
+| Stream Deck MK.2 / original | `streamdeck` | 5×3 | none | rows 0-1 (10) | row 2: HOME, ◀, ▶, CUT, TAKE |
+| Stream Deck + | `streamdeck-plus` | 4×2 | strip row 2, knobs row 3 | both key rows (8) | the strip: HOME, DEST, CUT, TAKE; knob 1 pages |
+| Stream Deck + XL | `streamdeck-plus-xl` | 9×4 | strip row 4, knobs row 5 (cols 0,2,3,5,6,8) | rows 0-2 (27) | row 3, like the XL; knob 1 pages |
+
+Pages, for each configured system:
+
+- **HOME**: a key for every section (and camera), then the status keys. On a + the first knob steps
+  through the sections.
+- **RS6 / E2 / PixelHue PRESETS**: the tiles up to the last used one, paged; DEST (destination toggles),
+  FREEZE and MASTER (RS6), CUES (E2).
+- **ATEM PGM/PVW**: a program row over a preview row, paged by the surface width, with the on-air keys on
+  the XL third row; ATEM KEYS (keys, DSK, FTB, transition styles, macros).
+- **One page per PTZ camera**: its 16 preset keys (as many as fit), pan/tilt and lens keys, and on a + /
+  + XL the knobs: zoom, focus, iris and pan/tilt speed (+ XL adds gain and zoom speed), with readouts on the
+  touch strip. A knob turn passes the fork's `$(this:delta)`; pressing a knob stops the zoom, does a
+  one-touch AF, toggles auto iris or resets the speed. ◀ CAM / CAM ▶ go to the next camera and select it.
+
+Every content key is a **linked** button (Companion's "preset reference") to the module preset of the same
+id, so names, tally and new presets keep up with the app. Navigation keys are plain buttons in the module's
+look that jump with Companion's internal *set page* action, and turn red with NO PAGE if their page is gone.
+
+To import: in Companion, **Import / Export** › choose the file › **Full Import** with only **Buttons** ticked ›
+**IMPORT PRESERVING UNSELECTED**. That replaces all button pages (export yours first); connections are kept,
+and a PV Control Center connection with the label given (default `rs6presets`) is reused, otherwise one is
+created pointing at the address and port given. Then set each Stream Deck's start page to its HOME page.
+
+API: `GET /api/companion/pages` (what each surface gets) and
+`GET /api/companion/pages/file?surfaces=xl|mk2|plus|plusxl[,…][&combined=1][&host=][&port=][&label=]`
+(the file; more than one surface needs `combined=1`). `/api/version` lists the `companionPages` feature; the
+API version stays 8. The generator is `lib/companion/` (see its README).
+
 ## v0.8.0: CAMERA CONTROL dashboard (RCP + joystick), Companion gateway (API 8)
 
 **CAMERA CONTROL** (PTZ) is now one dashboard laid out like a Panasonic AW-RP150/RP60 joystick controller next
