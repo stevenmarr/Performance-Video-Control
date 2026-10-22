@@ -228,6 +228,19 @@ test('board load and single-memory load target only the named destinations', asy
       ['/api/tpp/v1/load-master-memory', { memoryId: 2, target: 'preview' }],
       ['/api/tpp/v1/multiviewers/2/load-memory', { memoryId: 3 }],
     ]);
+    r = await call('GET', '/api/state'); assert.deepEqual(r.json.selection, ['S3', 'A2']); // master 2 has no stored screens, so the group stays
+  });
+});
+
+test('loading a Master memory selects the destination group stored for that master', async () => {
+  await withApp({}, async (call) => {
+    await call('POST', '/api/presets/8/assign', { target: 'master', type: 'master', slot: 4, dests: ['S2', 'A1', 'S1'] });
+    await call('POST', '/api/selection', { destinations: ['S4'] });
+    const r = await call('POST', '/api/memories/load', { type: 'master', slot: 4, target: 'preview' });
+    assert.equal(r.status, 200);
+    const st = await call('GET', '/api/state');
+    assert.deepEqual(st.json.selection, ['S1', 'S2', 'A1']);
+    assert.deepEqual(st.json.transitionTargets, ['S1', 'S2', 'A1']);
   });
 });
 
