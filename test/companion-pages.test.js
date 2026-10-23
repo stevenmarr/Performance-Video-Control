@@ -177,7 +177,7 @@ test('/api/companion/pages: the plan per surface, files to download, bad input r
   const port = 19000 + Math.floor(Math.random() * 1000); const B = `http://127.0.0.1:${port}`;
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6cp-'));
   const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), '--mock', '--port', String(port), '--host', '127.0.0.1', '--data', data], { stdio: 'ignore', env: { ...process.env, RS6_QUIET: '1' } });
-  t.after(() => { srv.kill(); fs.rmSync(data, { recursive: true, force: true }); });
+  t.after(async () => { srv.kill(); await new Promise((r) => (srv.exitCode !== null ? r() : srv.once('exit', r))); fs.rmSync(data, { recursive: true, force: true, maxRetries: 5 }); });
   await waitHttp(`${B}/api/state`);
   let plan;
   for (let i = 0; i < 100; i++) { plan = await (await fetch(`${B}/api/companion/pages`)).json(); if (plan.systems && plan.systems.length >= 5) break; await new Promise((r) => setTimeout(r, 100)); }

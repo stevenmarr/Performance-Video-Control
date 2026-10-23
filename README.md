@@ -257,6 +257,38 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ---
 
+## v0.10.0: ATEM models, ROUTER, AUDIO, DVE / SS / KEYS (API 9)
+
+- **Model profiles.** 18 ATEM profiles (Mini to Constellation 8K, the Production / Broadcast Studio 4K family;
+  see [docs/atem-models.md](docs/atem-models.md) with every uncertain number). A real switcher is matched by its
+  product id and topology. **ADD TO DESK AS SIMULATOR** on the ATEM card opens a model picker. The simulator then
+  emulates that model's protocol state (M/Es, keyers, DVE count, SuperSource, multiviewers, Fairlight or classic
+  audio, MADI routing). From the command line: `node server.js --mock --atem-model c4k4me`.
+- **ROUTER** (replaces AUX): every output with its live source, grouped as AUX / SDI outputs, M/E program /
+  preview and multiviewer windows. Tap an output to open the sources it accepts. You can filter by type
+  (cameras, media, colour, keys, SuperSource, clean feeds, M/E…) and search. The current source is highlighted,
+  and tapping a source routes it.
+- **AUDIO**: Fairlight strips (mix on/off/AFV, fader, input gain, balance, mute, solo) or the classic mixer
+  (mix, gain, balance), with master and monitor/headphone strips. On models with audio routing (Constellation,
+  HD8), output routing is grouped by MADI, SDI and other outputs.
+- **DVE / SS / KEYS**: per M/E upstream keyers (type luma / chroma / pattern / DVE, fill and key source, type
+  parameters, mask, a box preview for DVE with fly-key A/B/full), downstream keyers (sources, clip/gain, rate,
+  mask, tie) and SuperSource. SuperSource has a 16:9 box preview, box source / position / size / crop, art and border.
+  Layouts are kept per install: six built-ins (quad, side-by-side, crop, PiP, three-up, one-plus-two) plus saved ones.
+  Recall changes boxes only, unless **WITH SOURCES** is on.
+- **API 9**, new features `atemModels atemRouter atemAudio atemFairlight atemKeys atemSuperSource atemSsLayouts
+  atemMultiviewer`. `GET /api/sys/atem/models`, `GET|POST /api/sys/atem/ss-layouts`, `DELETE /api/sys/atem/ss-layouts/:id`.
+  `POST /api/sys/atem/simulate {model}`. New `POST /api/sys/atem/cmd/<name>` ops:
+  `route {output: 'aux:0'|'me:1:program'|'mv:0:3', source}`, `mvSource`, `uskType`, `uskSources`, `uskLuma`, `uskChroma`,
+  `uskPattern`, `uskMask`, `uskDve`, `uskFlyStore`, `uskFlyRun`, `dskSources`, `dskGeneral`, `dskMask`, `dskRate`, `ssBox`,
+  `ssProps`, `ssBorder`, `ssLayoutRecall {id, ss, withSources}`, `audioInput {id, mix, gain, fader, balance}`, `audioMute
+  {id, mute: true|false|'toggle'}`, `audioNudge {id, db}`, `audioMaster`, `audioMasterNudge`, `audioMonitor`,
+  `audioHeadphones`, `audioSolo`, `audioRoute {output, source}`. `me` is 1-based; keys, DSKs, aux, multiviewers, windows,
+  SuperSources and boxes are 0-based. Audio uses dB and balance −100..100. Keyers and SuperSource use the switcher's
+  integer units (DVE position ×1000, SuperSource x/y ×100, size ×1000).
+- None of the new protocol commands has been tried on a real switcher yet. They are byte-checked against the LibAtem
+  test vectors and the mock (list in docs/atem-models.md).
+
 ## v0.9.8: CAMERA CONTROL uses the whole screen
 
 The PTZ dashboard is laid out like an AW-RCP paint panel next to an RP150-style joystick controller, and it
@@ -400,7 +432,7 @@ or `/#pctl`.
 
 | System | Tabs | Protocol |
 |---|---|---|
-| Blackmagic ATEM (any model) | SWITCHER, AUX, MACROS | native UDP 9910 client (Node `dgram`, no dependencies) |
+| Blackmagic ATEM (any model) | SWITCHER, AUX (ROUTER from 0.10.0), MACROS | native UDP 9910 client (Node `dgram`, no dependencies) |
 | Panasonic PTZ cameras (AW-UE / AW-HE / AW-HR / AW-UN) | PTZ CONTROL, CAM PRESETS, CAMERAS | HTTP CGI on each camera, port 80 |
 
 ### ATEM
