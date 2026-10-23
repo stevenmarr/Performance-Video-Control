@@ -279,11 +279,11 @@ Neither is contacted until it has an address, and neither joins the desk until *
 - **API 9**, new features `atemModels atemRouter atemAudio atemFairlight atemKeys atemSuperSource atemSsLayouts
   atemMultiviewer`. `GET /api/sys/atem/models`, `GET|POST /api/sys/atem/ss-layouts`, `DELETE /api/sys/atem/ss-layouts/:id`.
   `POST /api/sys/atem/simulate {model}`. New `POST /api/sys/atem/cmd/<name>` ops:
-  `route {output: 'aux:0'|'me:1:program'|'mv:0:3', source}`, `mvSource`, `uskType`, `uskSources`, `uskLuma`, `uskChroma`,
+  `route {output: 'aux:0'|'me:0:program'|'mv:0:3', source}` (output keys are 0-based), `mvSource`, `uskType`, `uskSources`, `uskLuma`, `uskChroma`,
   `uskPattern`, `uskMask`, `uskDve`, `uskFlyStore`, `uskFlyRun`, `dskSources`, `dskGeneral`, `dskMask`, `dskRate`, `ssBox`,
-  `ssProps`, `ssBorder`, `ssLayoutRecall {id, ss, withSources}`, `audioInput {id, mix, gain, fader, balance}`, `audioMute
-  {id, mute: true|false|'toggle'}`, `audioNudge {id, db}`, `audioMaster`, `audioMasterNudge`, `audioMonitor`,
-  `audioHeadphones`, `audioSolo`, `audioRoute {output, source}`. `me` is 1-based; keys, DSKs, aux, multiviewers, windows,
+  `ssProps`, `ssBorder`, `ssLayoutRecall {layout, ss, withSources}`, `audioInput {input, mix, gain, fader, balance}`, `audioMute
+  {input, mute: true|false|'toggle'}`, `audioNudge {input, delta}` (dB), `audioMaster`, `audioMasterNudge {delta}`, `audioMonitor`,
+  `audioHeadphones`, `audioSolo {input, on}`, `audioRoute {output, source}`, `mvSource {mv, window, source}`. `me` is 1-based; keys, DSKs, aux, multiviewers, windows,
   SuperSources and boxes are 0-based. Audio uses dB and balance −100..100. Keyers and SuperSource use the switcher's
   integer units (DVE position ×1000, SuperSource x/y ×100, size ×1000).
 - None of the new protocol commands has been tried on a real switcher yet. They are byte-checked against the LibAtem
