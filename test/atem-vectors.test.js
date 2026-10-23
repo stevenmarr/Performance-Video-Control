@@ -28,6 +28,7 @@ const SET = {
   CKPt: (c) => P.OUT.uskPattern(c.mixEffectIndex, c.keyerIndex, { style: c.pattern, size: c.size, symmetry: c.symmetry, softness: c.softness, positionX: c.xPosition, positionY: c.yPosition, invert: c.inverse }, c.mask),
   CKDV: (c) => P.OUT.uskDve(c.mixEffectIndex, c.keyerIndex, DVE(c), c.mask),
   SFKF: (c) => P.OUT.uskFlyStore(c.mixEffectIndex, c.keyerIndex, c.keyFrame),
+  RFlK: (c) => P.OUT.uskFlyRun(c.mixEffectIndex, c.keyerIndex, c.keyFrame, c.runToInfinite),
   CDsF: (c) => P.OUT.dskFill(c.index, c.fillSource),
   CDsC: (c) => P.OUT.dskCut(c.index, c.cutSource),
   CDsG: (c) => P.OUT.dskGeneral(c.index, { preMultiply: c.preMultipliedKey, clip: c.clip, gain: c.gain, invert: c.invert }, c.mask),
@@ -102,4 +103,22 @@ test('getters parse LibAtem bytes into the driver state', () => {
 test('classic audio dB helpers round-trip', () => {
   assert.equal(P.dbToU16(0), 32768); assert.equal(P.u16ToDb(32768), 0); assert.equal(P.dbToU16(-Infinity), 0); assert.equal(P.u16ToDb(0), -Infinity);
   for (const db of [-40, -12.5, -3, 0, 3, 6]) near(P.u16ToDb(P.dbToU16(db)), db, 0.05, String(db));
+});
+
+test('readSetter reads back what OUT writes (the simulator side of every masked command)', () => {
+  for (const v of vectors) {
+    if (!P.SETTER[v.name] || !SET[v.name]) continue;
+    const r = P.readSetter(v.name, body(v));
+    assert.equal(r.mask, v.c.mask, v.name);
+    // every masked field read back equals what a serializer given those values writes
+    const names = P.MASKS[v.name];
+    for (const [k, val] of Object.entries(r.changes)) assert.ok(names.includes(k), `${v.name}.${k}`), assert.notEqual(val, undefined);
+  }
+  const b = P.OUT.uskDve(1, 2, { sizeX: 500, sizeY: 400, positionX: -8000, positionY: 4500, rotation: 900, rate: 10 }, P.maskOf('CKDV', ['sizeX', 'positionX', 'rotation']));
+  const r = P.readSetter('CKDV', b.subarray(8));
+  assert.deepEqual(r, { mask: 0b10101, ids: { me: 1, key: 2 }, changes: { sizeX: 500, positionX: -8000, rotation: 900 } });
+  const s = P.readSetter('CSBP', P.OUT.ssBox(1, 3, { enabled: true, source: 4, x: -800, y: 450, size: 500 }, P.maskOf('CSBP', ['source', 'x', 'y', 'size'])).subarray(8));
+  assert.deepEqual(s, { mask: 0b11110, ids: { index: 1, box: 3 }, changes: { source: 4, x: -800, y: 450, size: 500 } });
+  const f = P.readSetter('CFSP', P.OUT.flSource(5, P.FL_STEREO, { faderGain: -1000, mixOption: 2 }, P.maskOf('CFSP', ['faderGain', 'mixOption'])).subarray(8));
+  assert.deepEqual(f, { mask: 0x180, ids: { index: 5, source: '-65280' }, changes: { faderGain: -1000, mixOption: 2 } });
 });

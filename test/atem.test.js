@@ -59,7 +59,7 @@ test('ATEM: hello -> session id -> state dump (InCm); model, protocol, inputs wi
     const v = d.view();
     assert.equal(v.topology.mixEffects, 1); assert.equal(v.topology.downstreamKeyers, 2); assert.equal(v.topology.auxilliaries, 2);
     assert.equal(v.keyers.length, 4); assert.equal(v.dsk.length, 2); assert.equal(v.aux.length, 2);
-    assert.equal(v.bus.length, INPUTS.filter((i) => i[5] & 1).length); assert.equal(v.bus.length, 14);
+    assert.equal(v.bus.length, INPUTS.filter((i) => i[5] & 1).length); assert.equal(v.bus.length, 17); // 0.10.0: HD8 ISO profile adds MP keys and SuperSource
     const cam1 = v.inputs.find((i) => i.id === 1); assert.equal(cam1.long, 'Cam 1 Wide'); assert.equal(cam1.short, 'CAM1');
     assert.ok(v.bus.every((i) => i.id !== 10010 && i.id !== 10011), 'PGM / PVW outputs are not bus buttons');
     assert.ok(v.auxSources.some((i) => i.id === 10010), 'program is an aux source');
