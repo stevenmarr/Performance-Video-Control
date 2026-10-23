@@ -233,7 +233,15 @@
   <section class="grid-wrap pane" id="pane-arouter" hidden>
     <div class="board-head"><div class="section-title">ATEM ROUTER <small id="arInfo">every routable output and its current source · tap an output to change it</small></div><span class="spacer"></span>
       <span id="arFilter" class="seg-row"></span><button class="btn mini atem-simmodel" type="button" data-simmodel>SIMULATED MODEL…</button></div>
-    <div id="arGroups"></div>
+    <div class="ar-layout">
+      <aside class="ar-pal panel" id="arPalette"><div class="section-title">SOURCES <small>drag onto an output · or tap one, then tap outputs</small></div>
+        <input type="search" id="arPalSearch" placeholder="Filter sources…" autocomplete="off">
+        <div id="arPalKinds" class="seg-row ar-pal-kinds"></div>
+        <div id="arPalList" class="ar-pal-list"></div>
+        <label class="ar-pal-adv"><input type="checkbox" id="arPalAdv"> ADVANCED <small>media player key signals and key masks</small></label>
+        <div id="arArmed" class="note small" hidden></div></aside>
+      <div id="arGroups"></div>
+    </div>
   </section>
   <section class="grid-wrap pane" id="pane-aaudio" hidden>
     <div class="board-head"><div class="section-title">ATEM AUDIO <small id="auInfo"></small></div><span class="spacer"></span><span id="auFilter" class="seg-row"></span></div>
@@ -614,6 +622,7 @@
 <datalist id="memList"></datalist>
 <div id="toast" class="toast" hidden></div>
 <div id="undoBar" class="undo-bar" role="status" hidden></div>
+<script src="/drag.js"></script>
 <script src="/app.js"></script>
 <script src="/sys.js"></script>
 <script src="/atem.js"></script>
