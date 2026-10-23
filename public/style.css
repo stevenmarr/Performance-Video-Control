@@ -854,3 +854,22 @@ body.tab-atem .main{gap:14px}
 .ss-lay{display:inline-flex;gap:1px}
 .ss-ctl{display:flex;flex-direction:column;gap:6px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
 @media (max-width:900px){.ss-wrap{grid-template-columns:1fr}.ak-grid{grid-template-columns:1fr}}
+
+/* ---------- 0.11.0 ATEM: every M/E, long names ---------- */
+.nm-s{display:none}.nm-l{display:inline}
+.src b{font:800 14px/1.15 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
+.src{min-height:52px;justify-content:center}
+/* narrow buses: the short name instead (a bus cell under ~110 px cannot fit "Camera 1 Wide") */
+@container bus (max-width: 760px){ .bus .nm-l{display:none} .bus .nm-s{display:inline} .bus .src b{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace} }
+.bus{container-type:inline-size;container-name:bus;grid-template-columns:repeat(auto-fill,minmax(128px,1fr))}
+@media (max-width:900px){ .ar-grid .nm-l{display:none} .ar-grid .nm-s{display:inline} }
+.me-bar{margin-left:12px}.me-bar .mode{min-width:74px}.dot-air{color:#ff5a60}
+.me-grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:1500px){ .me-grid.me-n2,.me-grid.me-n4{grid-template-columns:repeat(2,minmax(0,1fr))} .me-grid.me-n3{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.me-block{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.me-block.focus{border-color:#3b8cff;box-shadow:0 0 0 1px #3b8cff inset}
+.me-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}.me-head b{font-size:15px;letter-spacing:.08em}
+.me-head .btn.cut{background:#5a1a1e;border-color:#ff5a60}.me-head .btn.take{background:#174a2a;border-color:#2bd46b}
+.me-block .bus{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}.me-block .src{min-height:42px;padding:6px 8px}
+.me-keys{display:flex;gap:6px;flex-wrap:wrap}
+.btn.cut small,.btn.take small{display:block;font-size:11px;letter-spacing:.06em;opacity:.8}

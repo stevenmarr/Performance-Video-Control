@@ -161,7 +161,7 @@
   });
 
   // ---------- DVE / SS / KEYS ----------
-  let akMe = Number(ls('cc.akMe', 0)); let ssSel = Number(ls('cc.ssSel', 0)); let boxSel = Number(ls('cc.boxSel', 0)); let withSrc = !!ls('cc.ssWithSrc', false);
+  const ME = window.CCATEMME; let akMe = ME ? ME.get() : Number(ls('cc.akMe', 0)); let ssSel = Number(ls('cc.ssSel', 0)); let boxSel = Number(ls('cc.boxSel', 0)); let withSrc = !!ls('cc.ssWithSrc', false);
   const num = (op, ids, k, v, scale, step, min, max, label) => `<label class="ak-num">${label}<input type="number" step="${step}" ${min !== undefined ? `min="${min}"` : ''} ${max !== undefined ? `max="${max}"` : ''} value="${v === undefined || v === null ? '' : +(v / scale).toFixed(3)}" data-op="${op}" data-ids='${JSON.stringify(ids)}' data-k="${k}" data-scale="${scale}"></label>`;
   const chk = (op, ids, k, v, label) => `<button type="button" class="mode mini ${v ? 'active' : ''}" data-op="${op}" data-ids='${JSON.stringify(ids)}' data-k="${k}" data-bool="${v ? 0 : 1}">${label}</button>`;
   const sel = (op, ids, k, v, list, label) => `<label class="ak-sel">${label}<select data-op="${op}" data-ids='${JSON.stringify(ids)}' data-k="${k}">${list.map((x) => `<option value="${x.id}" ${x.id === v ? 'selected' : ''}>${esc(x.short)} · ${esc(x.long)}</option>`).join('')}</select></label>`;
@@ -232,16 +232,16 @@
   function renderKeys() {
     const pane = $('#pane-akeys'); if (busy(pane)) return;
     if (!live()) { S.set($('#akUsk'), 'aku', off()); S.set($('#akDsk'), 'akd', ''); S.set($('#akSs'), 'aks', ''); S.set($('#akMe'), 'akm', ''); $('#akInfo').textContent = ''; return; }
-    const mes = V.mixEffects || []; if (akMe >= mes.length) akMe = 0;
+    const mes = V.mixEffects || []; if (ME) akMe = ME.get(); if (akMe >= mes.length) akMe = 0;
     $('#akInfo').textContent = `${V.profile ? V.profile.name : V.product} · ${mes.reduce((n, m) => n + m.keyers.length, 0)} upstream keys · ${(V.dsk || []).length} DSK · DVE ${V.dves ? `${V.dves.inUse} of ${V.dves.count} in use` : '—'} · ${(V.superSources || []).length} SuperSource`;
-    S.set($('#akMe'), 'akm', mes.length > 1 ? `<span class="modes-lbl">M/E</span>${mes.map((m) => `<button type="button" class="mode ${m.index === akMe ? 'active' : ''}" data-akme="${m.index}">M/E ${m.index + 1}</button>`).join('')}` : '');
+    S.set($('#akMe'), 'akm', mes.length > 1 ? `<span class="modes-lbl">M/E</span>${mes.map((m) => `<button type="button" class="mode ${m.index === akMe ? 'active' : ''}" data-akme="${m.index}" title="Upstream keys of M/E ${m.index + 1}${m.keyers.some((k) => k.onAir) ? ' · a key is on air' : ''}">M/E ${m.index + 1}${m.keyers.some((k) => k.onAir) ? ' <span class="dot-air">●</span>' : ''}</button>`).join('')}` : '');
     const me = mes[akMe] || { keyers: [] };
     S.set($('#akUsk'), 'aku', `<div class="section-title">UPSTREAM KEYS <small>${mes.length > 1 ? `M/E ${akMe + 1}` : ''}</small></div><div class="ak-grid">${me.keyers.map((k) => uskCard(akMe, k)).join('') || '<div class="note small">No upstream keys.</div>'}</div>`);
     S.set($('#akDsk'), 'akd', `<div class="section-title">DOWNSTREAM KEYS</div><div class="ak-grid">${(V.dsk || []).map(dskCard).join('') || '<div class="note small">No downstream keys.</div>'}</div>`);
     S.set($('#akSs'), 'aks', ssPanel());
   }
   const send = (op, ids, k, val) => cmd(op, { ...ids, [k]: val });
-  $('#akMe').addEventListener('click', (e) => { const b = e.target.closest('[data-akme]'); if (!b) return; akMe = Number(b.dataset.akme); save('cc.akMe', akMe); renderKeys(); });
+  $('#akMe').addEventListener('click', (e) => { const b = e.target.closest('[data-akme]'); if (!b) return; akMe = Number(b.dataset.akme); if (ME) ME.set(akMe); else save('cc.akMe', akMe); renderKeys(); });
   $('#pane-akeys').addEventListener('change', (e) => {
     const t = e.target; if (!t.dataset.op || !live()) return; const ids = JSON.parse(t.dataset.ids);
     if (t.tagName === 'SELECT') { send(t.dataset.op, ids, t.dataset.k, Number(t.value)); return t.blur(); }

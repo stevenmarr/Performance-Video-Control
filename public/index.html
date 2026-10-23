@@ -215,11 +215,14 @@
 
   <!-- 0.7.0 Blackmagic ATEM (public/atem.js) -->
   <section class="grid-wrap pane" id="pane-atem" hidden>
-    <div class="board-head"><div class="section-title">ATEM <small id="atemInfo"></small></div><span class="spacer"></span><span id="atemTally" class="xtargets"></span></div>
-    <div class="bus-block"><div class="bus-lbl pgm">PROGRAM</div><div id="atemPgm" class="bus"></div></div>
-    <div class="bus-block"><div class="bus-lbl pvw">PREVIEW</div><div id="atemPvw" class="bus"></div></div>
+    <div class="board-head"><div class="section-title">ATEM <small id="atemInfo"></small></div><span id="atemMe" class="seg-row me-bar" role="group" aria-label="M/E"></span><span class="spacer"></span><span id="atemTally" class="xtargets"></span></div>
+    <div id="atemSingle">
+      <div class="bus-block"><div class="bus-lbl pgm" id="atemPgmLbl">PROGRAM</div><div id="atemPgm" class="bus"></div></div>
+      <div class="bus-block"><div class="bus-lbl pvw" id="atemPvwLbl">PREVIEW</div><div id="atemPvw" class="bus"></div></div>
+    </div>
+    <div id="atemMulti" hidden></div>
     <div class="atem-lower">
-      <div class="panel"><div class="section-title">NEXT TRANSITION <small>BKGD and key TIE</small></div><div id="atemNext" class="seg-row"></div>
+      <div class="panel"><div class="section-title">NEXT TRANSITION <small><span id="atemLowerMe"></span> BKGD and key TIE</small></div><div id="atemNext" class="seg-row"></div>
         <div class="section-title">TRANSITION STYLE</div><div id="atemStyle" class="seg-row"></div>
         <div class="rate-row"><label>MIX RATE <input id="atemRate" type="number" min="1" max="250" inputmode="numeric"> frames</label><button class="btn mini" id="atemRateSet" type="button">SET</button></div></div>
       <div class="panel"><div class="section-title">UPSTREAM KEYS <small>ON AIR</small></div><div id="atemUsk" class="key-grid"></div></div>
@@ -248,7 +251,7 @@
     <div id="atemMacros" class="grid"></div>
   </section>
   <aside class="transport atransport">
-    <button id="atemCut" class="btn cut">CUT</button>
+    <button id="atemCut" class="btn cut">CUT<small id="atemCutSub"></small></button>
     <button id="atemAuto" class="btn take">AUTO<small id="atemAutoSub"></small></button>
     <div class="tbar"><div id="atemBar"></div></div>
     <button id="atemFtb" class="btn toggle">FTB<br><b id="atemFtbState">OFF</b></button>
