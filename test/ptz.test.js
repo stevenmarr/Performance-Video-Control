@@ -280,3 +280,75 @@ test('0.8.0 API: /api/sys long-poll + views=all, PTZ catalog / status / thumbnai
     await call('POST', '/api/sys/ptz/cameras/cam1', { series: '' }); assert.equal((await call('GET', '/api/sys/ptz/cameras/cam1/catalog')).json.series, 'UE150');
   } finally { server.closeClients(); await new Promise((r) => server.close(r)); systems.close(); await stop(); await ctx.teardown(); }
 });
+
+test('0.9.8: absolute zoom / focus, D.EXT, OIS, pan / tilt limits, tally setup, tracking out: encodings, mock replies, readback', async () => {
+  const cmd = (op, v, sr = 'UE150') => PC.build(sr, op, v).cmd;
+  assert.equal(cmd('zoomPos', 0), 'AXZ555'); assert.equal(cmd('zoomPos', 50), 'AXZAAA'); assert.equal(cmd('zoomPos', 100), 'AXZFFF'); assert.equal(cmd('focusPos', 100), 'AXFFFF');
+  assert.equal(cmd('limitLeft', true), 'LC31'); assert.equal(cmd('limitDown', false), 'LC20'); assert.equal(cmd('tallyEnable', false), 'TAE0');
+  assert.equal(cmd('tallyBright', '2'), 'OSA:D3:2'); assert.equal(cmd('dExtender', '1'), 'OSJ:4E:1'); assert.equal(cmd('ois', true), 'OIS:1');
+  const he = new Set(PC.catalogFor('AW-HE130').ops.map((o) => o.id));
+  for (const k of ['zoomPos', 'focusPos', 'limitUp', 'dExtender', 'ois', 'tallyBright', 'trackIP', 'snapshot', 'streamInfo']) assert.ok(!he.has(k), `HE130 has no ${k}`);
+  const { list, mocks, stop } = await cams(2);
+  const d = new PTZDriver(); d.configure({ cameras: list });
+  try {
+    await d.poll('cam1'); await d.poll('cam2');
+    assert.equal((await d.op('cam1', 'zoomPos', 50)).cmd, 'AXZAAA'); assert.equal(mocks[0].history.at(-1).path, 'aw_ptz');
+    await assert.rejects(d.op('cam1', 'focusPos', 40), /eR2|auto focus|refus/i, 'absolute focus needs manual focus');
+    await d.op('cam1', 'focusMode', false); await d.op('cam1', 'focusPos', 40);
+    await d.op('cam1', 'limitUp', true); await d.op('cam1', 'limitRight', true); await d.op('cam1', 'tallyEnable', false); await d.op('cam1', 'tallyBright', '2'); await d.op('cam1', 'trackIP', true);
+    await d.poll('cam1'); const v = d.values(d.cam('cam1'));
+    assert.equal(v.limitUp, true); assert.equal(v.limitRight, true); assert.equal(v.limitLeft, false); assert.equal(v.tallyEnable, false); assert.equal(v.trackIP, true);
+    assert.ok(Math.abs(v.zoomPos - 50) < 0.2, `zoom readback ${v.zoomPos}`);
+    await assert.rejects(d.op('cam2', 'zoomPos', 10), /not|series|support/i);
+    // preview frame and stream info: UE150 series only, image types only
+    const sn = await d.snapshot('cam1'); assert.match(sn.type, /^image\//); assert.ok(sn.body.length > 200);
+    await assert.rejects(d.snapshot('cam2'), (e) => e.status === 404);
+    const si = await d.streamInfo('cam1'); assert.equal(si.rtspPort, 554); assert.ok(si.streams.length >= 2); assert.match(si.streams[0].url, /^rtsp:\/\/127\.0\.0\.1\//);
+    assert.match((await d.streamInfo('cam2')).note, /no stream/);
+  } finally { d.close && d.close(); await stop(); }
+});
+
+test('0.9.8: notes, paint lock (also for Companion: 423), paint memories save / load, snapshot + info routes, show file', async () => {
+  const ctx = await setup({});
+  const { mocks, list, stop } = await cams(2);
+  const systems = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, overrides: { ptz: { cameras: list } }, autoStart: false });
+  const server = createServer(ctx.engine, systems);
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const call = async (method, p, body) => { const r = await fetch(base + p, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, json: (r.headers.get('content-type') || '').includes('json') ? await r.json() : null, r }; };
+  const cam = async (id = 'cam1') => (await call('GET', '/api/sys/ptz')).json.cameras.find((c) => c.id === id);
+  try {
+    await systems.connect('ptz');
+    const ver = (await call('GET', '/api/version')).json; assert.equal(ver.apiVersion, 8, 'still API 8: module 0.6 / 0.7 stay compatible'); const feats = ver.features;
+    for (const f of ['ptzSnapshot', 'ptzPaintLock', 'ptzPaintMemory', 'ptzNotes']) assert.ok(feats.includes(f), `feature ${f}`);
+    // notes
+    await call('POST', '/api/sys/ptz/cmd/notes', { cam: 'cam1', text: 'Long lens, riser' }); assert.equal((await cam()).notes, 'Long lens, riser');
+    // paint memory: save, change, load back
+    await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'rGain', value: -20 }); await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'gammaMode', value: '3' });
+    const sv = await call('POST', '/api/sys/ptz/cmd/paintSave', { cam: 'cam1', slot: 2, name: 'Warm' }); assert.equal(sv.status, 200); assert.ok(sv.json.count > 10);
+    assert.equal((await cam()).paintMem[2].name, 'Warm');
+    await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'rGain', value: 30 }); await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'gammaMode', value: '0' });
+    const ld = await call('POST', '/api/sys/ptz/cmd/paintLoad', { cam: 'cam1', slot: 2 }); assert.equal(ld.status, 200); assert.deepEqual(ld.json.failed, []);
+    const sx = (await call('GET', '/api/sys/ptz/cameras/cam1/status')).json; assert.equal(sx.values.rGain, -20); assert.equal(sx.values.gammaMode, '3');
+    assert.equal((await call('POST', '/api/sys/ptz/cmd/paintLoad', { cam: 'cam1', slot: 4 })).status, 404);
+    assert.equal((await call('POST', '/api/sys/ptz/cmd/paintSave', { cam: 'cam1', slot: 9 })).status, 400);
+    // lock: paint groups refused (the Companion module uses the same route), exposure / lens / motion stay live
+    await call('POST', '/api/sys/ptz/cmd/lock', { cam: 'cam1', on: true }); assert.equal((await cam()).locked, true);
+    const n = mocks[0].history.length;
+    const catOps = new Map((await call('GET', '/api/sys/ptz/cameras/cam1/catalog')).json.ops.map((o) => [o.id, o]));
+    for (const op of ['rGain', 'detail', 'gamma', 'matrixRG', 'chromaLevel', 'wbMode', 'scene']) { const o = catOps.get(op); const val = o.type === 'range' ? (o.range.centre ?? o.range.min) : o.type === 'toggle' ? true : o.options[0][0]; assert.equal((await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op, value: val })).status, 423, op); }
+    assert.equal(mocks[0].history.length, n, 'nothing reached the camera');
+    assert.equal((await call('POST', '/api/sys/ptz/cmd/paintLoad', { cam: 'cam1', slot: 2 })).status, 423);
+    assert.equal((await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'iris', value: 40 })).status, 200, 'iris is not paint');
+    assert.equal((await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam2', op: 'iris', value: 40 })).status, 200, 'other cameras unaffected');
+    // show file keeps notes, locks and memories
+    const sp = systems.showPart(); const show = (sp.systems || sp).ptz;
+    assert.equal(show.notes.cam1, 'Long lens, riser'); assert.equal(show.locks.cam1, true); assert.ok(show.paintMem.cam1[2].values.rGain === -20);
+    await call('POST', '/api/sys/ptz/cmd/lock', { cam: 'cam1', on: false }); assert.equal((await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'rGain', value: 0 })).status, 200);
+    // preview frame + stream info routes
+    const sn = await call('GET', '/api/sys/ptz/cameras/cam1/snapshot'); assert.equal(sn.status, 200); assert.match(sn.r.headers.get('content-type'), /^image\//); assert.equal(sn.r.headers.get('cache-control'), 'no-store'); assert.match(sn.r.headers.get('content-security-policy'), /default-src 'none'/);
+    assert.equal((await call('GET', '/api/sys/ptz/cameras/cam2/snapshot')).status, 404);
+    const inf = (await call('GET', '/api/sys/ptz/cameras/cam1/info')).json; assert.equal(inf.host, '127.0.0.1'); assert.ok(inf.streams.length >= 2);
+    assert.ok(!ctx.engine.logs.some((l) => /snapshot/i.test(l.msg || l.message || '')), 'missing preview frames are not logged as errors');
+  } finally { server.closeClients(); await new Promise((r) => server.close(r)); systems.close(); await stop(); await ctx.teardown(); }
+});

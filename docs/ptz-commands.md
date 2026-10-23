@@ -15,6 +15,8 @@ module's model table); other models may support some of them; confirm on hardwar
 | `store` | Store preset 1..100 | module | savePset (M<nn>) | ● | ● | ● | ● | ● | ● | ● | ● | ● |  |  | ● |
 | `presetName` | Preset name on the camera (15 chars) | spec | Save Preset Name OSJ:35 | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `thumbnail` | Preset thumbnail image | spec | Web CGI supplement 4.16 /cgi-bin/get_preset_thumbnail?preset_number=N | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `snapshot` | Live JPEG snapshot (one frame) | spec | Web CGI supplement 2.6 /cgi-bin/camera?resolution=640 | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `streamInfo` | RTSP stream information | spec | Web CGI supplement 4.17 /cgi-bin/get_rtsp | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `speeds` | Session speeds (pan-tilt / zoom / focus, 1..49) | module | ptSpeedS/U/D, pSpeed*, tSpeed*, zSpeed*, fSpeed* (app-side, like the module) | ● | ● | ● | ● | ● | ● | ● | ● | ● |  |  | ● |
 | `keepalive` | Hold keep-alive (re-arms the dead-man; sends nothing) | app | app safety | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |  | ● |
 | `focusMode` | Focus AF / MF | module | focusM | ● | ● | ● | ● | ● | ● | ● |  |  | ● |  | ● |
@@ -88,6 +90,22 @@ module's model table); other models may support some of them; confirm on hardwar
 | `menuRight` | Menu Right | spec | Menu Right DRT | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `menuEnter` | Menu Enter | spec | Menu Enter DIT | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `menuCancel` | Menu Cancel | spec | Menu Cancel DPG | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `zoomPos` | Zoom position (%; 0 wide .. 100 tele) | spec | Zoom Position Control #AXZ (555h wide .. FFFh tele) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `focusPos` | Focus position (%; 0 near .. 100 far; manual focus only) | spec | Focus Position Control #AXF (555h near .. FFFh far), available when Focus Mode is Manual | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `dExtender` | Digital extender | spec | Digital Extender OSJ:4E (0 OFF, 1 x1.4, 2 x2.0; Opt. zoom mode) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `digitalZoom` | Digital zoom | spec | Digital Zoom OSE:70 (0 disable, 1 enable) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `ois` | Image stabilizer (O.I.S.) | spec | O.I.S. Mode OIS (0 off, 1 on) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `presetDExt` | Preset digital extender | spec | Preset D-Extender OSE:7C (0 off, 1 on) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `limitUp` | Pan/tilt limit up (set at the current position) | spec | Limitation Control #LC1<0 release/1 set> | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `limitDown` | Pan/tilt limit down (set at the current position) | spec | Limitation Control #LC2<0 release/1 set> | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `limitLeft` | Pan/tilt limit left (set at the current position) | spec | Limitation Control #LC3<0 release/1 set> | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `limitRight` | Pan/tilt limit right (set at the current position) | spec | Limitation Control #LC4<0 release/1 set> | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `tallyEnable` | Tally lamp enable | spec | TALLY Enable #TAE (0 disable, 1 enable) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `tallyBright` | Tally brightness | spec | Tally Brightness OSA:D3 (0 low, 1 mid, 2 high; not in camdata) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `tallyLimitR` | Red tally LED limit | spec | Tally LED Limit R OSJ:D9 (0 unlimited, 1 limited) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `tallyLimitG` | Green tally LED limit | spec | Tally LED Limit G OSJ:DA (0 unlimited, 1 limited) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `trackSerial` | Tracking data out: serial | spec | Tracking data output Serial Out OSJ:54 (spec: AW-UE150 only) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `trackIP` | Tracking data out: IP | spec | Tracking data output IP Out OSJ:55 (spec: AW-UE150 only) | ● |  |  |  |  |  |  |  |  |  |  |  |
 
 ## Companion module action -> app command
 

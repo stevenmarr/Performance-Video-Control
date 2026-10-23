@@ -257,6 +257,51 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ---
 
+## v0.9.8: CAMERA CONTROL uses the whole screen
+
+The PTZ dashboard is laid out like an AW-RCP paint panel next to an RP150-style joystick controller, and it
+fills the screen at 1280, 1440 and 1920 px wide. The joystick, zoom/focus rockers, preset grid and notes
+grow to the height of their row, so no panel has empty space at the bottom.
+
+- **Paint cards.** White/black, paint, detail, gamma, knee, matrix, chroma and bars are cards side by side.
+  At 1920 and 1280 all eight groups show at once and the tabs are hidden. At 1440 they show four at a
+  time, and the tabs pick which.
+- **FINE / COARSE.** Sets whether the knob ± buttons and the wheel move 1 step or 10 at a time.
+  Shift + wheel is always ×10.
+- **Paint lock.** Locks white balance, paint, detail, gamma, knee, matrix, chroma and scene files for one
+  camera. The server enforces it (HTTP 423), so the lock also covers Companion and the API. Iris,
+  exposure, lens, motion and presets stay live.
+- **Paint memories (MEM 1–4).** Save a camera's paint values in this app and load them back, with modes
+  applied before levels. They are kept in the show file. The camera's own scene files (Scene 1–4) are
+  next to them.
+- **Lens.** Absolute zoom and focus sliders (`AXZ` / `AXF`); absolute focus works only in manual focus.
+  Also D.EXT (off/×1.4/×2.0), digital zoom, O.I.S. and preset D.EXT.
+- **Pan/tilt limits.** Up, down, left and right limits are set at the current position (`LC`). They are
+  shown as a cross under the joystick.
+- **Tally setup.** Red and green tally, tally enable (`TAE`), brightness, and the red/green limit setting.
+- **Tracking data output.** Serial and IP output, UE150 only. The camera has no auto-tracking of its own;
+  it sends tracking data out to an external system.
+- **Preview.** A live frame from `/cgi-bin/camera` about every 1.5 s while the tab is visible.
+- **Camera info.** IP, model, title, firmware and RTSP stream URLs from `/cgi-bin/get_rtsp`.
+- **Notes.** Per-camera notes, saved as you type.
+- **Camera strip.** Shows each camera's number, PGM/PVW tally, zoom, iris and lock state. Keys 1–9
+  select a camera.
+- **Motion safety.** Unchanged: one request in flight per axis, a 400 ms keep-alive and the server's
+  dead-man stop. Release, blur, page hide, tab change, camera change and Esc all stop, and ALL STOP
+  stops every camera.
+
+New routes:
+- `GET /api/sys/ptz/cameras/:id/snapshot`: image only, `no-store`, CSP `default-src 'none'`.
+- `GET /api/sys/ptz/cameras/:id/info`.
+
+New `POST /api/sys/ptz/cmd/…` commands: `notes {cam, text}`, `lock {cam, on}`, `paintSave {cam, slot, name}`,
+`paintLoad {cam, slot}` and `paintClear {cam, slot}`.
+
+New feature flags: `ptzSnapshot`, `ptzStreamInfo`, `ptzPaintLock`, `ptzPaintMemory`, `ptzNotes` and
+`ptzLimits`. `apiVersion` stays 8, so Companion module 0.6 and 0.7 work unchanged. The dashboard is the **PTZ** tab group on the desk; it works next to the other systems and with **ADD TO DESK AS SIMULATOR**.
+
+---
+
 ## v0.9.0: Companion pages for Stream Deck XL, MK.2, + and + XL
 
 **SYSTEMS › COMPANION PAGES** makes ready-made Companion pages for every configured system and downloads

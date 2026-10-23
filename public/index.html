@@ -245,7 +245,7 @@
   <!-- 0.8.0 Panasonic PTZ: one CAMERA CONTROL dashboard (RP150-style joystick + RCP paint panel; public/ptz.js) -->
   <section class="grid-wrap pane" id="pane-pctl" hidden>
     <div class="rcp-bus">
-      <div id="ptzStrip" class="cam-strip"></div>
+      <div id="ptzStrip" class="cam-strip" title="Tap to select · keys 1-9"></div>
       <span class="spacer"></span>
       <button class="btn rcp-allstop" id="ptzAllStop" type="button" title="Stop every camera (Esc)">■ ALL STOP</button>
     </div>
@@ -253,12 +253,16 @@
     <div class="rcp">
       <div class="panel rcp-joy">
         <div class="section-title">PAN / TILT <small>drag: speed grows with distance · release stops</small></div>
+        <div class="joy-wrap">
         <div id="ptzJoy" class="joy" role="slider" aria-label="Pan / tilt joystick" tabindex="0"><div class="joy-ring"></div><div class="joy-x"></div><div class="joy-puck" id="ptzPuck"></div><span class="joy-l t">TILT +</span><span class="joy-l b">TILT −</span><span class="joy-l l">PAN −</span><span class="joy-l r">PAN +</span></div>
+        </div>
         <div class="joy-foot">
           <label class="slider">MAX SPEED <input type="range" min="1" max="49" id="spPt"><b id="spPtV"></b></label>
           <button class="btn rcp-home" data-op="home" type="button">HOME</button>
         </div>
         <div class="joy-cmd" id="ptzJoyCmd">P 0 · T 0</div>
+        <div class="sub-t" data-for="limits">PAN / TILT LIMITS <small>set at the current position</small></div>
+        <div class="rcp-ctl" data-slot="limits"></div>
       </div>
       <div class="panel rcp-lens">
         <div class="section-title">ZOOM · FOCUS</div>
@@ -268,6 +272,7 @@
         </div>
         <label class="slider">ZOOM SPEED <input type="range" min="1" max="49" id="spZoom"><b id="spZoomV"></b></label>
         <label class="slider">FOCUS SPEED <input type="range" min="1" max="49" id="spFocus"><b id="spFocusV"></b></label>
+        <div class="rcp-ctl abs" data-slot="abs"></div>
         <div class="rcp-ctl" data-slot="lens"></div>
       </div>
       <div class="panel rcp-iris">
@@ -276,8 +281,13 @@
         <div class="rcp-ctl" data-slot="exposure"></div>
       </div>
       <div class="panel rcp-paint">
-        <div class="paint-tabs" id="ptzPaintTabs" role="tablist"></div>
-        <div class="rcp-ctl" data-slot="paint"></div>
+        <div class="paint-head">
+          <div class="paint-tabs" id="ptzPaintTabs" role="tablist"></div>
+          <span class="spacer"></span>
+          <div class="segb" role="group" aria-label="Knob step"><button class="mode" data-stepmul="1" type="button" title="± buttons and wheel move one step">FINE</button><button class="mode" data-stepmul="10" type="button" title="± buttons and wheel move ten steps">COARSE</button></div>
+          <button class="mode lockb" id="ptzLock" type="button" title="Lock white balance, paint, detail, gamma, knee, matrix, chroma and scene against accidental changes (also enforced for Companion)"><small>PAINT</small><b>UNLOCKED</b></button>
+        </div>
+        <div class="pgrid" data-slot="paint"></div>
       </div>
       <div class="panel rcp-presets">
         <div class="section-title">PRESETS <small id="ptzPresetHint"></small></div>
@@ -290,11 +300,28 @@
         <div id="ptzGrid" class="thumbs"></div>
         <div class="rcp-ctl inline" data-slot="preset"></div>
       </div>
+      <div class="panel rcp-view">
+        <div class="section-title">PREVIEW <small id="ptzSnapHint"></small></div>
+        <div class="snap" id="ptzSnap"><img alt="" id="ptzSnapImg"><span class="snap-na" id="ptzSnapNa"></span></div>
+        <div class="kv" id="ptzInfo"></div>
+        <label class="notes"><span class="lbl">NOTES <small id="ptzNotesSt"></small></span><textarea id="ptzNotes" rows="3" maxlength="2000" placeholder="Notes for this camera (lens, position, operator …)"></textarea></label>
+      </div>
       <div class="panel rcp-sys">
         <div class="section-title">CAMERA</div>
-        <div class="rcp-ctl" data-slot="system"></div>
-        <div class="section-title">OSD MENU</div>
-        <div class="rcp-ctl" data-slot="menu"></div>
+        <div class="sys-cols">
+          <div class="sys-col">
+            <div class="rcp-ctl" data-slot="system"></div>
+            <div class="sub-t">SCENE / PAINT FILES <small>MEM = paint values kept by this app</small></div>
+            <div class="rcp-ctl" data-slot="scene"></div>
+            <div class="pmem" id="ptzMem"></div>
+          </div>
+          <div class="sys-col">
+            <div class="sub-t first">TALLY</div>
+            <div class="rcp-ctl" data-slot="tally"></div>
+            <div class="sub-t">OSD MENU · TRACKING DATA</div>
+            <div class="sys-row"><div class="rcp-ctl" data-slot="menu"></div><div class="rcp-ctl" data-slot="tracking"></div></div>
+          </div>
+        </div>
       </div>
     </div>
   </section>

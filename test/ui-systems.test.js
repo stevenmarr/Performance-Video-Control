@@ -46,7 +46,12 @@ test('Control Center: dashboard, E2 presets (dim, recall, TAKE), PixelHue, back 
   await page.click('[data-use=pixelhue]');
   await page.click('.tab[data-tab=xpresets]');
   await page.locator('#xgrid .preset[data-key^="ph:"]').first().waitFor();
-  assert.equal(await page.locator('.tab[data-tab=xcues]').isVisible(), false, 'PixelHue API has no cues');
+  // 0.9.1 desk: E2 is still on the desk, so the shared preset group keeps CUES, owned by the E2 (PixelHue has no cues API)
+  const cuesTab = page.locator('.tab[data-tab=xcues]');
+  if (await cuesTab.isVisible()) assert.equal(await cuesTab.getAttribute('data-owner'), 'e2', 'PixelHue API has no cues: CUES belongs to the E2');
+  await fetch(`${B}/api/sys/armed`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system: 'e2', on: false }) });
+  await page.waitForFunction(() => { const t = document.querySelector('.tab[data-tab=xcues]'); return t && t.hidden; });
+  assert.equal(await cuesTab.isVisible(), false, 'PixelHue alone on the preset group: no CUES tab');
   await page.click('.tab[data-tab=system]');
   await page.click('[data-use=rs6]');
   await page.waitForFunction(() => !document.body.classList.contains('sys-x'));
@@ -130,7 +135,7 @@ test('Control Center 0.8.0: CAMERA CONTROL dashboard: proportional joystick, roc
   // every catalog command of this camera has a control (motion / presets have their own)
   const cat = await (await fetch(`${B}/api/sys/ptz/cameras/cam1/catalog`)).json();
   const ctl = new Set(await page.$$eval('#pane-pctl [data-op]', (els) => els.map((e) => e.dataset.op)));
-  const own = new Set(['move', 'zoom', 'focus', 'stop', 'recall', 'store', 'presetName', 'thumbnail', 'speeds', 'keepalive']);
+  const own = new Set(['move', 'zoom', 'focus', 'stop', 'recall', 'store', 'presetName', 'thumbnail', 'speeds', 'keepalive', 'snapshot', 'streamInfo']);
   for (const o of cat.ops) if (!own.has(o.id)) assert.ok(ctl.has(o.id), `control for ${o.id}`);
   // proportional joystick: a small push is slow, a full push is fast (the server reports the PTS code it sent)
   const box = await page.locator('#ptzJoy').boundingBox();
@@ -175,5 +180,59 @@ test('Control Center 0.8.0: CAMERA CONTROL dashboard: proportional joystick, roc
   await page.locator('#pane-pctl [data-slot=exposure] [data-op=shutter]').waitFor({ timeout: 8000 });
   assert.equal(await page.locator('#pane-pctl [data-op=rGain]').count(), 0); assert.equal(await page.locator('#pane-pctl [data-op=menu]').count(), 0);
   assert.equal(await page.locator('[data-ptab=paint]').isDisabled(), true);
+  assert.deepEqual(errors, []);
+});
+
+test('Control Center 0.9.8: CAMERA CONTROL fills 1280 / 1440 / 1920 (no dead zones, no sideways scroll); paint cards, lock, notes, memories, preview, keys 1-9 (Playwright)', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const port = 22000 + Math.floor(Math.random() * 1000); const B = `http://127.0.0.1:${port}`;
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6cc91-'));
+  const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), '--mock', '--port', String(port), '--host', '127.0.0.1', '--data', data], { stdio: 'ignore' });
+  t.after(() => { srv.kill(); fs.rmSync(data, { recursive: true, force: true }); });
+  await waitHttp(`${B}/api/state`);
+  const api = async (p, body) => (await fetch(B + p, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {})).json();
+  await api('/api/sys/active', { system: 'ptz' }); await api('/api/sys/ptz/cmd/select', { cam: 'cam1' });
+  const browser = await pw.chromium.launch(); t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
+  const errors = []; page.on('pageerror', (e) => errors.push(e.message)); page.on('dialog', (d) => d.accept(d.type() === 'prompt' ? 'Warm' : undefined));
+  await page.goto(B + '/#pctl');
+  await page.locator('#pane-pctl [data-op=rGain]').first().waitFor({ timeout: 10000 });
+  const cam = async (id = 'cam1') => (await api('/api/sys/ptz')).cameras.find((c) => c.id === id);
+  const until = async (fn, what) => { for (let i = 0; i < 80; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } throw new Error(`timed out: ${what}`); };
+  const metrics = () => page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: innerWidth,
+    gaps: [...document.querySelectorAll('#pane-pctl .rcp>.panel')].map((p) => { const r = p.getBoundingClientRect(); const bot = Math.max(...[...p.children].filter((k) => k.offsetParent !== null).map((k) => k.getBoundingClientRect().bottom)); return [p.className, r.bottom - bot]; }),
+    cards: [...document.querySelectorAll('#pane-pctl .pcard:not(.hide)')].length, tabs: getComputedStyle(document.querySelector('#ptzPaintTabs .ptab')).display !== 'none' }));
+  for (const [w, h, allCards] of [[1920, 1080, true], [1440, 900, false], [1280, 800, true]]) {
+    await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(500);
+    const m = await metrics();
+    assert.ok(m.sw <= m.w, `${w}: no sideways scroll (${m.sw})`);
+    for (const [cls, gap] of m.gaps) assert.ok(gap < 40, `${w}: ${cls} has ${Math.round(gap)} px empty at the bottom`);
+    if (allCards) { assert.equal(m.cards, 8, `${w}: every paint group side by side`); assert.equal(m.tabs, false); } else { assert.ok(m.cards >= 4, `${w}: ${m.cards} paint cards`); assert.equal(m.tabs, true); }
+  }
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  // absolute zoom slider -> AXZ; limit toggle; FINE / COARSE steps
+  await page.locator('#pane-pctl [data-op=zoomPos] input').fill('50');
+  await until(async () => { const c = await cam(); return c.values.zoomPos !== undefined && Math.abs(c.values.zoomPos - 50) < 1; }, 'zoom 50 %');
+  await page.click('#pane-pctl [data-op=limitUp]'); await until(async () => (await cam()).values.limitUp === true, 'limit up');
+  await page.click('[data-stepmul="10"]');
+  const rk = page.locator('#pane-pctl [data-pane=paint] [data-op=rGain]'); await rk.locator('[data-step="1"]').click();
+  await until(async () => (await cam()).values.rGain === 10, 'COARSE +10'); await page.click('[data-stepmul="1"]');
+  // paint memory: SAVE (prompt), change, LOAD (confirm)
+  await page.click('#ptzMem [data-msave="1"]'); await until(async () => ((await cam()).paintMem || {})[1], 'mem 1 saved');
+  await api('/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'rGain', value: -40 });
+  await page.locator('#ptzMem [data-mload="1"]:not([disabled])').waitFor(); await page.click('#ptzMem [data-mload="1"]');
+  await until(async () => (await api('/api/sys/ptz/cameras/cam1/status')).values.rGain === 10, 'mem 1 loaded');
+  // lock: controls disabled, server refuses
+  await page.click('#ptzLock'); await until(async () => (await cam()).locked === true, 'locked');
+  await page.locator('.rcp-paint.locked').waitFor(); assert.equal(await rk.locator('[data-step="1"]').isDisabled(), true);
+  assert.equal((await fetch(`${B}/api/sys/ptz/cmd/op`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cam: 'cam1', op: 'rGain', value: 0 }) })).status, 423);
+  await page.click('#ptzLock'); await until(async () => (await cam()).locked === false, 'unlocked');
+  // notes save on their own
+  await page.fill('#ptzNotes', 'Riser, 20x'); await page.locator('#ptzNotes').blur(); await until(async () => (await cam()).notes === 'Riser, 20x', 'notes');
+  // preview frame + stream info
+  await page.waitForFunction(() => { const i = document.querySelector('#ptzSnapImg'); return i && i.complete && i.naturalWidth > 0; }, null, { timeout: 6000 });
+  await page.locator('#ptzInfo .url').first().waitFor();
+  // keys 1-9 select a camera; the HE130 has no preview and no paint
+  await page.keyboard.press('3'); await until(async () => (await api('/api/sys/ptz')).selected === 'cam3', 'key 3');
+  await page.locator('#ptzSnap.na').waitFor(); assert.equal(await page.locator('#pane-pctl [data-op=zoomPos]').count(), 0);
   assert.deepEqual(errors, []);
 });

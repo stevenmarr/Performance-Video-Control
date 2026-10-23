@@ -669,3 +669,132 @@ body.tab-atem .main{gap:14px}
 .cc-msg{font-size:13px;color:var(--dim)}
 .cc-msg.err{color:#ff9b91}
 .cc-help{font-size:12px}
+
+/* ---------- 0.9.8 CAMERA CONTROL: full-screen RCP + joystick layout ---------- */
+.rcp-bus .cam-strip{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px}
+.cam-strip .cam{grid-template-columns:auto 14px 1fr auto;grid-template-rows:auto auto;column-gap:7px;min-width:0;padding:6px 10px}
+.cam-strip .cam .kn{grid-row:1 / span 2;font:900 11px/1 ui-monospace,Menlo,monospace;color:#5d6d82;border:1px solid #2d3743;border-radius:5px;padding:3px 5px}
+.cam-strip .cam.on .kn{color:#dfe3ff;border-color:var(--accent)}
+.cam-strip .cam .tl{grid-column:2}
+.cam-strip .cam b{grid-column:3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cam-strip .cam b .lk{font-style:normal;font-size:10px}
+.cam-strip .cam .mr{grid-column:4;grid-row:1;font:700 10px ui-monospace,Menlo,monospace;color:#9fb4cf;white-space:nowrap}
+.cam-strip .cam .mr em{font:900 9px/1 -apple-system,sans-serif;letter-spacing:.08em;padding:2px 4px;border-radius:3px;margin-right:4px}
+.cam-strip .cam .mr em.pg{background:var(--pgm);color:#fff}.cam-strip .cam .mr em.pv{background:var(--pvw);color:#04140a}
+.cam-strip .cam small{grid-column:3 / span 2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rcp-read{margin:4px 0 8px;padding:4px}
+.rcp{gap:8px;grid-template-columns:300px 214px 330px minmax(0,1fr) minmax(0,1fr);
+  grid-template-areas:"joy lens iris paint paint" "presets presets presets view sys"}
+.rcp>.panel{padding:10px;display:flex;flex-direction:column}
+.rcp-view{grid-area:view}
+.rcp .section-title{margin-bottom:4px}
+.sub-t{font:800 9px/1.3 -apple-system,Segoe UI,sans-serif;letter-spacing:.14em;color:#6f8fb8;margin:10px 0 0;padding-top:8px;border-top:1px solid #222a34}
+.sub-t small{letter-spacing:.04em;color:var(--dim);font-weight:600;margin-left:4px}
+.rcp-ctl{gap:6px;margin-top:6px}
+/* joystick panel */
+.rcp-joy .joy{max-width:268px}
+.lim-cross{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;width:100%}
+.lim-cross .ctl-t{min-width:0;padding:5px 8px;align-items:center}.lim-cross .ctl-t b{font-size:12px}
+.lim-cross .ctl-t.active{background:#3a2a08;border-color:#ffb02e;color:#ffd35c}
+.lim-c{display:flex;align-items:center;justify-content:center;font:900 9px/1 -apple-system,sans-serif;letter-spacing:.14em;color:#55657a;border:1px dashed #2d3743;border-radius:8px}
+/* lens panel */
+.rcp-lens .rk-track{height:170px}
+.ctl-abs{display:grid;grid-template-columns:44px 1fr 52px;align-items:center;gap:6px;width:100%}
+.ctl-abs .lbl{font:800 9px/1 -apple-system,Segoe UI,sans-serif;letter-spacing:.12em;color:var(--dim)}
+.ctl-abs input{width:100%;accent-color:var(--knob)}.ctl-abs b{font:800 12px ui-monospace,Menlo,monospace;color:#cfe3ff;text-align:right}
+.ctl-abs.dis{opacity:.4}
+.rcp-ctl.abs{flex-direction:column;padding:6px 0;border-top:1px solid #222a34;border-bottom:1px solid #222a34}
+.rcp-lens .ctl-t,.rcp-iris .ctl-t{min-width:0;flex:1 1 84px}
+.rcp-lens .ctl-seg{flex:1 1 100%}
+/* iris / exposure */
+.rcp-iris [data-slot=iris]{justify-content:center}
+.rcp-iris .knob:not(.big){width:76px}.rcp-iris .knob:not(.big) svg{width:60px;height:60px}.rcp-iris .knob:not(.big)>b{top:24px;font-size:12px}
+.rcp-iris .ctl-sel{flex:1 1 110px}.rcp-iris .ctl-sel select{max-width:none;width:100%}
+/* paint: cards side by side */
+.paint-head{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
+.paint-head .paint-tabs{margin:0}
+.paint-tabs .pt-all{display:none;font:800 11px/1 -apple-system,Segoe UI,sans-serif;letter-spacing:.14em;color:#6f8fb8;padding:7px 2px}
+.paint-tabs.all .pt-all{display:inline-block}.paint-tabs.all .ptab{display:none}
+.paint-head .segb{display:flex;gap:0}.paint-head .segb .mode{padding:6px 10px;font-size:11px;border-radius:0}
+.paint-head .segb .mode:first-child{border-radius:7px 0 0 7px}.paint-head .segb .mode:last-child{border-radius:0 7px 7px 0}
+.lockb{display:flex;flex-direction:column;align-items:flex-start;padding:4px 12px;min-width:96px}.lockb small{font-size:8px;letter-spacing:.14em;opacity:.7}.lockb b{font-size:12px}
+.lockb.active{background:#3a2a08;border-color:#ffb02e;color:#ffd35c}
+.pgrid{flex:1;display:grid;grid-template-columns:repeat(var(--pcols,1),minmax(0,1fr));grid-auto-rows:minmax(0,auto);gap:8px;align-content:stretch}
+.pgrid .pc-none{display:none;grid-column:1 / -1}.pgrid.none .pc-none{display:block}
+.pcard{display:flex;flex-direction:column;background:var(--rcp);border:1px solid #232b35;border-radius:10px;padding:6px 6px 8px;min-width:0}
+.pcard.hide{display:none}.pcard.wide{grid-column:span 2}
+.pcard .pc-t{font:900 10px/1 -apple-system,Segoe UI,sans-serif;letter-spacing:.16em;color:#9fb4cf;padding:3px 4px 6px;border-bottom:1px solid #1e252e;margin-bottom:4px}
+.pcard .pc-b{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-start;justify-content:space-around;align-content:space-evenly;flex:1}
+.pcard .knob{width:76px}.pcard .knob svg{width:58px;height:58px}.pcard .knob>b{top:23px;font-size:12px}
+.pcard .ctl-t{min-width:0;flex:1 1 70px;padding:6px 8px}
+.pcard .ctl-seg{flex:1 1 100%}.pcard .ctl-sel{flex:1 1 100%}.pcard .ctl-sel select{max-width:none;width:100%}
+.pcard .ctl-b{flex:1 1 60px}
+.rcp-paint.locked .pcard{border-color:#5a4210}
+.rcp-paint.locked .pcard .pc-t::after{content:' · LOCKED';color:#ffb02e}
+.plock{opacity:.45!important}
+/* presets */
+.rcp-presets .thumbs{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:6px;margin:6px 0}
+.rcp-presets .rcp-ctl.inline .ctl-seg{flex:0 1 auto}
+/* preview / info / notes */
+.snap{position:relative;aspect-ratio:16/9;border-radius:9px;overflow:hidden;background:#07090c;border:1px solid #232b35}
+.snap img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.snap .snap-na{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:10px;font:700 11px/1.4 -apple-system,sans-serif;color:var(--dim)}
+.snap.na img,.snap.err img{display:none}.snap.na .snap-na,.snap.err .snap-na{display:flex}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0;font-size:12px;align-items:baseline}
+.kv .kvl{font:800 9px/1.2 -apple-system,Segoe UI,sans-serif;letter-spacing:.12em;color:var(--dim);white-space:nowrap}
+.kv .kvv{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kv .kvv.mono{font-family:ui-monospace,Menlo,monospace}.kv .kvv.dim{color:var(--dim)}
+.kv .kvv small{color:var(--dim)}.kv .url{font-size:11px;color:#9fd0ff}.kv .sel{user-select:all}
+.notes{display:flex;flex-direction:column;gap:4px;flex:1;min-height:70px}
+.notes .lbl{font:800 9px/1 -apple-system,Segoe UI,sans-serif;letter-spacing:.14em;color:var(--dim)}.notes .lbl small{letter-spacing:.04em;color:#6fe39b}
+.notes textarea{flex:1;min-height:54px;resize:vertical;background:#0c0f13;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:13px/1.35 -apple-system,Segoe UI,sans-serif}
+/* camera / system */
+.pmem{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:6px}
+.pm{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;gap:2px 6px;padding:6px;border-radius:8px;background:var(--rcp);border:1px solid #232b35}
+.pm.set{border-color:#3b4f8a}
+.pm .pmn{font:900 10px/1 ui-monospace,Menlo,monospace;color:#9fb4cf}.pm small{font-size:10px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm .pmb{grid-column:1 / -1;display:flex;gap:4px}.pm .pmb .btn{flex:1;padding:4px 6px;font-size:10px}
+.rcp-sys .ctl-t{min-width:0;flex:1 1 84px}
+.sys-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start}.sys-row>.rcp-ctl{flex:1 1 auto}
+.rcp-sys [data-slot=tracking]{flex-direction:column;align-items:stretch}
+.menu-pad .cross{grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,34px)}
+/* 1281 .. 1679 (1440): 4 columns, paint takes the rest */
+@media (max-width:1679px){
+  .rcp{grid-template-columns:286px 200px 262px minmax(0,1fr);grid-template-areas:"joy lens iris paint" "presets presets view sys"}
+}
+/* up to 1280: paint gets a full-width row so every group shows side by side */
+@media (max-width:1280px){
+  .rcp{grid-template-columns:270px 196px 250px minmax(0,1fr);grid-template-areas:"joy lens iris sys" "paint paint paint paint" "presets presets presets view"}
+}
+@media (max-width:860px){ .rcp{grid-template-columns:1fr 1fr;grid-template-areas:"joy joy" "lens iris" "paint paint" "presets presets" "view sys"} }
+
+/* 0.9.8 fill: the joystick, rockers, preset grid and notes take the height their row gives them */
+.joy-wrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0}
+.rcp-joy .joy{margin:2px auto 6px}
+.rockers{flex:1;min-height:0}.rock{min-height:0}.rock .rk-track{flex:1;height:auto;min-height:150px}
+.rcp-presets .thumbs{flex:1;grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:minmax(52px,1fr)}
+.rcp-presets .thumb{aspect-ratio:auto;min-height:52px}
+.knob.big{width:128px}.knob.big svg{width:108px;height:108px}.knob.big>b{top:44px;font-size:20px}
+.rcp-iris .rcp-ctl{justify-content:space-between}
+.sys-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;flex:1}
+.sys-col{display:flex;flex-direction:column;min-width:0}
+.sub-t.first{margin-top:6px;border-top:0;padding-top:0}
+.pmem{grid-template-columns:1fr 1fr}
+.pcard .ctl-b{flex:0 1 auto}
+@media (max-width:860px){ .sys-cols{grid-template-columns:1fr} }
+.pcard .knob{width:70px}.pcard .knob svg{width:56px;height:56px}.pcard .knob>b{top:22px;font-size:11px}
+.pcard .pc-b{gap:4px 2px}
+.rcp-iris [data-slot=exposure]{flex:1;align-content:space-evenly}
+.rcp-sys [data-slot=tracking]{flex-direction:row}
+.rcp-sys .sys-row{flex-wrap:nowrap;justify-content:space-between}
+.rcp-sys .sys-row [data-slot=tracking] .ctl-t{flex:0 1 auto}
+.rcp-sys [data-slot=tracking]{flex-direction:column;flex:0 0 auto}
+.rcp-sys [data-slot=menu] .menu-pad{gap:6px;flex-wrap:nowrap}
+.rcp-sys [data-slot=menu] .menu-pad>.ctl-t,.rcp-sys [data-slot=menu] .menu-pad>.ctl-b{min-width:0}
+.rcp-sys [data-slot=tally] .ctl-t{flex:1 1 30%}
+.rcp-sys .ctl-t{padding:5px 8px}.rcp-sys .ctl-t b{font-size:12px}
+.menu-pad .mp-side{display:flex;flex-direction:column;gap:6px}
+.rcp-sys .sys-row{flex-wrap:wrap;justify-content:flex-start;gap:8px}
+.rcp-sys .sys-row>[data-slot=menu]{flex:0 0 auto}
+.rcp-sys .sys-row>[data-slot=tracking]{flex:1 1 90px;flex-direction:column}
+.rcp-sys .sys-row>[data-slot=tracking] .ctl-t{flex:0 0 auto;width:100%}
+.pcard[data-pane=matrix] .ctl-t{flex:1 1 100%}
+.rcp-bus .cam-strip{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}

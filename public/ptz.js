@@ -1,5 +1,5 @@
 'use strict';
-// 0.8.0 Panasonic PTZ: CAMERA CONTROL, one dashboard laid out like an AW-RP150 / RP60 joystick controller plus an
+// 0.8.0 / 0.9.8 Panasonic PTZ: CAMERA CONTROL, one dashboard laid out like an AW-RP150 / RP60 joystick controller plus an
 // AW-RCP paint panel, and CAMERAS (add / edit / remove, command reference).
 //   * The controls come from the camera's command catalog (GET /api/sys/ptz/cameras/:id/catalog): what its model
 //     series supports, per the Companion module's series table plus the UE150 / HE145 spec extras. Every catalog
@@ -8,12 +8,17 @@
 //     centre (dead zone + curve), the zoom / focus rockers likewise. Per axis only one request is in flight and
 //     only changed speeds are sent; a keep-alive every 400 ms re-arms the server's dead-man (the camera gets no
 //     traffic from it). Release, cancel, lost capture, window blur, page hide, tab change and Esc all stop.
+//   * 0.9.8: the dashboard fills the screen: paint groups become side-by-side cards (as many as fit), absolute zoom /
+//     focus, pan / tilt limits, D.EXT / OIS, tally setup, a live preview frame and stream info, notes, a paint lock
+//     (enforced by the server, so Companion is locked too), paint memories, FINE / COARSE steps, keys 1-9 pick a camera.
 (() => {
   const $ = (s) => document.querySelector(s);
   const { api, toast, run, esc } = window.CC;
   const S = window.CCSYS;
   let V = null; let pmode = 'recall'; let page = Number(localStorage.getItem('cc.ptzPage') || 1) || 1; const PAGE = 20;
   let paintTab = localStorage.getItem('cc.ptzPaint') || 'wb';
+  let stepMul = Number(localStorage.getItem('cc.ptzStep') || 1) === 10 ? 10 : 1; let paintCols = 1;
+  const PAINT_GROUPS = new Set(['wb', 'paint', 'detail', 'gamma', 'knee', 'matrix', 'chroma', 'scene']);
   const cats = new Map(); const catLoading = new Set(); let built = ''; const local = {}; const thumbVer = {};
   const camId = () => V && V.selected;
   const sel = () => (V && V.cameras ? V.cameras.find((c) => c.id === V.selected) : null);
@@ -111,6 +116,7 @@
   document.addEventListener('keydown', (e) => {
     if (window.CC.getTab() !== 'pctl' || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || document.querySelector('dialog[open]')) return;
     if (e.key === 'Escape') { releaseAll('Esc'); run(cmd('stopAll')); return; }
+    if (/^[1-9]$/.test(e.key) && !e.ctrlKey && !e.metaKey && !e.altKey && V && V.cameras) { const c = V.cameras[Number(e.key) - 1]; if (c && c.id !== V.selected) { releaseAll('camera change'); run(cmd('select', { cam: c.id })); } return; }
     if (e.repeat || !canMove()) { if (KEYS[e.key]) e.preventDefault(); return; }
     if (KEYS[e.key]) { e.preventDefault(); down.add(e.key); keyPT(); }
     else if (e.key === '+' || e.key === '=') AX.zoom.set({ value: Number(V.speeds.zoom) || 25 }, camId()); else if (e.key === '-') AX.zoom.set({ value: -(Number(V.speeds.zoom) || 25) }, camId());
@@ -120,32 +126,40 @@
 
   // ---------- catalog controls ----------
   const SLOTS = {
-    lens: ['focusMode', 'oneTouchAF'],
+    lens: ['focusMode', 'oneTouchAF', 'dExtender', 'digitalZoom', 'ois'],
+    abs: ['zoomPos', 'focusPos'],
+    limits: ['limitUp', 'limitLeft', 'limitRight', 'limitDown'],
     iris: ['iris', 'irisMode'],
     exposure: ['gain', 'superGain', 'ndFilter', 'shutter', 'shutterMode', 'shutterStepDown', 'shutterStep', 'shutterStepUp', 'synchroDown', 'synchro', 'synchroUp', 'masterPed', 'pedestal'],
-    preset: ['presetScope', 'presetSpeedMode', 'presetSpeed', 'presetTime'],
-    system: ['power', 'tallyRed', 'tallyGreen', 'scene', 'install', 'sdRec'],
+    preset: ['presetScope', 'presetSpeedMode', 'presetSpeed', 'presetTime', 'presetDExt'],
+    system: ['power', 'install', 'sdRec'],
+    scene: ['scene'],
+    tally: ['tallyRed', 'tallyGreen', 'tallyEnable', 'tallyBright', 'tallyLimitR', 'tallyLimitG'],
+    tracking: ['trackSerial', 'trackIP'],
     menu: ['menu', 'menuUp', 'menuLeft', 'menuEnter', 'menuRight', 'menuDown', 'menuCancel'],
   };
   const PAINT = [
-    ['wb', 'WHITE', ['wbMode', 'awb', 'abb', 'colorTemp', 'varTempDown', 'varTemp', 'varTempUp', 'rGain', 'bGain']],
+    ['wb', 'WHITE · BLACK', ['wbMode', 'awb', 'abb', 'colorTemp', 'varTempDown', 'varTemp', 'varTempUp']],
     ['paint', 'PAINT', ['rGain', 'bGain', 'rPed', 'gPed', 'bPed']],
     ['detail', 'DETAIL', ['detail', 'masterDetail', 'skinDetail', 'skinEffect']],
-    ['gamma', 'GAMMA · KNEE', ['gammaMode', 'gamma', 'kneeMode', 'kneePoint', 'kneeSlope']],
+    ['gamma', 'GAMMA', ['gammaMode', 'gamma']],
+    ['knee', 'KNEE', ['kneeMode', 'kneePoint', 'kneeSlope']],
     ['matrix', 'MATRIX', ['matrixType', 'adaptiveMatrix', 'matrixRG', 'matrixRB', 'matrixGR', 'matrixGB', 'matrixBR', 'matrixBG']],
     ['chroma', 'CHROMA', ['chromaLevel', 'chromaPhase']],
     ['bars', 'BARS', ['colorBars', 'colorBarsSetup', 'colorBarsTitle', 'colorBarsTone', 'colorBarsType']],
   ];
-  const NOT_CTL = new Set(['move', 'zoom', 'focus', 'stop', 'recall', 'store', 'presetName', 'thumbnail', 'speeds', 'keepalive', 'home']);
+  const NOT_CTL = new Set(['move', 'zoom', 'focus', 'stop', 'recall', 'store', 'presetName', 'thumbnail', 'speeds', 'keepalive', 'home', 'snapshot', 'streamInfo']);
   const SHORT = { focusMode: 'FOCUS', oneTouchAF: 'PUSH AF', irisMode: 'IRIS', iris: 'IRIS', superGain: 'SUPER GAIN', ndFilter: 'ND', shutterMode: 'SHUTTER', shutterStep: 'STEP', shutterStepUp: 'STEP +', shutterStepDown: 'STEP −',
     synchro: 'SYNCHRO', synchroUp: 'SYN +', synchroDown: 'SYN −', masterPed: 'M.PED', pedestal: 'M.PED', wbMode: 'WB', awb: 'AWB ▶', abb: 'ABB ▶', varTemp: 'VAR K', varTempUp: 'K +', varTempDown: 'K −', colorTemp: 'COLOR TEMP',
     rGain: 'R GAIN', bGain: 'B GAIN', rPed: 'R PED', gPed: 'G PED', bPed: 'B PED', detail: 'DETAIL', masterDetail: 'M.DTL', skinDetail: 'SKIN DTL', skinEffect: 'SKIN EFF', gammaMode: 'GAMMA MODE', gamma: 'GAMMA',
     kneeMode: 'KNEE', kneePoint: 'K.POINT', kneeSlope: 'K.SLOPE', matrixType: 'MATRIX', adaptiveMatrix: 'ADAPTIVE', matrixRG: 'R-G', matrixRB: 'R-B', matrixGR: 'G-R', matrixGB: 'G-B', matrixBR: 'B-R', matrixBG: 'B-G',
     chromaLevel: 'CHROMA', chromaPhase: 'PHASE', presetScope: 'RECALL SCOPE', presetSpeedMode: 'SPEED / TIME', presetSpeed: 'SPEED', presetTime: 'TIME', power: 'POWER', tallyRed: 'RED TALLY', tallyGreen: 'GREEN TALLY',
     scene: 'SCENE', install: 'INSTALL', sdRec: 'SD REC', colorBars: 'BARS', colorBarsSetup: 'SETUP', colorBarsTitle: 'TITLE', colorBarsTone: 'TONE', colorBarsType: 'TYPE', menu: 'MENU',
-    menuUp: '▲', menuDown: '▼', menuLeft: '◀', menuRight: '▶', menuEnter: 'ENTER', menuCancel: 'CANCEL' };
-  const TG = { focusMode: ['AF', 'MF'], irisMode: ['AUTO', 'MANUAL'], power: ['ON', 'STANDBY'] };
-  const FMT = { varTemp: (v) => `${Math.round(v)}K`, gamma: (v) => (v / 100).toFixed(2), kneePoint: (v) => `${Number(v).toFixed(2)}%`, chromaLevel: (v) => (v <= -100 ? 'OFF' : `${v > 0 ? '+' : ''}${v}%`), synchro: (v) => `${Number(v).toFixed(1)}`, iris: (v) => String(v) };
+    menuUp: '▲', menuDown: '▼', menuLeft: '◀', menuRight: '▶', menuEnter: 'ENTER', menuCancel: 'CANCEL',
+    zoomPos: 'ZOOM', focusPos: 'FOCUS', dExtender: 'D.EXT', digitalZoom: 'D.ZOOM', ois: 'O.I.S.', presetDExt: 'PRESET D.EXT', limitUp: 'UP', limitDown: 'DOWN', limitLeft: 'LEFT', limitRight: 'RIGHT',
+    tallyEnable: 'TALLY', tallyBright: 'BRIGHTNESS', tallyLimitR: 'R LIMIT', tallyLimitG: 'G LIMIT', trackSerial: 'SERIAL OUT', trackIP: 'IP OUT' };
+  const TG = { focusMode: ['AF', 'MF'], irisMode: ['AUTO', 'MANUAL'], power: ['ON', 'STANDBY'], limitUp: ['SET', 'OFF'], limitDown: ['SET', 'OFF'], limitLeft: ['SET', 'OFF'], limitRight: ['SET', 'OFF'], tallyLimitR: ['LIMITED', 'FULL'], tallyLimitG: ['LIMITED', 'FULL'] };
+  const FMT = { varTemp: (v) => `${Math.round(v)}K`, gamma: (v) => (v / 100).toFixed(2), kneePoint: (v) => `${Number(v).toFixed(2)}%`, chromaLevel: (v) => (v <= -100 ? 'OFF' : `${v > 0 ? '+' : ''}${v}%`), synchro: (v) => `${Number(v).toFixed(1)}`, iris: (v) => String(v), zoomPos: (v) => `${Number(v).toFixed(1)}%`, focusPos: (v) => `${Number(v).toFixed(1)}%` };
   const fmt = (o, v) => (v === undefined || v === null || Number.isNaN(v) ? '—' : FMT[o.id] ? FMT[o.id](v) : (o.range && o.range.min < 0 && v > 0 ? `+${v}` : String(v)));
   const ARC = (f) => { const a0 = 135; const a = a0 + 270 * Math.max(0, Math.min(1, f)); const p = (deg) => { const r = (deg * Math.PI) / 180; return `${50 + 40 * Math.cos(r)} ${50 + 40 * Math.sin(r)}`; }; return `M ${p(a0)} A 40 40 0 ${a - a0 > 180 ? 1 : 0} 1 ${p(a)}`; };
   function ctlHtml(o) {
@@ -156,6 +170,7 @@
       if (o.options.length <= 7 && o.id !== 'gain') return `<div class="ctl-seg" data-op="${o.id}" data-type="list" ${t}><span class="lbl">${esc(lbl)}</span><div class="segb">${o.options.map(([v, l]) => `<button class="mode" data-v="${esc(v)}" type="button">${esc(l)}</button>`).join('')}</div></div>`;
       return `<label class="ctl-sel" ${t}><span class="lbl">${esc(lbl)}</span><select data-op="${o.id}" data-type="list"><option value="" disabled>—</option>${o.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select></label>`;
     }
+    if (SLOTS.abs.includes(o.id)) return `<label class="ctl-abs" data-op="${o.id}" data-type="range" data-abs="1" ${t}><span class="lbl">${esc(lbl)}</span><input type="range" min="${o.range.min}" max="${o.range.max}" step="${o.range.step}"><b>—</b></label>`;
     const big = o.id === 'iris' ? 'big' : '';
     return `<div class="knob ${big}" data-op="${o.id}" data-type="range" tabindex="0" ${t}><svg viewBox="0 0 100 100" aria-hidden="true"><path class="trk" d="${ARC(1)}"/><path class="val" d="${ARC(0)}"/></svg><b>—</b><span class="kl">${esc(lbl)}</span>
       <span class="kb"><button data-step="-1" type="button">−</button><button data-step="1" type="button">+</button></span></div>`;
@@ -164,28 +179,56 @@
     const ops = ids.map((id) => k.ops.find((o) => o.id === id)).filter(Boolean);
     if (name === 'menu') {
       const g = (id) => { const o = ops.find((x) => x.id === id); return o ? ctlHtml(o) : '<span></span>'; };
-      return ops.length ? `<div class="menu-pad">${g('menu')}<div class="cross"><span></span>${g('menuUp')}<span></span>${g('menuLeft')}${g('menuEnter')}${g('menuRight')}<span></span>${g('menuDown')}<span></span></div>${g('menuCancel')}</div>` : '';
+      return ops.length ? `<div class="menu-pad"><div class="mp-side">${g('menu')}${g('menuCancel')}</div><div class="cross"><span></span>${g('menuUp')}<span></span>${g('menuLeft')}${g('menuEnter')}${g('menuRight')}<span></span>${g('menuDown')}<span></span></div></div>` : '';
+    }
+    if (name === 'limits') {
+      const g = (id) => { const o = ops.find((x) => x.id === id); return o ? ctlHtml(o) : '<span></span>'; };
+      return ops.length ? `<div class="lim-cross"><span></span>${g('limitUp')}<span></span>${g('limitLeft')}<span class="lim-c">LIMIT</span>${g('limitRight')}<span></span>${g('limitDown')}<span></span></div>` : '';
     }
     return ops.map(ctlHtml).join('');
   }
+  // paint cards: as many side by side as the panel width allows; tabs choose the first card shown when not all fit
+  function layoutPaint() {
+    const cards = [...document.querySelectorAll('#pane-pctl .pcard')]; if (!cards.length) return;
+    const avail = cards.filter((x) => !x.classList.contains('empty'));
+    // all cards fit in two rows: pick the column count that fills both rows (no empty cells); else page through them
+    const n = avail.length; const all = n <= paintCols * 2; let cols = paintCols; let wideM = false;
+    if (all && n) { const rows = n <= paintCols ? 1 : 2; cols = Math.ceil(n / rows); wideM = cols * rows - n >= 1 && cols >= 2; }
+    const cells = (x) => (x.dataset.pane === 'matrix' && wideM ? 2 : 1);
+    const cap = cols * 2;
+    $('#ptzPaintTabs').classList.toggle('all', all);
+    let start = Math.max(0, avail.findIndex((x) => x.dataset.pane === paintTab)); let used = 0; const show = new Set();
+    if (all) avail.forEach((x) => show.add(x));
+    else { start = Math.min(start, Math.max(0, avail.length - cap)); for (let i = start; i < avail.length && used < cap; i++) { const x = avail[i]; if (used + cells(x) > cap) break; show.add(x); used += cells(x); } }
+    for (const x of cards) { x.classList.toggle('hide', !show.has(x)); x.classList.toggle('wide', cells(x) === 2); }
+    document.querySelectorAll('#ptzPaintTabs .ptab').forEach((b) => b.classList.toggle('on', [...show].some((x) => x.dataset.pane === b.dataset.ptab)));
+    const g = document.querySelector('#pane-pctl [data-slot=paint]'); g.style.setProperty('--pcols', String(cols)); g.classList.toggle('none', !avail.length);
+  }
+  new ResizeObserver(() => { const g = document.querySelector('#pane-pctl [data-slot=paint]'); const w = g.clientWidth; const n = Math.max(1, Math.floor((w + 8) / 214)); if (n !== paintCols) { paintCols = n; layoutPaint(); } }).observe(document.querySelector('#pane-pctl [data-slot=paint]'));
   function build(c, k) {
     const sid = c.series; const used = new Set();
     for (const el of document.querySelectorAll('#pane-pctl [data-slot]')) {
       const name = el.dataset.slot; if (name === 'paint') continue;
       const ids = SLOTS[name]; ids.forEach((i) => used.add(i));
       let h = slot(name, ids, k);
+      if (!h && ['abs', 'limits', 'tracking', 'scene'].includes(name)) { el.innerHTML = ''; el.closest('.panel').querySelectorAll(`[data-for=${name}]`).forEach((x) => { x.hidden = true; }); continue; }
+      el.closest('.panel').querySelectorAll(`[data-for=${name}]`).forEach((x) => { x.hidden = false; });
       if (name === 'system') { const rest = k.ops.filter((o) => !NOT_CTL.has(o.id) && !Object.values(SLOTS).flat().includes(o.id) && !PAINT.some(([, , l]) => l.includes(o.id))); if (rest.length) h += `<div class="sub">OTHER</div>${rest.map(ctlHtml).join('')}`; }
       el.innerHTML = h || `<div class="note small">Not available on the ${esc(sid)} series.</div>`;
     }
     const tabs = PAINT.map(([id, l, ids]) => [id, l, ids.filter((i) => k.ops.some((o) => o.id === i))]);
     if (!tabs.some(([id, , l]) => id === paintTab && l.length)) { const f = tabs.find(([, , l]) => l.length); paintTab = f ? f[0] : 'wb'; }
-    $('#ptzPaintTabs').innerHTML = tabs.map(([id, l, ids]) => `<button class="ptab ${id === paintTab ? 'on' : ''}" data-ptab="${id}" ${ids.length ? '' : 'disabled title="not on this model"'} type="button">${l}</button>`).join('');
+    $('#ptzPaintTabs').innerHTML = `<span class="pt-all">PAINT · ALL GROUPS</span>${tabs.map(([id, l, ids]) => `<button class="ptab ${id === paintTab ? 'on' : ''}" data-ptab="${id}" ${ids.length ? '' : 'disabled title="not on this model"'} type="button">${l}</button>`).join('')}`;
     const pane = document.querySelector('#pane-pctl [data-slot=paint]');
-    pane.innerHTML = tabs.map(([id, , ids]) => `<div class="ptab-pane ${id === paintTab ? '' : 'hide'}" data-pane="${id}">${ids.length ? slot(id, ids, k) : `<div class="note small">Not available on the ${esc(sid)} series (these are UE150 / HE145 spec commands).</div>`}</div>`).join('');
+    pane.innerHTML = tabs.map(([id, l, ids]) => `<div class="pcard ptab-pane ${ids.length ? '' : 'empty hide'}" data-pane="${id}"><div class="pc-t">${l}</div><div class="pc-b">${ids.length ? slot(id, ids, k) : ''}</div></div>`).join('')
+      + `<div class="note small pc-none">No paint commands on the ${esc(sid)} series (white balance, gain / pedestal, detail, gamma, knee, matrix and chroma are UE150 / HE145 spec commands). Iris, gain, shutter and pedestal are under IRIS · EXPOSURE.</div>`;
+    layoutPaint();
     $('#spPt').closest('.joy-foot').querySelector('[data-op=home]').hidden = !k.ops.some((o) => o.id === 'home');
     $('#ptzFocusR').classList.toggle('na', !k.ops.some((o) => o.id === 'focus'));
   }
-  $('#ptzPaintTabs').addEventListener('click', (ev) => { const b = ev.target.closest('[data-ptab]'); if (!b || b.disabled) return; paintTab = b.dataset.ptab; localStorage.setItem('cc.ptzPaint', paintTab); document.querySelectorAll('#ptzPaintTabs .ptab').forEach((x) => x.classList.toggle('on', x === b)); document.querySelectorAll('#pane-pctl .ptab-pane').forEach((p) => p.classList.toggle('hide', p.dataset.pane !== paintTab)); });
+  $('#ptzPaintTabs').addEventListener('click', (ev) => { const b = ev.target.closest('[data-ptab]'); if (!b || b.disabled) return; paintTab = b.dataset.ptab; localStorage.setItem('cc.ptzPaint', paintTab); layoutPaint(); });
+  const stepBtns = () => document.querySelectorAll('[data-stepmul]').forEach((b) => b.classList.toggle('active', Number(b.dataset.stepmul) === stepMul));
+  document.querySelectorAll('[data-stepmul]').forEach((b) => b.addEventListener('click', () => { stepMul = Number(b.dataset.stepmul); localStorage.setItem('cc.ptzStep', String(stepMul)); stepBtns(); })); stepBtns();
 
   // value of one op: a value just set here wins for 2.5 s (the camera's echo arrives with the next status read)
   const valOf = (c, id) => { const l = local[`${c.id}:${id}`]; if (l && (l.drag || Date.now() - l.at < 2500)) return l.v; return (c.values || {})[id]; };
@@ -197,14 +240,16 @@
       if (el.dataset.type === 'toggle') { el.classList.toggle('active', v === true); el.querySelector('b').textContent = v === undefined ? '—' : (TG[id] ? TG[id][v ? 0 : 1] : v ? 'ON' : 'OFF'); }
       else if (el.dataset.type === 'list' && el.tagName === 'SELECT') { if (document.activeElement !== el) { el.value = v === undefined ? '' : String(v); if (el.value !== String(v ?? '')) el.value = ''; } }
       else if (el.dataset.type === 'list') el.querySelectorAll('[data-v]').forEach((b) => b.classList.toggle('active', String(v) === b.dataset.v));
+      else if (el.dataset.abs) { const n = v === undefined ? null : Number(v); el.querySelector('b').textContent = fmt(o, n); const inp = el.querySelector('input'); if (document.activeElement !== inp && n !== null) inp.value = String(n); }
       else if (el.dataset.type === 'range') {
         const r = o.range; const n = v === undefined ? null : Number(v);
         el.querySelector('b').textContent = fmt(o, n);
         el.querySelector('.val').setAttribute('d', ARC(n === null ? 0 : (n - r.min) / (r.max - r.min)));
         el.classList.toggle('centre', r.centre !== undefined && n === r.centre);
       }
-      const lock = off || (id === 'iris' && valOf(c, 'irisMode') === true) || (/^menu./.test(id) && valOf(c, 'menu') === false && false);
-      el.classList.toggle('dis', !!lock); if ('disabled' in el) el.disabled = !!lock; el.querySelectorAll('button,select').forEach((b) => { b.disabled = !!lock; });
+      const pl = c.locked && PAINT_GROUPS.has(o.group);
+      const lock = off || pl || (id === 'iris' && valOf(c, 'irisMode') === true) || (id === 'focusPos' && valOf(c, 'focusMode') === true);
+      el.classList.toggle('dis', !!lock); el.classList.toggle('plock', !!pl); if ('disabled' in el) el.disabled = !!lock; el.querySelectorAll('button,select,input').forEach((b) => { b.disabled = !!lock; });
     }
   }
   const pend = {};
@@ -221,7 +266,7 @@
   const pane = $('#pane-pctl');
   pane.addEventListener('click', (ev) => {
     const kb = ev.target.closest('.knob [data-step]');
-    if (kb) { const el = kb.closest('.knob'); const o = opDef(el.dataset.op); const c = sel(); if (!o || !c) return; const cur = Number(valOf(c, o.id) ?? o.range.centre ?? o.range.min); const v = Math.max(o.range.min, Math.min(o.range.max, cur + Number(kb.dataset.step) * o.range.step)); setLocal(o.id, v); renderCtl(); send(o.id, v, { now: true }); return; }
+    if (kb) { const el = kb.closest('.knob'); const o = opDef(el.dataset.op); const c = sel(); if (!o || !c) return; const cur = Number(valOf(c, o.id) ?? o.range.centre ?? o.range.min); const v = Math.max(o.range.min, Math.min(o.range.max, Number((cur + Number(kb.dataset.step) * o.range.step * stepMul).toFixed(2)))); setLocal(o.id, v); renderCtl(); send(o.id, v, { now: true }); return; }
     const b = ev.target.closest('[data-op]'); if (!b || b.disabled || b.classList.contains('dis')) return;
     const id = b.dataset.op; const c = sel(); if (!c) return;
     if (id === 'home') return run(cmd('op', { op: 'home' }).then(() => toast('Home')));
@@ -235,6 +280,9 @@
     if (t === 'list' && b.tagName !== 'SELECT') { const v = ev.target.closest('[data-v]'); if (!v) return; setLocal(id, v.dataset.v); renderCtl(); return run(cmd('op', { op: id, value: v.dataset.v })); }
     return undefined;
   });
+  // absolute zoom / focus: throttled while dragging, the final value on release
+  pane.addEventListener('input', (ev) => { const l = ev.target.closest('[data-abs]'); if (!l) return; const v = Number(ev.target.value); setLocal(l.dataset.op, v, true); l.querySelector('b').textContent = fmt(opDef(l.dataset.op) || {}, v); send(l.dataset.op, v); });
+  pane.addEventListener('change', (ev) => { const l = ev.target.closest('[data-abs]'); if (!l) return; const v = Number(ev.target.value); setLocal(l.dataset.op, v); send(l.dataset.op, v, { now: true }); });
   pane.addEventListener('change', (ev) => { const s = ev.target.closest('select[data-op]'); if (!s) return; setLocal(s.dataset.op, s.value); run(cmd('op', { op: s.dataset.op, value: s.value })); });
   // knob drag (vertical: 200 px = the full range), wheel, keys; double-click returns to centre
   let kd = null;
@@ -251,12 +299,12 @@
   });
   const kEnd = (ev) => { if (!kd || ev.pointerId !== kd.id) return; const { o, el } = kd; kd = null; el.classList.remove('drag'); const c = sel(); const l = c && local[`${c.id}:${o.id}`]; if (l && l.drag) { l.drag = false; l.at = Date.now(); send(o.id, l.v, { now: true }); } };
   pane.addEventListener('pointerup', kEnd); pane.addEventListener('pointercancel', kEnd);
-  pane.addEventListener('wheel', (ev) => { const el = ev.target.closest('.knob'); if (!el || el.classList.contains('dis')) return; const o = opDef(el.dataset.op); const c = sel(); if (!o || !c) return; ev.preventDefault(); const cur = Number(valOf(c, o.id) ?? o.range.centre ?? o.range.min); const v = Math.max(o.range.min, Math.min(o.range.max, Number((cur + (ev.deltaY < 0 ? 1 : -1) * o.range.step * (ev.shiftKey ? 10 : 1)).toFixed(2)))); setLocal(o.id, v); renderCtl(); send(o.id, v); }, { passive: false });
+  pane.addEventListener('wheel', (ev) => { const el = ev.target.closest('.knob'); if (!el || el.classList.contains('dis')) return; const o = opDef(el.dataset.op); const c = sel(); if (!o || !c) return; ev.preventDefault(); const cur = Number(valOf(c, o.id) ?? o.range.centre ?? o.range.min); const v = Math.max(o.range.min, Math.min(o.range.max, Number((cur + (ev.deltaY < 0 ? 1 : -1) * o.range.step * (ev.shiftKey ? 10 : stepMul)).toFixed(2)))); setLocal(o.id, v); renderCtl(); send(o.id, v); }, { passive: false });
   pane.addEventListener('dblclick', (ev) => { const el = ev.target.closest('.knob'); if (!el || el.classList.contains('dis')) return; const o = opDef(el.dataset.op); if (!o || o.range.centre === undefined) return; setLocal(o.id, o.range.centre); renderCtl(); send(o.id, o.range.centre, { now: true }); });
 
   // ---------- render ----------
-  const strip = () => S.set($('#ptzStrip'), 'ptzStrip', (V.cameras || []).map((c) => `<button class="cam ${c.id === V.selected ? 'on' : ''} ${c.connected ? '' : 'off'} ${c.tally ? 'tally-r' : ''} ${c.tallyGreen ? 'tally-g' : ''}" data-cam="${esc(c.id)}" type="button">
-      <span class="tl"><i class="r ${c.tally ? 'on' : ''}"></i><i class="g ${c.tallyGreen ? 'on' : ''}"></i></span><b>${esc(c.name)}</b><small>${esc(c.model || (c.connected ? '' : 'offline'))}${c.power === 'standby' ? ' · STANDBY' : ''}${c.lastPreset ? ` · P${c.lastPreset}` : ''}${c.moving ? ' · MOVING' : ''}</small></button>`).join('') || '<div class="note">No cameras. Add them on ⌂ SYSTEMS or the CAMERAS tab.</div>');
+  const strip = () => S.set($('#ptzStrip'), 'ptzStrip', (V.cameras || []).map((c, i) => `<button class="cam ${c.id === V.selected ? 'on' : ''} ${c.connected ? '' : 'off'} ${c.tally ? 'tally-r' : ''} ${c.tallyGreen ? 'tally-g' : ''}" data-cam="${esc(c.id)}" type="button">
+      ${i < 9 ? `<span class="kn">${i + 1}</span>` : ''}<span class="tl"><i class="r ${c.tally ? 'on' : ''}"></i><i class="g ${c.tallyGreen ? 'on' : ''}"></i></span><b>${esc(c.name)}${c.locked ? ' <em class="lk" title="paint locked">🔒</em>' : ''}</b><span class="mr">${c.tally ? '<em class="pg">PGM</em>' : c.tallyGreen ? '<em class="pv">PVW</em>' : ''}${c.pos && c.pos.zoom !== undefined && c.pos.zoom !== null ? `Z${Math.round(c.pos.zoom)}` : ''}${c.pos && c.pos.iris !== undefined && c.pos.iris !== null ? ` · I${Math.round(c.pos.iris)}` : ''}</span><small>${esc(c.model || (c.connected ? '' : 'offline'))}${c.power === 'standby' ? ' · STANDBY' : ''}${c.lastPreset ? ` · P${c.lastPreset}` : ''}${c.moving ? ' · MOVING' : ''}</small></button>`).join('') || '<div class="note">No cameras. Add them on ⌂ SYSTEMS or the CAMERAS tab.</div>');
   const deg = (v) => (v === null || v === undefined ? '—' : `${v > 0 ? '+' : ''}${v.toFixed(1)}°`);
   const pct = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)}%`);
   function readout(c) {
@@ -299,7 +347,49 @@
     if (built !== key) { build(c, k); built = key; }
     update(c, k);
     renderPresets(c, k);
+    renderExtras(c, k);
   }
+  // ---------- preview, info, notes, lock, paint memories ----------
+  const info = {}; let snapCam = null; let snapBusy = false;
+  function renderExtras(c, k) {
+    const lb = $('#ptzLock'); lb.classList.toggle('active', !!c.locked); lb.querySelector('b').textContent = c.locked ? 'LOCKED' : 'UNLOCKED'; lb.disabled = false;
+    $('#pane-pctl .rcp-paint').classList.toggle('locked', !!c.locked);
+    const ta = $('#ptzNotes'); if (document.activeElement !== ta && ta.dataset.cam !== `${c.id}|${c.notes}`) { ta.value = c.notes || ''; ta.dataset.cam = `${c.id}|${c.notes}`; }
+    const snap = !!(k && k.ops.some((o) => o.id === 'snapshot'));
+    $('#ptzSnap').classList.toggle('na', !snap || !c.connected); $('#ptzSnapNa').textContent = !snap ? `No preview frame on the ${c.series} series` : !c.connected ? 'Camera offline' : '';
+    $('#ptzSnapHint').textContent = snap ? 'live frame, about every 1.5 s' : '';
+    if (snapCam !== c.id) { snapCam = c.id; $('#ptzSnapImg').removeAttribute('src'); snapTick(); }
+    const ii = info[c.id];
+    if (!ii || Date.now() - ii.at > 60000) { info[c.id] = { at: Date.now(), v: ii && ii.v }; api('GET', `/api/sys/ptz/cameras/${encodeURIComponent(c.id)}/info`).then((v) => { info[c.id] = { at: Date.now(), v }; renderExtras(sel() || c, catOf(sel() || c)); }).catch(() => {}); }
+    const v = (ii && ii.v) || {};
+    const row = (l, x, cls = '') => `<span class="kvl">${l}</span><span class="kvv ${cls}">${x}</span>`;
+    S.set($('#ptzInfo'), 'ptzInfo', row('IP', `${esc(c.host)}<small>:${esc(c.port)}</small>`, 'mono') + row('MODEL', esc(c.model || '—')) + (c.title ? row('TITLE', esc(c.title)) : '') + (c.version ? row('FW', esc(c.version), 'mono') : '')
+      + ((v.streams || []).length ? (v.streams || []).map((x) => row(esc(x.name), `<span class="sel">${esc(x.url)}</span>`, 'mono url')).join('') : row('STREAM', esc(v.note || '…'), 'dim')));
+    const mem = c.paintMem || {}; const canMem = !!(k && k.ops.some((o) => PAINT_GROUPS.has(o.group) && o.type && o.type !== 'button'));
+    S.set($('#ptzMem'), 'ptzMem', canMem ? [1, 2, 3, 4].map((n) => { const m = mem[n]; return `<div class="pm ${m ? 'set' : ''}" title="${m ? esc(`${m.name} · ${m.count} values · saved ${new Date(m.at).toLocaleString()}`) : 'empty'}"><span class="pmn">MEM ${n}</span><small>${m ? esc(m.name) : 'empty'}</small><span class="pmb"><button class="btn mini" data-msave="${n}" type="button" ${c.connected ? '' : 'disabled'}>SAVE</button><button class="btn mini" data-mload="${n}" type="button" ${m && c.connected && !c.locked ? '' : 'disabled'}>LOAD</button></span></div>`; }).join('') : '<div class="note small">Paint memories need paint commands (UE150 / HE145 spec).</div>');
+  }
+  function snapTick() {
+    const c = sel(); const k = catOf(c);
+    if (!c || !c.connected || !k || !k.ops.some((o) => o.id === 'snapshot') || snapBusy) return;
+    snapBusy = true; const img = $('#ptzSnapImg'); const id = c.id;
+    const done = () => { snapBusy = false; img.onload = null; img.onerror = null; };
+    img.onload = () => { done(); $('#ptzSnap').classList.remove('err'); };
+    img.onerror = () => { done(); if (sel() && sel().id === id) { $('#ptzSnap').classList.add('err'); $('#ptzSnapNa').textContent = 'Preview frame unavailable'; } };
+    img.src = `/api/sys/ptz/cameras/${encodeURIComponent(id)}/snapshot?t=${Date.now()}`;
+    setTimeout(() => { if (snapBusy) done(); }, 5000);
+  }
+  setInterval(() => { if (V && V.kind === 'ptz' && window.CC.getTab() === 'pctl' && !document.hidden) snapTick(); }, 1500);
+  let noteT = null;
+  const saveNotes = () => { clearTimeout(noteT); noteT = null; const c = sel(); const ta = $('#ptzNotes'); if (!c || ta.dataset.dirty !== c.id) return; delete ta.dataset.dirty; const text = ta.value; cmd('notes', { text }).then(() => { $('#ptzNotesSt').textContent = 'saved'; setTimeout(() => { $('#ptzNotesSt').textContent = ''; }, 1500); }).catch((e) => toast(e.message, true)); };
+  $('#ptzNotes').addEventListener('input', () => { const c = sel(); if (!c) return; $('#ptzNotes').dataset.dirty = c.id; $('#ptzNotesSt').textContent = 'editing…'; clearTimeout(noteT); noteT = setTimeout(saveNotes, 900); });
+  $('#ptzNotes').addEventListener('blur', saveNotes);
+  $('#ptzLock').addEventListener('click', () => { const c = sel(); if (!c) return; run(cmd('lock', { on: !c.locked }).then((r) => toast(`${c.name}: paint ${r && r.locked ? 'locked' : 'unlocked'}`))); });
+  $('#ptzMem').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-msave],[data-mload]'); const c = sel(); if (!b || !c) return undefined; const m = c.paintMem || {};
+    if (b.dataset.msave) { const n = b.dataset.msave; if (m[n] && !confirm(`Overwrite paint memory ${n} ("${m[n].name}") with ${c.name}'s current paint?`)) return undefined; const name = prompt('Name for this paint memory', (m[n] && m[n].name) || `Paint ${n}`); if (name === null) return undefined; return run(cmd('paintSave', { slot: Number(n), name }).then((r) => toast(`Saved ${r.count} paint values to MEM ${n}`))); }
+    const n = b.dataset.mload; if (!confirm(`Load paint memory ${n} ("${m[n].name}") into ${c.name}? This changes white balance, paint, detail, gamma, knee, matrix and chroma.`)) return undefined;
+    return run(cmd('paintLoad', { slot: Number(n) }).then((r) => toast(`Loaded MEM ${n}: ${r.applied} values${r.failed.length ? `, ${r.failed.length} refused` : ''}`, !!r.failed.length)));
+  });
   function renderCams() {
     S.set($('#ptzCamList'), 'ptz-cams', (V.cameras || []).map((c) => `<div class="row cam-line ${c.connected ? '' : 'off'}" data-cam="${esc(c.id)}">
       <span class="led ${c.connected ? 'ok' : 'off'}"></span><span class="lbl">${esc(c.name)}<small>${esc(c.model || 'unknown model')} · series ${esc(c.series)}${c.title ? ` · ${esc(c.title)}` : ''} · ${esc(c.host)}:${esc(c.port)}${c.connected ? '' : ` · ${esc(c.error || 'offline')}`}</small></span>
