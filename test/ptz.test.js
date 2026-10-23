@@ -319,7 +319,7 @@ test('0.9.8: notes, paint lock (also for Companion: 423), paint memories save / 
   const cam = async (id = 'cam1') => (await call('GET', '/api/sys/ptz')).json.cameras.find((c) => c.id === id);
   try {
     await systems.connect('ptz');
-    const ver = (await call('GET', '/api/version')).json; assert.equal(ver.apiVersion, 8, 'still API 8: module 0.6 / 0.7 stay compatible'); const feats = ver.features;
+    const ver = (await call('GET', '/api/version')).json; assert.equal(ver.apiVersion, 9, 'API 9 since 0.10.0 (ATEM expansion)'); const feats = ver.features;
     for (const f of ['ptzSnapshot', 'ptzPaintLock', 'ptzPaintMemory', 'ptzNotes']) assert.ok(feats.includes(f), `feature ${f}`);
     // notes
     await call('POST', '/api/sys/ptz/cmd/notes', { cam: 'cam1', text: 'Long lens, riser' }); assert.equal((await cam()).notes, 'Long lens, riser');
