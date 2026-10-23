@@ -873,3 +873,5 @@ body.tab-atem .main{gap:14px}
 .me-block .bus{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px}.me-block .src{min-height:42px;padding:6px 8px}
 .me-keys{display:flex;gap:6px;flex-wrap:wrap}
 .btn.cut small,.btn.take small{display:block;font-size:11px;letter-spacing:.06em;opacity:.8}
+.ar-adv{margin-top:8px;border:1px dashed #3a4350;border-radius:9px;padding:6px 10px}.ar-adv summary{cursor:pointer;font-weight:800;font-size:12px;letter-spacing:.08em;color:#cfe2ff}
+.ar-adv[open] .ar-sources{margin-top:6px;max-height:26vh}

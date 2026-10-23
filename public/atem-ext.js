@@ -13,6 +13,8 @@
   const src = (id) => (V.sources || []).find((x) => x.id === id);
   const sname = (id) => { const x = src(id); return x ? x.long : id === undefined || id === null ? '—' : String(id); };
   const sshort = (id) => { const x = src(id); return x ? x.short : '—'; };
+  // 0.11.0 long names first; .nm-s (the short name) only shows where the layout is too narrow (style.css)
+  const nmH = (long, short) => `<span class="nm-l">${esc(long || short || '—')}</span><span class="nm-s">${esc(short || long || '—')}</span>`;
   const ls = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } };
   const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
   const KIND_LABEL = { input: 'INPUTS', direct: 'DIRECT', internal: 'BLACK / BARS / COLOR', media: 'MEDIA', supersource: 'SUPERSOURCE', cleanfeed: 'CLEAN FEED', me: 'M/E OUT', aux: 'AUX', mv: 'MULTIVIEW', mask: 'KEY MASKS', other: 'OTHER' };
@@ -56,8 +58,8 @@
     $('.atem-simmodel').hidden = !(V.connection && (V.connection.simulator || V.connection.mock));
     if (!live()) { S.set(el, 'ar', off()); S.set($('#arFilter'), 'arf', ''); return; }
     const outs = V.outputs || [];
-    $('#arInfo').textContent = `${V.profile ? V.profile.name : V.product} · ${outs.filter((o) => o.group === 'aux').length} aux / SDI · ${(V.mixEffects || []).length} M/E · ${(V.multiviewers || []).length} multiview`;
-    const groups = [['all', 'ALL'], ['aux', 'AUX / SDI'], ['me', 'M/E'], ['mv', 'MULTIVIEW']].filter(([g]) => g === 'all' || outs.some((o) => o.group === g));
+    $('#arInfo').textContent = `${V.profile ? V.profile.name : V.product} · ${outs.filter((o) => o.group === 'aux').length} aux / SDI · ${(V.multiviewers || []).length} multiview · tap an output to pick its source`;
+    const groups = [['all', 'ALL'], ['aux', 'AUX / SDI'], ['mv', 'MULTIVIEW']].filter(([g]) => g === 'all' || outs.some((o) => o.group === g));
     if (!groups.some(([g]) => g === arGroup)) arGroup = 'all';
     S.set($('#arFilter'), 'arf', groups.map(([g, l]) => `<button type="button" class="mode ${arGroup === g ? 'active' : ''}" data-argroup="${g}">${l}</button>`).join(''));
     const sec = (title, list) => (list.length ? `<div class="section-title">${title}</div><div class="ar-grid">${list.map((o) => `
@@ -66,7 +68,6 @@
     const want = (g) => arGroup === 'all' || arGroup === g;
     let h = '';
     if (want('aux')) h += sec('AUX / SDI OUTPUTS', outs.filter((o) => o.group === 'aux'));
-    if (want('me')) h += sec('M/E PROGRAM / PREVIEW', outs.filter((o) => o.group === 'me'));
     if (want('mv')) for (const mv of V.multiviewers || []) h += sec(`MULTIVIEW ${(V.multiviewers || []).length > 1 ? mv.index + 1 : ''} <small>${mv.windows.length} windows</small>`, outs.filter((o) => o.group === 'mv' && o.mv === mv.index));
     S.set(el, 'ar', h || off('This ATEM reports no routable outputs.'));
     if (dlgOut && $('#dlgAtemRoute').open) renderRouteDialog();
@@ -75,14 +76,21 @@
     const o = (V.outputs || []).find((x) => x.key === dlgOut); if (!o) { $('#dlgAtemRoute').close(); return; }
     $('#arTitle').textContent = `Route to ${o.label}`;
     $('#arNote').innerHTML = `Now: <b>${esc(o.sourceName || '—')}</b>${o.routable === false ? ' · this window is fixed on this model' : ''} · tap a source to route it`;
-    const valid = (V.sources || []).filter(accepts(o));
+    const valid0 = (V.sources || []).filter(accepts(o));
+    // 0.11.0: media player key signals and key masks only under ADVANCED
+    const advList = valid0.filter((x) => x.adv); const valid = valid0.filter((x) => !x.adv);
     const kinds = [...new Set(valid.map((x) => x.kind))];
     if (arKind !== 'all' && !kinds.includes(arKind)) arKind = 'all';
     S.set($('#arKinds'), 'ark', [['all', `ALL ${valid.length}`], ...kinds.map((k) => [k, `${KIND_LABEL[k] || k.toUpperCase()} ${valid.filter((x) => x.kind === k).length}`])]
       .map(([k, l]) => `<button type="button" class="mode ${arKind === k ? 'active' : ''}" data-kind="${k}">${esc(l)}</button>`).join(''));
     const q = arQ.trim().toLowerCase();
     const list = valid.filter((x) => (arKind === 'all' || x.kind === arKind) && (!q || `${x.long} ${x.short} ${x.id}`.toLowerCase().includes(q)));
-    S.set($('#arSources'), 'ars', list.map((x) => `<button type="button" class="src ${x.id === o.source ? 'on-aux current' : ''}" data-routesrc="${x.id}" title="${esc(x.long)} (${x.id})"><b>${esc(x.short || x.id)}</b><span>${esc(x.long)}</span></button>`).join('') || '<div class="note">No matching source.</div>');
+    const srcBtn = (x) => `<button type="button" class="src ${x.id === o.source ? 'on-aux current' : ''}" data-routesrc="${x.id}" draggable="false" title="${esc(x.long)} · ${esc(x.short)} (${x.id})"><b>${nmH(x.long, x.short)}</b></button>`;
+    S.set($('#arSources'), 'ars', list.map(srcBtn).join('') || '<div class="note">No matching source.</div>');
+    const advQ = advList.filter((x) => !q || `${x.long} ${x.short} ${x.id}`.toLowerCase().includes(q));
+    const ad = $('#arAdv'); ad.hidden = !advList.length; if (ad.open !== arAdvOpen) ad.open = arAdvOpen;
+    $('#arAdvSum').textContent = `ADVANCED · ${advList.length} key / mask sources${advList.some((x) => x.id === o.source) ? ' · current source is here' : ''}`;
+    S.set($('#arAdvList'), 'arad', advQ.map(srcBtn).join('') || '<div class="note small">No matching source.</div>');
   }
   $('#arFilter').addEventListener('click', (e) => { const b = e.target.closest('[data-argroup]'); if (!b) return; arGroup = b.dataset.argroup; save('cc.arGroup', arGroup); renderRouter(); });
   $('#arGroups').addEventListener('click', (e) => {
@@ -93,11 +101,14 @@
   $('#arKinds').addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (!b) return; arKind = b.dataset.kind; renderRouteDialog(); });
   $('#arSearch').addEventListener('input', () => { arQ = $('#arSearch').value; renderRouteDialog(); });
   $('#arSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const f = $('#arSources [data-routesrc]'); if (f) f.click(); } });
-  $('#arSources').addEventListener('click', (e) => {
+  let arAdvOpen = !!ls('cc.arAdv', false);
+  $('#arAdv').addEventListener('toggle', () => { arAdvOpen = $('#arAdv').open; save('cc.arAdv', arAdvOpen); });
+  const pickSrc = (e) => {
     const b = e.target.closest('[data-routesrc]'); if (!b || !live()) return;
     const o = V.outputs.find((x) => x.key === dlgOut);
     cmd('route', { output: dlgOut, source: Number(b.dataset.routesrc) }).then(() => { $('#dlgAtemRoute').close(); toast(`${o ? o.label : 'Output'} ← ${sname(Number(b.dataset.routesrc))}`); });
-  });
+  };
+  $('#arSources').addEventListener('click', pickSrc); $('#arAdvList').addEventListener('click', pickSrc);
 
   // ---------- AUDIO ----------
   let auKind = ls('cc.auKind', 'all');

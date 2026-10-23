@@ -28,7 +28,8 @@ test('ATEM 0.10.0 UI: model picker, ROUTER dialog assignment, AUDIO, DVE / SS / 
   await page.click('.tab[data-tab=arouter]');
   await page.locator('.ar-out[data-out="aux:11"]').waitFor();
   assert.equal(await page.locator('.ar-out.aux').count(), 12, '2 M/E Constellation: 12 outputs');
-  assert.equal(await page.locator('.ar-out.me').count(), 4);
+  assert.equal(await page.locator('.ar-out.me').count(), 0, '0.11.0: no M/E program / preview outputs');
+  assert.equal(await page.locator('[data-argroup="me"]').count(), 0);
   assert.equal(await page.locator('.ar-out.mv').count(), 32, '2 multiviews x 16 windows');
   await page.click('.ar-out[data-out="aux:2"]');
   const dlg = page.locator('#dlgAtemRoute[open]'); await dlg.waitFor();
@@ -36,7 +37,14 @@ test('ATEM 0.10.0 UI: model picker, ROUTER dialog assignment, AUDIO, DVE / SS / 
   assert.equal(await dlg.locator(`[data-routesrc="${cur}"].current`).count(), 1, 'current source highlighted');
   await dlg.locator('[data-kind="media"]').click();
   assert.ok(await dlg.locator('[data-routesrc]').count() >= 2); assert.equal(await dlg.locator('[data-routesrc="1"]').count(), 0, 'filtered to media');
-  await dlg.locator('[data-kind="all"]').click(); await page.fill('#arSearch', 'graphics');
+  // 0.11.0: media player key and key mask sources only under ADVANCED
+  await dlg.locator('[data-kind="all"]').click();
+  assert.equal(await dlg.locator('#arSources [data-routesrc="3011"]').count(), 0, 'MP1 key hidden');
+  assert.equal(await dlg.locator('#arAdv').isVisible(), true);
+  assert.equal(await dlg.locator('#arAdvList [data-routesrc="3011"]').isVisible(), false, 'collapsed');
+  await dlg.locator('#arAdvSum').click(); await dlg.locator('#arAdvList [data-routesrc="3011"]').waitFor();
+  await dlg.locator('#arAdvSum').click();
+  await page.fill('#arSearch', 'graphics');
   assert.equal(await dlg.locator('[data-routesrc]').count(), 1);
   await dlg.locator('[data-routesrc="7"]').click();
   await page.locator('#dlgAtemRoute:not([open])').waitFor({ state: 'attached' });

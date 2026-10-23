@@ -47,7 +47,7 @@ test('simulator: every model answers with its own product id and topology, and t
       assert.equal(v.audio.type, p.audio.type); assert.equal(v.audio.inputs.length, p.audio.inputs.length);
       assert.equal(!!v.audio.routing, p.audio.type === 'fairlight' && !!p.audio.routing);
       assert.equal(v.outputs.filter((o) => o.group === 'aux').length, p.aux.length);
-      assert.equal(v.outputs.filter((o) => o.group === 'me').length, p.mes * 2);
+      assert.equal(v.outputs.filter((o) => o.group === 'me').length, 0, '0.11.0: M/E program / preview are not router outputs');
     } finally { await stop(); }
   }
 });
