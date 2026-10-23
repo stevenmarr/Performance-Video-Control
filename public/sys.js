@@ -91,7 +91,7 @@
       c.innerHTML = (s.connected ? `${esc(short)} ${pillView.system === 'ptz' ? '' : `${esc(model)} ${esc(ver(s.info && s.info.version))} · `}${where}` : `${esc(pillInfo.short)} not connected${s.error ? ' · ' + esc(s.error).slice(0, 50) : ''}`) + (pillView.connection.mock ? '<span class="mock">MOCK</span>' : '');
       let last = '';
       if (pillView.kind === 'preset') last = pillView.lastRecalled ? `PVW: ${pillView.lastRecalled.number} · ${pillView.lastRecalled.name}` : 'PVW: —';
-      else if (pillView.kind === 'atem' && pillView.inputs && pillView.inputs.length) { const nm = (id) => { const i = pillView.inputs.find((x) => x.id === id); return i ? i.short : '—'; }; last = `PGM ${nm(pillView.program)} · PVW ${nm(pillView.preview)}`; }
+      else if (pillView.kind === 'atem' && pillView.inputs && pillView.inputs.length) { const nm = (id) => { const i = pillView.inputs.find((x) => x.id === id); return i ? i.long || i.short : '—'; }; last = `PGM ${nm(pillView.program)} · PVW ${nm(pillView.preview)}`; }
       else if (pillView.kind === 'ptz') { const c2 = (pillView.cameras || []).find((x) => x.id === pillView.selected); last = c2 ? `CAM: ${c2.name}` : 'CAM: —'; }
       else if (pillView.kind === 'pixera') { const t = (pillView.timelines || []).find((x) => x.selected); last = t ? `${t.name}: ${(t.transport || '—').toUpperCase()}` : 'TIMELINE: —'; }
       else if (pillView.kind === 'millumin') last = pillView.running ? `COL: ${pillView.columnName || pillView.column || '—'}` : 'COL: —';

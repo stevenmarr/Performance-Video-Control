@@ -36,7 +36,7 @@
     const off = !live(); const list = mes(); const all = meView === 'all' && list.length > 1; const mi = curMe(); const m = meOf(mi);
     $('#atemInfo').textContent = off ? (V && V.status && V.status.error ? `not connected · ${V.status.error}` : 'not connected · set its IP on ⌂ SYSTEMS')
       : `${V.product} · protocol ${V.protocol} · ${list.length > 1 ? (all ? `${list.length} M/Es side by side` : `driving M/E ${mi + 1} of ${list.length}`) : '1 M/E'}`;
-    $('#atemTally').innerHTML = off ? '' : `<span class="lg pgm">PGM</span> ${esc(V.tally.program.join(', ') || '—')} &nbsp; <span class="lg pvw">PVW</span> ${esc(V.tally.preview.join(', ') || '—')}`;
+    $('#atemTally').innerHTML = off ? '' : `<span class="lg pgm">PGM</span> ${esc((V.tallyLong || V.tally).program.join(', ') || '—')} &nbsp; <span class="lg pvw">PVW</span> ${esc((V.tallyLong || V.tally).preview.join(', ') || '—')}`;
     renderMeBar();
     document.body.classList.toggle('atem-allme', all);
     $('#atemSingle').hidden = all; $('#atemMulti').hidden = !all;

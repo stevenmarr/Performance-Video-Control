@@ -60,7 +60,7 @@ for (const [model, n] of [['chd2me', 2], ['c4k4me', 4]]) {
     await until(async () => (await api('/api/sys/atem')).mes[1].preview === s1, 'preview from the M/E 2 block');
     await b1.locator('[data-meauto="1"]').click();
     await until(async () => (await api('/api/sys/atem')).mes[1].program === s1, 'AUTO from the M/E 2 block');
-    if (n >= 2) { const boxes = await page.$$eval('#atemMulti .me-block', (els) => els.map((e) => e.getBoundingClientRect().left)); assert.ok(new Set(boxes.map(Math.round)).size >= 2, '1920 px: side by side'); }
+    await page.waitForFunction(() => new Set([...document.querySelectorAll('#atemMulti .me-block')].map((e) => Math.round(e.getBoundingClientRect().left))).size >= 2, null, { timeout: 5000 }); // 1920 px: side by side
     // KEYS: the same M/E selection, every M/E reachable
     await page.click('#atemMe [data-ame="1"]');
     await page.click('.tab[data-tab=akeys]');
@@ -76,3 +76,17 @@ for (const [model, n] of [['chd2me', 2], ['c4k4me', 4]]) {
     assert.deepEqual(errors, []);
   });
 }
+
+test('ATEM 0.11.0: buttons show the long source name; the short name only on a narrow screen (Playwright)', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+  const { api, page, errors } = await boot(t, 'chd2me');
+  const v = await api('/api/sys/atem'); const i = v.mes[0].bus.find((x) => x.id >= 1 && x.id < 1000 && x.long !== x.short);
+  const b = page.locator(`#atemPgm [data-pgm="${i.id}"]`);
+  assert.equal(await b.locator('.nm-l').isVisible(), true); assert.equal(await b.locator('.nm-s').isVisible(), false);
+  assert.equal((await b.innerText()).trim(), i.long, 'only the long name');
+  await page.setViewportSize({ width: 640, height: 900 }); await page.waitForTimeout(200);
+  assert.equal(await b.locator('.nm-s').isVisible(), true, 'narrow: short name'); assert.equal((await b.innerText()).trim(), i.short);
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.click('.tab[data-tab=arouter]'); await page.locator('.ar-out[data-out="aux:0"] .nm-l').waitFor();
+  assert.equal(await page.locator('.ar-out[data-out="aux:0"] .nm-s').isVisible(), false);
+  assert.deepEqual(errors, []);
+});

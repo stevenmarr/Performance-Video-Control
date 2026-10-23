@@ -48,11 +48,11 @@ test('ATEM 0.10.0 UI: model picker, ROUTER dialog assignment, AUDIO, DVE / SS / 
   assert.equal(await dlg.locator('[data-routesrc]').count(), 1);
   await dlg.locator('[data-routesrc="7"]').click();
   await page.locator('#dlgAtemRoute:not([open])').waitFor({ state: 'attached' });
-  await page.locator('.ar-out[data-out="aux:2"] b', { hasText: 'GFX' }).waitFor();
+  await page.locator('.ar-out[data-out="aux:2"] b .nm-l', { hasText: 'Graphics' }).waitFor();
   assert.equal((await api('/api/sys/atem')).aux[2].source, 7);
   // a multiviewer window through the same dialog
   await page.click('.ar-out[data-out="mv:1:4"]'); await dlg.waitFor(); await dlg.locator('[data-routesrc="3010"]').click();
-  await page.locator('.ar-out[data-out="mv:1:4"] b', { hasText: 'MP1' }).waitFor();
+  await page.locator('.ar-out[data-out="mv:1:4"] b .nm-l', { hasText: 'Media Player 1' }).waitFor();
   // AUDIO (Fairlight): mute toggles from the strip
   await page.click('.tab[data-tab=aaudio]'); await page.locator('.au-type.fairlight').waitFor();
   await page.locator('.au-strip[data-in="5"] [data-au="mute"]').click();

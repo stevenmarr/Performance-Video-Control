@@ -64,7 +64,7 @@
     S.set($('#arFilter'), 'arf', groups.map(([g, l]) => `<button type="button" class="mode ${arGroup === g ? 'active' : ''}" data-argroup="${g}">${l}</button>`).join(''));
     const sec = (title, list) => (list.length ? `<div class="section-title">${title}</div><div class="ar-grid">${list.map((o) => `
       <button type="button" class="ar-out ${o.group} ${o.routable === false ? 'fixed' : ''}" data-out="${esc(o.key)}" title="${esc(o.label)}: ${esc(o.sourceName || '—')}">
-        <span class="ar-lbl">${esc(o.label)}</span><b>${esc(o.sourceShort || '—')}</b><span class="ar-src">${esc(o.sourceName || '—')}</span>${o.routable === false ? '<span class="chip">FIXED</span>' : ''}</button>`).join('')}</div>` : '');
+        <span class="ar-lbl">${esc(o.label)}</span><b>${nmH(o.sourceName, o.sourceShort)}</b>${o.routable === false ? '<span class="chip">FIXED</span>' : ''}</button>`).join('')}</div>` : '');
     const want = (g) => arGroup === 'all' || arGroup === g;
     let h = '';
     if (want('aux')) h += sec('AUX / SDI OUTPUTS', outs.filter((o) => o.group === 'aux'));
@@ -175,7 +175,7 @@
   const ME = window.CCATEMME; let akMe = ME ? ME.get() : Number(ls('cc.akMe', 0)); let ssSel = Number(ls('cc.ssSel', 0)); let boxSel = Number(ls('cc.boxSel', 0)); let withSrc = !!ls('cc.ssWithSrc', false);
   const num = (op, ids, k, v, scale, step, min, max, label) => `<label class="ak-num">${label}<input type="number" step="${step}" ${min !== undefined ? `min="${min}"` : ''} ${max !== undefined ? `max="${max}"` : ''} value="${v === undefined || v === null ? '' : +(v / scale).toFixed(3)}" data-op="${op}" data-ids='${JSON.stringify(ids)}' data-k="${k}" data-scale="${scale}"></label>`;
   const chk = (op, ids, k, v, label) => `<button type="button" class="mode mini ${v ? 'active' : ''}" data-op="${op}" data-ids='${JSON.stringify(ids)}' data-k="${k}" data-bool="${v ? 0 : 1}">${label}</button>`;
-  const sel = (op, ids, k, v, list, label) => `<label class="ak-sel">${label}<select data-op="${op}" data-ids='${JSON.stringify(ids)}' data-k="${k}">${list.map((x) => `<option value="${x.id}" ${x.id === v ? 'selected' : ''}>${esc(x.short)} · ${esc(x.long)}</option>`).join('')}</select></label>`;
+  const sel = (op, ids, k, v, list, label) => `<label class="ak-sel">${label}<select data-op="${op}" data-ids='${JSON.stringify(ids)}' data-k="${k}">${list.map((x) => `<option value="${x.id}" ${x.id === v ? 'selected' : ''} title="${esc(x.short)}">${esc(x.long)}</option>`).join('')}</select></label>`;
   const PATTERNS = ['Left-right bar', 'Top-bottom bar', 'H barn door', 'V barn door', 'Corners in four', 'Rect iris', 'Diamond iris', 'Circle iris', 'Top-left box', 'Top-right box', 'Bottom-right box', 'Bottom-left box', 'Top centre box', 'Right centre box', 'Bottom centre box', 'Left centre box', 'Top-left diagonal', 'Top-right diagonal'];
   function dvePreview(d, fill) {
     if (!d) return '';
@@ -228,7 +228,7 @@
     const prev = `<div class="ss-screen ${pr.artOption === 1 ? 'art-fg' : ''}"><div class="ss-art">${esc(art ? art.short : '')} ART</div>${ss.boxes.map((x) => (x.enabled ? `<div class="ss-box ${x.index === boxSel ? 'sel' : ''}" data-box="${x.index}" style="${boxRect(x)};z-index:${10 - x.index};${bd.borderEnabled ? 'outline:2px solid #ffd35c;' : ''}"><b>${x.index + 1}</b><span>${esc(sshort(x.source))}</span></div>` : '')).join('')}</div>`;
     const lay = (V.ssLayouts || []).map((l) => `<span class="ss-lay"><button type="button" class="mode mini" data-sslayout="${esc(l.id)}" title="${esc(l.name)}">${esc(l.name)}</button>${l.builtIn ? '' : `<button type="button" class="mode mini danger" data-ssdel="${esc(l.id)}" title="Delete ${esc(l.name)}">×</button>`}</span>`).join('');
     return `<div class="section-title">SUPERSOURCE <small>${list.length > 1 ? list.map((x) => `<button type="button" class="mode mini ${x.index === ssSel ? 'active' : ''}" data-ss="${x.index}">SS ${x.index + 1}</button>`).join('') : ''}</small></div>
-      <div class="ss-wrap"><div>${prev}<div class="ss-boxbar">${ss.boxes.map((x) => `<button type="button" class="mode mini ${x.index === boxSel ? 'active' : ''} ${x.enabled ? '' : 'dim'}" data-box="${x.index}">BOX ${x.index + 1} · ${esc(sshort(x.source))}</button>`).join('')}</div>
+      <div class="ss-wrap"><div>${prev}<div class="ss-boxbar">${ss.boxes.map((x) => `<button type="button" class="mode mini ${x.index === boxSel ? 'active' : ''} ${x.enabled ? '' : 'dim'}" data-box="${x.index}" title="${esc(sshort(x.source))}">BOX ${x.index + 1} · ${esc(sname(x.source))}</button>`).join('')}</div>
         <div class="ss-layouts"><span class="modes-lbl">LAYOUTS</span>${lay}<button type="button" class="mode mini ${withSrc ? 'active' : ''}" data-sswith="${withSrc ? 0 : 1}" title="Recall the sources stored in a saved layout too">WITH SOURCES</button><button type="button" class="btn mini primary" data-sssave>SAVE CURRENT…</button></div></div>
       <div class="ss-ctl"><div class="ak-head"><b>BOX ${boxSel + 1}</b>${chk('ssBox', ids, 'enabled', b.enabled, b.enabled ? 'ENABLED' : 'DISABLED')}</div>
         <div class="ak-row">${sel('ssBox', ids, 'source', b.source, boxSrc, 'SOURCE')}</div>
