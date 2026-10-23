@@ -389,6 +389,22 @@
   async function refetch() { try { onSys(await api('GET', '/api/sys')); } catch { /* the stream will bring it */ } }
   window.addEventListener('cc:sys', (e) => onSys(e.detail));
   // for public/atem.js and public/ptz.js
+  // 0.11.0 SAVE on the switcher pages (RS6 PRESETS, E2 / PixelHue PRESETS, ATEM SWITCHER): POST /api/sys/<sys>/save
+  let saveSys = null;
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-desksave]'); if (!b) return;
+    saveSys = b.dataset.desksave === 'x' ? (V && V.system) || SYS.active : b.dataset.desksave;
+    const st = window.CC.state && window.CC.state(); $('#dsName').textContent = `"${(st && st.show && st.show.name) || $('#showName').textContent}"`;
+    const atem = saveSys === 'atem'; $('#dsStartupRow').hidden = !atem; $('#dsStartupNote').hidden = !atem; $('#dsStartup').checked = true;
+    $('#dlgDeskSave').returnValue = ''; $('#dlgDeskSave').showModal();
+  });
+  $('#dlgDeskSave').addEventListener('close', () => {
+    if ($('#dlgDeskSave').returnValue !== 'save' || !saveSys) return;
+    const startup = saveSys === 'atem' && $('#dsStartup').checked;
+    CC.run(CC.api('POST', `/api/sys/${saveSys}/save`, { startup }).then((r) => {
+      CC.toast(`Saved show "${r.show.name}"${r.startup ? ' · ATEM startup state saved' : ''}${r.startupError ? ` · ${r.startupError}` : ''}`, !!r.startupError);
+    }));
+  });
   window.CCSYS = { onRender: (fn) => listeners.push(fn), view: () => V, state: () => SYS, refetch, set };
   window.addEventListener('cc:tab', () => setTimeout(renderAll, 0));
   // ⚙ Settings is the RS6 device dialog; with another system active it opens the SYSTEMS dashboard instead

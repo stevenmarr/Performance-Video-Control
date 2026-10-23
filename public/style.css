@@ -907,3 +907,4 @@ body.tab-atem .main{gap:14px}
 .au-wvals{display:flex;gap:10px;font-size:11px;color:var(--dim)}.au-wvals b{color:#e6edf3;font-family:ui-monospace,Menlo,Consolas,monospace}
 .au-wbtns{display:flex;gap:6px}.au-wbtns .mode{flex:1}
 .au-desk[hidden],.au-watch[hidden],.ar-pal[hidden],#auWatchClear[hidden],.note[hidden]{display:none!important}
+#dsStartupRow[hidden]{display:none!important}.desk-save{margin-left:8px}

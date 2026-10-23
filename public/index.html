@@ -84,6 +84,7 @@
         <div class="section-title">SCREENS <small>tap a tile to select it for TAKE / CUT</small></div>
         <span class="spacer"></span>
         <span id="xtargets" class="xtargets"></span>
+        <button class="btn mini primary desk-save" id="rs6Save" data-desksave="rs6" title="Save the show (presets, settings) to the library">💾 SAVE</button>
       </div>
       <div id="screens" class="screens">
         <div id="destRow" class="dest-row"></div>
@@ -179,6 +180,7 @@
       <span class="spacer"></span>
       <span id="xtargetsX" class="xtargets"></span>
       <button class="btn mini" id="xRefresh" title="Re-read presets, destinations and sources from the device">⟳ Refresh</button>
+      <button class="btn mini primary desk-save" id="xSave" data-desksave="x" title="Save the show (presets, layout, auto recall) to the library">💾 SAVE</button>
     </div>
     <div class="screens"><div id="xdestRow" class="dest-row"></div></div>
     <div class="modes" role="toolbar" aria-label="What a tap on a preset tile does">
@@ -215,7 +217,7 @@
 
   <!-- 0.7.0 Blackmagic ATEM (public/atem.js) -->
   <section class="grid-wrap pane" id="pane-atem" hidden>
-    <div class="board-head"><div class="section-title">ATEM <small id="atemInfo"></small></div><span id="atemMe" class="seg-row me-bar" role="group" aria-label="M/E"></span><span class="spacer"></span><span id="atemTally" class="xtargets"></span></div>
+    <div class="board-head"><div class="section-title">ATEM <small id="atemInfo"></small></div><span id="atemMe" class="seg-row me-bar" role="group" aria-label="M/E"></span><span class="spacer"></span><span id="atemTally" class="xtargets"></span><button class="btn mini primary desk-save" id="atemSave" data-desksave="atem" title="Save the show and the ATEM's startup state">💾 SAVE</button></div>
     <div id="atemSingle">
       <div class="bus-block"><div class="bus-lbl pgm" id="atemPgmLbl">PROGRAM</div><div id="atemPgm" class="bus"></div></div>
       <div class="bus-block"><div class="bus-lbl pvw" id="atemPvwLbl">PREVIEW</div><div id="atemPvw" class="bus"></div></div>
@@ -590,6 +592,16 @@
     <div id="arSources" class="bus wide ar-sources"></div>
     <details id="arAdv" class="ar-adv" hidden><summary id="arAdvSum">ADVANCED</summary><div class="note small">Media player key signals and key masks: the key (alpha) halves of fill + key pairs.</div><div id="arAdvList" class="bus wide ar-sources"></div></details>
     <div class="actions"><button value="cancel" class="btn ghost">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgDeskSave">
+  <form method="dialog" class="form">
+    <h2>SAVE</h2>
+    <p>Saves the show <b id="dsName"></b> to the show library — every desk's presets, tile layouts, auto recall and settings (same as SHOW → SAVE).</p>
+    <label class="chk" id="dsStartupRow"><input type="checkbox" id="dsStartup" checked> also save the ATEM's current state as its <b>startup state</b> (what it boots into)</label>
+    <p class="note small" id="dsStartupNote">Startup-state save (SRsv) follows the atem-connection encoding and is not yet verified on hardware.</p>
+    <div class="actions"><button value="cancel" class="btn ghost">Cancel</button><button value="save" id="dsGo" class="btn primary">SAVE</button></div>
   </form>
 </dialog>
 

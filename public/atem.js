@@ -77,7 +77,6 @@
     $('#atemFtb').classList.toggle('on', !!f.black); $('#atemFtb').classList.toggle('running', !!f.inTransition);
     $('#atemFtbState').textContent = f.inTransition ? 'FADING' : f.black ? 'BLACK' : 'OFF';
     const r = $('#atemFtbRate'); if (document.activeElement !== r) r.value = f.rate || '';
-    if ($('#atemSave')) $('#atemSave').disabled = off;
   }
   function renderMacros() {
     const r = V.macroRun || {};
@@ -120,11 +119,7 @@
   $('#atemCut').addEventListener('click', () => cmd('cut', meBody()));
   $('#atemAuto').addEventListener('click', () => cmd('auto', meBody()));
   $('#atemFtb').addEventListener('click', () => { const f = meOf().ftb; if (!f || f.black || confirm(`FADE TO BLACK takes ${mes().length > 1 ? `M/E ${curMe() + 1}` : 'the program output'} to black. Continue?`)) cmd('ftb', meBody()); });
-  // 0.11.0 SAVE: the show file (app state) and, on the ATEM, its startup state (SRsv; see docs/atem-models.md)
-  if ($('#atemSave')) $('#atemSave').addEventListener('click', () => {
-    if (!confirm('SAVE\n\n• saves the current show (presets, layouts, desk) to the show library\n• asks the ATEM to save its current state as its STARTUP state (what it boots into)\n\nContinue?')) return;
-    run(api('POST', '/api/sys/atem/save', { show: true, startup: true }).then((r) => toast(`Saved show "${r.show ? r.show.name : ''}"${r.startup ? ' · ATEM startup state saved' : ''}`)));
-  });
+  // 0.11.0 SAVE (#atemSave, data-desksave): handled in public/sys.js with the other switcher pages
   $('#atemMacros').addEventListener('click', (ev) => { const b = ev.target.closest('[data-macro]'); if (b && live()) cmd('macroRun', { macro: Number(b.dataset.macro) }).then(() => toast('Macro started')); });
   $('#atemMacroStop').addEventListener('click', () => cmd('macroStop'));
   document.addEventListener('keydown', (e) => {
