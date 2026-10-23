@@ -16,7 +16,7 @@
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS && SYS.systems[SYS.active] ? SYS.systems[SYS.active].kind : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
-  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'aaux', 'amacros'], ptz: ['pctl', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'] };
+  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'] };
   const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
@@ -225,6 +225,7 @@
   $('#sysCards').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return;
     if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); toast(`${st.systems[b.dataset.armoff].short} left the desk`); }).catch((e) => toast(e.message, true)));
+    if (b.dataset.sim === 'atem' && window.CCATEM) return window.CCATEM.pickModel(); // 0.10.0: choose the simulated model first
     if (b.dataset.sim) return run(api('POST', `/api/sys/${b.dataset.sim}/simulate`).then((st) => { onSys(st); toast(`${st.systems[b.dataset.sim].short} simulator is on the desk`); }).catch((e) => toast(e.message, true)));
     if (b.dataset.use) return run(api('POST', '/api/sys/active', { system: b.dataset.use }).then((st) => { onSys(st); if (b.dataset.open) CC.setTab(HOME_TAB[st.systems[b.dataset.use].kind]); else toast(`${st.systems[b.dataset.use].short} is on the desk`); }));
     if (b.dataset.open) { const k = SYS.systems[b.dataset.open].kind; return CC.setTab(HOME_TAB[k]); }

@@ -49,7 +49,9 @@
   <button class="tab x-only" data-tab="xbackup" data-cap="backups" data-sys="preset">BACKUP</button>
   <span class="tab-group x-only atem-grp" data-grp="atem">ATEM</span>
   <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher" data-sys="atem">SWITCHER</button>
-  <button class="tab x-only" data-tab="aaux" data-cap="atemAux" data-sys="atem">AUX</button>
+  <button class="tab x-only" data-tab="arouter" data-cap="atemRouter" data-sys="atem">ROUTER</button>
+  <button class="tab x-only" data-tab="aaudio" data-cap="atemAudio" data-sys="atem">AUDIO</button>
+  <button class="tab x-only" data-tab="akeys" data-cap="atemKeys" data-sys="atem">DVE / SS / KEYS</button>
   <button class="tab x-only" data-tab="amacros" data-cap="atemMacros" data-sys="atem">MACROS</button>
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
   <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
@@ -224,10 +226,22 @@
       <div class="panel"><div class="section-title">DOWNSTREAM KEYS</div><div id="atemDsk" class="dsk-list"></div></div>
     </div>
   </section>
-  <section class="grid-wrap pane" id="pane-aaux" hidden>
-    <div class="section-title">ATEM AUX OUTPUTS <small>pick an aux, then tap a source (routes immediately)</small></div>
-    <div id="atemAuxBar" class="aux-bar"></div>
-    <div id="atemAuxGrid" class="bus wide"></div>
+  <!-- 0.10.0 ATEM ROUTER / AUDIO / DVE-SS-KEYS (public/atem-ext.js) -->
+  <section class="grid-wrap pane" id="pane-arouter" hidden>
+    <div class="board-head"><div class="section-title">ATEM ROUTER <small id="arInfo">every routable output and its current source · tap an output to change it</small></div><span class="spacer"></span>
+      <span id="arFilter" class="seg-row"></span><button class="btn mini atem-simmodel" type="button" data-simmodel>SIMULATED MODEL…</button></div>
+    <div id="arGroups"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-aaudio" hidden>
+    <div class="board-head"><div class="section-title">ATEM AUDIO <small id="auInfo"></small></div><span class="spacer"></span><span id="auFilter" class="seg-row"></span></div>
+    <div id="auStrips" class="au-strips"></div>
+    <div id="auRouting"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-akeys" hidden>
+    <div class="board-head"><div class="section-title">DVE · SUPERSOURCE · KEYS <small id="akInfo"></small></div><span class="spacer"></span><span id="akMe" class="seg-row"></span></div>
+    <div id="akUsk" class="ak-usk"></div>
+    <div id="akDsk" class="ak-dsk"></div>
+    <div id="akSs"></div>
   </section>
   <section class="grid-wrap pane" id="pane-amacros" hidden>
     <div class="board-head"><div class="section-title">ATEM MACROS <small id="atemMacroInfo">tap to run</small></div><span class="spacer"></span><button class="btn mini danger" id="atemMacroStop" type="button">■ STOP MACRO</button></div>
@@ -545,6 +559,26 @@
   </form>
 </dialog>
 
+<!-- 0.10.0 ATEM: simulator model picker and the router's source dialog -->
+<dialog id="dlgAtemModel" class="wide">
+  <form method="dialog" class="form">
+    <h2>ATEM simulator model</h2>
+    <div class="note small">The simulator answers with this model's product id, topology, keyers, SuperSource, multiviewers and audio mixer. 127.0.0.1 only; nothing is saved.</div>
+    <div id="amList" class="am-list"></div>
+    <div id="amNotes" class="note small am-notes"></div>
+    <div class="actions"><button value="cancel" class="btn ghost">Cancel</button><button value="ok" id="amStart" class="btn primary" type="button">START SIMULATOR</button></div>
+  </form>
+</dialog>
+<dialog id="dlgAtemRoute" class="wide">
+  <form method="dialog" class="form">
+    <h2 id="arTitle">Route</h2>
+    <div class="note small" id="arNote"></div>
+    <div class="ar-tools"><span id="arKinds" class="seg-row"></span><input id="arSearch" type="search" placeholder="Search sources" autocomplete="off"></div>
+    <div id="arSources" class="bus wide ar-sources"></div>
+    <div class="actions"><button value="cancel" class="btn ghost">Close</button></div>
+  </form>
+</dialog>
+
 <!-- Target picker (memory dropped on a preset) -->
 <dialog id="dlgPick">
   <form method="dialog" class="form">
@@ -579,6 +613,7 @@
 <script src="/app.js"></script>
 <script src="/sys.js"></script>
 <script src="/atem.js"></script>
+<script src="/atem-ext.js"></script>
 <script src="/ptz.js"></script>
 <script src="/pixera.js"></script>
 <script src="/millumin.js"></script>

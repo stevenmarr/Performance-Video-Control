@@ -1,12 +1,13 @@
 'use strict';
 // 0.7.0 Blackmagic ATEM tabs: SWITCHER (program / preview bus, CUT / AUTO, transition style and rate, next
-// transition + key tie, upstream / downstream keys, FTB), AUX (aux output routing) and MACROS. State comes from
+// transition + key tie, upstream / downstream keys, FTB) and MACROS. 0.10.0: ROUTER (replaces AUX), AUDIO and
+// DVE / SS / KEYS are in public/atem-ext.js. State comes from
 // public/sys.js (window.CCSYS); every action is POST /api/sys/atem/cmd/<name>.
 (() => {
   const $ = (s) => document.querySelector(s);
   const { api, toast, run, esc } = window.CC;
   const S = window.CCSYS;
-  let V = null; let auxSel = Number(localStorage.getItem('cc.atemAux') || 0);
+  let V = null;
   const cmd = (name, body = {}) => run(api('POST', `/api/sys/atem/cmd/${name}`, body));
   const live = () => V && V.kind === 'atem' && V.status && V.status.connected;
   const btn = (i, cls, attr) => `<button class="src ${cls}" ${attr}="${i.id}" title="${esc(i.long)} (${i.id})"><b>${esc(i.short || i.id)}</b><span>${esc(i.long)}</span></button>`;
@@ -42,14 +43,6 @@
     $('#atemFtbState').textContent = f.inTransition ? 'FADING' : f.black ? 'BLACK' : 'OFF';
     const r = $('#atemFtbRate'); if (document.activeElement !== r) r.value = f.rate || '';
   }
-  function renderAux() {
-    if (!(V.aux || []).length) { S.set($('#atemAuxBar'), 'atem-auxbar', '<div class="note">This ATEM reports no aux outputs (or is not connected).</div>'); S.set($('#atemAuxGrid'), 'atem-aux', ''); return; }
-    if (auxSel >= V.aux.length) auxSel = 0;
-    const name = (id) => { const i = V.inputs.find((x) => x.id === id); return i ? i.short : '—'; };
-    S.set($('#atemAuxBar'), 'atem-auxbar', `<span class="modes-lbl">AUX</span>${V.aux.map((a) => `<button class="mode ${auxSel === a.index ? 'active' : ''}" data-aux="${a.index}" type="button">AUX ${a.index + 1} · ${esc(name(a.source))}</button>`).join('')}`);
-    const cur = V.aux[auxSel] ? V.aux[auxSel].source : null;
-    S.set($('#atemAuxGrid'), 'atem-aux', (V.auxSources || []).map((i) => btn(i, i.id === cur ? 'on-aux' : '', 'data-auxsrc')).join(''));
-  }
   function renderMacros() {
     const r = V.macroRun || {};
     const running = r.isRunning ? (V.macros.find((m) => m.index === r.macroIndex) || { name: `Macro ${r.macroIndex + 1}` }) : null;
@@ -59,7 +52,7 @@
   }
   S.onRender((v, tab) => {
     V = v; if (!V || V.kind !== 'atem') return;
-    if (tab === 'atem') renderSwitcher(); else if (tab === 'aaux') renderAux(); else if (tab === 'amacros') renderMacros();
+    if (tab === 'atem') renderSwitcher(); else if (tab === 'amacros') renderMacros();
   });
   $('#pane-atem').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b || !live()) return;
@@ -80,8 +73,6 @@
   $('#atemCut').addEventListener('click', () => cmd('cut'));
   $('#atemAuto').addEventListener('click', () => cmd('auto'));
   $('#atemFtb').addEventListener('click', () => { if (!V.ftb || V.ftb.black || confirm('FADE TO BLACK takes the program output to black. Continue?')) cmd('ftb'); });
-  $('#atemAuxBar').addEventListener('click', (ev) => { const b = ev.target.closest('[data-aux]'); if (!b) return; auxSel = Number(b.dataset.aux); localStorage.setItem('cc.atemAux', String(auxSel)); renderAux(); });
-  $('#atemAuxGrid').addEventListener('click', (ev) => { const b = ev.target.closest('[data-auxsrc]'); if (b && live()) cmd('aux', { aux: auxSel, source: Number(b.dataset.auxsrc) }); });
   $('#atemMacros').addEventListener('click', (ev) => { const b = ev.target.closest('[data-macro]'); if (b && live()) cmd('macroRun', { macro: Number(b.dataset.macro) }).then(() => toast('Macro started')); });
   $('#atemMacroStop').addEventListener('click', () => cmd('macroStop'));
   document.addEventListener('keydown', (e) => {
