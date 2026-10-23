@@ -886,3 +886,24 @@ body.tab-atem .main{gap:14px}
 .ar-out{-webkit-touch-callout:none;user-select:none}
 .ar-out.drop-ok{border-color:#3fb950;box-shadow:inset 0 0 0 1px #3fb950}.ar-out.drop-no{opacity:.35}
 @media (max-width:900px){ .ar-layout{grid-template-columns:1fr} .ar-pal{position:static;max-height:none} .ar-pal-list{max-height:30vh;grid-template-columns:repeat(auto-fill,minmax(120px,1fr))} }
+/* 0.11.0 ATEM audio MONITOR area + MUTE ALL / DESK ZERO */
+.btn.warn{background:#3a2a08;border-color:#d4a017;color:#ffd35c}
+.au-desk{gap:6px;margin-left:10px}
+.au-name[data-auwatch-drag]{cursor:grab;touch-action:manipulation;-webkit-touch-callout:none;user-select:none}
+.au-eye{margin-left:4px;padding:0 4px;border:1px solid var(--line);border-radius:5px;background:transparent;font-size:10px;line-height:14px;opacity:.6;cursor:pointer}.au-eye.on{opacity:1;border-color:#d4a017;background:#3a2a08}
+.au-watch{margin-top:12px;padding:10px;min-height:96px;border:1px dashed #3a4350;transition:border-color .15s,background .15s}
+.au-watch .section-title{display:flex;align-items:center;gap:8px}
+.au-watch.drop-ready{border-color:#3fb950;background:rgba(63,185,80,.06)}
+.au-watch-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+.au-wempty{grid-column:1/-1;padding:18px;text-align:center;color:var(--dim);font-size:13px}
+.au-wcard{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.au-wcard.muted{border-color:var(--danger)}.au-wcard.muted .au-wmeter i{background:#5a2a28}
+.au-whead{display:flex;align-items:center;gap:6px;cursor:grab;touch-action:manipulation;user-select:none}.au-whead b{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.au-whead .chip.m-on{background:#123a1c;color:#7ee28f}.au-whead .chip.m-afv{background:#3a2a08;color:#ffd35c}.au-whead .chip.m-off{background:#3a1210;color:#ff9b91}
+.au-wx{background:transparent;border:0;color:var(--dim);font-size:16px;cursor:pointer;padding:0 4px}
+.au-wmeter{position:relative;height:12px;border-radius:6px;background:#0d1117;overflow:hidden;border:1px solid #2a313b}
+.au-wmeter i{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#2ea043 0%,#2ea043 70%,#d4a017 85%,#f85149 100%)}
+.au-wmeter em{position:absolute;top:-1px;bottom:-1px;width:2px;background:#fff8}
+.au-wvals{display:flex;gap:10px;font-size:11px;color:var(--dim)}.au-wvals b{color:#e6edf3;font-family:ui-monospace,Menlo,Consolas,monospace}
+.au-wbtns{display:flex;gap:6px}.au-wbtns .mode{flex:1}
+.au-desk[hidden],.au-watch[hidden],.ar-pal[hidden],#auWatchClear[hidden],.note[hidden]{display:none!important}

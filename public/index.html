@@ -244,8 +244,10 @@
     </div>
   </section>
   <section class="grid-wrap pane" id="pane-aaudio" hidden>
-    <div class="board-head"><div class="section-title">ATEM AUDIO <small id="auInfo"></small></div><span class="spacer"></span><span id="auFilter" class="seg-row"></span></div>
+    <div class="board-head"><div class="section-title">ATEM AUDIO <small id="auInfo"></small></div><span class="spacer"></span><span id="auFilter" class="seg-row"></span>
+      <span class="seg-row au-desk"><button type="button" class="btn mini danger" id="auMuteAll" title="Every input off (MUTE ALL remembers each mix)">MUTE ALL</button><button type="button" class="btn mini" id="auUnmuteAll" title="Put back the inputs MUTE ALL took off">UN-MUTE ALL</button><button type="button" class="btn mini warn" id="auDeskZero" title="Reset every fader, gain, balance, EQ and dynamics">DESK ZERO…</button></span></div>
     <div id="auStrips" class="au-strips"></div>
+    <div id="auWatch" class="au-watch panel"><div class="section-title">MONITOR <small id="auWatchInfo">drag a channel's name here (or tap its 👁) to watch its level and mute · kept for this install</small><span class="spacer"></span><button type="button" class="btn mini ghost" id="auWatchClear">CLEAR</button></div><div id="auWatchList" class="au-watch-list"></div></div>
     <div id="auRouting"></div>
   </section>
   <section class="grid-wrap pane" id="pane-akeys" hidden>
@@ -591,6 +593,15 @@
   </form>
 </dialog>
 
+<dialog id="dlgDeskZero">
+  <form method="dialog" class="form">
+    <h2>DESK ZERO?</h2>
+    <p>Every audio input and the master go back to their defaults: <b>faders 0 dB, gain 0 dB, balance centre</b><span id="dzFl">, <b>EQ off and flat, make-up 0, dynamics (expander, compressor, limiter) reset</b></span>.</p>
+    <p class="note small">On / off / AFV, routing, delay, monitor and solo are not changed. This cannot be undone.</p>
+    <div class="actions"><button value="cancel" class="btn ghost">Cancel</button><button value="zero" id="dzGo" class="btn danger">DESK ZERO</button></div>
+  </form>
+</dialog>
+
 <!-- Target picker (memory dropped on a preset) -->
 <dialog id="dlgPick">
   <form method="dialog" class="form">
@@ -622,6 +633,7 @@
 <datalist id="memList"></datalist>
 <div id="toast" class="toast" hidden></div>
 <div id="undoBar" class="undo-bar" role="status" hidden></div>
+<script src="/prefs.js"></script>
 <script src="/drag.js"></script>
 <script src="/app.js"></script>
 <script src="/sys.js"></script>

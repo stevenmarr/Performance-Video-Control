@@ -170,6 +170,7 @@
   const fader = (op, extra, v, min, max) => `<div class="au-fader"><input type="range" min="${min}" max="${max}" step="0.5" value="${Number.isFinite(v) ? v : min}" data-au="${op}" data-field="fader" ${extra} orient="vertical"><output>${db(v)} dB</output></div>`;
   function renderAudio() {
     const pane = $('#pane-aaudio'); if (busy(pane)) return;
+    $('#auWatch').hidden = !live() || !V.audio; $('.au-desk').hidden = !live() || !V.audio;
     if (!live() || !V.audio) { S.set($('#auStrips'), 'au', off(live() ? 'This ATEM reports no audio mixer.' : '')); S.set($('#auRouting'), 'aur', ''); S.set($('#auFilter'), 'auf', ''); $('#auInfo').textContent = ''; return; }
     const a = V.audio; const fl = a.type === 'fairlight'; const max = fl ? 10 : 6;
     $('#auInfo').innerHTML = `<span class="chip au-type ${a.type}">${fl ? 'FAIRLIGHT' : 'CLASSIC'}</span> ${esc(V.profile ? V.profile.name : V.product)} · ${a.inputs.length} inputs${a.madi && a.madi.inputs ? ` · MADI ${a.madi.inputs} in / ${a.madi.outputs} out` : ''}`;
@@ -178,7 +179,7 @@
     S.set($('#auFilter'), 'auf', kinds.map((k) => `<button type="button" class="mode ${auKind === k ? 'active' : ''}" data-aukind="${k}">${AU_LABEL[k]}</button>`).join(''));
     const strips = a.inputs.filter((x) => auKind === 'all' || auKindOf(x) === auKind).map((x) => `
       <div class="au-strip ${x.muted ? 'muted' : ''} ${x.mix}" data-in="${x.id}">
-        <div class="au-name" title="${esc(x.name)} (${x.id})">${esc(x.name)}</div><div class="au-port">${esc(x.port || '')}</div>
+        <div class="au-name" data-auwatch-drag title="${esc(x.name)} (${x.id}) · drag into MONITOR to watch">${esc(x.name)}</div><div class="au-port">${esc(x.port || '')}<button type="button" class="au-eye ${watch.includes(x.id) ? 'on' : ''}" data-auwatch="${x.id}" title="${watch.includes(x.id) ? 'Stop watching' : 'Watch in MONITOR'}">👁</button></div>
         <div class="au-mix">${['on', 'off', 'afv'].filter((m) => x.supported.includes(m)).map((m) => `<button type="button" class="mode ${x.mix === m ? `active m-${m}` : ''}" data-au="mix" data-v="${m}">${m.toUpperCase()}</button>`).join('')}</div>
         ${fader('input', '', x.fader, -60, max)}
         ${fl ? `<label class="au-trim">GAIN <input type="number" step="0.5" min="-100" max="6" value="${Number(x.gain).toFixed(1)}" data-au="input" data-field="gain"> dB</label>` : ''}
@@ -191,6 +192,7 @@
       <div class="au-mix"><button type="button" class="mode ${mo.mute ? 'onair' : ''}" data-au="monmute" data-v="${mo.mute ? 0 : 1}">${mo.mute ? 'MUTED' : 'MUTE'}</button>${fl ? '' : `<button type="button" class="mode ${mo.dim ? 'active' : ''}" data-au="mondim" data-v="${mo.dim ? 0 : 1}">DIM</button>`}</div>
       ${fader('monitor', '', mo.gain, -60, 6)}${mo.solo ? '<div class="au-btns"><button type="button" class="mode" data-au="solooff">SOLO OFF</button></div>' : ''}</div>` : '';
     S.set($('#auStrips'), 'au', `<div class="au-scroll">${strips}</div><div class="au-fixed">${master}${mon}</div>`);
+    renderWatch(a, max);
     if (!a.routing) { S.set($('#auRouting'), 'aur', fl ? '' : '<div class="note small">Classic audio mixer: no audio routing (inputs follow their video input).</div>'); return; }
     const opts = a.routing.sources.map((s) => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
     const grp = {}; for (const o of a.routing.outputs) { const g = o.madi ? 'MADI OUT' : o.name.replace(/\s+\d+(\/\d+)?$/, '').replace(/\s+\d+$/, '').toUpperCase(); (grp[g] = grp[g] || []).push(o); }
@@ -199,6 +201,41 @@
       <details class="au-route" data-rg="${esc(g)}" ${openG.has(g) ? 'open' : ''}><summary>${esc(g)} <small>${list.length}</small></summary><div class="au-rgrid">${list.map((o) => `
         <label class="au-rrow"><span>${esc(o.name)}</span><select data-route="${o.id}">${opts.replace(`value="${o.source}"`, `value="${o.source}" selected`)}</select></label>`).join('')}</div></details>`).join('')}`);
   }
+  // 0.11.0 MONITOR: channels dragged (or 👁-tapped) here are watched — level bar, dB, mix and a MUTE — and the list
+  // is kept per install (CCPREFS 'atem.audioWatch'). MUTE ALL / UN-MUTE ALL / DESK ZERO (behind a confirmation).
+  const PREF_WATCH = 'atem.audioWatch';
+  let watch = (window.CCPREFS ? window.CCPREFS.get(PREF_WATCH, []) : []).map(Number).filter(Number.isFinite);
+  if (window.CCPREFS) window.CCPREFS.on(() => { watch = window.CCPREFS.get(PREF_WATCH, []).map(Number).filter(Number.isFinite); render(); });
+  const saveWatch = () => { if (window.CCPREFS) window.CCPREFS.set(PREF_WATCH, watch); renderAudio(); };
+  const pct = (v, min, max) => (Number.isFinite(v) ? Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100)) : 0);
+  function renderWatch(a, max) {
+    const list = watch.map((id) => a.inputs.find((x) => x.id === id)).filter(Boolean);
+    $('#auWatchClear').hidden = !list.length;
+    S.set($('#auWatchList'), 'auw', list.map((x) => `
+      <div class="au-wcard ${x.muted ? 'muted' : ''}" data-win="${x.id}">
+        <div class="au-whead" data-auwatch-move title="drag to reorder"><b>${esc(x.name)}</b><span class="chip m-${x.mix}">${x.mix.toUpperCase()}</span><button type="button" class="au-wx" data-unwatch="${x.id}" title="Stop watching">×</button></div>
+        <div class="au-wmeter" title="fader ${db(x.fader)} dB"><i style="width:${pct(x.fader, -60, max).toFixed(1)}%"></i><em style="left:${pct(0, -60, max).toFixed(1)}%"></em></div>
+        <div class="au-wvals"><span>FADER <b>${db(x.fader)}</b> dB</span>${x.gain !== null && x.gain !== undefined ? `<span>GAIN <b>${db(x.gain)}</b></span>` : ''}<span>BAL <b>${x.balance === 0 ? 'C' : x.balance < 0 ? `L${-x.balance}` : `R${x.balance}`}</b></span></div>
+        <div class="au-wbtns"><button type="button" class="mode ${x.muted ? 'onair' : ''}" data-wmute="${x.id}">${x.muted ? 'MUTED' : 'MUTE'}</button><button type="button" class="mode ${x.solo ? 'active' : ''}" data-wsolo="${x.id}" data-v="${x.solo ? 0 : 1}">SOLO</button></div>
+      </div>`).join('') || '<div class="au-wempty">Drag channel names here to watch them</div>');
+  }
+  const watchAdd = (id, before) => {
+    watch = watch.filter((x) => x !== id); const i = before === undefined ? -1 : watch.indexOf(before);
+    if (i < 0) watch.push(id); else watch.splice(i, 0, id); saveWatch();
+  };
+  window.CCDRAG.attach($('#pane-aaudio'), {
+    handle: '[data-auwatch-drag], [data-auwatch-move]',
+    start: (el) => { const s = el.closest('[data-in],[data-win]'); return s ? Number(s.dataset.in || s.dataset.win) : null; },
+    target: (under) => under.closest('#auWatch .au-wcard') || under.closest('#auWatch'),
+    drop: (t, id) => { const c = t.closest('.au-wcard'); watchAdd(id, c ? Number(c.dataset.win) : undefined); toast(`Watching ${(V.audio.inputs.find((x) => x.id === id) || {}).name || id}`); },
+    begin: () => $('#auWatch').classList.add('drop-ready'), end: () => $('#auWatch').classList.remove('drop-ready'),
+    ghost: (el, id) => `👁 ${esc((V.audio.inputs.find((x) => x.id === id) || {}).name || id)}`,
+  });
+  $('#auWatchClear').addEventListener('click', () => { watch = []; saveWatch(); });
+  $('#auMuteAll').addEventListener('click', () => live() && cmd('audioMuteAll', { mute: true }).then((r) => toast(`MUTE ALL · ${r && r.inputs ? r.inputs.length : 0} inputs muted`)));
+  $('#auUnmuteAll').addEventListener('click', () => live() && cmd('audioMuteAll', { mute: false }).then((r) => toast(`UN-MUTE ALL · ${r && r.inputs ? r.inputs.length : 0} inputs back`)));
+  $('#auDeskZero').addEventListener('click', () => { if (!live()) return; $('#dzFl').hidden = !(V.audio && V.audio.type === 'fairlight'); $('#dlgDeskZero').returnValue = ''; $('#dlgDeskZero').showModal(); });
+  $('#dlgDeskZero').addEventListener('close', () => { if ($('#dlgDeskZero').returnValue === 'zero') cmd('audioDeskZero', { confirm: true }).then(() => toast('DESK ZERO · every level back to default')); });
   $('#auFilter').addEventListener('click', (e) => { const b = e.target.closest('[data-aukind]'); if (!b) return; auKind = b.dataset.aukind; save('cc.auKind', auKind); renderAudio(); });
   $('#pane-aaudio').addEventListener('input', (e) => { const t = e.target; if (t.type === 'range' && t.nextElementSibling) { const v = Number(t.value); t.nextElementSibling.textContent = t.dataset.field === 'balance' ? (v === 0 ? 'C' : v < 0 ? `L${-v}` : `R${v}`) : `${db(v)} dB`; } });
   $('#pane-aaudio').addEventListener('change', (e) => {
@@ -212,6 +249,14 @@
   });
   $('#pane-aaudio').addEventListener('toggle', (e) => { const d = e.target; if (!d.dataset || !d.dataset.rg) return; const s = new Set(ls('cc.auRoutes', ['MADI OUT'])); if (d.open) s.add(d.dataset.rg); else s.delete(d.dataset.rg); save('cc.auRoutes', [...s]); }, true);
   $('#pane-aaudio').addEventListener('click', (e) => {
+    const w = e.target.closest('[data-auwatch],[data-unwatch],[data-wmute],[data-wsolo]');
+    if (w && live()) {
+      const d = w.dataset;
+      if (d.auwatch) { const id = Number(d.auwatch); if (watch.includes(id)) { watch = watch.filter((x) => x !== id); saveWatch(); } else watchAdd(id); return undefined; }
+      if (d.unwatch) { watch = watch.filter((x) => x !== Number(d.unwatch)); saveWatch(); return undefined; }
+      if (d.wmute) return cmd('audioMute', { input: Number(d.wmute), mute: 'toggle' });
+      if (d.wsolo) return cmd('audioSolo', { input: Number(d.wsolo), on: d.v === '1' });
+    }
     const b = e.target.closest('button[data-au]'); if (!b || !live()) return; const strip = b.closest('[data-in]'); const id = strip ? Number(strip.dataset.in) : null; const op = b.dataset.au;
     if (op === 'mix') return cmd('audioInput', { input: id, mix: b.dataset.v });
     if (op === 'mute') return cmd('audioMute', { input: id, mute: 'toggle' });
