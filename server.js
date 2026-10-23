@@ -62,7 +62,8 @@ async function main() {
     sysMocks.push(e2, ph);
     console.log(`MOCK E2 JSON-RPC http://127.0.0.1:${sysOverrides.e2.port}  MOCK PixelHue http://127.0.0.1:${sysOverrides.pixelhue.port}/pixelhue`);
     // 0.7.0: a mock ATEM (UDP) and three mock Panasonic cameras (HTTP), all on 127.0.0.1
-    const atem = new MockAtem(); sysOverrides.atem = { host: '127.0.0.1', port: await atem.start(0), me: 1 }; sysMocks.push(atem);
+    // 0.10.0: --atem-model <key> picks the mock's model profile (GET /api/sys/atem/models), default the TVS HD8 ISO
+    const atem = new MockAtem({ model: arg('atem-model', undefined) || undefined }); sysOverrides.atem = { host: '127.0.0.1', port: await atem.start(0), me: 1 }; sysMocks.push(atem);
     const cams = [['Cam 1 Wide', 'AW-UE150'], ['Cam 2 Stage', 'AW-UE100'], ['Cam 3 Lectern', 'AW-HE130']];
     sysOverrides.ptz = { cameras: [] };
     for (const [i, [name, model]] of cams.entries()) { const m = new MockPTZ({ model, title: name.toUpperCase().replace(/\s+/g, '-') }); sysOverrides.ptz.cameras.push({ id: `cam${i + 1}`, name, host: '127.0.0.1', port: await m.start(0) }); sysMocks.push(m); }
