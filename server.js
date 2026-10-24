@@ -75,6 +75,8 @@ async function main() {
   }
   const systems = new SystemManager({ dataDir, engine, overrides: sysOverrides });
   const server = createServer(engine, systems);
+  // 0.12.0 video scopes: H.264 relay (WebSocket /api/scopes/ws) + /api/scopes/*; in --mock a mock RTSP camera
+  const scopes = require('./lib/scopes/service').attachScopes(server, { systems, dataDir, mock, log: (lv, m) => engine.log(lv, m) });
   server.listen(port, bind, async () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
     console.log(`RS6 Presets UI: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
@@ -83,7 +85,7 @@ async function main() {
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);
   });
 
-  const shutdown = async () => { server.closeClients(); server.close(); await systems.close(); for (const m of sysMocks) await m.stop(); engine.close(); if (device) await device.stop(); process.exit(0); };
+  const shutdown = async () => { await scopes.close(); server.closeClients(); server.close(); await systems.close(); for (const m of sysMocks) await m.stop(); engine.close(); if (device) await device.stop(); process.exit(0); };
   process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 }
 
