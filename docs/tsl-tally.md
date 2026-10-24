@@ -1,6 +1,6 @@
 # TSL tally (0.20.0)
 
-TSL is its own setup. It is not part of Lightning (the engineering scopes tab).
+TSL is its own setup. It is not part of Scopes. Lightning is a scope mode on the SCOPES tab, not this page.
 
 Control Center is a **TSL 5.0 UDP sender**. It maps switcher **PGM → red** and **PVW → green** onto
 addresses stored with the show file (and in `<dataDir>/tsl.json` while you edit). Open it from

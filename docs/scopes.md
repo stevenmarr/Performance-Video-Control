@@ -1,24 +1,34 @@
-# Video scopes / Lightning (0.20.0)
+# Video scopes (0.20.1)
 
-Waveform, RGB parade, vectorscope and false colour from an **H.264** feed. The picture is not
+Waveform, RGB parade, vectorscope, Lightning and false colour from an **H.264** feed. The picture is not
 re-encoded on the way; the browser decodes it and the scopes are drawn on the GPU (WebGL2) from the decoded
 Y′CbCr values.
 
-Open it from the top-level **LIGHTNING** tab (engineering scopes on an NDI ingest), from **PTZ → SCOPES**
-(same frame, camera sources), or on its own page at **`/lightning.html`** / **`/scopes.html`**. The page
-also works in a separate window (the **⤢ WINDOW** button).
+Open it from the persistent top-row **SCOPES** tab, from **PTZ → SCOPES** (a shortcut into the same pane,
+aimed at a camera), or on its own page at **`/scopes.html`**. **`/lightning.html`** is an old alias of that
+page. The page also works in a separate window (the **⤢ WINDOW** button).
 
-**Lightning** means this engineering scopes surface — not stage lighting, not NewTek CG, and not TSL tallies.
-Tallies live under **SYSTEMS → TALLIES** ([docs/tsl-tally.md](tsl-tally.md)).
+**SCOPES** is the tab. **Lightning** is one mode in the scope strip: a component vectorscope with luminance
+(Y) vertical, B−Y on the left half and R−Y on the right half. It is not stage lighting, not NewTek CG, and
+not a separate tab. Tallies live under **SYSTEMS → TALLIES** ([docs/tsl-tally.md](tsl-tally.md)).
 
 ## NDI ingest (Mac sidecar)
 
-The operator picks an **NDI source** on the Lightning tab. Scopes run on that feed. The app does **not**
-publish scopes as an NDI output, and it does **not** open NDI itself (browsers cannot; a Pi should not).
+NDI is an **input** into Scopes. The operator picks a source that is already in the list. The list is not
+a place to invent a name:
 
-A Mac sidecar receives NDI and pushes H.264 into the same relay the camera RTSP path already uses.
-`--mock` on the app adds fixture sources (`ndi:mock-bars`, `ndi:mock-ramps`) so CI and a desk with no
-hardware still have something to select. Details: [docs/ndi-ingest.md](ndi-ingest.md).
+* **`--mock`** on the app adds fixture sources (`ndi:mock-bars`, `ndi:mock-ramps`).
+* A **Mac sidecar** that is pushing H.264 shows up under sidecar / discovered NDI.
+
+The app does **not** publish scopes as an NDI output, and it does **not** open NDI itself (browsers cannot;
+a Pi should not). Discover and receive on a Mac:
+
+```
+node tools/ndi-sidecar.js --list
+node tools/ndi-sidecar.js --ndi "NAME" --app http://127.0.0.1:8080
+```
+
+Details: [docs/ndi-ingest.md](ndi-ingest.md).
 
 ```
 camera RTSP (TCP interleaved RTP, H.264)  ─┐
@@ -26,19 +36,19 @@ test file (.h264 Annex-B / .mp4 / .mov)  ──┼─► lib/stream-relay.js ─
 mock UE150 RTSP camera (--mock)          ─┤   (access units, no transcoding)      │
 NDI mock fixtures (--mock, in-process)   ─┤                                        ├─ WebCodecs VideoDecoder → I420 planes (exact Y′)
 Mac sidecar (NDI receive → H.264 push)   ─┘                                        ├─ or MSE <video> (fMP4 muxed in the page) → RGB
-                                                                                   └─ WebGL2: analyse → waveform / parade / vectorscope / false colour
+                                                                                   └─ WebGL2: analyse → waveform / parade / vectorscope / Lightning / false colour
 ```
 
 ## Using it
 
 | Control | What it does |
 |---|---|
-| SOURCE | An NDI ingest (`ndi:<id>`), a camera (`cam:<id>`), a built-in test clip, a clip in the test folder, or the custom input |
-| PIC / WFM / PARADE / VEC | Choose which panels to show; they lay out side by side. Double-click a panel to show it alone. |
+| SOURCE | Grouped menu: sidecar / discovered NDI, mock fixtures, cameras, test clips. Empty NDI groups say why. You cannot type a new source in. |
+| PIC / WFM / PARADE / VEC / LIGHTNING | Choose which panels to show; they lay out side by side. Double-click a panel to show it alone. Lightning is the component vectorscope (Y / B−Y / R−Y). |
 | NORMAL / FALSE / ZEBRA | Picture mode. ZEBRA uses the level next to it (%). |
 | RANGE | AUTO uses the stream's VUI `video_full_range_flag`. LEGAL is 16–235 = 0–100 %; FULL is 0–255 = 0–100 %. |
 | INTENSITY | Trace brightness. |
-| VEC ×1 / ×2 / ×5 | Vectorscope gain. |
+| VEC ×1 / ×2 / ×5 | Vectorscope and Lightning gain. |
 | DECODE | AUTO, WEBCODECS, MSE, or JPEG (camera snapshots; picture only). |
 | ⚙ INPUTS | Per-camera stream number, path, port and login; the test folder; and a custom file path or `rtsp://` URL. |
 
@@ -64,6 +74,11 @@ more than 400 ms behind.
 The legend is shown in the toolbar.
 
 **Vectorscope**: BT.709 75 % (□) and 100 % (○) targets, plus the skin line at 123°.
+
+**Lightning**: the same 75 % and 100 % bars, drawn as a component vectorscope. Each half has its own
+vertical Y axis (0 % at the bottom, 100 % at the top). Positive B−Y goes left of the left axis. Positive
+R−Y goes right of the right axis. The outline is the 100 % gamut on that plot. It uses the same gain
+control as the vectorscope.
 
 ## Cameras (Panasonic AW-UE150 class)
 

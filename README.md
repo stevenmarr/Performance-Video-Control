@@ -42,7 +42,7 @@ network can open.
 - A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API** for Bitfocus
   Companion (a module ships separately in `companion-module-rs6-presets`). Companion is not how PTZ
   decks run in 0.20. See [Stream Deck (Path C)](#video-control-020-stream-deck-path-c) and
-  [Lightning and TSL](#video-control-020-lightning-and-tsl).
+  [Scopes and TSL](#video-control-020-scopes-and-tsl).
 
 No dependencies, no build step for the app. You need Node.js 16 or later (tested on 16 and 20).
 The Stream Deck plugin is a separate package and needs Node.js 24.
@@ -56,8 +56,8 @@ Path C is the show deck for Panasonic AW-UE150 cameras. An official Elgato plugi
 never opens a camera connection, and Companion is not in that path. The Companion page generator from
 0.9.0 is still there for other surfaces. It is not the PTZ deck.
 
-Lightning (NDI ingest into the scopes) and TSL tallies are the other half of 0.20. They are separate
-from this plugin. See [Lightning and TSL](#video-control-020-lightning-and-tsl).
+Scopes (NDI ingest included) and TSL tallies are the other half of 0.20. They are separate
+from this plugin. See [Scopes and TSL](#video-control-020-scopes-and-tsl).
 
 ### Where it lives
 
@@ -133,28 +133,32 @@ ALL STOP is the bottom-right key on every page. On a live camera, preset recall 
 
 ---
 
-## Video Control 0.20: Lightning and TSL
+## Video Control 0.20: Scopes and TSL
 
-These two setups ship in the same 0.20.0 app as Path C. They are not one feature, and neither is the
-Stream Deck plugin.
+These two setups ship in the same app as Path C. They are not one feature, and neither is the
+Stream Deck plugin. **0.20.1** names the persistent top tab **SCOPES**. Lightning is a scope mode.
 
-**Lightning** is the engineering scopes tab. The operator picks an NDI source and waveform, RGB parade,
-vectorscope and false colour run on that feed. The app does not open NDI. A Mac sidecar receives it and
-pushes H.264 into the same relay the camera RTSP path already uses. The Pi does not receive NDI.
-`node server.js --mock` adds `ndi:mock-bars` and `ndi:mock-ramps` so a desk with no hardware can select
-a source. See [docs/ndi-ingest.md](docs/ndi-ingest.md).
+**SCOPES** is always on the top row. Waveform, RGB parade, vectorscope, Lightning and false colour run
+on the selected feed. **Lightning** draws a component vectorscope: Y vertical, B−Y on the left, R−Y on
+the right, in the same strip as the other modes. The app does not open NDI. A Mac sidecar receives it
+and pushes H.264 into the same relay the camera RTSP path already uses. The Pi does not receive NDI.
+The source list only shows mock fixtures (when the app is started with `--mock`) and sidecar feeds that
+are already pushing. It is not a box for inventing a name. See [docs/ndi-ingest.md](docs/ndi-ingest.md)
+and [docs/scopes.md](docs/scopes.md).
 
 **TSL** is **⌂ SYSTEMS → TALLIES**. Control Center sends TSL 5.0 (mock, or UDP to loopback) from the show
 map: PGM red, PVW green. See [docs/tsl-tally.md](docs/tsl-tally.md).
 
 ```
 node server.js --mock
-# Lightning: open the LIGHTNING tab and pick NDI · MOCK BARS
+# SCOPES: pick NDI · MOCK BARS (a fixture, not a discovered NDI source)
+node tools/ndi-sidecar.js --list
+node tools/ndi-sidecar.js --ndi "NAME" --app http://127.0.0.1:8080
 node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080
 ```
 
-On a Mac, `node tools/ndi-sidecar.js --ndi "SOURCE NAME" --app http://127.0.0.1:8080` receives one NDI
-source (ffmpeg with `libndi_newtek`, or `RS6_NDI_RECV`). `--ndi` does not run on Linux or on a Pi.
+`--list` and `--ndi` are macOS only (ffmpeg with `libndi_newtek`, or `RS6_NDI_RECV`). They do not run
+on Linux or on a Pi. `--mock` on the sidecar needs no hardware.
 
 ---
 
@@ -369,6 +373,15 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ---
 
+## v0.20.1: SCOPES tab, Lightning as a scope mode
+
+Package version **0.20.1**. API stays 9. No release and no tag from this change.
+
+- The persistent top tab is **SCOPES**. The 0.20.0 **LIGHTNING** group is gone. `/#lightning` still opens SCOPES. `/lightning.html` still serves the scopes page.
+- **Lightning** is a mode in the scope strip (component vectorscope, Y / R−Y / B−Y), next to waveform, parade, vectorscope and false colour.
+- The NDI picker states that a row exists only for `--mock` fixtures or a sidecar that is already pushing. The Mac commands are `--list` and `--ndi "NAME"`.
+- **PTZ → SCOPES** stays a shortcut into the same pane.
+
 ## v0.20.0: Stream Deck Path C, Lightning NDI ingest, TSL tallies
 
 Package version **0.20.0**. API stays 9. Path C, Lightning, and TSL are three separate surfaces in that
@@ -377,8 +390,9 @@ version.
 - **Path C.** Elgato plugin in `streamdeck/`, UUID `com.performancevideo.control`. It calls
   `GET /api/deck/ptz` and `POST /api/sys/ptz/cmd/…` (including `step`). See
   [Stream Deck (Path C)](#video-control-020-stream-deck-path-c). Features: `streamDeck`, `ptzDeck`.
-- **Lightning.** Engineering scopes on an NDI ingest (Mac sidecar, or mock fixtures). See
-  [Lightning and TSL](#video-control-020-lightning-and-tsl) and [docs/ndi-ingest.md](docs/ndi-ingest.md).
+- **Scopes / NDI ingest.** Engineering scopes on an NDI ingest (Mac sidecar, or mock fixtures). 0.20.0
+  called the tab Lightning; 0.20.1 renames that tab to SCOPES and makes Lightning a scope mode. See
+  [Scopes and TSL](#video-control-020-scopes-and-tsl) and [docs/ndi-ingest.md](docs/ndi-ingest.md).
   Features: `lightning`, `ndiIngest`.
 - **TSL.** **⌂ SYSTEMS → TALLIES**, TSL 5.0 mock or UDP loopback. See [docs/tsl-tally.md](docs/tsl-tally.md).
   Feature: `tslTally`.
@@ -387,9 +401,9 @@ No GitHub Release and no tag are created from this branch.
 
 ## v0.13.0-dev: Lightning scopes tab, TSL 5.0 tally (first slice)
 
-- **Lightning** top-level engineering tab: waveform, RGB parade, vectorscope, false colour and zebra (the
-  existing scopes UI). Not stage lighting and not NewTek CG. Brand tokens black / `#121212`, white /
-  `#F5F5F5`, accent `#C42020`. **PTZ → SCOPES** remains a shortcut into the same frame.
+- **Scopes** top-level engineering tab (named LIGHTNING in this slice; renamed SCOPES in 0.20.1): waveform,
+  RGB parade, vectorscope, false colour and zebra. Not stage lighting and not NewTek CG. Brand tokens
+  black / `#121212`, white / `#F5F5F5`, accent `#C42020`. **PTZ → SCOPES** remains a shortcut into the same frame.
 - Standalone URLs: `/lightning.html` (alias) and `/scopes.html`.
 - **NDI** in 0.13 was in-app help for publishing a browser window (OBS DistroAV / NDI Tools). That publish
   path is superseded in 0.20 by NDI **ingest**. See the 0.20 section above.
@@ -1266,7 +1280,7 @@ Everything returns JSON. Errors return HTTP 4xx with `{ "error": "…" }`.
 | `GET /api/deck/ptz/layout` | | **0.20.0** + XL key and dial grid (Path C). R/B gain and pedestal are dials, not keys |
 | `POST /api/sys/ptz/cmd/step` | `{"cam","op","steps"}` | **0.20.0** Move a range or list by `steps` codes (FINE is ±1, COARSE is ±5). Paint lock still returns 423 |
 | `GET /api/scopes/sources` | | **0.12.0** Scope sources. **0.20.0** includes `ndi:` keys (mock fixtures and sidecar ingest) |
-| `GET /api/scopes/ndi` | | **0.20.0** Lightning NDI ingest status. Receive stays a Mac sidecar; this process does not open NDI |
+| `GET /api/scopes/ndi` | | **0.20.0** NDI ingest status for the SCOPES tab (`mock` added in 0.20.1). Receive stays a Mac sidecar; this process does not open NDI |
 | `WS /api/scopes/ndi/ingest` | | **0.20.0** Sidecar pushes Annex-B H.264. Loopback unless `RS6_NDI_INGEST_LAN=1` |
 | `GET/POST /api/tsl` | | **0.20.0** TSL 5.0 map on SYSTEMS → TALLIES. `POST /api/tsl/tick` sends now |
 | `GET /api/shows` | | **0.5.0** Show library, backups, current show (`name`, `dirty`) and folder |

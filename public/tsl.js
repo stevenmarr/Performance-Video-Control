@@ -1,6 +1,6 @@
 'use strict';
 // TSL 5.0 tally map on SYSTEMS → TALLIES (mock / loopback sender only).
-// Separate from Lightning. Lightning is NDI ingest → scopes.
+// Separate from Scopes. NDI ingest is an input on the SCOPES tab. Lightning is a scope mode.
 (() => {
   const $ = (s) => document.querySelector(s);
   const CC = window.CC;

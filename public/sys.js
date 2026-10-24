@@ -16,8 +16,8 @@
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS && SYS.systems[SYS.active] ? SYS.systems[SYS.active].kind : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
-  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams', 'pscopes'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], lightning: ['lightning'] };
-  const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', lightning: 'lightning' };
+  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams', 'pscopes'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'] };
+  const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
   const RS6TABS = KIND_TABS.rs6;
@@ -45,7 +45,7 @@
   // Row 1: ⌂ SYSTEMS + one button per system group on the desk, always in the same order (RS6, E2 / PIXELHUE,
   // ATEM, PTZ, PIXERA, MILLUMIN). Row 2: the pages of the selected group only. Each row scrolls sideways when
   // it does not fit, and the active button is kept in view.
-  const GRP_ORDER = ['rs6', 'preset', 'atem', 'ptz', 'pixera', 'millumin', 'lightning'];
+  const GRP_ORDER = ['rs6', 'preset', 'atem', 'ptz', 'pixera', 'millumin'];
   const RANK = { off: 3, warn: 2, idle: 1, ok: 0 };
   const lastTabKey = (g) => `cc.lastTab.${g}`;
   function curGroup() { const t = CC.getTab(); return TAB_KIND[t] || 'home'; }
@@ -57,18 +57,18 @@
       el.classList.toggle('grp-off', (el.dataset.sys || el.dataset.grp) !== g);
     });
     $('#tabsHomeNote').hidden = g !== 'home';
+    const scopesNote = $('#tabsScopesNote'); if (scopesNote) scopesNote.hidden = g !== 'scopes';
     for (const b of document.querySelectorAll('.tgrp[data-tabgrp]')) {
       const k = b.dataset.tabgrp; const list = armedOf(k);
-      // Lightning is engineering (scopes), always on the desk — not a device to arm
-      b.hidden = k === 'lightning' ? false : !list.length; b.classList.toggle('active', k === g);
-      let worst = k === 'lightning' ? 'ok' : 'ok';
-      if (k !== 'lightning') for (const s of list) { const c = statusOf(SYS.systems[s]).cls; if ((RANK[c] ?? 2) > (RANK[worst] ?? 0)) worst = c; }
+      b.hidden = !list.length; b.classList.toggle('active', k === g);
+      let worst = 'ok';
+      for (const s of list) { const c = statusOf(SYS.systems[s]).cls; if ((RANK[c] ?? 2) > (RANK[worst] ?? 0)) worst = c; }
       b.querySelector('.led').className = `led ${worst}`;
       if (k === 'preset') {
         const nm = list.map((s) => SYS.systems[s].short).join(' / ') || 'E2 / PIXELHUE';
         b.querySelector('.tgrp-nm').textContent = nm;
       }
-      b.title = k === 'lightning' ? 'Lightning: engineering scopes on an NDI ingest (waveform, parade, vectorscope, false colour)' : (list.length ? `${list.map((s) => `${SYS.systems[s].label}: ${statusOf(SYS.systems[s]).txt}`).join(' · ')}` : '');
+      b.title = list.length ? `${list.map((s) => `${SYS.systems[s].label}: ${statusOf(SYS.systems[s]).txt}`).join(' · ')}` : '';
     }
     const act = document.querySelector('#tabsSub .tab.active:not(.grp-off)') ; const top = document.querySelector('#tabsTop .active');
     for (const el of [act, top]) if (el && el.scrollIntoView && el.parentElement.scrollWidth > el.parentElement.clientWidth) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -111,12 +111,10 @@
     document.querySelectorAll('.tab-group').forEach((g) => { g.hidden = !armedOf(g.dataset.grp).length; });
     document.querySelectorAll('.tab-group .grp-btn').forEach((b) => { b.hidden = !on.has(b.dataset.focus); b.classList.toggle('on', b.dataset.focus === a); });
     document.querySelectorAll('.tab[data-sys]').forEach((t) => {
-      if (t.dataset.sys === 'lightning') { t.hidden = false; return; }
       const owner = ownerOf(t.dataset.tab, t.dataset.cap);
       t.hidden = !owner;
       if (owner) t.dataset.owner = owner;
     });
-    document.querySelectorAll('.tab-group[data-grp=lightning]').forEach((g) => { g.hidden = false; });
     applyTabRows();
     document.querySelectorAll('.xsys').forEach((e) => { e.textContent = sysInfo.short; });
     const pillFor = () => {
@@ -144,7 +142,7 @@
     }
     // a tab whose system left the desk goes home; a deep link to a system not yet armed brings it on
     const tab = CC.getTab(); const kn = TAB_KIND[tab];
-    if (tab !== 'system' && kn && kn !== 'lightning' && !armedOf(kn).length) {
+    if (tab !== 'system' && kn && kn !== 'scopes' && !armedOf(kn).length) {
       if (!landed) return armForTab(tab);
       const home = armedOf('rs6').length ? 'presets' : (armed()[0] ? HOME_TAB[SYS.systems[armed()[0]].kind] : 'system');
       CC.setTab(home);
@@ -163,7 +161,8 @@
   }
   // Landing: the SYSTEMS page is home. A deep link (/#presets, /#xpresets, /#atem, ...) opens that tab instead.
   (() => {
-    const h = decodeURIComponent((location.hash || '').replace(/^#\/?/, '').replace(/^tab=/, ''));
+    let h = decodeURIComponent((location.hash || '').replace(/^#\/?/, '').replace(/^tab=/, ''));
+    if (h === 'lightning') h = 'scopes'; // 0.20.0 called this tab LIGHTNING
     if (h && document.querySelector(`.tab[data-tab="${h.replace(/[^\w-]/g, '')}"]`)) { window.__ccTabClicked = true; CC.setTab(h); } else CC.setTab('system');
   })();
 

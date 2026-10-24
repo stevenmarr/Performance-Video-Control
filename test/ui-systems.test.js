@@ -37,7 +37,8 @@ test('Control Center: dashboard, E2 presets (dim, recall, TAKE), PixelHue, back 
   assert.equal(await page.locator('.tgrp[data-tabgrp=preset]').isVisible(), true);
   assert.equal(await page.locator('.tgrp[data-tabgrp=preset].active').count(), 1, 'the E2 group is selected');
   assert.equal(await page.locator('.tab[data-tab=presets]').isVisible(), false, 'other groups\' pages are not in the second row');
-  assert.deepEqual(await page.$$eval('#tabsTop .tgrp:not([hidden])', (b) => b.map((x) => x.dataset.tabgrp)), ['rs6', 'preset', 'lightning'], 'fixed group order');
+  assert.deepEqual(await page.$$eval('#tabsTop .tgrp:not([hidden])', (b) => b.map((x) => x.dataset.tabgrp)), ['rs6', 'preset'], 'fixed group order');
+  assert.equal(await page.locator('.tab[data-tab=scopes]').isVisible(), true, 'SCOPES stays on the top row');
   await openTab(page, 'xpresets');
   await page.locator('#xgrid .preset[data-key]').first().waitFor();
   // select only Screen 4: S1-only presets dim
@@ -120,7 +121,8 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   await page.waitForFunction(() => document.body.classList.contains('kind-rs6') && document.body.classList.contains('arm-atem') && document.body.classList.contains('arm-ptz'));
   assert.equal(await page.locator('.tgrp[data-tabgrp=atem]').isVisible(), true, 'ATEM group stays on the desk while RS6 is open');
   assert.equal(await page.locator('.tgrp[data-tabgrp=ptz]').isVisible(), true, 'PTZ group stays on the desk while RS6 is open');
-  assert.deepEqual(await page.$$eval('#tabsTop .tgrp:not([hidden])', (b) => b.map((x) => x.dataset.tabgrp)), ['rs6', 'atem', 'ptz', 'lightning'], 'fixed group order');
+  assert.deepEqual(await page.$$eval('#tabsTop .tgrp:not([hidden])', (b) => b.map((x) => x.dataset.tabgrp)), ['rs6', 'atem', 'ptz'], 'fixed group order');
+  assert.equal(await page.locator('.tab[data-tab=scopes]').isVisible(), true, 'SCOPES stays on the top row');
   // a group button returns to the page last used in that group
   await page.click('.tgrp[data-tabgrp=ptz]'); await page.locator('.tab[data-tab=pcams]').click();
   await page.click('.tgrp[data-tabgrp=atem]'); await page.waitForFunction(() => document.body.classList.contains('tab-atem'));

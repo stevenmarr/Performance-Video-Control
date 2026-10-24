@@ -2,7 +2,8 @@
 // the exact code values of the bitstream) or an RGB picture (MSE <video>, JPEG) converted back to Y′CbCr (BT.709).
 //  1. ANALYZE   source -> analysis texture (AW x AH, nearest sampling, RGBA8 = Y′, Cb, Cr code values)
 //  2. ACCUMULATE  one gl.POINTS draw per scope, vertex shader texelFetch()es its sample by gl_VertexID and places it
-//               (waveform: x = column, y = Y′ level; parade: R′ G′ B′ in thirds; vectorscope: (Pb, Pr)); additive
+//               (waveform: x = column, y = Y′ level; parade: R′ G′ B′ in thirds; vectorscope: (Pb, Pr);
+//               Lightning: two component plots, Y vertical, B−Y left, R−Y right); additive
 //               blending into RGBA16F targets (EXT_color_buffer_float; RGBA8 fallback)
 //  3. DISPLAY   each target -> its panel, brightness 1 - exp(-count x gain), phosphor tint; picture with false colour /
 //               zebra LUT on Y′. Graticules / labels are drawn on a 2D overlay (only when the layout changes).
@@ -21,6 +22,15 @@
   const WFM_LO = -0.10; const WFM_HI = 1.10; // waveform display range (video level 0..1)
   const SKIN_ANGLE = 123; // degrees from +Pb (the "I" / flesh-tone line)
   const VEC_SCALE = 0.9 / 0.5; // Pb / Pr 0.5 -> 90 % of the vectorscope radius
+  // Lightning (component vectorscope). Each half has its own Y axis (clip x = ±0.5).
+  // Positive B−Y goes left of the left axis; positive R−Y goes right of the right axis.
+  // A color difference of 0.5 lands 0.42 clip from that axis, so 100 % bars stay inside their half at ×1.
+  const LTNG_X = 0.84;
+  const LTNG_Y = 1.65; // Y 0..1 -> clip about −0.825..0.825
+  function lightningOf(y, pb, pr, vgain = 1) {
+    const g = vgain || 1; const yClip = (y - 0.5) * LTNG_Y;
+    return { by: { x: -0.5 + (-pb) * LTNG_X * g, y: yClip }, ry: { x: 0.5 + pr * LTNG_X * g, y: yClip } };
+  }
   function falseColorOf(pct) { for (const b of FALSE_COLOR) if (pct >= b.lo && pct < b.hi) return b; return null; }
   // code value (8-bit) -> video level in % (Y′) or Pb/Pr (-0.5..0.5)
   const levelOf = (y, full) => (full ? (y / 255) * 100 : ((y - 16) / 219) * 100);
@@ -32,10 +42,10 @@
   function targets() { // vectorscope bar targets (Pb, Pr) at 75 % and 100 %
     const bars = [['R', 1, 0, 0], ['MG', 1, 0, 1], ['B', 0, 0, 1], ['CY', 0, 1, 1], ['G', 0, 1, 0], ['YL', 1, 1, 0]];
     const out = [];
-    for (const amp of [0.75, 1]) for (const [name, r, g, b] of bars) { const y = 0.2126 * r * amp + 0.7152 * g * amp + 0.0722 * b * amp; out.push({ name, amp, pb: (b * amp - y) / 1.8556, pr: (r * amp - y) / 1.5748 }); }
+    for (const amp of [0.75, 1]) for (const [name, r, g, b] of bars) { const y = 0.2126 * r * amp + 0.7152 * g * amp + 0.0722 * b * amp; out.push({ name, amp, y, pb: (b * amp - y) / 1.8556, pr: (r * amp - y) / 1.5748 }); }
     return out;
   }
-  const math = { FALSE_COLOR, falseColorOf, levelOf, chromaOf, ycbcrOf, targets, WFM_LO, WFM_HI, SKIN_ANGLE, VEC_SCALE };
+  const math = { FALSE_COLOR, falseColorOf, levelOf, chromaOf, ycbcrOf, targets, lightningOf, WFM_LO, WFM_HI, SKIN_ANGLE, VEC_SCALE, LTNG_X, LTNG_Y };
   if (typeof module !== 'undefined' && module.exports) { module.exports = math; return; }
 
   const VS_QUAD = `#version 300 es
@@ -59,7 +69,9 @@
   precision highp float; precision highp int;
   uniform sampler2D u_an; uniform ivec2 u_anSize; uniform int u_mode; uniform float u_full, u_vgain;
   void main(){
-    int n = u_anSize.x * u_anSize.y; int id = gl_VertexID; int ch = 0;
+    int n = u_anSize.x * u_anSize.y; int id = gl_VertexID; int ch = 0; int side = 0;
+    // Lightning draws each sample twice: side 0 is B-Y (left half), side 1 is R-Y (right half)
+    if (u_mode == 3) { side = id / n; id -= side * n; }
     ivec2 p = ivec2(id % u_anSize.x, id / u_anSize.x);
     // parade: each channel is drawn into a third of the width, so it samples every third column (same cost as WFM)
     if (u_mode == 1) { int cw = u_anSize.x / 3; int nc = cw * u_anSize.y; ch = id / nc; id -= ch * nc; p = ivec2((id % cw) * 3 + 1, id / cw); }
@@ -68,7 +80,13 @@
     float Pb = u_full > 0.5 ? (c.g - 128.0) / 255.0 : (c.g - 128.0) / 224.0;
     float Pr = u_full > 0.5 ? (c.b - 128.0) / 255.0 : (c.b - 128.0) / 224.0;
     float x; float v;
-    if (u_mode == 2) { gl_Position = vec4(Pb * u_vgain, Pr * u_vgain, 0.0, 1.0); gl_PointSize = 1.0; return; }
+    if (u_mode == 2) { gl_Position = vec4(Pb * ${VEC_SCALE.toFixed(6)} * u_vgain, Pr * ${VEC_SCALE.toFixed(6)} * u_vgain, 0.0, 1.0); gl_PointSize = 1.0; return; }
+    if (u_mode == 3) {
+      float cd = side == 0 ? -Pb : Pr;
+      float cx = side == 0 ? -0.5 : 0.5;
+      gl_Position = vec4(cx + cd * ${LTNG_X.toFixed(6)} * u_vgain, (Y - 0.5) * ${LTNG_Y.toFixed(6)}, 0.0, 1.0);
+      gl_PointSize = 1.0; return;
+    }
     if (u_mode == 1) { vec3 rgb = vec3(Y + 1.5748 * Pr, Y - 0.1873 * Pb - 0.4681 * Pr, Y + 1.8556 * Pb); v = ch == 0 ? rgb.r : ch == 1 ? rgb.g : rgb.b; x = (float(ch) + (float(p.x) + 0.5) / float(u_anSize.x)) / 3.0; }
     else { v = Y; x = (float(p.x) + 0.5) / float(u_anSize.x); }
     float y = (v - ${WFM_LO.toFixed(3)}) / (${(WFM_HI - WFM_LO).toFixed(3)});
@@ -84,6 +102,7 @@
     vec3 t = vec3(0.55, 1.0, 0.65);
     if (u_tint == 1) { float th = v_uv.x * 3.0; t = th < 1.0 ? vec3(1.0, 0.3, 0.3) : th < 2.0 ? vec3(0.35, 1.0, 0.35) : vec3(0.4, 0.55, 1.0); }
     else if (u_tint == 2) t = vec3(0.75, 1.0, 0.8);
+    else if (u_tint == 3) t = vec3(0.98, 0.9, 0.55);
     o = vec4(t * b + vec3(b * b * 0.35), 1.0);
   }`;
   const FS_PICTURE = `#version 300 es
@@ -131,7 +150,7 @@
       this.tex = { y: this._tex(), u: this._tex(), v: this._tex() };
       this.src = null; // {mode: 0 I420 | 1 NV12 | 2 RGB, w, h}
       this.targets = {};
-      this.opts = { full: false, gain: 1, vgain: 1, view: 0, zebra: 95, matrix: 0, show: { pic: true, wfm: true, parade: true, vec: true } };
+      this.opts = { full: false, gain: 1, vgain: 1, view: 0, zebra: 95, matrix: 0, show: { pic: true, wfm: true, parade: true, vec: true, ltng: false } };
       gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     }
     _tex(filter) { const gl = this.gl; const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, t); for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, filter || gl.LINEAR], [gl.TEXTURE_MAG_FILTER, filter || gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v); return t; }
@@ -175,7 +194,7 @@
     }
     // the RGB path is always delivered as legal-range codes by ANALYZE; the picture shader handles RGB itself
     get effFull() { return this.src && this.src.mode === 2 ? false : !!this.opts.full; }
-    // panels: {pic, wfm, parade, vec}: [x, y, w, h] in canvas pixels (top-left origin) or null
+    // panels: {pic, wfm, parade, vec, ltng}: [x, y, w, h] in canvas pixels (top-left origin) or null
     render(panels, time = 0) {
       const gl = this.gl; const s = this.src; const W = this.canvas.width; const Hc = this.canvas.height; const o = this.opts;
       gl.bindVertexArray(this.vao); gl.disable(gl.DEPTH_TEST);
@@ -191,13 +210,14 @@
       // 2. accumulate
       const pp = this.prog.pts; gl.useProgram(pp.p);
       gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, an.tex); gl.uniform1i(pp.u.u_an, 3);
-      gl.uniform2i(pp.u.u_anSize, aw, ah); gl.uniform1f(pp.u.u_full, full); gl.uniform1f(pp.u.u_vgain, VEC_SCALE * (o.vgain || 1));
+      gl.uniform2i(pp.u.u_anSize, aw, ah); gl.uniform1f(pp.u.u_full, full); gl.uniform1f(pp.u.u_vgain, o.vgain || 1);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.blendEquation(gl.FUNC_ADD); gl.clearColor(0, 0, 0, 0);
       const acc = (name, w, h, mode, count) => { const t = this._target(name, w, h, true); gl.bindFramebuffer(gl.FRAMEBUFFER, t.fb); gl.viewport(0, 0, w, h); gl.clear(gl.COLOR_BUFFER_BIT); gl.uniform1i(pp.u.u_mode, mode); gl.drawArrays(gl.POINTS, 0, count); };
       const scale8 = this.floatOk ? 1 : 255; // RGBA8 fallback saturates at 1 count: brightness is then on/off
       if (panels.wfm) acc('wfm', aw, 512, 0, aw * ah);
       if (panels.parade) acc('parade', aw, 512, 1, Math.floor(aw / 3) * ah * 3);
       if (panels.vec) acc('vec', 512, 512, 2, aw * ah);
+      if (panels.ltng) acc('ltng', 1024, 512, 3, aw * ah * 2);
       gl.disable(gl.BLEND); gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, null);
       // 3. display
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.enable(gl.SCISSOR_TEST);
@@ -208,6 +228,7 @@
       show('wfm', panels.wfm, 40 / ah, 0);
       show('parade', panels.parade, 40 / ah, 1);
       show('vec', panels.vec, (512 * 512) / (aw * ah) * 0.35, 2);
+      show('ltng', panels.ltng, (1024 * 512) / Math.max(1, aw * ah * 2) * 0.45, 3);
       if (panels.pic) {
         vp(panels.pic); const pc = this.prog.pic; gl.useProgram(pc.p); this._bindSrc(pc);
         gl.uniform1i(pc.u.u_view, o.view | 0); gl.uniform1f(pc.u.u_full, full); gl.uniform1f(pc.u.u_zebra, o.zebra); gl.uniform1f(pc.u.u_time, time); gl.uniform1i(pc.u.u_matrix, o.matrix | 0);
@@ -266,6 +287,55 @@
         if (t.amp === 1) { ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.fillText(t.name, px + (t.pb >= 0 ? f(8) : -f(22)), py + (t.pr >= 0 ? -f(6) : f(14))); }
       }
       ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillText(`VECTORSCOPE${vgain !== 1 ? ` ×${vgain}` : ''}`, x + f(4), y + f(12));
+      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillText('□ 75 %  ○ 100 %', x + f(4), y + h - f(5));
+    } else if (kind === 'ltng') {
+      const g = vgain || 1;
+      const pix = (xClip, yClip) => [x + ((xClip + 1) / 2) * w, y + ((1 - yClip) / 2) * h];
+      const yClipOf = (lvl) => (lvl - 0.5) * LTNG_Y;
+      const hull = (points) => {
+        const pts = points.map((p) => [p[0], p[1]]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+        if (pts.length < 3) return pts;
+        const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+        const lower = []; const upper = [];
+        for (const p of pts) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+        for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
+        lower.pop(); upper.pop(); return lower.concat(upper);
+      };
+      ctx.strokeStyle = 'rgba(255,200,80,0.4)';
+      for (const side of ['by', 'ry']) {
+        const cx = side === 'by' ? -0.5 : 0.5;
+        const top = pix(cx, yClipOf(1)); const bot = pix(cx, yClipOf(0));
+        ctx.beginPath(); ctx.moveTo(top[0], top[1]); ctx.lineTo(bot[0], bot[1]); ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(255,210,120,0.75)';
+      for (const lvl of [0, 50, 100]) { const p = pix(-0.96, yClipOf(lvl / 100)); ctx.fillText(String(lvl), p[0], p[1] + f(3)); }
+      const bars = targets();
+      ctx.strokeStyle = 'rgba(255,200,80,0.28)';
+      for (const side of ['by', 'ry']) {
+        const cx = side === 'by' ? -0.5 : 0.5;
+        const pts = bars.filter((t) => t.amp === 1).map((t) => { const c = lightningOf(t.y, t.pb, t.pr, g); const clip = c[side]; return pix(clip.x, clip.y); });
+        pts.push(pix(cx, yClipOf(0)), pix(cx, yClipOf(1)));
+        const edge = hull(pts); if (edge.length < 3) continue;
+        ctx.beginPath(); ctx.moveTo(edge[0][0], edge[0][1]);
+        for (const p of edge.slice(1)) ctx.lineTo(p[0], p[1]);
+        ctx.closePath(); ctx.stroke();
+      }
+      for (const t of bars) {
+        for (const side of ['by', 'ry']) {
+          const c = lightningOf(t.y, t.pb, t.pr, g)[side]; const [px, py] = pix(c.x, c.y); const s = f(t.amp === 1 ? 5 : 6);
+          ctx.strokeStyle = t.amp === 1 ? 'rgba(255,255,255,0.75)' : 'rgba(255,200,80,0.85)';
+          if (t.amp === 1) { ctx.beginPath(); ctx.arc(px, py, s * 0.65, 0, Math.PI * 2); ctx.stroke(); }
+          else ctx.strokeRect(px - s, py - s, 2 * s, 2 * s);
+          if (t.amp === 1) {
+            ctx.fillStyle = 'rgba(255,255,255,0.75)';
+            const outward = side === 'by' ? (t.pb >= 0 ? -f(20) : f(6)) : (t.pr >= 0 ? f(6) : -f(20));
+            ctx.fillText(t.name, px + outward, py + (t.y >= 0.5 ? -f(6) : f(12)));
+          }
+        }
+      }
+      const lAxis = pix(-0.5, yClipOf(0.5)); const rAxis = pix(0.5, yClipOf(0.5));
+      ctx.fillStyle = 'rgba(255,200,80,0.8)'; ctx.fillText('B−Y', lAxis[0] - f(28), y + f(24)); ctx.fillText('R−Y', rAxis[0] + f(8), y + f(24));
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillText(`LIGHTNING  Y / B−Y · R−Y${vgain !== 1 ? ` ×${vgain}` : ''}`, x + f(4), y + f(12));
       ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillText('□ 75 %  ○ 100 %', x + f(4), y + h - f(5));
     }
     ctx.restore();

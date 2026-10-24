@@ -1,7 +1,8 @@
-# Lightning NDI ingest (0.20.0)
+# Scopes NDI ingest (0.20.1)
 
-Lightning is the engineering scopes tab. The operator picks an **NDI source** and waveform, RGB parade,
-vectorscope and false colour run on that feed.
+**SCOPES** is the engineering tab. **Lightning** is a scope mode on that tab (Y / R−Y / B−Y), in the same
+strip as waveform, parade, vectorscope and false colour. The operator picks an **NDI source** and those
+modes run on that feed.
 
 This is **ingest**. The app does not publish scopes as an NDI output. TSL tallies are a different setup
 under **SYSTEMS → TALLIES** ([tsl-tally.md](tsl-tally.md)).
@@ -28,9 +29,11 @@ Source keys look like `ndi:mock-bars` or `ndi:cam-a`. Viewers use the existing
 node server.js --mock
 ```
 
-Open **LIGHTNING**. The ingest strip lists **NDI · MOCK BARS** and **NDI · MOCK RAMPS**. Pick one.
-The scopes page SOURCE list includes the same keys. Those fixtures are in-process H.264 files. They
-do not use the NDI SDK, and they are how CI exercises the picker and the relay.
+Open **SCOPES**. The sidecar / discovered NDI strip lists **NDI · MOCK BARS** and **NDI · MOCK RAMPS**
+under **MOCK FIXTURES**. Pick one. The scopes page SOURCE list includes the same keys, in the mock group.
+Those fixtures are in-process H.264 files. They do not use the NDI SDK, and they are how CI exercises the
+picker and the relay. If the app was not started with `--mock`, that group says so and stays empty. You
+cannot type a source name into the list.
 
 To exercise the sidecar socket as well (still no NDI hardware):
 

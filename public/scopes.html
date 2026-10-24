@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>LIGHTNING · Scopes · PV Control Center</title>
+<title>SCOPES · PV Control Center</title>
 <link rel="icon" href="favicon.png">
 <style>
   :root { --bg: #121212; --panel: #1a1a1a; --line: #2a2a2a; --txt: #F5F5F5; --dim: #9a9a9a; --acc: #C42020; --ok: #3fbf6a; --bad: #e5484d; }
@@ -56,7 +56,7 @@
   <button id="btnPlay" aria-pressed="true" title="Start / stop the stream">LIVE</button>
   <span class="lbl">SCOPES</span>
   <span class="grp" id="showGrp">
-    <button data-show="pic" title="Picture">PIC</button><button data-show="wfm" title="Luma waveform">WFM</button><button data-show="parade" title="RGB parade">PARADE</button><button data-show="vec" title="Vectorscope">VEC</button>
+    <button data-show="pic" title="Picture">PIC</button><button data-show="wfm" title="Luma waveform">WFM</button><button data-show="parade" title="RGB parade">PARADE</button><button data-show="vec" title="Vectorscope (Pb / Pr)">VEC</button><button data-show="ltng" title="Lightning: component vectorscope. Y is vertical. B−Y is the left half, R−Y is the right half.">LIGHTNING</button>
   </span>
   <span class="lbl">PICTURE</span>
   <span class="grp" id="viewGrp"><button data-view="0">NORMAL</button><button data-view="1" title="False colour (ARRI-style)">FALSE</button><button data-view="2" title="Zebra stripes at or above the level">ZEBRA</button></span>
@@ -64,16 +64,20 @@
   <span class="lbl">RANGE</span>
   <select id="range" aria-label="Video range"><option value="auto">AUTO</option><option value="legal">LEGAL 16–235</option><option value="full">FULL 0–255</option></select>
   <span class="lbl">INTENSITY</span><input id="gain" type="range" min="0.2" max="5" step="0.1" value="1" aria-label="Scope intensity">
-  <span class="lbl">VEC</span><select id="vgain" aria-label="Vectorscope gain"><option value="1">×1</option><option value="2">×2</option><option value="5">×5</option></select>
+  <span class="lbl">VEC</span><select id="vgain" aria-label="Vectorscope and Lightning gain"><option value="1">×1</option><option value="2">×2</option><option value="5">×5</option></select>
   <span class="lbl">DECODE</span>
   <select id="mode" aria-label="Decode path"><option value="auto">AUTO</option><option value="webcodecs">WEBCODECS</option><option value="mse">MSE (RGB)</option><option value="jpeg">JPEG SNAPSHOT</option></select>
   <span class="legend" id="legend" hidden></span>
   <button id="btnSettings" title="Camera streams, test video, custom input" style="margin-left:auto">⚙ INPUTS</button>
-  <a class="pop" href="/lightning.html" target="_blank" rel="noopener" title="Open Lightning scopes in their own window" style="color:var(--dim);text-decoration:none">⤢ WINDOW</a>
-  <button type="button" id="btnNdi" title="NDI ingest: pick a source in SOURCE, or run the Mac sidecar">NDI</button>
+  <a class="pop" href="/scopes.html" target="_blank" rel="noopener" title="Open Scopes in their own window" style="color:var(--dim);text-decoration:none">⤢ WINDOW</a>
+  <button type="button" id="btnNdi" title="Sidecar / discovered NDI: the SOURCE list only shows feeds that already exist">NDI</button>
 </div>
 <aside id="ndiHelp" hidden style="padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);font-size:12px;color:var(--dim)">
-  <b style="color:var(--txt)">NDI ingest (this app does not open NDI):</b> pick an <b>NDI ·</b> source above. A Mac sidecar receives NDI and pushes H.264 into the same relay as camera RTSP. <code>node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080</code> plays a fixture with no hardware. <code>--ndi</code> is macOS only. The Pi does not receive NDI. See <code>docs/ndi-ingest.md</code>.
+  <b style="color:var(--txt)">Sidecar / discovered NDI.</b> The SOURCE list is not a place to invent a name. A row appears only when this app was started with <code>--mock</code> (fixture clips) or when a Mac sidecar is pushing H.264. This page does not discover NDI. The Pi does not run an NDI SDK.
+  <pre style="margin:6px 0;padding:8px 10px;background:#0a0a0a;border:1px solid var(--line);border-radius:6px;color:var(--txt);overflow:auto">node tools/ndi-sidecar.js --list
+node tools/ndi-sidecar.js --ndi "NAME" --app http://127.0.0.1:8080
+node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080</pre>
+  <span><code>--list</code> and <code>--ndi</code> are macOS only (ffmpeg with <code>libndi_newtek</code>, or <code>RS6_NDI_RECV</code>). <code>--mock</code> needs no hardware. See <code>docs/ndi-ingest.md</code>.</span>
 </aside>
 <div class="stage" id="stage">
   <div class="panels" id="panels">
@@ -81,6 +85,7 @@
     <div class="pnl" data-k="wfm" aria-label="Waveform"></div>
     <div class="pnl" data-k="parade" aria-label="RGB parade"></div>
     <div class="pnl" data-k="vec" aria-label="Vectorscope"></div>
+    <div class="pnl" data-k="ltng" aria-label="Lightning"></div>
   </div>
   <canvas class="gl" id="gl"></canvas><canvas class="ov" id="ov"></canvas>
   <div class="msg" id="msg" hidden></div>
@@ -106,7 +111,6 @@
 (function () {
   const b = document.getElementById('btnNdi'); const p = document.getElementById('ndiHelp');
   if (b && p) b.addEventListener('click', () => { p.hidden = !p.hidden; });
-  if (/lightning=1/.test(location.search) || /lightning\.html/.test(location.pathname)) document.title = 'LIGHTNING · Scopes';
 })();
 </script>
 </body>
