@@ -23,7 +23,10 @@ const bandOf = (rgb) => { // picture pixel -> false-colour band name (or GREY)
 test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / parade / vectorscope / false colour; raw-frame GL maths; MSE fallback; PTZ tab', { skip: pw ? false : 'playwright not installed', timeout: 120000 }, async (t) => {
   const port = 31000 + Math.floor(Math.random() * 1000); const B = `http://127.0.0.1:${port}`;
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6scopes-ui-'));
-  const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), '--mock', '--port', String(port), '--host', '127.0.0.1', '--data', data], { stdio: 'ignore', env: { ...process.env, RS6_SCOPES_TEST_DIR: path.join(__dirname, 'fixtures', 'scopes') } });
+  // optional HTTPS mirror (RS6_TLS_*) with a throw-away self-signed certificate, when openssl is on the machine
+  const tlsPort = port + 1000; let tlsEnv = {};
+  try { require('child_process').execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-keyout', path.join(data, 'k.pem'), '-out', path.join(data, 'c.pem'), '-days', '1', '-subj', '/CN=scopes.test'], { stdio: 'ignore' }); tlsEnv = { RS6_TLS_CERT: path.join(data, 'c.pem'), RS6_TLS_KEY: path.join(data, 'k.pem'), RS6_TLS_PORT: String(tlsPort) }; } catch { /* no openssl: that sub-test is skipped */ }
+  const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), '--mock', '--port', String(port), '--host', '127.0.0.1', '--data', data], { stdio: 'ignore', env: { ...process.env, ...tlsEnv, HOST: '127.0.0.1', RS6_SCOPES_TEST_DIR: path.join(__dirname, 'fixtures', 'scopes') } });
   t.after(() => { srv.kill(); fs.rmSync(data, { recursive: true, force: true }); });
   await waitHttp(`${B}/api/state`);
   const browser = await pw.chromium.launch({ args: ['--host-resolver-rules=MAP scopes.test 127.0.0.1'] }); t.after(() => browser.close());
@@ -109,6 +112,14 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     assert.equal(await p2.evaluate(() => window.__scopes.session().path), 'mse');
     assert.match(await p2.textContent('#note'), /secure context|https/);
     await p2.close();
+  });
+
+  await t.test('HTTPS mirror (RS6_TLS_CERT / RS6_TLS_KEY) makes a LAN host name a secure context: WebCodecs, exact Y′', { skip: wc && tlsEnv.RS6_TLS_CERT ? false : 'needs openssl + WebCodecs H.264' }, async () => {
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 800 } }); const p4 = await ctx.newPage();
+    await p4.goto(`https://scopes.test:${tlsPort}/scopes.html?test=1&aw=160&src=builtin:bars.h264`);
+    await p4.waitForFunction(() => window.__scopes && window.__scopes.stats.drawn >= 3, null, { timeout: 20000 });
+    assert.deepEqual(await p4.evaluate(() => [isSecureContext, window.__scopes.session().path, window.__scopes.session().exact]), [true, 'webcodecs', true]);
+    await ctx.close();
   });
 
   await t.test('PTZ group: SCOPES tab opens the scopes on the mock UE150 RTSP stream and stops it when left', { skip: wc ? false : 'no WebCodecs H.264' }, async () => {
