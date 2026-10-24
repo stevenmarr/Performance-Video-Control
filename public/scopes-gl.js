@@ -181,6 +181,7 @@
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, Hc); gl.disable(gl.SCISSOR_TEST); gl.clearColor(0.03, 0.035, 0.04, 1); gl.clear(gl.COLOR_BUFFER_BIT);
       if (!s) return;
       const [aw, ah] = this.analysisSize; const full = this.effFull ? 1 : 0;
+      for (const unit of [3, 4]) { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, null); } // no feedback loops
       // 1. analyze
       const an = this._target('an', aw, ah, false);
       gl.bindFramebuffer(gl.FRAMEBUFFER, an.fb); gl.viewport(0, 0, aw, ah); gl.disable(gl.BLEND);
@@ -196,7 +197,7 @@
       if (panels.wfm) acc('wfm', aw, 512, 0, aw * ah);
       if (panels.parade) acc('parade', aw, 512, 1, aw * ah * 3);
       if (panels.vec) acc('vec', 512, 512, 2, aw * ah);
-      gl.disable(gl.BLEND);
+      gl.disable(gl.BLEND); gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, null);
       // 3. display
       gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.enable(gl.SCISSOR_TEST);
       const vp = (r) => { const [x, y, w, h] = r; gl.viewport(x, Hc - y - h, w, h); gl.scissor(x, Hc - y - h, w, h); };

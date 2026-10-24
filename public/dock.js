@@ -158,11 +158,12 @@
       bar.innerHTML = '<div class="dk-tray" role="toolbar" aria-label="Closed panels"></div><button type="button" class="btn mini dk-lay" aria-haspopup="true" aria-expanded="false"><span class="dk-lay-n">LAYOUT</span> ▾</button><div class="dk-menu" role="dialog" aria-label="Dashboard layout" hidden></div>';
       bar.querySelector('.dk-lay').addEventListener('click', () => { menuOpen = !menuOpen; renderBar(); if (menuOpen) { const i = bar.querySelector('.dk-menu input'); if (i) i.focus(); } });
       document.addEventListener('pointerdown', (e) => { if (menuOpen && !bar.contains(e.target)) { menuOpen = false; renderBar(); } });
-      bar.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menuOpen) { e.stopPropagation(); menuOpen = false; renderBar(); bar.querySelector('.dk-lay').focus(); } });
+      // Esc closes the menu (and still reaches the page: on the PTZ page Esc is ALL STOP)
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menuOpen) { menuOpen = false; renderBar(); if (bar.contains(document.activeElement) || document.activeElement === document.body) bar.querySelector('.dk-lay').focus(); } });
       bar.addEventListener('click', (e) => {
         const b = e.target.closest('[data-dka]'); if (!b) return; const a = b.dataset.dka; const name = b.dataset.name;
         if (a === 'open') return reopen(b.dataset.id);
-        if (a === 'toggle') { const it = layout.find((x) => x.id === b.dataset.id); if (it.closed) reopen(it.id); else close(it.id); return undefined; }
+        if (a === 'toggle') { const it = layout.find((x) => x.id === b.dataset.id); if (it.closed) reopen(it.id, false); else close(it.id); const n = bar.querySelector(`.dk-menu input[data-id="${it.id}"]`); if (n) n.focus(); return undefined; }
         if (a === 'reset') return reset();
         if (a === 'save') { const inp = bar.querySelector('.dk-menu input[name=dkname]'); return savePreset(inp.value); }
         if (a === 'load') return loadPreset(name);
@@ -206,7 +207,7 @@
     function setItem(id, patch) { const l = clone(layout); Object.assign(l.find((x) => x.id === id), patch); return l; }
     function collapse(id, on) { if (!guard()) return; const it = layout.find((x) => x.id === id); const v = on === undefined ? !it.c : !!on; const l = setItem(id, { c: v }); commit(it.f ? l : arrange(l, id, boxOf(id))); }
     function close(id) { if (!guard()) return; const l = setItem(id, { closed: true }); compact(l.filter(inGrid)); commit(l, `${panels.get(id).title} closed — reopen it from the PANELS tray`); }
-    function reopen(id) { if (!guard()) return; const l = setItem(id, { closed: false }); commit(arrange(l, id, boxOf(id))); const p = panels.get(id); if (p) p.head.focus({ preventScroll: true }); }
+    function reopen(id, focus = true) { if (!guard()) return; const l = setItem(id, { closed: false }); commit(arrange(l, id, boxOf(id))); const p = panels.get(id); if (p && focus) p.head.focus({ preventScroll: true }); }
     function float(id) {
       if (!guard()) return; const it = layout.find((x) => x.id === id); const el = panels.get(id).el;
       if (it.f) { commit(arrange(setItem(id, { f: null }), id, boxOf(id))); return; }

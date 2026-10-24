@@ -14,8 +14,8 @@ const { spawnSync, spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const OUT = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : '/workspace/rs6/scopes-test';
-fs.mkdirSync(OUT, { recursive: true });
+const OUT = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : path.join(__dirname, '..', '..', 'scopes-test');
+if (require.main === module) fs.mkdirSync(OUT, { recursive: true });
 const X264 = (range, gop = 30) => ['-c:v', 'libx264', '-preset', 'veryfast', '-tune', 'zerolatency', '-profile:v', 'high', '-bf', '0', '-g', String(gop), '-keyint_min', String(gop),
   '-pix_fmt', 'yuv420p', '-color_range', range, '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709',
   '-x264-params', `repeat-headers=1:colorprim=bt709:transfer=bt709:colormatrix=bt709:range=${range}`, '-b:v', '6M'];
@@ -65,7 +65,7 @@ function encodeRaw(name, W, H, frames, range, makeFrame) {
   });
 }
 
-(async () => {
+async function main() {
   const t0 = Date.now();
   ff(['-f', 'lavfi', '-i', 'smptehdbars=s=1280x720:r=30:d=6', ...X264('tv'), path.join(OUT, 'bars.h264')]); both('bars');
   const legal = rampsFrame(1280, 720, false); const full = rampsFrame(1280, 720, true);
@@ -88,4 +88,6 @@ function encodeRaw(name, W, H, frames, range, makeFrame) {
     '  bars1080.h264/.mp4    1920x1080 59.94p bars + moving box (performance)',
     '  *.yuv                 raw I420 frames (ramps source frame; --frames: decoded frame 0 of bars / moving)', ''].join('\n'));
   console.log(`done in ${Date.now() - t0} ms -> ${OUT}`);
-})().catch((e) => { console.error(e.message); process.exit(1); });
+}
+module.exports = { rampsFrame, ycc, WEDGE, PATCHES, SKIN };
+if (require.main === module) main().catch((e) => { console.error(e.message); process.exit(1); });

@@ -995,6 +995,7 @@ details.xp>summary small{color:var(--dim);font-weight:700}
 .dk-b{width:26px;height:24px;padding:0;border-radius:6px;background:transparent;border:1px solid transparent;color:#7b8a9c;font-size:13px;line-height:1;cursor:pointer}
 .dk-b:hover,.dk-b:focus-visible{background:#10151b;border-color:var(--line);color:#dfe8f5}.dk-b.on{color:#ffd35c}
 .dk-body{flex:1 1 auto;min-height:0;overflow:auto;padding:8px 10px 10px;display:flex;flex-direction:column;container:dk / size}
+#pane-pctl .rcp>.dk-panel[hidden]{display:none}
 .dk-collapsed>.dk-body,.dk-collapsed>.dk-rz{display:none}
 .dk-collapsed>.dk-head{border-bottom:0;border-radius:12px}
 .dk-rz{position:absolute;z-index:4;touch-action:none;display:block}
