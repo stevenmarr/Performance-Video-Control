@@ -144,3 +144,22 @@ Known disagreements between references:
 - \`_MvC\` from V8.1.1: LibAtem puts the window count in byte 0, atem-connection reads byte 1. The driver follows
   atem-connection; the mock writes both. Check on hardware.
 - \`KeFS\`: LibAtem reads *running to keyframe* at byte 4, atem-connection *is at keyframe* at byte 6. Both are parsed.
+
+## Protocol commands added in 0.11.0 (unverified)
+
+None of these has been sent to a real switcher. Their encodings come from atem-connection 3.10.3 and are checked
+only against the mock (`test/atem-audio-desk.test.js`, `test/ui-desk-save.test.js`). **Try them on a spare
+switcher before a show.**
+
+| Command | Used by | Bytes (from atem-connection 3.10.3) |
+|---|---|---|
+| `SRsv` | SAVE → *also save the ATEM startup state* | 4 zero bytes |
+| `RICD` | DESK ZERO (Fairlight): reset an input's dynamics | 20 bytes: u16 input index @0, source (i64) @8, reset bits `0b1111` @17 |
+| `RICE` | DESK ZERO (Fairlight): reset an input's EQ | flag 1 @0, u16 input index @2, source (i64) @8, equalizer 1 @16 |
+| `RMOD` | DESK ZERO (Fairlight): reset the master dynamics | 4 bytes, reset bits `0b1111` @1 |
+| `RMOE` | DESK ZERO (Fairlight): reset the master EQ | `[1, 1, 0, 0]` |
+
+The rest of MUTE ALL and DESK ZERO uses commands that were already in 0.10.0 (`CAMI`, `CAMM`, `CFSP`, `CFMP`).
+DESK ZERO sets gain 0 dB, balance centre, EQ off and EQ gain / make-up 0, and resets dynamics. It does not change
+mix (on / off / AFV), routing, delay, monitor or solo. MUTE ALL remembers each input's mix and UN-MUTE ALL restores
+only the inputs it muted.

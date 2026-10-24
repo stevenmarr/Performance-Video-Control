@@ -257,6 +257,54 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ---
 
+## v0.11.0: every M/E, router drag, audio monitor, desk SAVE, auto recall / bail-to, compact SYSTEMS, two-row tabs, PTZ layout
+
+- **Every M/E** on 2 M/E and 4 M/E switchers: the SWITCHER and DVE / SS / KEYS pages share one M/E selector, and
+  wide screens show the M/Es side by side. Long input names are used everywhere they fit.
+- **ROUTER**: M/E program / preview are no longer listed as outputs (the API still takes `me:` output keys). MP key /
+  mask sources are under **ADVANCED**. A source palette sits beside the outputs. Drag a source onto an output, or drag
+  one output onto another to copy its source. On touch, press and hold, then drag. A quick swipe still scrolls.
+  You can also tap a source to arm it and then tap outputs.
+- **AUDIO**: a **MONITOR** area. Drag channels into it (or tap 👁). The list is saved per install. Also new:
+  **MUTE ALL / UN-MUTE ALL**, and **DESK ZERO** behind a confirmation dialog. API: ATEM ops `audioMuteAll {mute}` and
+  `audioDeskZero {confirm: true}` (without `confirm: true` the server answers 400).
+- **SAVE** on the switcher pages (RS6, E2 / PixelHue, ATEM) saves the show. On an ATEM it can also save the
+  switcher's startup state (`SRsv`, unverified). API: `POST /api/sys/:sys/save {startup}`.
+- **AUTO RECALL / BAIL TO** (RS6, E2, PixelHue): after a TAKE or CUT, the app loads a "bail to" preset onto
+  Preview. It never takes it, so the next TAKE is a safe look. Settings, in order of precedence:
+  1. the **preset**'s own setting (ON / OFF, optionally with its own target)
+  2. its **group**: groups of presets, or of destinations, each with an enable switch and a target. The first
+     matching group wins. A preset set ON explicitly overrides a group that is OFF.
+  3. the **show default** bail-to preset
+
+  One **universal switch** turns all of it off. The page header shows the active bail target, tiles carry a chip
+  (G = from a group, D = from the default), and a manual recall cancels a pending auto recall. Everything is kept
+  in show files and is backward compatible (format 2, additive). API: RS6 `POST /api/presets/:n/followup
+  {followUp}`, `GET|POST /api/followup {enabled, default, delayMs, groups}`; E2 / PixelHue `POST
+  /api/sys/:sys/presets/:key/followup` and `POST /api/sys/:sys/followup`. `followUp` is `null` (inherit),
+  `{enabled?, target?}`, `0` (off) or a target preset.
+- **SYSTEMS** is a dense **LIST** by default (COMPACT and CARDS remain), with search and status chips (ALL, ONLINE,
+  ISSUES, ON DESK, NOT SET UP). ⚙ on a row opens its settings.
+- **Tabs in two rows** ([docs/navigation.md](docs/navigation.md)): ⌂ SYSTEMS plus one button per system group on the
+  desk, in a fixed order with a status led. Below it are the selected group's pages. Each row scrolls sideways
+  when it does not fit, and a group button returns to the page last used in that group.
+- **PTZ CAMERA CONTROL**: R / B gain and R / G / B / master pedestal are one compact matrix. Rarely used controls
+  (auto-iris setup, synchro, ELC limit, skin detail, linear matrix, chroma phase, bars setup) are in closed
+  expanders. Panels can be rearranged: drag a panel's ⠿ grip onto another panel to swap them (touch: hold, then
+  drag; keyboard: arrow keys on the grip). The layout is saved per install, and **↺ RESET LAYOUT** restores the
+  default.
+- **AW-UE150 is the default PTZ profile**: a camera whose model is not known yet gets the UE150 command set. A model
+  the camera reports still decides. The UE150 shutter and auto-iris codes were checked against the Panasonic
+  interface spec v2.94: auto iris `#D31` / `#D30`, shutter mode `OSJ:03`, step `OSJ:06` (4-hex denominator, with
+  1/125 removed because the camera does not offer it), synchro `OSJ:09`. New in the catalog: auto iris speed
+  `OSJ:01`, window `OSJ:02`, close limit `OSJ:C0`, picture level `OSD:48` and ELC limit `OSD:BF`.
+- **Per-install UI preferences**: `GET /api/ui-prefs`, `POST /api/ui-prefs/<key> {value}` (null deletes). They are
+  kept in systems.json, so every browser on the install shares them.
+- API stays **9** because every change is additive. New features: `uiPrefs deskSave followUp followUpGroups
+  atemMuteAll atemDeskZero`.
+- Unverified on hardware: ATEM `SRsv`, `RICD`, `RICE`, `RMOD`, `RMOE` (see [docs/atem-models.md](docs/atem-models.md)),
+  and the new UE150 commands above (they are taken from the spec but have not been tried on a camera).
+
 ## v0.10.0: ATEM models, ROUTER, AUDIO, DVE / SS / KEYS (API 9)
 
 - **Model profiles.** 18 ATEM profiles (Mini to Constellation 8K, the Production / Broadcast Studio 4K family;

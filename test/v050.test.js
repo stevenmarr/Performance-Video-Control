@@ -179,6 +179,9 @@ test('GET /api/version and apiVersion in the state', async () => {
     assert.equal(v.appVersion, require('../package.json').version);
     for (const f of ['swap', 'tileCount', 'shows', 'longpoll']) assert.ok(v.features.includes(f), f);
     assert.deepEqual(v.tileCounts, [24, 48, 72, 96]);
+    // 0.11.0: additive features, API stays 9
+    assert.equal(require('../package.json').version, '0.11.0');
+    for (const f of ['uiPrefs', 'deskSave', 'followUp', 'followUpGroups', 'atemMuteAll', 'atemDeskZero']) assert.ok(v.features.includes(f), f);
     const st = (await call('GET', '/api/state')).json;
     assert.equal(st.apiVersion, 9); for (const f of ['atem', 'ptz', 'sysLongpoll', 'sysViews', 'ptzCatalog', 'companionGateway']) assert.ok(v.features.includes(f), f); assert.equal(st.appVersion, v.appVersion);
   });
