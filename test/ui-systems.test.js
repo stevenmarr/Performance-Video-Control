@@ -214,7 +214,8 @@ test('Control Center 0.9.8: CAMERA CONTROL fills 1280 / 1440 / 1920 (no dead zon
   const metrics = () => page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: innerWidth,
     gaps: [...document.querySelectorAll('#pane-pctl .rcp>.panel')].map((p) => { const r = p.getBoundingClientRect(); const bot = Math.max(...[...p.children].filter((k) => k.offsetParent !== null).map((k) => k.getBoundingClientRect().bottom)); return [p.className, r.bottom - bot]; }),
     cards: [...document.querySelectorAll('#pane-pctl .pcard:not(.hide)')].length, tabs: getComputedStyle(document.querySelector('#ptzPaintTabs .ptab')).display !== 'none' }));
-  for (const [w, h, allCards] of [[1920, 1080, true], [1440, 900, false], [1280, 800, true]]) {
+  // 0.11.1 dock defaults: 1200–1599 px gives PAINT a full-width row (as 1280 did), so 1440 also shows every group
+  for (const [w, h, allCards] of [[1920, 1080, true], [1440, 900, true], [1280, 800, true]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(500);
     const m = await metrics();
     assert.ok(m.sw <= m.w, `${w}: no sideways scroll (${m.sw})`);
