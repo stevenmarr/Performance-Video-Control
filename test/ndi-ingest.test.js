@@ -100,7 +100,7 @@ test('scopes: mock NDI fixtures and a sidecar push share the RTSP relay path', a
   const port = srv.address().port; const B = `http://127.0.0.1:${port}`;
 
   const listed = await (await fetch(`${B}/api/scopes/ndi`)).json();
-  assert.equal(listed.receive, 'sidecar'); assert.equal(listed.inProcess, false);
+  assert.equal(listed.receive, 'sidecar'); assert.equal(listed.inProcess, false); assert.equal(listed.mock, true);
   assert.equal(listed.ingest, 'loopback');
   assert.ok(listed.sources.some((s) => s.key === 'ndi:mock-bars' && s.kind === 'ndi' && s.via === 'mock' && s.ok));
   assert.ok(listed.sources.some((s) => s.key === 'ndi:mock-ramps' && s.via === 'mock'));

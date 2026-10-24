@@ -42,7 +42,7 @@
     <button type="button" class="tgrp" data-tabgrp="ptz" hidden><i class="led"></i>PTZ</button>
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
-    <button type="button" class="tgrp tgrp-eng" data-tabgrp="lightning" title="Lightning: engineering scopes on an NDI ingest"><i class="led ok"></i>LIGHTNING</button>
+    <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. NDI is an input, from a Mac sidecar or --mock fixtures.">SCOPES</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
@@ -67,15 +67,14 @@
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
   <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
   <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras" data-sys="ptz">CAMERAS</button>
-  <button class="tab x-only" data-tab="pscopes" data-cap="ptzCameras" data-sys="ptz" title="Shortcut to Lightning scopes (waveform, parade, vectorscope, false colour)">SCOPES</button>
+  <button class="tab x-only" data-tab="pscopes" data-cap="ptzCameras" data-sys="ptz" title="Shortcut into the SCOPES tab (same pane). Lightning is a scope mode, not a separate tab.">SCOPES</button>
   <span class="tab-group x-only pixera-grp" data-grp="pixera">PIXERA</span>
   <button class="tab x-only" data-tab="pxplay" data-cap="pixeraTransport" data-sys="pixera">TIMELINES</button>
   <button class="tab x-only" data-tab="pxcues" data-cap="pixeraCues" data-sys="pixera">CUES</button>
   <span class="tab-group x-only millumin-grp" data-grp="millumin">MILLUMIN</span>
   <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin">COLUMNS</button>
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
-  <span class="tab-group" data-grp="lightning">LIGHTNING</span>
-  <button class="tab" data-tab="lightning" data-sys="lightning" title="Waveform, RGB parade, vectorscope, false colour and zebra">SCOPES</button>
+  <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. NDI sources come from --mock or a Mac sidecar.</span>
   </div>
 </nav>
 
@@ -190,7 +189,7 @@
         <button type="button" class="btn mini primary" id="tslSave">SAVE MAP</button>
         <button type="button" class="btn mini" id="tslTick">SEND NOW</button>
       </div>
-      <div class="note small">Tallies are their own setup on this SYSTEMS page. They are separate from Lightning. UDP is limited to <code>127.0.0.1</code> / <code>::1</code> in this build. Default port <b>8900</b> (configurable). Address map is saved with the show.</div>
+      <div class="note small">Tallies are their own setup on this SYSTEMS page. They are separate from Scopes. UDP is limited to <code>127.0.0.1</code> / <code>::1</code> in this build. Default port <b>8900</b> (configurable). Address map is saved with the show.</div>
       <table class="tsl-table" id="tslTable"><thead><tr><th>#</th><th>LABEL</th><th>ATEM IN</th><th>PTZ CAM</th><th></th></tr></thead><tbody></tbody></table>
       <div class="tsl-row"><button type="button" class="btn mini" id="tslAdd">＋ ADDRESS</button><span id="tslMsg" class="cc-msg"></span></div>
       <div class="section-title" style="margin-top:10px">LAST PACKETS <small>mock / loopback log</small></div>
@@ -404,29 +403,32 @@
     <div class="section-title" style="margin-top:18px">COMMAND REFERENCE <small>every command the dashboard can send to the selected camera, with its source (Companion module action or Panasonic spec)</small></div>
     <div id="ptzRef" class="rows ref"></div>
   </section>
-  <!-- Lightning: NDI ingest into the engineering scopes. TSL tallies stay on SYSTEMS. public/scopes-tab.js -->
-  <section class="grid-wrap pane" id="pane-lightning" hidden>
-    <div class="lightning-head">
-      <div class="section-title">LIGHTNING <small>NDI ingest · waveform · RGB parade · vectorscope · false colour · zebra</small></div>
+  <!-- SCOPES: persistent engineering tab. Lightning is a mode inside the scope strip. NDI is an input path. public/scopes-tab.js -->
+  <section class="grid-wrap pane" id="pane-scopes" hidden>
+    <div class="scopes-head">
+      <div class="section-title">SCOPES <small>waveform · RGB parade · vectorscope · Lightning (Y / R−Y / B−Y) · false colour · zebra</small></div>
       <span class="spacer"></span>
-      <a class="btn mini" href="/lightning.html" target="_blank" rel="noopener" title="Open standalone Lightning / scopes page">⤢ WINDOW</a>
-      <button type="button" class="btn mini" id="btnLightningNdi" title="How the Mac sidecar receives NDI">HOW TO RECEIVE</button>
+      <a class="btn mini" href="/scopes.html" target="_blank" rel="noopener" title="Open Scopes in their own window">⤢ WINDOW</a>
+      <button type="button" class="btn mini" id="btnNdiRefresh" title="Re-read mock fixtures and sidecar feeds">⟳ REFRESH</button>
     </div>
-    <aside id="lightningNdi" class="lightning-ndi">
-      <div class="section-title">NDI INGEST <small>pick a source · scopes run on that feed · the app does not open NDI</small></div>
-      <div id="ndiSources" class="ndi-sources" role="listbox" aria-label="NDI sources"></div>
+    <aside id="scopesNdi" class="scopes-ndi">
+      <div class="section-title">SIDECAR / DISCOVERED NDI <small>the list only shows sources that already exist</small></div>
+      <p class="note small">You cannot type a new name into this list. A source appears when the app is running with <b>--mock</b> (fixture clips) or when a Mac sidecar is pushing H.264. This page does not discover NDI, and the Pi does not run an NDI SDK.</p>
+      <div class="ndi-block"><h4>MOCK FIXTURES</h4><div id="ndiMock" class="ndi-sources" role="listbox" aria-label="Mock NDI fixtures"></div></div>
+      <div class="ndi-block"><h4>SIDECAR FEEDS</h4><div id="ndiSide" class="ndi-sources" role="listbox" aria-label="Sidecar NDI feeds"></div></div>
       <p class="note small" id="ndiStatus"></p>
-      <div id="ndiHow" class="ndi-how" hidden>
-        <p>A browser cannot open NDI. A <b>Mac sidecar</b> receives the source and pushes H.264 into the same relay the camera RTSP path already uses. The Pi does not receive NDI.</p>
-        <pre class="ndi-cmd">node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080
-node tools/ndi-sidecar.js --ndi "SOURCE NAME" --app http://127.0.0.1:8080</pre>
-        <p class="note small"><code>--ndi</code> is macOS only. It needs ffmpeg built with <code>libndi_newtek</code>, or <code>RS6_NDI_RECV</code> pointing at a helper that writes Annex-B H.264 to stdout. <code>--mock</code> needs no hardware. See <code>docs/ndi-ingest.md</code>.</p>
+      <div id="ndiHow" class="ndi-how">
+        <p>On a Mac, discover sources, then receive one. The sidecar pushes H.264 into Control Center. Scopes read that feed the same way they read a camera RTSP stream.</p>
+        <pre class="ndi-cmd" id="ndiCmds">node tools/ndi-sidecar.js --list
+node tools/ndi-sidecar.js --ndi "NAME" --app http://127.0.0.1:8080
+node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080</pre>
+        <p class="note small"><code>--list</code> and <code>--ndi</code> are macOS only. They need ffmpeg built with <code>libndi_newtek</code>, or <code>RS6_NDI_RECV</code> pointing at a helper that writes Annex-B H.264 to stdout. <code>--mock</code> needs no hardware. See <code>docs/ndi-ingest.md</code>.</p>
       </div>
     </aside>
-    <iframe id="scopesFrame" title="Lightning scopes" style="display:block;width:100%;border:0;border-radius:8px;background:#121212"></iframe>
+    <iframe id="scopesFrame" title="Scopes" style="display:block;width:100%;border:0;border-radius:8px;background:#121212"></iframe>
   </section>
   <section class="grid-wrap pane" id="pane-pscopes" hidden>
-    <div class="note small" style="margin:8px 12px">PTZ → SCOPES opens the same Lightning scopes. Prefer the <b>LIGHTNING</b> tab for engineering.</div>
+    <div class="note small" style="margin:8px 12px">PTZ → SCOPES is a shortcut into the same Scopes pane. The persistent tab is <b>SCOPES</b> on the top row. Lightning is a mode in the scope strip (Y / R−Y / B−Y), not its own tab.</div>
     <div id="pscopesHost"></div>
   </section>
 

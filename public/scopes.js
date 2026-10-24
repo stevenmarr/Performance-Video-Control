@@ -9,7 +9,7 @@
   'use strict';
   const $ = (s) => document.querySelector(s);
   const Q = new URLSearchParams(location.search);
-  const onLightning = Q.get('lightning') === '1' || /\/lightning(?:\.html)?$/.test(location.pathname);
+  const preferNdi = Q.get('prefer') === 'ndi' || /\/lightning(?:\.html)?$/.test(location.pathname);
   const LS = (k, v) => { const key = `cc.scopes.${k}`; if (v === undefined) return localStorage.getItem(key); if (v === null) localStorage.removeItem(key); else localStorage.setItem(key, String(v)); return v; };
   if (Q.get('embed')) document.body.classList.add('embed');
   const TEST = Q.get('test') === '1';
@@ -46,6 +46,7 @@
       const k = p.dataset.k;
       if (k === 'pic') { const ar = st.cfg ? st.cfg.width / st.cfg.height : 16 / 9; r = fit(r, ar); }
       if (k === 'vec') r = fit(r, 1);
+      if (k === 'ltng') r = fit(r, 2);
       rects[k] = r.map(Math.round);
     }
     dirty = true; overlayDirty = true;
@@ -54,7 +55,7 @@
   function drawOverlay() {
     overlayDirty = false; octx.clearRect(0, 0, ov.width, ov.height);
     const dpr = window.devicePixelRatio || 1; const full = G ? G.effFull : false;
-    for (const k of ['wfm', 'parade', 'vec']) if (rects[k]) M.drawGraticule(octx, k, rects[k], { full, dpr, vgain: st.vgain });
+    for (const k of ['wfm', 'parade', 'vec', 'ltng']) if (rects[k]) M.drawGraticule(octx, k, rects[k], { full, dpr, vgain: st.vgain });
     if (rects.pic) { octx.font = `${Math.round(10 * dpr)}px ui-monospace, Menlo, monospace`; octx.fillStyle = 'rgba(255,255,255,0.6)'; octx.fillText(['PICTURE', 'FALSE COLOUR', `ZEBRA ≥ ${st.zebra} %`][st.view] || '', rects.pic[0] + 6 * dpr, rects.pic[1] + 14 * dpr); }
   }
   new ResizeObserver(layout).observe($('#stage'));
@@ -109,21 +110,41 @@
 
   // ---------- sources ----------
   let ndiPreferApplied = false;
+  // The menu is a list of sources that already exist. A disabled row explains an empty group.
+  // Operators cannot type a new NDI name into it.
+  function sourceMenu(sources, mockOn) {
+    const buckets = [
+      { label: 'Sidecar / discovered NDI', items: sources.filter((s) => s.kind === 'ndi' && s.via === 'sidecar'), empty: 'No sidecar feed — ndi-sidecar.js --list, then --ndi "NAME"' },
+      { label: 'Mock fixtures (--mock)', items: sources.filter((s) => s.kind === 'ndi' && s.via === 'mock'), empty: mockOn ? 'No fixture files found' : 'Not listed. Start the app with --mock' },
+      { label: 'Cameras', items: sources.filter((s) => s.kind === 'camera'), empty: '' },
+      { label: 'Test clips and custom', items: sources.filter((s) => s.kind !== 'ndi' && s.kind !== 'camera'), empty: '' },
+    ];
+    const html = buckets.map((b) => {
+      if (!b.items.length && !b.empty) return '';
+      const opts = b.items.map((s) => `<option value="${esc(s.key)}" ${s.ok ? '' : 'data-noh264="1"'}>${esc(s.label)}${s.ok ? '' : ' — JPEG only'}</option>`).join('');
+      const hole = !b.items.length ? `<option disabled value="">${esc(b.empty)}</option>` : '';
+      return `<optgroup label="${esc(b.label)}">${opts}${hole}</optgroup>`;
+    }).join('');
+    return html || '<option value="">no sources</option>';
+  }
   async function loadSources() {
+    const first = !st.sources.length;
     const r = await fetch('/api/scopes/sources').then((x) => x.json());
-    st.sources = r.sources; st.settings = r.settings; st.ndi = r.ndi || null;
+    st.sources = r.sources; st.settings = r.settings; st.ndi = r.ndi || null; st.mock = !!r.mock;
     const sel = $('#src');
-    sel.innerHTML = r.sources.map((s) => `<option value="${esc(s.key)}" ${s.ok ? '' : 'data-noh264="1"'}>${esc(s.label)}${s.ok ? '' : ' — JPEG only'}</option>`).join('') || '<option value="">no sources</option>';
-    if (!r.sources.some((s) => s.key === st.src)) st.src = (r.sources.find((s) => s.kind === 'camera' && s.ok) || r.sources[0] || {}).key || '';
-    // Lightning opens on an NDI ingest. PTZ → SCOPES keeps the camera preference.
-    if (!ndiPreferApplied && (Q.get('prefer') === 'ndi' || onLightning)) {
-      ndiPreferApplied = true;
-      const ndi = r.sources.find((s) => s.kind === 'ndi' && s.ok);
-      const cur = r.sources.find((s) => s.key === st.src);
-      if (ndi && (!cur || cur.kind !== 'ndi')) { st.src = ndi.key; LS('src', st.src); }
+    sel.innerHTML = sourceMenu(r.sources, st.mock);
+    if (first) {
+      if (!r.sources.some((s) => s.key === st.src)) st.src = (r.sources.find((s) => s.kind === 'camera' && s.ok) || r.sources[0] || {}).key || '';
+      // The SCOPES tab prefers an NDI ingest. PTZ → SCOPES keeps the camera preference.
+      if (!ndiPreferApplied && preferNdi) {
+        ndiPreferApplied = true;
+        const ndi = r.sources.find((s) => s.kind === 'ndi' && s.ok);
+        const cur = r.sources.find((s) => s.key === st.src);
+        if (ndi && (!cur || cur.kind !== 'ndi')) { st.src = ndi.key; LS('src', st.src); }
+      }
     }
-    sel.value = st.src;
-    announce();
+    if ([...sel.options].some((o) => o.value === st.src)) sel.value = st.src;
+    if (first) announce();
     return r;
   }
 
@@ -359,9 +380,23 @@
     // Y′ level (%) histogram rows of the waveform: which display rows got samples for columns [c0, c1)
     waveformLevels(c0, c1) { const t = G.readTarget('wfm'); const out = []; for (let y = 0; y < t.h; y++) { let s = 0; for (let x = Math.floor(c0 * t.w); x < Math.ceil(c1 * t.w); x++) s += t.data[y * t.w + x]; if (s > 0) out.push({ level: M.WFM_LO * 100 + ((y + 0.5) / t.h) * (M.WFM_HI - M.WFM_LO) * 100, count: s }); } return out; },
     vectorPeaks(min = 0) { const t = G.readTarget('vec'); const out = []; for (let y = 0; y < t.h; y++) for (let x = 0; x < t.w; x++) { const v = t.data[y * t.w + x]; if (v > min) out.push({ pb: ((x + 0.5) / t.w * 2 - 1) / (M.VEC_SCALE * st.vgain), pr: ((y + 0.5) / t.h * 2 - 1) / (M.VEC_SCALE * st.vgain), count: v }); } return out; },
+    // Lightning accumulation: side 'by' (B−Y, left) or 'ry' (R−Y, right), Y in 0..1
+    lightningPeaks(min = 0) {
+      const t = G.readTarget('ltng'); if (!t) return []; const g = st.vgain || 1; const out = [];
+      for (let y = 0; y < t.h; y++) for (let x = 0; x < t.w; x++) {
+        const v = t.data[y * t.w + x]; if (v <= min) continue;
+        const xClip = ((x + 0.5) / t.w) * 2 - 1; const yClip = ((y + 0.5) / t.h) * 2 - 1;
+        const side = xClip < 0 ? 'by' : 'ry'; const cx = side === 'by' ? -0.5 : 0.5;
+        const cd = (xClip - cx) / (M.LTNG_X * g); const Y = yClip / M.LTNG_Y + 0.5;
+        out.push({ side, y: Y, pb: side === 'by' ? -cd : 0, pr: side === 'ry' ? cd : 0, count: v });
+      }
+      return out;
+    },
     start, stop, loadSources,
   };
 
   syncUi(); layout();
   loadSources().then(() => { if (st.playing && !Q.get('idle')) start(); }).catch((e) => showMsg('Cannot list sources', esc(e.message)));
+  // A sidecar can connect after the page is open. Refresh the menu; do not restart the live source.
+  setInterval(() => { if (!document.hidden) loadSources().catch(() => {}); }, 4000);
 })();

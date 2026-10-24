@@ -95,6 +95,26 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     await page.selectOption('#range', 'full');
     assert.equal(bandOf(await page.evaluate(([x]) => window.__scopes.pictureAt(x, 0.375), [last / W])), 'GREY', 'full range: 92 %');
     await page.selectOption('#range', 'auto');
+    // Lightning is a real component vectorscope: 75 % bars land on B−Y (left) and R−Y (right) at that Y
+    await page.click('[data-show="ltng"]');
+    await page.evaluate(() => window.__scopes.render());
+    const ltng = await page.evaluate((want) => {
+      const peaks = window.__scopes.lightningPeaks(12);
+      return {
+        n: peaks.length,
+        hits: want.map((t) => ({
+          name: t.name,
+          by: peaks.some((q) => q.side === 'by' && Math.abs(q.pb - t.pb) < 0.03 && Math.abs(q.y - t.y) < 0.05),
+          ry: peaks.some((q) => q.side === 'ry' && Math.abs(q.pr - t.pr) < 0.03 && Math.abs(q.y - t.y) < 0.05),
+        })),
+      };
+    }, SM.targets().filter((t) => t.amp === 0.75));
+    assert.ok(ltng.n > 6, 'Lightning accumulated component samples');
+    for (const h of ltng.hits) {
+      assert.ok(h.by, `Lightning B−Y has 75 % ${h.name}`);
+      assert.ok(h.ry, `Lightning R−Y has 75 % ${h.name}`);
+    }
+    await page.click('[data-show="ltng"]');
     // toggles: hide PARADE and VEC -> two panels side by side
     await page.click('[data-show="parade"]'); await page.click('[data-show="vec"]');
     const r = await page.evaluate(() => window.__scopes.rects());
@@ -140,25 +160,31 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     await p3.close();
   });
 
-  await t.test('Lightning tab: NDI ingest picker runs scopes on a mock NDI source', { skip: wc ? false : 'no WebCodecs H.264' }, async () => {
+  await t.test('SCOPES tab: NDI picker runs scopes on a mock fixture; Lightning is a mode', { skip: wc ? false : 'no WebCodecs H.264' }, async () => {
     const p4 = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     await p4.goto(`${B}/`); await p4.waitForTimeout(400);
     await p4.evaluate(() => localStorage.setItem('cc.scopes.src', 'builtin:bars.h264'));
-    await openTab(p4, 'lightning');
-    assert.equal(await p4.locator('#pane-lightning').isVisible(), true);
-    assert.match(await p4.locator('#lightningNdi').innerText(), /NDI INGEST/);
-    await p4.locator('.ndi-src[data-key="ndi:mock-bars"]').waitFor();
+    await openTab(p4, 'scopes');
+    assert.equal(await p4.locator('#pane-scopes').isVisible(), true);
+    assert.equal(await p4.locator('.tgrp[data-tabgrp=lightning]').count(), 0);
+    assert.match(await p4.locator('#scopesNdi').innerText(), /SIDECAR \/ DISCOVERED NDI/);
+    assert.match(await p4.locator('#ndiHow').innerText(), /ndi-sidecar\.js --list/);
+    assert.match(await p4.locator('#ndiHow').innerText(), /--ndi "NAME"/);
+    assert.match(await p4.locator('#ndiMock').innerText(), /MOCK BARS/);
+    await p4.locator('.ndi-src[data-key="ndi:mock-bars"][data-via="mock"]').waitFor();
     await p4.click('.ndi-src[data-key="ndi:mock-bars"]');
-    await p4.click('#btnLightningNdi');
-    assert.equal(await p4.locator('#ndiHow').isVisible(), true);
     const f = p4.frameLocator('#scopesFrame');
     await f.locator('#ro').waitFor({ timeout: 10000 });
+    await f.locator('[data-show="ltng"]').waitFor();
+    assert.equal(await f.locator('[data-show="wfm"]').count(), 1);
+    assert.equal(await f.locator('[data-show="parade"]').count(), 1);
+    assert.equal(await f.locator('[data-show="vec"]').count(), 1);
+    assert.equal(await f.locator('[data-view="1"]').count(), 1);
     const fr = p4.frame({ url: /scopes\.html/ });
     await fr.waitForFunction(() => window.__scopes && window.__scopes.stats.drawn >= 2, null, { timeout: 20000 });
-    // standalone alias
     const r = await fetch(`${B}/lightning.html`);
     assert.equal(r.status, 200);
-    assert.match(await r.text(), /scopes\.js|SOURCE/);
+    assert.match(await r.text(), /data-show="ltng"/);
     await p4.close();
   });
   assert.deepEqual(errors, []);

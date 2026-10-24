@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 'use strict';
-// 0.13.0-dev Lightning tab screenshots → /workspace/rs6/multi/96-lightning-*.png
+// Scopes tab screenshots (Lightning is a mode inside the strip).
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -34,15 +34,14 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await shot('tab-scopes', async (p) => {
     await p.goto(B + '/'); await sleep(600);
     await p.evaluate(() => { localStorage.setItem('cc.scopes.src', 'cam:cam1'); localStorage.setItem('cc.scopes.aw', '640'); });
-    await p.click('.tgrp[data-tabgrp=lightning]'); await sleep(500);
-    await p.click('.tab[data-tab=lightning]');
+    await p.click('.tab[data-tab=scopes]'); await sleep(500);
     const fr = p.frame({ url: /scopes\.html/ });
     if (fr) { try { await fr.waitForFunction(() => window.__scopes && window.__scopes.stats.drawn > 2, null, { timeout: 20000 }); await sleep(1500); await fr.evaluate(() => { window.__scopes.stop(true); window.__scopes.render(); }); } catch { await sleep(2500); } }
     else await sleep(4000);
   });
   await shot('ndi-help', async (p) => {
-    await p.goto(B + '/#lightning'); await sleep(800);
-    await p.click('#btnLightningNdi'); await sleep(400);
+    await p.goto(B + '/#scopes'); await sleep(800);
+    await p.locator('#ndiHow').waitFor(); await sleep(400);
   });
   await shot('standalone', async (p) => {
     await p.goto(`${B}/lightning.html?test=1&aw=640&src=cam:cam1`);
