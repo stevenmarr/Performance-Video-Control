@@ -257,3 +257,26 @@ test('scope maths: false-colour bands, BT.709 levels, vectorscope targets', () =
   assert.ok(Math.abs(r100.pr - 0.5) < 1e-9 && Math.abs(r100.pb + 0.1146) < 1e-3);
   const ang = (Math.atan2(r100.pr, r100.pb) * 180) / Math.PI; assert.ok(ang > 100 && ang < SM.SKIN_ANGLE, 'skin line sits between R and YL');
 });
+
+test('scopes use the camera\'s own UE150 login (CAMERAS tab, 0.11.1) where it exists, read again on every reconnect', async (t) => {
+  const { attachScopes } = require('../lib/scopes/service');
+  const http = require('http');
+  const cam = new MockRtspCamera({ streams: { '/MediaInput/h264/stream_1': BARS } }); const port = await cam.start(0); t.after(() => cam.stop());
+  const conf = { name: 'Cam 1', host: '127.0.0.1', user: 'admin', pass: 'wrong-pass' };
+  const systems = { drivers: { ptz: { cams: new Map([['cam1', { conf, st: { series: 'UE150', data: { model: 'AW-UE150' } } }], ['cam2', { conf: { name: 'Cam 2', host: '127.0.0.1' }, st: { series: 'UE150', data: {} } }]]) } } };
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'scopes-login-')); t.after(() => fs.rmSync(data, { recursive: true, force: true }));
+  const server = http.createServer((q, r) => { r.writeHead(404); r.end(); });
+  const sc = attachScopes(server, { systems, dataDir: data, mock: false });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r)); t.after(async () => { await sc.close(); server.close(); });
+  const B = `http://127.0.0.1:${server.address().port}`;
+  await fetch(`${B}/api/scopes/settings`, { method: 'POST', body: JSON.stringify({ cameras: { cam1: { port, password: '12345' }, cam2: { port } } }) });
+  const s = await (await fetch(`${B}/api/scopes/sources`)).json();
+  assert.equal(s.settings.cameras.cam1.loginFrom, 'camera', 'the camera login wins over the scopes setting');
+  assert.equal(s.settings.cameras.cam2.loginFrom, 'factory');
+  assert.ok(!JSON.stringify(s).includes('wrong-pass') && !JSON.stringify(s).includes('12345'), 'no password in the API');
+  const w = await wsConnect(`${B}/api/scopes/ws?src=cam:cam1`); t.after(() => w.close());
+  await until(() => w.msgs.some((m) => m.type === 'status' && m.state === 'error' && m.auth), 8000);
+  // fix the login on the camera (as the CAMERAS tab LOGIN does): the relay uses it on its next retry
+  conf.pass = '12345';
+  await until(() => w.msgs.filter(Buffer.isBuffer).length >= 3, 25000);
+});

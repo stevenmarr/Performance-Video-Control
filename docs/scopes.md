@@ -66,8 +66,11 @@ The legend is shown in the toolbar.
   - Keep-alive is GET_PARAMETER; the camera's timeout is 120 s.
 - **Login.** Sent only when the camera asks (Digest or Basic).
   - With *User auth.* OFF (factory setting), live video needs no login.
-  - The login used is, in order: the one set in ⚙ INPUTS, then the camera's login in the app, then the factory
-    default `admin` / `12345`.
+  - The login used is, in order: the camera's own login from the PTZ CAMERAS tab (LOGIN, 0.11.1) when one is set,
+    then the one set in ⚙ INPUTS, then the factory default `admin` / `12345`. CGI control and the RTSP stream then
+    use the same account. ⚙ INPUTS shows "camera login (CAMERAS tab)" for those cameras instead of the fields.
+  - The login is read again on every reconnect, so fixing it on the CAMERAS tab heals a rejected stream on the
+    next retry (about 15 s after a refusal) without reopening the SCOPES tab.
   - Passwords are saved in the data folder (`scopes.json`) and the API never returns them.
 - **Other cameras.** HE130/HE40-class cameras have no RTSP H.264; for them JPEG mode shows snapshots only.
   Any other RTSP H.264 source can be used through the custom input (`rtsp://user:pass@host/path`, or a

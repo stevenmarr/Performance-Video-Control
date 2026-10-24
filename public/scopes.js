@@ -155,7 +155,7 @@
   }
   function onPong(m) { const t1 = Date.now(); const rtt = t1 - m.t; if (rtt <= stats.rtt * 1.5 || rtt < 20) { stats.rtt = Math.min(rtt, stats.rtt); stats.offset = m.server - (m.t + rtt / 2); } }
   function onStatus(s, m) {
-    if (m.state === 'error') showMsg(m.auth ? 'Camera login rejected' : 'Stream error', `${esc(m.error)}${m.auth ? '<br>Set the camera\'s user / password under ⚙ INPUTS (factory default admin / 12345).' : ''}<br><small>Retrying…</small>`);
+    if (m.state === 'error') showMsg(m.auth ? 'Camera login rejected' : 'Stream error', `${esc(m.error)}${m.auth ? '<br>Check the camera login on the PTZ CAMERAS tab (or under ⚙ INPUTS; factory default admin / 12345).' : ''}<br><small>Retrying…</small>`);
     else if (m.state === 'connecting') note('Connecting to the stream…');
     else if (m.state === 'playing') { showMsg(null); note(s.path === 'mse' && !canWebCodecs() ? $('#note').textContent : ''); }
   }
@@ -314,7 +314,7 @@
     $('#camTbl tbody').innerHTML = Object.entries(cams).map(([id, c]) => `<tr data-cam="${esc(id)}"><td>${esc(names[id] || id)}<br><small class="hint">${esc(c.url)}</small></td>
       <td><select data-f="stream">${[1, 2, 3, 4].map((n) => `<option ${Number(c.stream) === n ? 'selected' : ''}>${n}</option>`).join('')}</select></td>
       <td><input data-f="path" value="${esc(c.path || '')}" placeholder="${esc(set.cameraDefaults.path)}"></td><td><input data-f="port" value="${esc(c.port || 554)}" style="width:64px"></td>
-      <td><input data-f="user" value="${esc(c.user || '')}" autocomplete="off"></td><td><input data-f="password" type="password" autocomplete="new-password" placeholder="${c.hasPassword ? 'unchanged' : 'none'}"></td></tr>`).join('') || '<tr><td colspan="6" class="hint">No PTZ cameras on the desk (SYSTEMS → PTZ).</td></tr>';
+      ${c.loginFrom === 'camera' ? `<td colspan="2" class="hint" title="Change it on the PTZ CAMERAS tab (LOGIN)">${esc(c.user || '')} · camera login (CAMERAS tab)</td>` : `<td><input data-f="user" value="${esc(c.user || '')}" autocomplete="off"></td><td><input data-f="password" type="password" autocomplete="new-password" placeholder="${c.hasPassword ? 'unchanged' : 'none'}"></td>`}</tr>`).join('') || '<tr><td colspan="6" class="hint">No PTZ cameras on the desk (SYSTEMS → PTZ).</td></tr>';
     $('#testDir').value = set.testDir || ''; $('#custom').value = set.custom || ''; $('#customUser').value = set.customUser || ''; $('#customPassword').value = '';
     $('#dlg').showModal();
   });
