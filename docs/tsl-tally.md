@@ -1,7 +1,10 @@
-# TSL tally (0.13.0-dev)
+# TSL tally (0.20.0)
+
+TSL is its own setup. It is not part of Lightning (the engineering scopes tab).
 
 Control Center is a **TSL 5.0 UDP sender**. It maps switcher **PGM → red** and **PVW → green** onto
-addresses stored with the show file (and in `<dataDir>/tsl.json` while you edit).
+addresses stored with the show file (and in `<dataDir>/tsl.json` while you edit). Open it from
+**⌂ SYSTEMS → TALLIES**.
 
 ## First slice (this build)
 

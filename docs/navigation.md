@@ -18,7 +18,8 @@ The app has two rows of tabs under the header.
   see each system's status.
 * E2 and PixelHue share one group because they share the preset pages. The button shows whichever of the
   two are on the desk, for example `E2 / PIXELHUE`.
-* **LIGHTNING** is always shown (engineering scopes). It is not a device to ADD TO DESK.
+* **LIGHTNING** is always shown (engineering scopes on an NDI ingest). It is not a device to ADD TO DESK.
+  **TALLIES** (TSL) is a card on the SYSTEMS page, not a Lightning page.
 * Tapping a group button opens **the page you last used in that group**. The first time, it opens the
   group's main page (PRESETS, SWITCHER, CAMERA CONTROL, TIMELINES, COLUMNS). The last page is remembered
   in this browser.
@@ -35,7 +36,7 @@ Only the pages of the selected group are shown, always in the same order:
 | PTZ | CAMERA CONTROL · CAMERAS · SCOPES (shortcut into Lightning) |
 | PIXERA | TIMELINES · CUES |
 | MILLUMIN | COLUMNS · LAYER |
-| LIGHTNING | SCOPES (engineering waveform / parade / vectorscope / false colour; always available) |
+| LIGHTNING | SCOPES (NDI ingest → waveform / parade / vectorscope / false colour; always available) |
 
 A page that the connected system does not support is not shown (for example, PixelHue has no CUES).
 On the SYSTEMS page this row shows a short hint instead of tabs.

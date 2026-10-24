@@ -1,5 +1,6 @@
 'use strict';
-// 0.13.0-dev TSL 5.0 tally map UI on SYSTEMS (mock / loopback sender only).
+// TSL 5.0 tally map on SYSTEMS → TALLIES (mock / loopback sender only).
+// Separate from Lightning. Lightning is NDI ingest → scopes.
 (() => {
   const $ = (s) => document.querySelector(s);
   const CC = window.CC;

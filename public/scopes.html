@@ -70,11 +70,10 @@
   <span class="legend" id="legend" hidden></span>
   <button id="btnSettings" title="Camera streams, test video, custom input" style="margin-left:auto">⚙ INPUTS</button>
   <a class="pop" href="/lightning.html" target="_blank" rel="noopener" title="Open Lightning scopes in their own window" style="color:var(--dim);text-decoration:none">⤢ WINDOW</a>
-  <button type="button" id="btnNdi" title="Publish over NDI from a Mac (OBS DistroAV / NDI Tools)">NDI</button>
+  <button type="button" id="btnNdi" title="NDI ingest: pick a source in SOURCE, or run the Mac sidecar">NDI</button>
 </div>
 <aside id="ndiHelp" hidden style="padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);font-size:12px;color:var(--dim)">
-  <b style="color:var(--txt)">NDI path (no SDK on the Pi):</b> open this page full screen on a Mac → publish with <b>OBS DistroAV</b> or <b>NDI Tools</b>. Prefer one composite source first.
-  <label style="margin-left:12px;opacity:.7"><input type="checkbox" disabled> Future Mac sidecar (not available yet)</label>
+  <b style="color:var(--txt)">NDI ingest (this app does not open NDI):</b> pick an <b>NDI ·</b> source above. A Mac sidecar receives NDI and pushes H.264 into the same relay as camera RTSP. <code>node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080</code> plays a fixture with no hardware. <code>--ndi</code> is macOS only. The Pi does not receive NDI. See <code>docs/ndi-ingest.md</code>.
 </aside>
 <div class="stage" id="stage">
   <div class="panels" id="panels">

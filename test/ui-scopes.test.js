@@ -140,14 +140,17 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     await p3.close();
   });
 
-  await t.test('Lightning tab: always available, hosts the same scopes frame + NDI help', { skip: wc ? false : 'no WebCodecs H.264' }, async () => {
+  await t.test('Lightning tab: NDI ingest picker runs scopes on a mock NDI source', { skip: wc ? false : 'no WebCodecs H.264' }, async () => {
     const p4 = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     await p4.goto(`${B}/`); await p4.waitForTimeout(400);
     await p4.evaluate(() => localStorage.setItem('cc.scopes.src', 'builtin:bars.h264'));
     await openTab(p4, 'lightning');
     assert.equal(await p4.locator('#pane-lightning').isVisible(), true);
+    assert.match(await p4.locator('#lightningNdi').innerText(), /NDI INGEST/);
+    await p4.locator('.ndi-src[data-key="ndi:mock-bars"]').waitFor();
+    await p4.click('.ndi-src[data-key="ndi:mock-bars"]');
     await p4.click('#btnLightningNdi');
-    assert.equal(await p4.locator('#lightningNdi').isVisible(), true);
+    assert.equal(await p4.locator('#ndiHow').isVisible(), true);
     const f = p4.frameLocator('#scopesFrame');
     await f.locator('#ro').waitFor({ timeout: 10000 });
     const fr = p4.frame({ url: /scopes\.html/ });

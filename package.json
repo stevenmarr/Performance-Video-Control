@@ -11,7 +11,8 @@
   "scripts": {
     "start": "node server.js",
     "mock": "node server.js --mock",
-    "test": "node --test test/*.test.js"
+    "test": "node --test test/*.test.js",
+    "ndi-sidecar": "node tools/ndi-sidecar.js"
   },
   "dependencies": {}
 }

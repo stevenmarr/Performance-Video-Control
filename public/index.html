@@ -42,7 +42,7 @@
     <button type="button" class="tgrp" data-tabgrp="ptz" hidden><i class="led"></i>PTZ</button>
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
-    <button type="button" class="tgrp tgrp-eng" data-tabgrp="lightning" title="Lightning: engineering scopes"><i class="led ok"></i>LIGHTNING</button>
+    <button type="button" class="tgrp tgrp-eng" data-tabgrp="lightning" title="Lightning: engineering scopes on an NDI ingest"><i class="led ok"></i>LIGHTNING</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
@@ -190,7 +190,7 @@
         <button type="button" class="btn mini primary" id="tslSave">SAVE MAP</button>
         <button type="button" class="btn mini" id="tslTick">SEND NOW</button>
       </div>
-      <div class="note small">UDP is limited to <code>127.0.0.1</code> / <code>::1</code> in this build. Default port <b>8900</b> (configurable). Address map is saved with the show.</div>
+      <div class="note small">Tallies are their own setup on this SYSTEMS page. They are separate from Lightning. UDP is limited to <code>127.0.0.1</code> / <code>::1</code> in this build. Default port <b>8900</b> (configurable). Address map is saved with the show.</div>
       <table class="tsl-table" id="tslTable"><thead><tr><th>#</th><th>LABEL</th><th>ATEM IN</th><th>PTZ CAM</th><th></th></tr></thead><tbody></tbody></table>
       <div class="tsl-row"><button type="button" class="btn mini" id="tslAdd">＋ ADDRESS</button><span id="tslMsg" class="cc-msg"></span></div>
       <div class="section-title" style="margin-top:10px">LAST PACKETS <small>mock / loopback log</small></div>
@@ -404,23 +404,24 @@
     <div class="section-title" style="margin-top:18px">COMMAND REFERENCE <small>every command the dashboard can send to the selected camera, with its source (Companion module action or Panasonic spec)</small></div>
     <div id="ptzRef" class="rows ref"></div>
   </section>
-  <!-- 0.12.0 / 0.13.0-dev Lightning engineering scopes (+ PTZ → SCOPES shortcut). public/scopes-tab.js -->
+  <!-- Lightning: NDI ingest into the engineering scopes. TSL tallies stay on SYSTEMS. public/scopes-tab.js -->
   <section class="grid-wrap pane" id="pane-lightning" hidden>
     <div class="lightning-head">
-      <div class="section-title">LIGHTNING <small>engineering scopes · waveform · RGB parade · vectorscope · false colour · zebra</small></div>
+      <div class="section-title">LIGHTNING <small>NDI ingest · waveform · RGB parade · vectorscope · false colour · zebra</small></div>
       <span class="spacer"></span>
       <a class="btn mini" href="/lightning.html" target="_blank" rel="noopener" title="Open standalone Lightning / scopes page">⤢ WINDOW</a>
-      <button type="button" class="btn mini" id="btnLightningNdi" title="How to publish scopes over NDI from a Mac">NDI HELP</button>
+      <button type="button" class="btn mini" id="btnLightningNdi" title="How the Mac sidecar receives NDI">HOW TO RECEIVE</button>
     </div>
-    <aside id="lightningNdi" class="lightning-ndi" hidden>
-      <div class="section-title">NDI FROM LIGHTNING <small>no NDI SDK on the Pi — Mac / OBS path</small></div>
-      <ol class="ndi-steps">
-        <li>On a show Mac, open <code>/lightning.html</code> (or <code>/scopes.html</code>) full screen.</li>
-        <li>Publish that window with <b>OBS + DistroAV</b> (ex OBS-NDI) or <b>NDI Tools</b> Scan Converter.</li>
-        <li>Start with <b>one composite</b> NDI source (picture + scopes together).</li>
-      </ol>
-      <label class="chk ndi-future"><input type="checkbox" id="ndiSidecar" disabled> Future: Mac sidecar publish (not available yet)</label>
-      <p class="note small">The Pi app stays relay-only (no NDI npm deps). See <code>docs/scopes.md</code>.</p>
+    <aside id="lightningNdi" class="lightning-ndi">
+      <div class="section-title">NDI INGEST <small>pick a source · scopes run on that feed · the app does not open NDI</small></div>
+      <div id="ndiSources" class="ndi-sources" role="listbox" aria-label="NDI sources"></div>
+      <p class="note small" id="ndiStatus"></p>
+      <div id="ndiHow" class="ndi-how" hidden>
+        <p>A browser cannot open NDI. A <b>Mac sidecar</b> receives the source and pushes H.264 into the same relay the camera RTSP path already uses. The Pi does not receive NDI.</p>
+        <pre class="ndi-cmd">node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080
+node tools/ndi-sidecar.js --ndi "SOURCE NAME" --app http://127.0.0.1:8080</pre>
+        <p class="note small"><code>--ndi</code> is macOS only. It needs ffmpeg built with <code>libndi_newtek</code>, or <code>RS6_NDI_RECV</code> pointing at a helper that writes Annex-B H.264 to stdout. <code>--mock</code> needs no hardware. See <code>docs/ndi-ingest.md</code>.</p>
+      </div>
     </aside>
     <iframe id="scopesFrame" title="Lightning scopes" style="display:block;width:100%;border:0;border-radius:8px;background:#121212"></iframe>
   </section>

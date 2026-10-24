@@ -9,6 +9,7 @@
   'use strict';
   const $ = (s) => document.querySelector(s);
   const Q = new URLSearchParams(location.search);
+  const onLightning = Q.get('lightning') === '1' || /\/lightning(?:\.html)?$/.test(location.pathname);
   const LS = (k, v) => { const key = `cc.scopes.${k}`; if (v === undefined) return localStorage.getItem(key); if (v === null) localStorage.removeItem(key); else localStorage.setItem(key, String(v)); return v; };
   if (Q.get('embed')) document.body.classList.add('embed');
   const TEST = Q.get('test') === '1';
@@ -82,7 +83,7 @@
   $('#vgain').addEventListener('change', (e) => { st.vgain = Number(e.target.value); LS('vgain', st.vgain); applyOpts(); });
   $('#zebra').addEventListener('change', (e) => { st.zebra = Math.max(50, Math.min(109, Number(e.target.value) || 95)); LS('zebra', st.zebra); applyOpts(); });
   $('#mode').addEventListener('change', (e) => { st.mode = e.target.value; LS('mode', st.mode); start(); });
-  $('#src').addEventListener('change', (e) => { st.src = e.target.value; LS('src', st.src); start(); });
+  $('#src').addEventListener('change', (e) => { st.src = e.target.value; LS('src', st.src); announce(); start(); });
   $('#btnPlay').addEventListener('click', () => { st.playing = !st.playing; syncUi(); if (st.playing) start(); else stop(); });
   // double-click (or double-tap) a panel: that scope alone; again: back to the grid
   $('#stage').addEventListener('dblclick', (e) => {
@@ -93,20 +94,36 @@
   for (const p of document.querySelectorAll('.pnl')) p.style.pointerEvents = 'auto';
   // pause while hidden (saves the camera's stream slot and the Pi's bandwidth); resume on return
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (session) stop(true); } else if (st.playing && !session) start(); });
-  window.addEventListener('message', (e) => { if (e.origin !== location.origin || !e.data || e.data.type !== 'scopes') return; if (e.data.visible === false) stop(true); else if (st.playing) start(); });
+  function announce() { if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'scopes-src', src: st.src }, location.origin); }
+  window.addEventListener('message', (e) => {
+    if (e.origin !== location.origin || !e.data || e.data.type !== 'scopes') return;
+    if (typeof e.data.src === 'string' && e.data.src) { st.src = e.data.src; LS('src', st.src); const sel = $('#src'); if ([...sel.options].some((o) => o.value === st.src)) sel.value = st.src; announce(); }
+    if (e.data.visible === false) stop(true);
+    else if (e.data.src) { if (st.playing) start(); }
+    else if (st.playing) start();
+  });
 
   function showMsg(title, html) { const m = $('#msg'); if (!title) { m.hidden = true; return; } m.innerHTML = `<h3>${title}</h3><div>${html}</div>`; m.hidden = false; }
   function note(t) { const n = $('#note'); n.textContent = t || ''; n.hidden = !t; }
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   // ---------- sources ----------
+  let ndiPreferApplied = false;
   async function loadSources() {
     const r = await fetch('/api/scopes/sources').then((x) => x.json());
-    st.sources = r.sources; st.settings = r.settings;
+    st.sources = r.sources; st.settings = r.settings; st.ndi = r.ndi || null;
     const sel = $('#src');
     sel.innerHTML = r.sources.map((s) => `<option value="${esc(s.key)}" ${s.ok ? '' : 'data-noh264="1"'}>${esc(s.label)}${s.ok ? '' : ' — JPEG only'}</option>`).join('') || '<option value="">no sources</option>';
     if (!r.sources.some((s) => s.key === st.src)) st.src = (r.sources.find((s) => s.kind === 'camera' && s.ok) || r.sources[0] || {}).key || '';
+    // Lightning opens on an NDI ingest. PTZ → SCOPES keeps the camera preference.
+    if (!ndiPreferApplied && (Q.get('prefer') === 'ndi' || onLightning)) {
+      ndiPreferApplied = true;
+      const ndi = r.sources.find((s) => s.kind === 'ndi' && s.ok);
+      const cur = r.sources.find((s) => s.key === st.src);
+      if (ndi && (!cur || cur.kind !== 'ndi')) { st.src = ndi.key; LS('src', st.src); }
+    }
     sel.value = st.src;
+    announce();
     return r;
   }
 
