@@ -123,7 +123,8 @@
   })();
 
   // ---------- dashboard (home): status + every connection setting ----------
-  let density = localStorage.getItem('cc.density') || 'cards';
+  let density = localStorage.getItem('cc.density') || 'list'; // 0.11.0: dense LIST is the default
+  let dashQ = ''; let dashSt = localStorage.getItem('cc.dashSt') || 'all';
   let groupSel = localStorage.getItem('cc.group') || 'all';
   const f = (name, label, type, val, ph, dis, extra = '') => `<label>${label}<input name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${esc(ph)}" ${dis} ${extra}></label>`;
   function connForm(s) {
@@ -205,13 +206,45 @@
         <details data-det="${s.key}" ${openDet.has(s.key) ? 'open' : ''}><summary>CONFIGURE</summary>${connForm(s)}</details>
       </article>`;
     };
+    // 0.11.0 LIST: one dense line per system — LED, name, status, the key numbers, live line, actions; ⚙ expands CONFIGURE
+    const row = (s) => {
+      const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
+      const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : 'PRESETS';
+      const n = s.counts || {};
+      const stats = (s.kind === 'atem' ? [['src', n.sources], ['macros', n.macros], ['keys', n.keyers]] : s.kind === 'ptz' ? [['cams', n.cameras], ['online', n.online], ['tally', n.tally]]
+        : s.kind === 'pixera' ? [['timelines', n.timelines], ['playing', n.playing]] : s.kind === 'millumin' ? [['running', n.running]] : [['presets', n.presets], ['dests', n.destinations], ['src', n.sources]])
+        .filter(([, v]) => v !== undefined && v !== null).map(([k, v]) => `<span><b>${v}</b> ${k}</span>`).join('');
+      const live = s.kind === 'atem' && n.program ? `<span class="lg pgm">PGM</span> ${esc(n.program)} <span class="lg pvw">PVW</span> ${esc(n.preview)}`
+        : s.kind === 'ptz' && (s.cameras || []).length ? s.cameras.slice(0, 6).map((c) => `<span class="cam-chip ${c.connected ? '' : 'off'} ${c.tally ? 'tally' : ''}"><span class="led ${c.connected ? 'ok' : 'off'}"></span>${esc(c.name)}</span>`).join('') + (s.cameras.length > 6 ? ` +${s.cameras.length - 6}` : '') : '';
+      const host = s.connection && s.connection.host ? s.connection.host : '';
+      const acts = on
+        ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}" title="Open its tabs">OPEN ${open}</button><button type="button" class="btn mini danger" data-armoff="${s.key}" title="Remove from the desk">REMOVE</button>`
+        : `<button type="button" class="btn mini primary" data-use="${s.key}" title="Add to the desk">ADD</button>${s.key !== 'rs6' && !(s.connection && s.connection.mock) ? `<button type="button" class="btn mini" data-sim="${s.key}" title="Add to the desk as a simulator (not saved)">SIM</button>` : ''}`;
+      return `<article class="sys-card sys-line ${active ? 'active' : ''} ${on ? 'on-desk' : ''} ${st.cls}" data-card="${s.key}">
+        <div class="row-main"><span class="led ${st.cls}" title="${esc(st.txt)}"></span><span class="mono">${MONO[s.key] || '?'}</span>
+          <span class="row-nm" title="${esc(s.label)}"><b>${esc(s.short || s.label)}</b> <small>${esc(s.label)}${s.group ? ` · ${esc(s.group)}` : ''}</small></span>
+          <span class="row-st ${st.cls}">${st.txt}${info.model ? ` · ${esc(info.model)}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}${on ? ' <span class="desk-tag">DESK</span>' : ''}</span>
+          <span class="row-stats">${stats}</span><span class="row-live">${live}${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<span class="err-inline" title="${esc(s.status.error)}">${esc(s.status.error).slice(0, 60)}</span>` : ''}</span>
+          <span class="row-host">${esc(host)}</span><span class="row-acts">${acts}</span></div>
+        <details data-det="${s.key}" ${openDet.has(s.key) ? 'open' : ''}><summary title="Configure the connection">⚙</summary>${connForm(s)}</details>
+      </article>`;
+    };
     // one flowing grid (scales to many cards); group chips filter it; the active system always comes first
     const groups = SYS.groups || [{ name: 'Systems', systems: Object.keys(SYS.systems) }];
     if (groupSel !== 'all' && !groups.some((g) => g.name === groupSel)) groupSel = 'all';
     const chip = (key, label, n) => `<button class="mode ${groupSel === key ? 'active' : ''}" data-group="${esc(key)}" type="button">${esc(label)} <small>${n}</small></button>`;
     set($('#dashGroups'), 'groups', chip('all', 'ALL', all.length) + groups.map((g) => chip(g.name, g.name.toUpperCase(), g.systems.length)).join(''));
     const keys = (groupSel === 'all' ? groups.flatMap((g) => g.systems) : groups.find((g) => g.name === groupSel).systems).slice().sort((x, y) => (armed().includes(x) === armed().includes(y) ? (x === SYS.active ? -1 : y === SYS.active ? 1 : 0) : armed().includes(x) ? -1 : 1));
-    const cards = `<div class="sys-cards ${density}">${keys.map((k) => card(SYS.systems[k])).join('')}</div>`;
+    // 0.11.0 search + status filter
+    const q = dashQ.trim().toLowerCase();
+    const stOk = (k) => { const x = SYS.systems[k]; const c = statusOf(x).cls; return dashSt === 'all' || (dashSt === 'online' && c === 'ok') || (dashSt === 'issues' && (c === 'off' || c === 'warn')) || (dashSt === 'desk' && armed().includes(k)) || (dashSt === 'idle' && c === 'idle'); };
+    const qOk = (k) => { const x = SYS.systems[k]; return !q || `${x.key} ${x.short} ${x.label} ${x.group || ''} ${x.kind} ${statusOf(x).txt} ${(x.connection && x.connection.host) || ''} ${armed().includes(k) ? 'desk' : ''}`.toLowerCase().includes(q); };
+    const base0 = groupSel === 'all' ? groups.flatMap((g) => g.systems) : groups.find((g) => g.name === groupSel).systems;
+    const cnt = (f) => base0.filter((k) => SYS.systems[k] && qOk(k) && f(k)).length;
+    const stChip = (k, l, f) => `<button class="mode ${dashSt === k ? 'active' : ''}" data-dashst="${k}" type="button">${l} <small>${cnt(f)}</small></button>`;
+    set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('online', 'ONLINE', (k) => statusOf(SYS.systems[k]).cls === 'ok') + stChip('issues', 'ISSUES', (k) => ['off', 'warn'].includes(statusOf(SYS.systems[k]).cls)) + stChip('desk', 'ON DESK', (k) => armed().includes(k)) + stChip('idle', 'NOT SET UP', (k) => statusOf(SYS.systems[k]).cls === 'idle'));
+    const shown = keys.filter((k) => SYS.systems[k] && qOk(k) && stOk(k));
+    const cards = `<div class="sys-cards ${density}">${shown.map((k) => (density === 'list' ? row : card)(SYS.systems[k])).join('') || '<div class="note">No system matches the filter.</div>'}</div>`;
     // keep a focused connection form from being replaced while typing
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#sysCards')) set($('#sysCards'), 'cards', cards);
     $('#sysPlannedWrap').hidden = !(SYS.planned || []).length;
@@ -219,6 +252,8 @@
   }
   const openDet = new Set(JSON.parse(localStorage.getItem('cc.conn') || '[]'));
   $('#sysCards').addEventListener('toggle', (ev) => { const d = ev.target; if (!d.dataset || !d.dataset.det) return; if (d.open) openDet.add(d.dataset.det); else openDet.delete(d.dataset.det); localStorage.setItem('cc.conn', JSON.stringify([...openDet])); }, true);
+  $('#dashSearch').addEventListener('input', () => { dashQ = $('#dashSearch').value; renderDash(); });
+  $('#dashStatus').addEventListener('click', (ev) => { const b = ev.target.closest('[data-dashst]'); if (!b) return; dashSt = b.dataset.dashst; localStorage.setItem('cc.dashSt', dashSt); renderDash(); });
   $('#dashGroups').addEventListener('click', (ev) => { const b = ev.target.closest('[data-group]'); if (!b) return; groupSel = b.dataset.group; localStorage.setItem('cc.group', groupSel); renderDash(); });
   document.querySelectorAll('[data-density]').forEach((b) => b.addEventListener('click', () => { density = b.dataset.density; localStorage.setItem('cc.density', density); html.cards = null; renderDash(); }));
   const camRow = (el) => ({ name: el.querySelector('[name=name]').value.trim(), host: el.querySelector('[name=host]').value.trim(), port: Number(el.querySelector('[name=port]').value) || 80 });
@@ -255,6 +290,7 @@
   // ---------- presets ----------
   function renderPresets() {
     if (!V) return;
+    if (V.presets) { const sel = new Set(V.selection || []); bailBadge($('#xBail'), V.followUp, V.presets.filter((p) => p.tally.pvw !== 'none' && (!p.dests || !sel.size || p.dests.some((d) => sel.has(d)))), xName); }
     const dims = $('#xDim').checked;
     const nd = V.destinations.length;
     const cols = `repeat(${1 + nd}, minmax(var(--colmin), 1fr))`;
@@ -285,7 +321,9 @@
       if (p.lastRecalled) cls.push('is-last'); if (dims && p.dim) cls.push('dim'); if (moveSrc === n) cls.push('move-src'); if (p.locked) cls.push('locked');
       const chips = p.dests ? (p.dests.map((d) => `<span class="chip ${d[0] === 'A' ? 'aux' : ''}" title="${esc(label(d))}">${d}</span>`).join('') || '<span class="chip warn">no destinations</span>') : '<span class="chip">destinations unknown</span>';
       const num = p.sno && !/\.00$/.test(p.sno) ? p.sno : p.number;
-      h += `<button class="${cls.join(" ")}" data-preset="${n}" data-key="${esc(p.key)}" title="${esc(V.short)} preset ${esc(num)} · ${esc(p.name)}${p.dests ? ' · ' + esc(p.dests.join(', ')) : ''}"><span class="tags">${tags.join('')}</span><span class="num">${n}${String(num) !== String(n) ? ` <small class="devnum">#${esc(num)}</small>` : ''}</span><span class="name">${esc(p.name)}</span><span class="chips">${chips}</span></button>`;
+      const fu = p.followUpResolved ? V.presets.find((x) => x.key === p.followUpResolved) : null;
+      const fuChip = fu ? `<span class="chip fu src-${p.bail.source}" title="Auto recall: bail to ${esc(fu.name)} (${p.bail.source === 'group' ? `group ${esc(p.bail.group)}` : p.bail.source === 'preset' ? 'set on this preset' : 'show default'})">↪ ${fu.tile}${p.bail.source === 'preset' ? '' : `<i>${p.bail.source === 'group' ? 'G' : 'D'}</i>`}</span>` : '';
+      h += `<button class="${cls.join(" ")}" data-preset="${n}" data-key="${esc(p.key)}" title="${esc(V.short)} preset ${esc(num)} · ${esc(p.name)}${p.dests ? ' · ' + esc(p.dests.join(', ')) : ''}"><span class="tags">${tags.join('')}</span><span class="num">${n}${String(num) !== String(n) ? ` <small class="devnum">#${esc(num)}</small>` : ''}</span><span class="name">${esc(p.name)}</span><span class="chips">${fuChip}${chips}</span></button>`;
     }
     set($('#xgrid'), 'grid', h);
     const g = `grid mode-${mode === 'program' ? 'recall' : mode}${moveSrc != null ? ' has-src' : ''}`; if ($('#xgrid').className !== g) $('#xgrid').className = g;
@@ -316,6 +354,7 @@
     }
     if (!b.dataset.key) return;
     const p = V.presets.find((x) => x.key === b.dataset.key);
+    if (mode === 'follow') return xFollow(p);
     if (mode === 'program' && !confirm(`Recall "${p.name}" straight to PROGRAM on ${p.dests ? p.dests.join(', ') : 'its destinations'}? This goes live without a transition.`)) return;
     run(api('POST', `${base()}/presets/${encodeURIComponent(p.key)}/recall`, { target: mode === 'program' ? 'program' : 'preview' }));
   });
@@ -389,6 +428,87 @@
   async function refetch() { try { onSys(await api('GET', '/api/sys')); } catch { /* the stream will bring it */ } }
   window.addEventListener('cc:sys', (e) => onSys(e.detail));
   // for public/atem.js and public/ptz.js
+  // 0.11.0 AUTO RECALL / BAIL TO dialog, shared by RS6 PRESETS (public/app.js) and E2 / PixelHue PRESETS. o = { sys,
+  // numeric (RS6 ids), presets: [{value, label}], dests: [keys], preset: {name, self, own, bail} | null,
+  // cfg: {enabled, default, delayMs, groups}, note, save({preset, enabled, def, delayMs, groups}) → promise }
+  let fuCtx = null; let fuGroups = [];
+  const SRC_LABEL = { preset: 'this preset', group: 'group', default: 'show default' };
+  const bailText = (b, nameOf) => (b && b.target ? `↪ ${esc(nameOf(b.target))} <small>(${b.source === 'group' ? `group “${esc(b.group)}”` : SRC_LABEL[b.source]})</small>` : `<span class="dimtxt">no auto recall${b && b.reason ? ` — ${esc(b.reason)}` : ''}</span>`);
+  const fuOptList = (list, cur, first, self) => `${first}${list.filter((x) => String(x.value) !== String(self)).map((x) => `<option value="${esc(String(x.value))}" ${cur !== null && cur !== undefined && String(cur) === String(x.value) ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}`;
+  function fuRenderGroups() {
+    const o = fuCtx; const destBox = (g, gi) => (o.dests || []).map((d) => `<label class="fu-dest"><input type="checkbox" data-gdest="${gi}" value="${esc(d)}" ${g.dests.includes(d) ? 'checked' : ''}>${esc(d)}</label>`).join('');
+    $('#fuGroups').innerHTML = fuGroups.map((g, gi) => `<div class="fu-group" data-g="${gi}">
+      <div class="fu-ghead"><input class="fu-gname" data-gname="${gi}" value="${esc(g.name)}" maxlength="40"><label class="fu-gon"><input type="checkbox" data-gon="${gi}" ${g.enabled ? 'checked' : ''}> ON</label>
+        <label>bail to <select data-gtarget="${gi}">${fuOptList(o.presets, g.target || null, `<option value="0" ${!g.target ? 'selected' : ''}>show default</option>`)}</select></label><button type="button" class="btn mini ghost" data-gdel="${gi}" title="Remove this group">×</button></div>
+      <div class="fu-gbody"><label>presets <select multiple size="4" data-gpresets="${gi}">${o.presets.map((x) => `<option value="${esc(String(x.value))}" ${g.presets.map(String).includes(String(x.value)) ? 'selected' : ''}>${esc(x.label)}</option>`).join('')}</select></label>
+        ${o.dests && o.dests.length ? `<div class="fu-dests"><span class="modes-lbl">or every preset on</span>${destBox(g, gi)}</div>` : ''}</div></div>`).join('') || '<div class="note small">No groups.</div>';
+  }
+  function openFollowUp(o) {
+    fuCtx = o; const c = o.cfg || {}; $('#fuSys').textContent = o.sys || '';
+    $('#fuEnabled').checked = c.enabled !== false;
+    $('#fuPresetRow').hidden = !o.preset;
+    if (o.preset) {
+      const own = o.preset.own || {};
+      $('#fuPresetName').textContent = o.preset.name;
+      $('#fuPState').value = own.enabled === true ? 'on' : own.enabled === false ? 'off' : 'inherit';
+      $('#fuPTarget').innerHTML = fuOptList(o.presets, own.target || null, `<option value="__inherit" ${own.target ? '' : 'selected'}>inherit (group / show default)</option>`, o.preset.self);
+      $('#fuPNow').innerHTML = `Now: ${bailText(o.preset.bail, o.nameOf)}`;
+    }
+    $('#fuDefault').innerHTML = fuOptList(o.presets, c.default || null, `<option value="0" ${!c.default ? 'selected' : ''}>none</option>`);
+    $('#fuDelay').value = c.delayMs === undefined ? 1000 : c.delayMs; $('#fuDelayNote').textContent = o.note || '';
+    fuGroups = JSON.parse(JSON.stringify(c.groups || [])); fuRenderGroups();
+    $('#dlgFollowUp').returnValue = ''; $('#dlgFollowUp').showModal();
+  }
+  const fuVal = (v) => (fuCtx && fuCtx.numeric ? Number(v) : v);
+  $('#fuAddGroup').addEventListener('click', () => { fuGroups.push({ name: `Group ${fuGroups.length + 1}`, enabled: true, target: 0, presets: [], dests: [] }); fuRenderGroups(); });
+  $('#fuGroups').addEventListener('change', (e) => {
+    const t = e.target; const d = t.dataset;
+    if (d.gname !== undefined) fuGroups[d.gname].name = t.value;
+    if (d.gon !== undefined) fuGroups[d.gon].enabled = t.checked;
+    if (d.gtarget !== undefined) fuGroups[d.gtarget].target = t.value === '0' ? 0 : fuVal(t.value);
+    if (d.gpresets !== undefined) fuGroups[d.gpresets].presets = [...t.selectedOptions].map((x) => fuVal(x.value));
+    if (d.gdest !== undefined) { const g = fuGroups[d.gdest]; g.dests = t.checked ? [...new Set([...g.dests, t.value])] : g.dests.filter((x) => x !== t.value); }
+  });
+  $('#fuGroups').addEventListener('input', (e) => { if (e.target.dataset.gname !== undefined) fuGroups[e.target.dataset.gname].name = e.target.value; });
+  $('#fuGroups').addEventListener('click', (e) => { const b = e.target.closest('[data-gdel]'); if (b) { fuGroups.splice(Number(b.dataset.gdel), 1); fuRenderGroups(); } });
+  $('#dlgFollowUp').addEventListener('close', () => {
+    if ($('#dlgFollowUp').returnValue !== 'save' || !fuCtx) return;
+    let preset;
+    if (fuCtx.preset) {
+      const st = $('#fuPState').value; const tv = $('#fuPTarget').value;
+      const own = {}; if (st === 'on') own.enabled = true; if (st === 'off') own.enabled = false; if (tv !== '__inherit') own.target = fuVal(tv);
+      preset = Object.keys(own).length ? own : null;
+    }
+    const dv = $('#fuDefault').value;
+    CC.run(fuCtx.save({ preset, enabled: $('#fuEnabled').checked, def: dv === '0' ? 0 : fuVal(dv), delayMs: Number($('#fuDelay').value), groups: fuGroups }).then(() => CC.toast('Auto recall saved')));
+  });
+  // the bail badge on a page head: universal switch, what a TAKE of the current Preview would bail to, a pending one
+  function bailBadge(el, cfg, pvwList, nameOf) {
+    if (!el) return;
+    let h; let cls = 'btn mini bail-badge';
+    if (!cfg || cfg.enabled === false) { h = '↪ AUTO RECALL <b>OFF</b>'; cls += ' off'; }
+    else if (cfg.pending) { const to = cfg.pending.to.map((x) => (typeof x === 'object' && x ? x.name || x.key : nameOf(x))); h = `↪ next: <b>${esc(to.join(', '))}</b> → PVW`; cls += ' pending'; }
+    else {
+      const b = pvwList.map((p) => p.bail).filter((x) => x && x.target);
+      h = b.length ? `↪ after TAKE: <b>${esc([...new Set(b.map((x) => nameOf(x.target)))].join(', '))}</b> <small>${b[0].source === 'group' ? `group ${esc(b[0].group)}` : SRC_LABEL[b[0].source]}</small>`
+        : `↪ ON · default <b>${cfg.default ? esc(nameOf(cfg.default)) : 'none'}</b>`;
+      cls += ' on';
+    }
+    set(el, `bail-${el.id}`, h); if (el.className !== cls) el.className = cls;
+  }
+  window.CCFU = { open: openFollowUp, badge: bailBadge, bailText };
+  const xName = (k) => { const p = V && V.presets.find((x) => x.key === k); return p ? `${p.tile} · ${p.name}` : String(k); };
+  const xFollow = (p) => {
+    openFollowUp({ sys: V.short, presets: V.presets.slice().sort((a, b) => a.tile - b.tile).map((x) => ({ value: x.key, label: `${x.tile} · ${x.name}` })), dests: V.destinations.map((d) => d.key),
+      preset: p ? { name: `${p.tile} · ${p.name}`, self: p.key, own: p.followUp, bail: p.bail } : null, cfg: V.followUp || {}, nameOf: xName,
+      note: V.system === 'pixelhue' ? 'PixelHue: waits at least the transition time set on its connection.' : 'Set the wait to (at least) the transition time.',
+      save: async ({ preset, enabled, def, delayMs, groups }) => {
+        if (p) await api('POST', `${base()}/presets/${encodeURIComponent(p.key)}/followup`, { followUp: preset });
+        await api('POST', `${base()}/followup`, { enabled, default: def || 0, delayMs, groups });
+        return refetch();
+      } });
+  };
+  document.addEventListener('click', (e) => { const b = e.target.closest('[data-bail="x"]'); if (b && V && V.kind === 'preset') xFollow(null); });
   // 0.11.0 SAVE on the switcher pages (RS6 PRESETS, E2 / PixelHue PRESETS, ATEM SWITCHER): POST /api/sys/<sys>/save
   let saveSys = null;
   document.addEventListener('click', (e) => {

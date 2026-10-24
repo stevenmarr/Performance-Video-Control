@@ -12,6 +12,11 @@
     + 'body.cc-dragging,body.cc-dragging *{cursor:grabbing!important;user-select:none!important;-webkit-user-select:none!important}.cc-drop-hover{outline:3px solid #ffd35c!important;outline-offset:1px}.cc-drag-src{opacity:.55}.cc-pending{transform:scale(.97);transition:transform .15s}';
   document.head.appendChild(css);
   const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
+  let eatClick = null;
+  window.addEventListener('click', (e) => {
+    const k = eatClick; if (!k) return; eatClick = null;
+    if (performance.now() <= k.until && Math.hypot(e.clientX - k.x, e.clientY - k.y) < 12) swallow(e);
+  }, true);
   function stop(commit, e) {
     const a = active; if (!a) return; active = null;
     clearTimeout(a.timer); window.removeEventListener('pointermove', a.move, true); window.removeEventListener('pointerup', a.up, true); window.removeEventListener('pointercancel', a.cancel, true);
@@ -20,8 +25,8 @@
     if (!a.dragging) return;
     if (a.ghost) a.ghost.remove(); document.body.classList.remove('cc-dragging');
     if (a.over) a.over.classList.remove('cc-drop-hover');
-    // swallow the click the browser fires after pointerup on the dragged element
-    window.addEventListener('click', swallow, { capture: true, once: true }); setTimeout(() => window.removeEventListener('click', swallow, true), 60);
+    // swallow the click the browser fires right after this pointerup (same spot, within a moment) — never a later one
+    eatClick = { until: performance.now() + 400, x: e ? e.clientX : -1, y: e ? e.clientY : -1 };
     try { if (commit && a.over) a.o.drop(a.over, a.payload, e); } finally { if (a.o.end) a.o.end(a.payload); }
   }
   function attach(root, o) {

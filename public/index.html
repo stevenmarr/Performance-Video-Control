@@ -84,6 +84,7 @@
         <div class="section-title">SCREENS <small>tap a tile to select it for TAKE / CUT</small></div>
         <span class="spacer"></span>
         <span id="xtargets" class="xtargets"></span>
+        <button class="btn mini bail-badge" id="bailBadge" type="button" data-bail="rs6" title="Auto recall (bail to): click to set it up"></button>
         <button class="btn mini primary desk-save" id="rs6Save" data-desksave="rs6" title="Save the show (presets, settings) to the library">💾 SAVE</button>
       </div>
       <div id="screens" class="screens">
@@ -107,6 +108,7 @@
       <button class="mode" data-mode="move" title="Tap a tile, then tap where it goes: swaps two tiles, or moves into an empty one. With a mouse you can also just drag a tile.">MOVE ⇄</button>
       <span class="modes-sep"></span>
       <button class="mode" data-mode="save" title="Capture what is on Preview now on the lit screens (the Screen memory each one reports, plus a source snapshot) into the tile you tap. Use SAVE BOARD AS PRESET for Master / Multiviewer memories.">SAVE PVW → TILE</button>
+      <button class="btn mini" id="btnFollowUp" type="button" title="Auto recall: the desk default follow-up preset and the wait after a TAKE / CUT">↪ AUTO RECALL…</button>
     </div>
     <div class="hint mode-hint" id="modeHint"></div>
     <div id="pager" class="pager" role="tablist" aria-label="Preset pages" hidden></div>
@@ -148,13 +150,14 @@
   <!-- 0.6.0 SYSTEMS dashboard: one card per system, live status, connection, and the switch between them -->
   <section class="grid-wrap pane dash" id="pane-system" hidden>
     <div class="dash-head">
-      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">ADD TO DESK puts a system on the tab bar and becomes REMOVE FROM DESK. ADD TO DESK AS SIMULATOR uses a built-in fixture and is not saved. OPEN goes to its tabs. CONFIGURE sets the address.</div></div>
+      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">ADD puts a system on the desk (its tabs appear), REMOVE takes it off. SIM uses a built-in fixture and is not saved. OPEN goes to its tabs. ⚙ sets the address.</div></div>
       <span class="spacer"></span>
       <div class="dash-tools"><div id="dashSummary" class="dash-summary"></div>
-        <div class="seg-row" role="group" aria-label="Card size"><button class="mode" data-density="cards" type="button">CARDS</button><button class="mode" data-density="compact" type="button">COMPACT</button></div></div>
+        <input type="search" id="dashSearch" class="dash-search" placeholder="Filter systems… (name, group, status, address)" autocomplete="off">
+        <div class="seg-row" role="group" aria-label="Card size"><button class="mode" data-density="list" type="button" title="Dense list: one line per system">LIST</button><button class="mode" data-density="compact" type="button">COMPACT</button><button class="mode" data-density="cards" type="button">CARDS</button></div></div>
       <div id="dashClock" class="dash-clock"></div>
     </div>
-    <div id="dashGroups" class="seg-row dash-groups" role="group" aria-label="Show systems of"></div>
+    <div class="dash-filters"><div id="dashGroups" class="seg-row dash-groups" role="group" aria-label="Show systems of"></div><span class="spacer"></span><div id="dashStatus" class="seg-row" role="group" aria-label="Show systems that are"></div></div>
     <div id="sysCards"></div>
     <div id="sysPlannedWrap" hidden><div class="section-title">MORE SYSTEMS <small>driver interface ready, drivers not built yet</small></div>
     <div id="sysPlanned" class="sys-cards planned"></div></div>
@@ -180,6 +183,7 @@
       <span class="spacer"></span>
       <span id="xtargetsX" class="xtargets"></span>
       <button class="btn mini" id="xRefresh" title="Re-read presets, destinations and sources from the device">⟳ Refresh</button>
+      <button class="btn mini bail-badge" id="xBail" type="button" data-bail="x" title="Auto recall (bail to): click to set it up"></button>
       <button class="btn mini primary desk-save" id="xSave" data-desksave="x" title="Save the show (presets, layout, auto recall) to the library">💾 SAVE</button>
     </div>
     <div class="screens"><div id="xdestRow" class="dest-row"></div></div>
@@ -188,6 +192,7 @@
       <button class="mode active" data-xmode="recall" title="Tap a tile: recall that preset to Preview on its destinations, then TAKE or CUT">RECALL → PVW</button>
       <button class="mode" data-xmode="program" title="Tap a tile: recall that preset straight to Program (no transition). Asks first.">RECALL → PGM</button>
       <button class="mode" data-xmode="move" title="Tap a tile, then tap another to swap them, or an empty tile to move it there. Only the app's tile layout changes; the device's preset numbers stay as they are.">MOVE ⇄</button>
+      <button class="mode" data-xmode="follow" title="Tap a tile to choose the preset that is recalled to Preview automatically after it goes to Program (auto recall)">↪ AUTO RECALL</button>
       <span class="modes-sep"></span>
       <label class="pal-opt xfilter"><input type="checkbox" id="xDim" checked> dim presets without the selected destinations</label>
     </div>
@@ -559,6 +564,10 @@
     <div class="section-title">Master memory <small>loads first; tick the screens it covers (not readable from the device)</small></div>
     <div class="row2"><label>Master slot <input name="master" type="number" min="1" max="500" placeholder="none"></label><span></span></div>
     <div id="editMasterDests" class="chkrow"></div>
+    <div class="section-title">Auto recall · bail to <small>after this preset goes to Program (TAKE / CUT), recall the bail-to preset to Preview</small></div>
+    <div class="row2"><label>Auto recall <select name="followUpState" id="editFollowState"><option value="inherit">inherit (group / show default)</option><option value="on">ON for this preset</option><option value="off">OFF for this preset</option></select></label>
+      <label>Bail to <select name="followUp" id="editFollowUp"></select></label></div>
+    <div class="note small fu-now" id="editFollowHint"></div>
     <div id="editMvWrap"><div class="section-title">Multiviewer memory per output</div><div id="editMv" class="slots"></div></div>
     <div class="btn-grid">
       <button type="button" class="btn" data-act="board">Open on the board</button>
@@ -592,6 +601,24 @@
     <div id="arSources" class="bus wide ar-sources"></div>
     <details id="arAdv" class="ar-adv" hidden><summary id="arAdvSum">ADVANCED</summary><div class="note small">Media player key signals and key masks: the key (alpha) halves of fill + key pairs.</div><div id="arAdvList" class="bus wide ar-sources"></div></details>
     <div class="actions"><button value="cancel" class="btn ghost">Close</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlgFollowUp" class="wide">
+  <form method="dialog" class="form">
+    <h2>↪ AUTO RECALL · BAIL TO <small id="fuSys"></small></h2>
+    <p class="note small">When a preset goes to Program with TAKE or CUT, its bail-to preset is recalled to <b>Preview</b> once the transition is done — ready for the next TAKE. It never takes by itself. Which one: <b>the preset's own setting</b>, else <b>its group</b>, else <b>the show default</b> — all only while the switch is ON.</p>
+    <label class="fu-switch"><input type="checkbox" id="fuEnabled"> <b>AUTO RECALL ON</b> <small>universal switch</small></label>
+    <div id="fuPresetRow" class="fu-box"><div class="section-title">THIS PRESET <small id="fuPresetName"></small></div>
+      <div class="row2"><label>Auto recall <select id="fuPState"><option value="inherit">inherit (group / show default)</option><option value="on">ON for this preset</option><option value="off">OFF for this preset</option></select></label>
+        <label>Bail to <select id="fuPTarget"></select></label></div>
+      <div class="fu-now" id="fuPNow"></div></div>
+    <div class="row2"><label>Show default bail to <select id="fuDefault"></select></label>
+      <label>Wait after the TAKE / CUT (ms) <input id="fuDelay" type="number" min="0" max="60000" step="any"></label></div>
+    <p class="note small" id="fuDelayNote"></p>
+    <div class="section-title">GROUPS <small>presets (or destinations) that share a bail-to preset and an ON / OFF; the first matching group wins</small><span class="spacer"></span><button type="button" class="btn mini" id="fuAddGroup">+ GROUP</button></div>
+    <div id="fuGroups" class="fu-groups"></div>
+    <div class="actions"><button value="cancel" class="btn ghost" formnovalidate>Cancel</button><button value="save" id="fuSave" class="btn primary">Save</button></div>
   </form>
 </dialog>
 

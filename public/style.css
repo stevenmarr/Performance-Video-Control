@@ -908,3 +908,37 @@ body.tab-atem .main{gap:14px}
 .au-wbtns{display:flex;gap:6px}.au-wbtns .mode{flex:1}
 .au-desk[hidden],.au-watch[hidden],.ar-pal[hidden],#auWatchClear[hidden],.note[hidden]{display:none!important}
 #dsStartupRow[hidden]{display:none!important}.desk-save{margin-left:8px}
+.chip.fu{background:#1d2a44;color:#9cc4ff;border-color:#3b5b8f}.chip.fu.dflt{border-style:dashed}#fuPresetRow[hidden]{display:none}
+/* 0.11.0 auto recall / bail to */
+.bail-badge{margin-left:8px;font-weight:700;white-space:nowrap;max-width:420px;overflow:hidden;text-overflow:ellipsis}
+.bail-badge.on{border-color:#3b5b8f;color:#cfe2ff;background:#16223a}.bail-badge.off{opacity:.7}.bail-badge.pending{border-color:#d4a017;color:#ffd35c;background:#3a2a08}
+.bail-badge small{color:var(--dim);font-weight:400}
+.chip.fu i{font-style:normal;font-size:9px;margin-left:2px;opacity:.8}.chip.fu.src-group{border-style:dotted}.chip.fu.src-default{border-style:dashed}
+.fu-switch{display:flex;gap:8px;align-items:center;font-size:14px;margin:6px 0 10px}.fu-switch small{color:var(--dim)}
+.fu-box{border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-bottom:10px;background:var(--panel2)}
+.fu-now{font-size:12px;color:#cfe2ff}.fu-now small{color:var(--dim)}.dimtxt{color:var(--dim)}
+.fu-groups{display:flex;flex-direction:column;gap:8px;max-height:40vh;overflow:auto}
+.fu-group{border:1px solid var(--line);border-radius:9px;padding:8px;background:var(--panel2)}
+.fu-ghead{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.fu-gname{flex:1;min-width:140px}.fu-gon{display:flex;gap:4px;align-items:center;font-weight:800}
+.fu-gbody{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap;align-items:flex-start}.fu-gbody select[multiple]{min-width:220px}
+.fu-dests{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.fu-dest{display:flex;gap:3px;align-items:center;font-size:12px}
+/* 0.11.0 SYSTEMS: dense LIST, search, status filter */
+.dash-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.dash-filters .dash-groups{margin-bottom:0}
+.dash-search{min-width:240px;width:300px}
+.sys-cards.list{grid-template-columns:repeat(auto-fill,minmax(min(100%,860px),1fr));gap:6px}
+.sys-card.sys-line{padding:6px 10px 6px 14px;gap:4px;border-radius:9px;flex-direction:column}
+.sys-card.sys-line::before{top:6px;bottom:6px}
+.sys-line .row-main{display:grid;grid-template-columns:12px 30px minmax(150px,1.3fr) minmax(110px,1fr) minmax(120px,1fr) minmax(0,1.6fr) minmax(0,.8fr) auto;align-items:center;gap:10px;min-height:32px}
+.sys-line .mono{width:30px;height:24px;font-size:10px;border-radius:6px}
+.sys-line .row-nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}.sys-line .row-nm small{color:var(--dim);font-size:11px}
+.sys-line .row-st{font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sys-line .row-st.ok{color:#7ee28f}.sys-line .row-st.off,.sys-line .row-st.warn{color:#ff9b91}
+.sys-line .row-stats{display:flex;gap:10px;font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden}.sys-line .row-stats b{color:var(--text);font-family:ui-monospace,Menlo,Consolas,monospace}
+.sys-line .row-live{display:flex;gap:6px;align-items:center;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sys-line .row-host{font:11px ui-monospace,Menlo,Consolas,monospace;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sys-line .row-acts{display:flex;gap:4px;justify-content:flex-end;white-space:nowrap}
+.sys-line .err-inline{color:#ff9b91;font-size:11px;overflow:hidden;text-overflow:ellipsis}
+.sys-line details{position:absolute;right:6px;top:6px}.sys-line details[open]{position:static;border-top:1px solid var(--line);padding-top:6px}
+.sys-line details summary{padding:4px 8px;font-size:13px}
+.sys-line .row-acts{margin-right:40px}
+@media (max-width:1100px){ .sys-line .row-main{grid-template-columns:12px 30px minmax(0,1fr) auto;grid-template-areas:none} .sys-line .row-stats,.sys-line .row-live,.sys-line .row-host,.sys-line .row-st{display:none} }

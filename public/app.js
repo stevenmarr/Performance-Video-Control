@@ -28,6 +28,7 @@
   // ---------- render ----------
   function render() {
     if (!S) return;
+    try { rsBadge(); } catch { /* the badge is best effort */ }
     const av = $('#appVer');
     if (av && S.appVersion && av.textContent !== `v${S.appVersion}`) { av.textContent = `v${S.appVersion}`; av.title = `Control Center ${S.appVersion}`; }
     const c = $('#conn');
@@ -95,8 +96,9 @@
         || '<span class="chip warn">empty</span>';
       if (p.autoName) cls.push('auto');
       if (moveSrc === n) cls.push('move-src');
+      const fuChip = p.followUpResolved ? `<span class="chip fu src-${p.bail.source}" title="Auto recall: bail to preset ${p.followUpResolved} (${p.bail.source === 'group' ? `group ${esc(p.bail.group)}` : p.bail.source === 'preset' ? 'set on this preset' : 'show default'})">↪ ${p.followUpResolved}${p.bail.source === 'preset' ? '' : `<i>${p.bail.source === 'group' ? 'G' : 'D'}</i>`}</span>` : '';
       const tip = p.autoName ? `Preset ${n} · automatic name from the device memory names · long-press or right-click to rename` : `Preset ${n} · long-press or right-click to rename`;
-      html += `<button class="${cls.join(' ')}" data-preset="${n}" data-drop-preset="${n}" title="${esc(tip)}"><span class="tags">${tags.join('')}</span><span class="num">${n}</span><span class="name">${esc(p.name)}</span><span class="chips">${chips}</span></button>`;
+      html += `<button class="${cls.join(' ')}" data-preset="${n}" data-drop-preset="${n}" title="${esc(tip)}"><span class="tags">${tags.join('')}</span><span class="num">${n}</span><span class="name">${esc(p.name)}</span><span class="chips">${fuChip}${chips}</span></button>`;
     }
     if (html !== gridHtml) { gridHtml = html; $('#grid').innerHTML = html; }
     const gcls = `grid mode-${mode}${moveSrc != null ? ' has-src' : ''}`; if ($('#grid').className !== gcls) $('#grid').className = gcls;
@@ -602,6 +604,14 @@
   });
   document.body.classList.add('tab-presets');
   // 0.6.0: shared helpers for public/sys.js
+  // 0.11.0 auto recall / bail to: the page-head badge (#bailBadge, data-bail="rs6") and its dialog
+  function rsName(n) { const q = S && S.presets.find((x) => x.number === n); return q ? `${n} · ${q.name}` : String(n); }
+  const openRsFollow = () => window.CCFU.open({ sys: 'RS6', numeric: true, presets: S.presets.map((x) => ({ value: x.number, label: `${x.number} · ${x.name}` })), dests: S.destinations.map((d) => d.key), preset: null,
+    cfg: S.followUp || {}, nameOf: rsName, note: 'Set the wait to the RS6 Take duration (1 s by default) so the next preset loads once the transition is done.',
+    save: ({ enabled, def, delayMs, groups }) => api('POST', '/api/followup', { enabled, default: def || 0, delayMs, groups }) });
+  $('#btnFollowUp').addEventListener('click', openRsFollow);
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-bail="rs6"]')) openRsFollow(); });
+  function rsBadge() { if (S && window.CCFU) window.CCFU.badge($('#bailBadge'), S.followUp, S.presets.filter((p) => p.tally && p.tally.pvw !== 'none'), rsName); }
   window.CC = { setTab, getTab: () => tab, api, toast, run, esc };
 
   // ---------- 0.4.0 Web RCS pane ----------
@@ -731,6 +741,11 @@
     $('#editMasterDests').innerHTML = S.destinations.map((d) => `<label><input type="checkbox" name="mdest_${d.key}" ${md.includes(d.key) ? 'checked' : ''}> ${d.key}</label>`).join('');
     $('#editMvWrap').hidden = !(S.multiviewers || []).length;
     $('#editMv').innerHTML = (S.multiviewers || []).map((m) => `<label>${m.key} · ${esc(m.label)}<input type="number" min="1" max="50" name="mv_${m.key}" placeholder="none" value="${(p.mvMemories || {})[m.key] || ''}"></label>`).join('');
+    const own = p.followUp || {};
+    $('#editFollowState').value = own.enabled === true ? 'on' : own.enabled === false ? 'off' : 'inherit';
+    $('#editFollowUp').innerHTML = `<option value="__inherit">inherit (group / show default)</option>${S.presets.filter((x) => x.number !== p.number).map((x) => `<option value="${x.number}">${x.number} · ${esc(x.name)}</option>`).join('')}`;
+    $('#editFollowUp').value = own.target ? String(own.target) : '__inherit';
+    $('#editFollowHint').innerHTML = `Now: ${window.CCFU.bailText(p.bail, (n) => { const q = S.presets.find((x) => x.number === n); return q ? `${n} · ${q.name}` : String(n); })} · waits ${S.followUp ? S.followUp.delayMs : 1000} ms · ↪ on the page head sets the switch, default and groups`;
     $('#dlgEdit').showModal();
   }
   $('#dlgEdit').addEventListener('close', () => {
@@ -739,7 +754,7 @@
     const ms = Number(f.elements.master.value);
     const master = ms ? { slot: ms, dests: S.destinations.map((d) => d.key).filter((k) => f.elements[`mdest_${k}`] && f.elements[`mdest_${k}`].checked) } : null;
     const mvMemories = {}; for (const m of S.multiviewers || []) { const v = Number(f.elements[`mv_${m.key}`] && f.elements[`mv_${m.key}`].value); if (v) mvMemories[m.key] = v; }
-    run(api('PUT', `/api/presets/${editing.number}`, { name: f.elements.name.value, newNumber: Number(f.elements.number.value), memories: readSlots(f, editing.destinations), master, mvMemories }).then(() => toast('Saved')));
+    run(api('PUT', `/api/presets/${editing.number}`, { name: f.elements.name.value, newNumber: Number(f.elements.number.value), memories: readSlots(f, editing.destinations), master, mvMemories, followUp: (() => { const o = {}; const st = f.elements.followUpState.value; if (st === 'on') o.enabled = true; if (st === 'off') o.enabled = false; if (f.elements.followUp.value !== '__inherit') o.target = Number(f.elements.followUp.value); return Object.keys(o).length ? o : null; })() }).then(() => toast('Saved')));
   });
   $('#formEdit').querySelector('.btn-grid').addEventListener('click', (ev) => {
     const b = ev.target.closest('button[data-act]'); if (!b || !editing) return;
