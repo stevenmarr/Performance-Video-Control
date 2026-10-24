@@ -1,11 +1,25 @@
-# Video scopes (0.12.0-dev)
+# Video scopes / Lightning (0.13.0-dev)
 
 Waveform, RGB parade, vectorscope and false colour from a camera's **H.264 stream**. The picture is not
 re-encoded on the way; the browser decodes it and the scopes are drawn on the GPU (WebGL2) from the decoded
 Y′CbCr values.
 
-Open it from **PTZ → SCOPES** (in the app) or on its own page at **`/scopes.html`**. The page also works in a
-separate window (the **⤢ WINDOW** button).
+Open it from the top-level **LIGHTNING** tab (engineering scopes), from **PTZ → SCOPES** (same experience),
+or on its own page at **`/lightning.html`** / **`/scopes.html`**. The page also works in a separate window
+(the **⤢ WINDOW** button).
+
+**Lightning** means this engineering scopes surface — not stage lighting and not NewTek CG.
+
+## Publishing over NDI (Mac path; no NDI SDK on the Pi)
+
+The Pi app does **not** ship an NDI SDK or npm native deps. To get scopes onto an NDI multiviewer:
+
+1. On a show Mac, open `/lightning.html` (or `/scopes.html`) **full screen**.
+2. Publish that window with **OBS + DistroAV** (formerly OBS-NDI) or **NDI Tools** Scan Converter.
+3. Prefer **one composite** NDI source first (picture + scopes together).
+
+In the Lightning tab, **NDI HELP** shows the same recipe. A “Mac sidecar” toggle is a placeholder for a
+future optional helper — it does not publish anything yet.
 
 ```
 camera RTSP (TCP interleaved RTP, H.264)  ─┐

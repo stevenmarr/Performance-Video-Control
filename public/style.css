@@ -944,8 +944,8 @@ body.tab-atem .main{gap:14px}
 @media (max-width:1100px){ .sys-line .row-main{grid-template-columns:12px 30px minmax(0,1fr) auto;grid-template-areas:none} .sys-line .row-stats,.sys-line .row-live,.sys-line .row-host,.sys-line .row-st{display:none} }
 
 /* 0.11.0 two-row navigation: row 1 = ⌂ SYSTEMS + system groups on the desk, row 2 = that group's pages */
-nav.tabs{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:4px 14px 0;row-gap:0}
-.tabs-top,.tabs-sub{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+nav.tabs{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:4px 14px 0;row-gap:0;min-width:0;max-width:100%;box-sizing:border-box}
+.tabs-top,.tabs-sub{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;-webkit-overflow-scrolling:touch;min-width:0;max-width:100%}
 .tabs-top{padding-bottom:6px;border-bottom:1px solid var(--line)}
 .tabs-sub{padding-top:6px;min-height:40px}
 .tabs-top>*,.tabs-sub>*{flex:0 0 auto}
@@ -1049,3 +1049,21 @@ body.dk-busy-rz-e *,body.dk-busy-rz-w *{cursor:ew-resize!important}body.dk-busy-
 @container dk (min-width: 560px){ .notes textarea{min-height:80px} }
 .chip.login{font-family:ui-monospace,Menlo,monospace}.chip.login.bad{background:#3a0d10;border-color:var(--pgm);color:#ffb3b6}
 #formPtzLogin h2 small{font-size:12px;color:var(--dim);font-weight:600;margin-left:6px}
+
+
+/* 0.13.0-dev Lightning engineering tab + TSL tallies */
+.tgrp-eng .led.ok { box-shadow: 0 0 0 1px #C42020; }
+body[data-tabgrp="lightning"] .tgrp[data-tabgrp="lightning"] { color: #F5F5F5; border-color: #C42020; }
+.lightning-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px 4px; background: #121212; border-bottom: 1px solid #262626; }
+.lightning-ndi { margin: 8px 12px; padding: 10px 12px; background: #121212; border: 1px solid #2a2a2a; border-radius: 8px; color: #F5F5F5; }
+.lightning-ndi .ndi-steps { margin: 6px 0 10px 1.2em; color: #F5F5F5; }
+.lightning-ndi .ndi-future { opacity: .7; }
+#pane-lightning { background: #121212; }
+.tsl-panel { margin: 18px 0; padding: 12px 14px; background: #121212; border: 1px solid #2a2a2a; border-radius: 10px; }
+.tsl-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 8px 0; }
+.tsl-row label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #a8a8a8; }
+.tsl-row input[type=text], .tsl-row input[type=number], .tsl-row select { min-width: 90px; }
+.tsl-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 13px; }
+.tsl-table th, .tsl-table td { border-bottom: 1px solid #2a2a2a; padding: 4px 6px; text-align: left; }
+.tsl-table input { width: 100%; max-width: 160px; background: #1a1a1a; border: 1px solid #333; color: #F5F5F5; border-radius: 4px; padding: 4px 6px; }
+.tsl-log { max-height: 140px; overflow: auto; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 6px; padding: 8px; font: 11px ui-monospace, Menlo, monospace; color: #bdbdbd; }
