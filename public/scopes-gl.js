@@ -60,8 +60,9 @@
   uniform sampler2D u_an; uniform ivec2 u_anSize; uniform int u_mode; uniform float u_full, u_vgain;
   void main(){
     int n = u_anSize.x * u_anSize.y; int id = gl_VertexID; int ch = 0;
-    if (u_mode == 1) { ch = id / n; id -= ch * n; }
     ivec2 p = ivec2(id % u_anSize.x, id / u_anSize.x);
+    // parade: each channel is drawn into a third of the width, so it samples every third column (same cost as WFM)
+    if (u_mode == 1) { int cw = u_anSize.x / 3; int nc = cw * u_anSize.y; ch = id / nc; id -= ch * nc; p = ivec2((id % cw) * 3 + 1, id / cw); }
     vec3 c = texelFetch(u_an, p, 0).rgb * 255.0;
     float Y = u_full > 0.5 ? c.r / 255.0 : (c.r - 16.0) / 219.0;
     float Pb = u_full > 0.5 ? (c.g - 128.0) / 255.0 : (c.g - 128.0) / 224.0;
@@ -195,7 +196,7 @@
       const acc = (name, w, h, mode, count) => { const t = this._target(name, w, h, true); gl.bindFramebuffer(gl.FRAMEBUFFER, t.fb); gl.viewport(0, 0, w, h); gl.clear(gl.COLOR_BUFFER_BIT); gl.uniform1i(pp.u.u_mode, mode); gl.drawArrays(gl.POINTS, 0, count); };
       const scale8 = this.floatOk ? 1 : 255; // RGBA8 fallback saturates at 1 count: brightness is then on/off
       if (panels.wfm) acc('wfm', aw, 512, 0, aw * ah);
-      if (panels.parade) acc('parade', aw, 512, 1, aw * ah * 3);
+      if (panels.parade) acc('parade', aw, 512, 1, Math.floor(aw / 3) * ah * 3);
       if (panels.vec) acc('vec', 512, 512, 2, aw * ah);
       gl.disable(gl.BLEND); gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, null);
       // 3. display
@@ -205,7 +206,7 @@
       const ps = this.prog.scope;
       const show = (name, r, k, tint) => { if (!r) return; vp(r); gl.useProgram(ps.p); gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this.targets[name].tex); gl.uniform1i(ps.u.u_acc, 4); gl.uniform1f(ps.u.u_k, k * g * scale8); gl.uniform1i(ps.u.u_tint, tint); gl.drawArrays(gl.TRIANGLES, 0, 3); };
       show('wfm', panels.wfm, 40 / ah, 0);
-      show('parade', panels.parade, 40 / ah / 3, 1);
+      show('parade', panels.parade, 40 / ah, 1);
       show('vec', panels.vec, (512 * 512) / (aw * ah) * 0.35, 2);
       if (panels.pic) {
         vp(panels.pic); const pc = this.prog.pic; gl.useProgram(pc.p); this._bindSrc(pc);
