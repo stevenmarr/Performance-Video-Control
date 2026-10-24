@@ -1,40 +1,62 @@
-# Video scopes / Lightning (0.13.0-dev)
+# Video scopes / Lightning (0.20.0-dev)
 
-Waveform, RGB parade, vectorscope and false colour from a camera's **H.264 stream**. The picture is not
-re-encoded on the way; the browser decodes it and the scopes are drawn on the GPU (WebGL2) from the decoded
-Y′CbCr values.
+Waveform, RGB parade, vectorscope and false colour from an **H.264** feed. The picture is not
+re-encoded on the way through the app; the browser decodes it and the scopes are drawn on the GPU
+(WebGL2) from the decoded Y′CbCr values.
 
-Open it from the top-level **LIGHTNING** tab (engineering scopes), from **PTZ → SCOPES** (same experience),
-or on its own page at **`/lightning.html`** / **`/scopes.html`**. The page also works in a separate window
-(the **⤢ WINDOW** button).
+**Lightning** is the engineering scopes tab: the operator picks an **NDI source (ingest)** and runs
+those scopes on that feed. It is not stage lighting, not NewTek CG, and not “publish the scopes
+picture as an NDI output.”
 
-**Lightning** means this engineering scopes surface — not stage lighting and not NewTek CG.
+**PTZ → SCOPES** is the camera RTSP shortcut into the same WebGL page. TSL tallies are a different
+setup under **SYSTEMS → TALLIES** (`docs/tsl-tally.md`).
 
-## Publishing over NDI (Mac path; no NDI SDK on the Pi)
+Open Lightning from the **LIGHTNING** tab, or on its own page at **`/lightning.html`** /
+**`/scopes.html`** (the **⤢ WINDOW** button).
 
-The Pi app does **not** ship an NDI SDK or npm native deps. To get scopes onto an NDI multiviewer:
+## NDI ingest (Mac sidecar; the Pi does not receive NDI)
 
-1. On a show Mac, open `/lightning.html` (or `/scopes.html`) **full screen**.
-2. Publish that window with **OBS + DistroAV** (formerly OBS-NDI) or **NDI Tools** Scan Converter.
-3. Prefer **one composite** NDI source first (picture + scopes together).
-
-In the Lightning tab, **NDI HELP** shows the same recipe. A “Mac sidecar” toggle is a placeholder for a
-future optional helper — it does not publish anything yet.
+Browsers cannot open NDI. The Control Center process does not load an NDI SDK or a native npm addon.
+NDI receive runs in a **Mac sidecar**. The sidecar turns the NDI source into H.264 access units and
+pushes them into the same relay the camera RTSP path already uses.
 
 ```
+NDI source (show LAN)
+    │  Mac only — sidecar/ndi/ndi-sidecar.js
+    │  real: ffmpeg NDI demuxer → H.264 Annex-B (zerolatency, no B-frames)
+    │  no hardware: --mock or --frames-file (fixture). CI uses this.
+    ▼
+POST /api/scopes/ndi/au          (the Pi app only accepts these bytes)
+    │
 camera RTSP (TCP interleaved RTP, H.264)  ─┐
 test file (.h264 Annex-B / .mp4 / .mov)  ──┼─► lib/stream-relay.js ──WebSocket /api/scopes/ws──► browser
-mock UE150 RTSP camera (--mock)          ─┘   (access units, no transcoding)      │
-                                                                                  ├─ WebCodecs VideoDecoder → I420 planes (exact Y′)
-                                                                                  ├─ or MSE <video> (fMP4 muxed in the page) → RGB
-                                                                                  └─ WebGL2: analyse → waveform / parade / vectorscope / false colour
+mock UE150 RTSP camera (--mock)          ─┤   (access units, no transcoding)      │
+ndi:mock  (built-in bars fixture, --mock) ┘                                       ├─ WebCodecs → exact Y′
+                                                                                  ├─ or MSE <video> → RGB
+                                                                                  └─ WebGL2: waveform / parade / vectorscope / false colour
 ```
+
+| Piece | Where it runs |
+|---|---|
+| NDI receive + H.264 encode | **Mac** sidecar. Refuses `--source` / `--list` on a Raspberry Pi. |
+| Byte relay + WebSocket | Control Center (Pi or Mac). No NDI library. |
+| Scopes | Browser WebGL, same page as the camera feed. |
+| No-hardware path | App `--mock` lists **NDI · Mock bars** (`ndi:mock`). Sidecar `--mock` pushes the same fixture as `ndi:mock-sidecar` (or `--id`). |
+
+```
+node sidecar/ndi/ndi-sidecar.js --mock --app http://127.0.0.1:8080
+node sidecar/ndi/ndi-sidecar.js --source "SOURCE NAME" --app http://<control-center-host>:<port>
+```
+
+On the Lightning tab, choose the source and press **USE FEED**. **NDI SETUP** is this recipe.
+Full-bandwidth NDI is uncompressed, so a real receive encodes H.264 on the Mac (CPU). That encode
+does not run on the Pi.
 
 ## Using it
 
 | Control | What it does |
 |---|---|
-| SOURCE | A camera (`cam:<id>`), a built-in test clip, a clip in the test folder, or the custom input |
+| SOURCE | An NDI ingest (`ndi:<id>`), a camera (`cam:<id>`), a built-in test clip, a clip in the test folder, or the custom input |
 | PIC / WFM / PARADE / VEC | Choose which panels to show; they lay out side by side. Double-click a panel to show it alone. |
 | NORMAL / FALSE / ZEBRA | Picture mode. ZEBRA uses the level next to it (%). |
 | RANGE | AUTO uses the stream's VUI `video_full_range_flag`. LEGAL is 16–235 = 0–100 %; FULL is 0–255 = 0–100 %. |
@@ -223,5 +245,6 @@ node server.js --mock                                                    # mock 
 
 | Part | Files |
 |---|---|
-| Server | `lib/scopes/{h264,rtp,rtsp-client,sources,ws,service}.js`, `lib/stream-relay.js`, `lib/mocks/rtsp-camera.js` |
+| Server | `lib/scopes/{h264,rtp,rtsp-client,sources,ws,service,ndi-ingest}.js`, `lib/stream-relay.js`, `lib/mocks/rtsp-camera.js` |
+| NDI sidecar | `sidecar/ndi/ndi-sidecar.js` (Mac receive, or `--mock` / `--frames-file` with no hardware) |
 | Browser | `public/scopes.{html,js}`, `public/scopes-gl.js`, `public/scopes-mse.js`, `public/scopes-tab.js` |

@@ -79,7 +79,7 @@ async function main() {
   const scopes = require('./lib/scopes/service').attachScopes(server, { systems, dataDir, mock, log: (lv, m) => engine.log(lv, m) });
   server.listen(port, bind, async () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
-    console.log(`RS6 Presets UI: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
+    console.log(`Control Center UI: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
     console.log(`Data dir: ${dataDir}`);
     await engine.connect();
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);

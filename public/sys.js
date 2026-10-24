@@ -68,7 +68,7 @@
         const nm = list.map((s) => SYS.systems[s].short).join(' / ') || 'E2 / PIXELHUE';
         b.querySelector('.tgrp-nm').textContent = nm;
       }
-      b.title = k === 'lightning' ? 'Lightning: engineering scopes (waveform, parade, vectorscope, false colour)' : (list.length ? `${list.map((s) => `${SYS.systems[s].label}: ${statusOf(SYS.systems[s]).txt}`).join(' · ')}` : '');
+      b.title = k === 'lightning' ? 'Lightning: NDI ingest into waveform, parade, vectorscope and false colour' : (list.length ? `${list.map((s) => `${SYS.systems[s].label}: ${statusOf(SYS.systems[s]).txt}`).join(' · ')}` : '');
     }
     const act = document.querySelector('#tabsSub .tab.active:not(.grp-off)') ; const top = document.querySelector('#tabsTop .active');
     for (const el of [act, top]) if (el && el.scrollIntoView && el.parentElement.scrollWidth > el.parentElement.clientWidth) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });

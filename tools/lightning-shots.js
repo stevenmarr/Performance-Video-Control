@@ -51,7 +51,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   });
   await shot('tsl-tallies', async (p) => {
     await p.goto(B + '/#system'); await sleep(800);
-    await p.evaluate(() => document.querySelector('#tslPanel') && document.querySelector('#tslPanel').scrollIntoView());
+    await p.click('[data-sysview=tallies]'); await sleep(300);
     await sleep(400);
   });
   await shot('ptz-scopes-shortcut', async (p) => {
