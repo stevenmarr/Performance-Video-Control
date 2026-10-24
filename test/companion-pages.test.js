@@ -151,7 +151,7 @@ test('PTZ deck pages (0.12.0 / module 0.9.0): LIVE/PAINT/FUNC/MOVE, HOME top-lef
   assert.deepEqual([0, 1, 2, 3].map((c) => plus.controls[2][c].presetRef.presetId), ['iris', 'mped', 'zoom', 'focus'].map((k) => `deck_strip_${k}`));
   assert.equal(plus.controls[3][0].options.rotaryActions, true);
   const pxl = page('plusxl', /PTZ LIVE$/);
-  assert.deepEqual([0, 2, 3, 5, 6, 8].map((c) => pxl.controls[5][c].presetRef.presetId), ['iris', 'mped', 'rgain', 'bgain', 'zoom', 'focus'].map((k) => `deck_dial_${k}`));
+  assert.deepEqual([0, 2, 3, 5, 6, 8].map((c) => pxl.controls[5][c].presetRef.presetId), ['iris', 'mped', 'gain_rb', 'ped_rb', 'zoom', 'focus'].map((k) => `deck_dial_${k}`));
   const mk2 = page('mk2', /PTZ LIVE$/);
   assert.equal(mk2.controls[0][0].type, 'button');
   assert.equal(mk2.controls[1][0].presetRef.presetId, 'deck_sel_preset_1');
