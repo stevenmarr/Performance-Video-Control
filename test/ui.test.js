@@ -47,6 +47,7 @@ test('Settings button markup and /settings deep link are present', () => {
 
 // Browser check. Uses Playwright when it can be resolved (npm i -g playwright, or NODE_PATH); skipped otherwise,
 // because the app itself has no dependencies.
+const { openTab } = require('./ui-helpers');
 let pw = null;
 try { pw = require('playwright'); } catch { pw = null; }
 
@@ -318,7 +319,7 @@ test('0.4.0 #5: BACKUP tab shows the group label and only existing backups', { s
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto(app.base + '/#presets'); await page.click('.tab[data-tab=backup]');
+  await page.goto(app.base + '/#presets'); await openTab(page, 'backup');
   await page.waitForFunction(() => /MEDIA BU/.test(document.querySelector('#pane-backup').innerText));
   const txt = await page.textContent('#pane-backup');
   assert.match(txt, /MEDIA BU\s*GROUP 1/);
@@ -329,7 +330,7 @@ test('0.4.0 #6: WEB RCS tab embeds the device page; a unit that refuses framing 
   const app = await appFixture(t);
   const browser = await launch(t, pw.chromium); if (!browser) return;
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-  await page.goto(app.base + '/#presets'); await page.click('.tab[data-tab=webrcs]');
+  await page.goto(app.base + '/#presets'); await openTab(page, 'webrcs');
   await page.waitForFunction(() => /EMBEDDED/.test(document.querySelector('#rcsStatus').textContent));
   const frame = page.frameLocator('#rcsFrame');
   await frame.locator('text=Web RCS placeholder').waitFor();
@@ -340,7 +341,7 @@ test('0.4.0 #6: WEB RCS tab embeds the device page; a unit that refuses framing 
   // a unit that sends X-Frame-Options: DENY
   const p2 = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await p2.route('**/api/webrcs', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ url: 'http://127.0.0.1:9/', reachable: true, status: 200, framable: false, blockedBy: ['X-Frame-Options: DENY'] }) }));
-  await p2.goto(app.base + '/#presets'); await p2.click('.tab[data-tab=webrcs]');
+  await p2.goto(app.base + '/#presets'); await openTab(p2, 'webrcs');
   await p2.waitForFunction(() => /CAN'T EMBED/.test(document.querySelector('#rcsStatus').textContent));
   assert.ok(await visible(p2, '#rcsBlocked')); assert.match(await p2.textContent('#rcsBlocked'), /X-Frame-Options: DENY/);
   assert.ok(await visible(p2, '#rcsSide'));

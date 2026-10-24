@@ -41,6 +41,46 @@
   }
   const ver = (v) => (v && typeof v === 'object' ? `${v.major}.${v.minor}.${v.patch}` : v || '');
 
+  // ---------- 0.11.0 two-row navigation (docs/navigation.md) ----------
+  // Row 1: ⌂ SYSTEMS + one button per system group on the desk, always in the same order (RS6, E2 / PIXELHUE,
+  // ATEM, PTZ, PIXERA, MILLUMIN). Row 2: the pages of the selected group only. Each row scrolls sideways when
+  // it does not fit, and the active button is kept in view.
+  const GRP_ORDER = ['rs6', 'preset', 'atem', 'ptz', 'pixera', 'millumin'];
+  const RANK = { off: 3, warn: 2, idle: 1, ok: 0 };
+  const lastTabKey = (g) => `cc.lastTab.${g}`;
+  function curGroup() { const t = CC.getTab(); return TAB_KIND[t] || 'home'; }
+  function applyTabRows() {
+    if (!SYS) return;
+    const g = curGroup();
+    document.body.dataset.tabgrp = g;
+    document.querySelectorAll('#tabsSub .tab[data-sys], #tabsSub .tab-group').forEach((el) => {
+      el.classList.toggle('grp-off', (el.dataset.sys || el.dataset.grp) !== g);
+    });
+    $('#tabsHomeNote').hidden = g !== 'home';
+    for (const b of document.querySelectorAll('.tgrp[data-tabgrp]')) {
+      const k = b.dataset.tabgrp; const list = armedOf(k);
+      b.hidden = !list.length; b.classList.toggle('active', k === g);
+      let worst = 'ok';
+      for (const s of list) { const c = statusOf(SYS.systems[s]).cls; if ((RANK[c] ?? 2) > (RANK[worst] ?? 0)) worst = c; }
+      b.querySelector('.led').className = `led ${worst}`;
+      if (k === 'preset') {
+        const nm = list.map((s) => SYS.systems[s].short).join(' / ') || 'E2 / PIXELHUE';
+        b.querySelector('.tgrp-nm').textContent = nm;
+      }
+      b.title = list.length ? `${list.map((s) => `${SYS.systems[s].label}: ${statusOf(SYS.systems[s]).txt}`).join(' · ')}` : '';
+    }
+    const act = document.querySelector('#tabsSub .tab.active:not(.grp-off)') ; const top = document.querySelector('#tabsTop .active');
+    for (const el of [act, top]) if (el && el.scrollIntoView && el.parentElement.scrollWidth > el.parentElement.clientWidth) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+  $('#tabsTop').addEventListener('click', (ev) => {
+    const b = ev.target.closest('.tgrp[data-tabgrp]'); if (!b) return;
+    const k = b.dataset.tabgrp;
+    const vis = (t) => { const el = t && document.querySelector(`#tabsSub .tab[data-tab="${t}"][data-sys="${k}"]`); return el && !el.hidden ? el : null; };
+    const el = vis(localStorage.getItem(lastTabKey(k))) || vis(HOME_TAB[k]) || [...document.querySelectorAll(`#tabsSub .tab[data-sys="${k}"]`)].find((x) => !x.hidden);
+    if (el) el.click();
+  });
+  window.addEventListener('cc:tab', (ev) => { const g = TAB_KIND[ev.detail]; if (g) localStorage.setItem(lastTabKey(g), ev.detail); applyTabRows(); });
+
   // ---------- system switch / chrome ----------
   // One preset pane is shared by E2 and PixelHue, so that group shows the focused one when it is a preset
   // system, otherwise the first armed preset system that has the tab.
@@ -73,6 +113,7 @@
       t.hidden = !owner;
       if (owner) t.dataset.owner = owner;
     });
+    applyTabRows();
     document.querySelectorAll('.xsys').forEach((e) => { e.textContent = sysInfo.short; });
     const pillFor = () => {
       const tab = CC.getTab();

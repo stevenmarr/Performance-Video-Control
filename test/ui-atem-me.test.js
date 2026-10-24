@@ -8,6 +8,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
+const { openTab } = require('./ui-helpers');
 let pw = null; try { pw = require('playwright'); } catch { /* optional */ }
 const waitHttp = async (u) => { for (let i = 0; i < 150; i++) { try { await fetch(u); return; } catch { await new Promise((r) => setTimeout(r, 100)); } } throw new Error('server did not start'); };
 
@@ -63,13 +64,13 @@ for (const [model, n] of [['chd2me', 2], ['c4k4me', 4]]) {
     await page.waitForFunction(() => new Set([...document.querySelectorAll('#atemMulti .me-block')].map((e) => Math.round(e.getBoundingClientRect().left))).size >= 2, null, { timeout: 5000 }); // 1920 px: side by side
     // KEYS: the same M/E selection, every M/E reachable
     await page.click('#atemMe [data-ame="1"]');
-    await page.click('.tab[data-tab=akeys]');
+    await openTab(page, 'akeys');
     await page.locator('#akMe [data-akme="1"].active').waitFor();
     assert.equal(await page.locator('#akMe [data-akme]').count(), n);
     await page.click(`#akMe [data-akme="${last}"]`);
     await page.locator('[data-uskon="0"]').first().click();
     await until(async () => (await api('/api/sys/atem')).mixEffects[last].keyers[0].onAir === true, `key 1 on air on M/E ${n}`);
-    await page.click('.tab[data-tab=atem]');
+    await openTab(page, 'atem');
     await page.locator(`#atemMe [data-ame="${last}"].active`).waitFor();
     // kept per browser
     await page.reload(); await page.locator(`#atemMe [data-ame="${last}"].active`).waitFor({ timeout: 8000 });
@@ -86,7 +87,7 @@ test('ATEM 0.11.0: buttons show the long source name; the short name only on a n
   await page.setViewportSize({ width: 640, height: 900 }); await page.waitForTimeout(200);
   assert.equal(await b.locator('.nm-s').isVisible(), true, 'narrow: short name'); assert.equal((await b.innerText()).trim(), i.short);
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.click('.tab[data-tab=arouter]'); await page.locator('.ar-out[data-out="aux:0"] .nm-l').waitFor();
+  await openTab(page, 'arouter'); await page.locator('.ar-out[data-out="aux:0"] .nm-l').waitFor();
   assert.equal(await page.locator('.ar-out[data-out="aux:0"] .nm-s').isVisible(), false);
   assert.deepEqual(errors, []);
 });

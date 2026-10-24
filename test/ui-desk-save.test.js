@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
+const { openTab } = require('./ui-helpers');
 let pw = null; try { pw = require('playwright'); } catch { /* optional */ }
 const waitHttp = async (u) => { for (let i = 0; i < 150; i++) { try { await fetch(u); return; } catch { await new Promise((r) => setTimeout(r, 100)); } } throw new Error('server did not start'); };
 const until = async (fn, what) => { for (let i = 0; i < 80; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } throw new Error(`timed out: ${what}`); };
@@ -32,7 +33,7 @@ test('SAVE on switcher pages: show saved, ATEM startup state (SRsv) on request (
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(B + '/');
   await page.waitForFunction(() => document.body.classList.contains('kind-atem'), null, { timeout: 8000 });
-  await page.click('.tab[data-tab=atem]');
+  await openTab(page, 'atem');
   const before = (await api('/api/shows')).json;
   await page.click('#atemSave'); await page.locator('#dlgDeskSave[open]').waitFor();
   assert.ok(await page.locator('#dsStartupRow').isVisible(), 'ATEM: startup option offered');

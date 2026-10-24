@@ -8,6 +8,7 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const { spawn } = require('child_process');
+const { openTab } = require('./ui-helpers');
 let pw = null;
 try { pw = require('playwright'); } catch { pw = null; }
 const waitHttp = (url, ms = 15000) => { const t0 = Date.now(); return new Promise((res, rej) => { const once = () => http.get(url, (r) => { r.resume(); res(); }).on('error', () => (Date.now() - t0 > ms ? rej(new Error('server did not start')) : setTimeout(once, 200))); once(); }); };
@@ -28,11 +29,16 @@ test('Control Center: dashboard, E2 presets (dim, recall, TAKE), PixelHue, back 
   await page.locator('.sys-card[data-card=e2] .led.ok, .sys-card[data-card=e2] .led.on').first().waitFor({ timeout: 8000 });
   await page.click('[data-use=e2]');
   await page.waitForFunction(() => document.body.classList.contains('sys-x'));
+  await page.click('.tgrp[data-tabgrp=preset]');
+  await page.locator('.tab[data-tab=xcues]').waitFor();
   assert.equal(await page.locator('.tab[data-tab=xcues]').isVisible(), true);
-  assert.equal(await page.locator('.tab[data-tab=presets]').isVisible(), true, 'RS6 stays on the desk when E2 is added');
-  assert.equal(await page.locator('.tab-group[data-grp=rs6]').isVisible(), true);
-  assert.equal(await page.locator('.tab-group[data-grp=preset]').isVisible(), true);
-  await page.click('.tab[data-tab=xpresets]');
+  // 0.11.0: one top-row button per system group on the desk; the second row holds the selected group's pages only
+  assert.equal(await page.locator('.tgrp[data-tabgrp=rs6]').isVisible(), true, 'RS6 stays on the desk when E2 is added');
+  assert.equal(await page.locator('.tgrp[data-tabgrp=preset]').isVisible(), true);
+  assert.equal(await page.locator('.tgrp[data-tabgrp=preset].active').count(), 1, 'the E2 group is selected');
+  assert.equal(await page.locator('.tab[data-tab=presets]').isVisible(), false, 'other groups\' pages are not in the second row');
+  assert.deepEqual(await page.$$eval('#tabsTop .tgrp:not([hidden])', (b) => b.map((x) => x.dataset.tabgrp)), ['rs6', 'preset'], 'fixed group order');
+  await openTab(page, 'xpresets');
   await page.locator('#xgrid .preset[data-key]').first().waitFor();
   // select only Screen 4: S1-only presets dim
   await fetch(`${B}/api/sys/e2/selection`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ destinations: ['S4'] }) });
@@ -44,7 +50,7 @@ test('Control Center: dashboard, E2 presets (dim, recall, TAKE), PixelHue, back 
   await page.goto(B + '/');
   await page.click('.tab[data-tab=system]');
   await page.click('[data-use=pixelhue]');
-  await page.click('.tab[data-tab=xpresets]');
+  await openTab(page, 'xpresets');
   await page.locator('#xgrid .preset[data-key^="ph:"]').first().waitFor();
   // 0.9.1 desk: E2 is still on the desk, so the shared preset group keeps CUES, owned by the E2 (PixelHue has no cues API)
   const cuesTab = page.locator('.tab[data-tab=xcues]');
@@ -82,7 +88,7 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   // ATEM: preview from the bus, then CUT
   await page.click('[data-use=atem]');
   await page.waitForFunction(() => document.body.classList.contains('kind-atem'));
-  await page.click('.tab[data-tab=atem]');
+  await openTab(page, 'atem');
   await page.click('#atemPvw [data-pvw="4"]');
   await page.locator('#atemPvw [data-pvw="4"].on-pvw').waitFor();
   await page.click('#atemCut');
@@ -91,7 +97,7 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   // PTZ: hold the joystick to the right, the camera moves; release, it stops
   await page.click('.tab[data-tab=system]');
   await page.click('[data-use=ptz]');
-  await page.click('.tab[data-tab=pctl]');
+  await openTab(page, 'pctl');
   const joy = page.locator('#ptzJoy'); await joy.waitFor();
   await page.locator('#pane-pctl [data-op=iris]').waitFor();
   const box = await joy.boundingBox();
@@ -112,8 +118,14 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   await page.mouse.up();
   await page.click('.tab[data-tab=system]'); await page.click('[data-use=rs6]');
   await page.waitForFunction(() => document.body.classList.contains('kind-rs6') && document.body.classList.contains('arm-atem') && document.body.classList.contains('arm-ptz'));
-  assert.equal(await page.locator('.tab[data-tab=atem]').isVisible(), true, 'ATEM tabs stay grouped while RS6 is open');
-  assert.equal(await page.locator('.tab[data-tab=pctl]').isVisible(), true, 'PTZ tabs stay grouped while RS6 is open');
+  assert.equal(await page.locator('.tgrp[data-tabgrp=atem]').isVisible(), true, 'ATEM group stays on the desk while RS6 is open');
+  assert.equal(await page.locator('.tgrp[data-tabgrp=ptz]').isVisible(), true, 'PTZ group stays on the desk while RS6 is open');
+  assert.deepEqual(await page.$$eval('#tabsTop .tgrp:not([hidden])', (b) => b.map((x) => x.dataset.tabgrp)), ['rs6', 'atem', 'ptz'], 'fixed group order');
+  // a group button returns to the page last used in that group
+  await page.click('.tgrp[data-tabgrp=ptz]'); await page.locator('.tab[data-tab=pcams]').click();
+  await page.click('.tgrp[data-tabgrp=atem]'); await page.waitForFunction(() => document.body.classList.contains('tab-atem'));
+  await page.click('.tgrp[data-tabgrp=ptz]'); await page.waitForFunction(() => document.body.classList.contains('tab-pcams'));
+  assert.equal(await page.locator('.tgrp[data-tabgrp=ptz].active').count(), 1);
   assert.deepEqual(errors, []);
 });
 
@@ -143,8 +155,9 @@ test('Control Center 0.8.0: CAMERA CONTROL dashboard: proportional joystick, roc
   await page.mouse.move(cx, cy); await page.mouse.down(); await page.mouse.move(cx + box.width * 0.18, cy, { steps: 2 });
   const slow = await until(async () => { const c = await cam(); return c.sent && c.sent.pt && c.sent.pt !== 'PTS5050' && c.sent.pt; }, 'slow move');
   await page.mouse.move(cx + box.width * 0.5, cy - box.height * 0.5, { steps: 3 });
-  const fast = await until(async () => { const c = await cam(); return c.sent.pt !== slow && c.sent.pt; }, 'fast move');
   const pan = (code) => Number(code.slice(3, 5)) - 50; const tilt = (code) => Number(code.slice(5, 7)) - 50;
+  // wait for the last step (under load an intermediate step can be read first)
+  const fast = await until(async () => { const c = await cam(); return c.sent.pt !== slow && pan(c.sent.pt) > pan(slow) && tilt(c.sent.pt) > 0 && c.sent.pt; }, 'fast move');
   assert.ok(pan(slow) > 0 && pan(slow) < 10, `slow pan ${slow}`); assert.ok(pan(fast) > pan(slow), `faster pan ${fast}`); assert.ok(tilt(fast) > 0, 'up = tilt +');
   // hidden page stops
   await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });

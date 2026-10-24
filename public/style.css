@@ -942,3 +942,22 @@ body.tab-atem .main{gap:14px}
 .sys-line details summary{padding:4px 8px;font-size:13px}
 .sys-line .row-acts{margin-right:40px}
 @media (max-width:1100px){ .sys-line .row-main{grid-template-columns:12px 30px minmax(0,1fr) auto;grid-template-areas:none} .sys-line .row-stats,.sys-line .row-live,.sys-line .row-host,.sys-line .row-st{display:none} }
+
+/* 0.11.0 two-row navigation: row 1 = ⌂ SYSTEMS + system groups on the desk, row 2 = that group's pages */
+nav.tabs{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:4px 14px 0;row-gap:0}
+.tabs-top,.tabs-sub{display:flex;flex-wrap:nowrap;align-items:flex-end;gap:6px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.tabs-top{padding-bottom:6px;border-bottom:1px solid var(--line)}
+.tabs-sub{padding-top:6px;min-height:40px}
+.tabs-top>*,.tabs-sub>*{flex:0 0 auto}
+.tabs-top .tab.tab-home{border-radius:8px;border-bottom:1px solid var(--line);padding:8px 16px}
+.tabs-top .tab.tab-home.active{box-shadow:inset 0 -3px 0 var(--accent)}
+.tgrp{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:var(--panel);border:1px solid var(--line);font-weight:900;letter-spacing:.12em;font-size:12px;color:var(--dim);cursor:pointer;min-height:38px}
+.tgrp[hidden]{display:none !important}
+.tgrp.active{background:var(--panel2);color:var(--text);border-color:#3b8cff;box-shadow:inset 0 -3px 0 var(--accent)}
+.tgrp .led{width:8px;height:8px;border-radius:50%;background:#59636f;display:inline-block}
+.tgrp .led.ok{background:#3ccf62}.tgrp .led.warn{background:#ffb02e}.tgrp .led.off{background:#ff5a4f}.tgrp .led.idle{background:#59636f}
+#tabsSub .grp-off{display:none !important}
+#tabsSub .tab-group{padding:0 4px 8px 0;margin:0}
+.tabs-home-note{align-self:center;font-size:12px;color:var(--dim);padding:0 4px}
+.tabs-home-note[hidden]{display:none}
+#tabsSub .tab-group:not(.preset-grp){display:none !important}

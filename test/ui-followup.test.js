@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
+const { openTab } = require('./ui-helpers');
 let pw = null; try { pw = require('playwright'); } catch { /* optional */ }
 const waitHttp = async (u) => { for (let i = 0; i < 150; i++) { try { await fetch(u); return; } catch { await new Promise((r) => setTimeout(r, 100)); } } throw new Error('server did not start'); };
 const until = async (fn, what) => { for (let i = 0; i < 100; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } throw new Error(`timed out: ${what}`); };
@@ -24,7 +25,7 @@ test('auto recall UI: RS6 edit + defaults, E2 AUTO RECALL mode, chip, TAKE → f
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(B + '/');
-  await page.click('.tab[data-tab=presets]');
+  await openTab(page, 'presets');
   await page.locator('#grid .preset[data-preset="1"]').waitFor();
   // RS6: edit preset 1 → follow-up 2
   await page.click('[data-mode=edit]'); await page.click('#grid .preset[data-preset="1"]');
@@ -53,7 +54,7 @@ test('auto recall UI: RS6 edit + defaults, E2 AUTO RECALL mode, chip, TAKE → f
   await api('/api/sys/active', { system: 'e2' });
   await until(async () => (await api('/api/sys/e2')).presets.length > 3, 'E2 mock presets');
   await api('/api/sys/e2/selection', { destinations: ['S2', 'S3'] });
-  await page.click('.tab[data-tab=xpresets]');
+  await openTab(page, 'xpresets');
   await page.locator('#xgrid .preset[data-key="e2:2"]').waitFor();
   await page.click('[data-xmode=follow]'); await page.click('#xgrid .preset[data-key="e2:2"]');
   await page.locator('#dlgFollowUp[open]').waitFor();

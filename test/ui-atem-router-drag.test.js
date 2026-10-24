@@ -9,6 +9,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
+const { openTab } = require('./ui-helpers');
 let pw = null; try { pw = require('playwright'); } catch { /* optional */ }
 const waitHttp = async (u) => { for (let i = 0; i < 150; i++) { try { await fetch(u); return; } catch { await new Promise((r) => setTimeout(r, 100)); } } throw new Error('server did not start'); };
 const until = async (fn, what) => { for (let i = 0; i < 80; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } throw new Error(`timed out: ${what}`); };
@@ -27,7 +28,7 @@ test('ATEM 0.11.0 ROUTER: drag a source onto an output (mouse + touch), copy out
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(B + '/#arouter');
   await page.waitForFunction(() => document.body.classList.contains('kind-atem'), null, { timeout: 8000 });
-  await page.click('.tab[data-tab=arouter]');
+  await openTab(page, 'arouter');
   await page.locator('.ar-out[data-out="aux:1"]').waitFor();
   await page.locator('#arPalList [data-dragsrc="3"]').waitFor();
   assert.equal(await page.locator('#arPalList [data-dragsrc="3011"]').count(), 0, 'media player key sources hidden from the palette by default');
@@ -86,7 +87,7 @@ test('ATEM 0.11.0 ROUTER: drag a source onto an output (mouse + touch), copy out
 
   // 5. ADVANCED reveals media player key sources in the palette (persisted)
   await page.check('#arPalAdv'); await page.locator('#arPalList [data-dragsrc="3011"]').waitFor();
-  await page.reload(); await page.click('.tab[data-tab=arouter]');
+  await page.reload(); await openTab(page, 'arouter');
   await page.locator('#arPalList [data-dragsrc="3011"]').waitFor();
   assert.deepEqual(errors, []);
 });

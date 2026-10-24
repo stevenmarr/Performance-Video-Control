@@ -8,6 +8,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
+const { openTab } = require('./ui-helpers');
 let pw = null; try { pw = require('playwright'); } catch { /* optional */ }
 const waitHttp = async (u) => { for (let i = 0; i < 150; i++) { try { await fetch(u); return; } catch { await new Promise((r) => setTimeout(r, 100)); } } throw new Error('server did not start'); };
 const until = async (fn, what) => { for (let i = 0; i < 80; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } throw new Error(`timed out: ${what}`); };
@@ -26,7 +27,7 @@ test('ATEM 0.11.0 AUDIO: MONITOR drag + persistence, MUTE ALL, DESK ZERO confirm
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(B + '/');
   await page.waitForFunction(() => document.body.classList.contains('kind-atem'), null, { timeout: 8000 });
-  await page.click('.tab[data-tab=aaudio]');
+  await openTab(page, 'aaudio');
   await page.locator('.au-strip[data-in="1"] .au-name').waitFor();
   await page.locator('#auWatchList .au-wempty').waitFor();
   // drag input 1's name into MONITOR
@@ -51,7 +52,7 @@ test('ATEM 0.11.0 AUDIO: MONITOR drag + persistence, MUTE ALL, DESK ZERO confirm
   await page.locator('.au-wcard.muted[data-win="1"]').waitFor();
   // a fresh browser (another device on this install) sees the same monitor list
   const p2 = await browser.newPage({ viewport: { width: 1920, height: 1080 } }); await p2.goto(B + '/');
-  await p2.waitForFunction(() => document.body.classList.contains('kind-atem'), null, { timeout: 8000 }); await p2.click('.tab[data-tab=aaudio]');
+  await p2.waitForFunction(() => document.body.classList.contains('kind-atem'), null, { timeout: 8000 }); await openTab(p2, 'aaudio');
   await until(async () => (await p2.$$eval('#auWatchList .au-wcard', (els) => els.map((e) => e.dataset.win).join(','))) === '2,1', 'same list in a new browser');
   await p2.close();
   // MUTE ALL / UN-MUTE ALL
