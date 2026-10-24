@@ -205,7 +205,9 @@ function wsConnect(url) {
 test('scopes service: sources, settings (passwords never returned), WebSocket relay from a test file and from the mock camera', async (t) => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6scopes-')); t.after(() => fs.rmSync(data, { recursive: true, force: true }));
   const { EventEmitter } = require('events');
-  const systems = { drivers: { ptz: { cams: new Map([['cam1', { conf: { name: 'Cam 1', host: '127.0.0.1' }, st: { series: 'UE150', data: { model: 'AW-UE150' } } }], ['cam3', { conf: { name: 'Lectern', host: '10.255.255.1' }, st: { series: 'AW-HE130', data: {} } }]]) } } };
+  const systems = { drivers: { ptz: { cams: new Map([['cam1', { conf: { name: 'Cam 1', host: '127.0.0.1' }, st: { series: 'UE150', data: { model: 'AW-UE150' } } }], ['cam3', { conf: { name: 'Lectern', host: '10.255.255.1' }, st: { series: 'AW-HE130', data: {} } }]]),
+    // the camera's own request URIs (/cgi-bin/get_rtsp) win over the default path
+    asked: [], async streamInfo(id) { this.asked.push(id); return { streams: [{ name: 'H264 STREAM 2', url: 'rtsp://127.0.0.1/MEDIAINPUT/H264/STREAM_2' }] }; } } } };
   const srv = http.createServer((req, res) => { res.writeHead(200); res.end('app'); });
   const sc = attachScopes(srv, { systems, dataDir: data, mock: true, testDir: FX, log: () => {} }); t.after(() => sc.close());
   await new Promise((r) => srv.listen(0, '127.0.0.1', r)); t.after(() => srv.close());
@@ -237,6 +239,7 @@ test('scopes service: sources, settings (passwords never returned), WebSocket re
   await fetch(`${B}/api/scopes/settings`, { method: 'POST', body: JSON.stringify({ cameras: { cam1: { password: '12345' } } }) });
   await until(() => w2.msgs.filter(Buffer.isBuffer).length >= 5, 8000);
   assert.equal(w2.msgs.find((m) => m.type === 'config').width, 1280);
+  assert.ok(systems.drivers.ptz.asked.includes('cam1')); assert.ok(w2.msgs.some((m) => m.type === 'status' && /\/MEDIAINPUT\/H264\/STREAM_2$/.test(m.url || '')), 'connects to the URI the camera reports');
   const w3 = await wsConnect(`${B}/api/scopes/ws?src=cam:cam1`); t.after(() => w3.close());
   await until(() => w3.msgs.filter(Buffer.isBuffer).length >= 5, 8000);
   assert.equal(w3.msgs.find((m) => m.type === 'config').width, 1280);
