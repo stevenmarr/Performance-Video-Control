@@ -425,10 +425,9 @@
     S.set($('#ptzCamList'), 'ptz-cams', (V.cameras || []).map((c) => `<div class="row cam-line ${c.connected ? '' : 'off'}" data-cam="${esc(c.id)}">
       <span class="led ${c.connected ? 'ok' : 'off'}"></span><span class="lbl">${esc(c.name)}<small>${esc(c.model || 'unknown model')} · series ${esc(c.series)}${c.title ? ` · ${esc(c.title)}` : ''} · ${esc(c.host)}:${esc(c.port)}${c.connected ? '' : ` · ${esc(c.error || 'offline')}`}</small></span>
       <span class="chip">${c.power ? esc(c.power.toUpperCase()) : '—'}</span>${c.tally ? '<span class="chip pgmc">TALLY</span>' : ''}<span class="spacer"></span>
-      <span class="chip login ${c.authError ? 'bad' : ''}" title="${c.authError ? 'The camera refused the login' : c.authScheme ? `The camera asked for a login (HTTP ${c.authScheme})` : 'Sent only if the camera asks for a login'}">${c.authError ? 'LOGIN REFUSED' : `LOGIN ${esc(c.user || 'admin')}${c.loginDefault ? ' · FACTORY' : ''}`}</span>
       <label class="ctl-sel mini" title="Model series used for the command set ('auto' = from the camera's model)"><select data-series="${esc(c.id)}"><option value="">series: auto</option>${(V.seriesList || []).map((s) => `<option value="${esc(s)}" ${c.series === s && c.seriesOverride ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
       <button class="btn mini ${c.id === V.selected ? 'primary' : ''}" data-selcam="${esc(c.id)}" type="button">${c.id === V.selected ? 'SELECTED' : 'SELECT'}</button>
-      <button class="btn mini" data-edit="${esc(c.id)}" type="button">EDIT</button><button class="btn mini" data-login="${esc(c.id)}" type="button" title="User / password the camera asks for (factory: admin / 12345)">LOGIN</button><button class="btn mini danger" data-rm="${esc(c.id)}" type="button">REMOVE</button></div>`).join('') || '<div class="note">No cameras yet.</div>');
+      <button class="btn mini" data-edit="${esc(c.id)}" type="button">EDIT</button><button class="btn mini danger" data-rm="${esc(c.id)}" type="button">REMOVE</button></div>`).join('') || '<div class="note">No cameras yet.</div>');
     const c = sel(); const k = catOf(c);
     if (c && !k && !catLoading.has(c.series)) { catLoading.add(c.series); api('GET', `/api/sys/ptz/cameras/${encodeURIComponent(c.id)}/catalog`).then((x) => cats.set(x.series, x)).catch(() => {}).finally(() => { catLoading.delete(c.series); renderCams(); }); }
     S.set($('#ptzRef'), 'ptz-ref', c && k ? `<div class="note small">${esc(c.name)} · ${esc(c.model || '?')} · series ${esc(k.series)} · ${k.ops.length} commands. Sources: ${esc(k.sources.module)}; ${esc(k.sources.spec)}.</div>`
@@ -471,46 +470,64 @@
   $('#ptzCamList').addEventListener('change', (ev) => { const s = ev.target.closest('[data-series]'); if (!s) return; run(api('POST', `/api/sys/ptz/cameras/${s.dataset.series}`, { series: s.value }).then(() => { cats.clear(); built = ''; toast('Camera series saved'); })); });
   $('#ptzCamList').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return; const d = b.dataset;
-    const c = d.selcam || d.edit || d.rm || d.login; const cam = (V.cameras || []).find((x) => x.id === c);
-    if (d.login) { // 0.11.1 camera login dialog
-      const dlg = $('#dlgPtzLogin'); const fm = $('#formPtzLogin'); fm.dataset.cam = c; fm.elements.user.value = cam.user || 'admin'; fm.elements.pass.value = '';
-      $('#ptzLoginCam').textContent = `${cam.name} · ${cam.host}`;
-      $('#ptzLoginState').textContent = cam.authError ? 'The camera refused the current login.' : cam.loginDefault ? 'Using the factory default login.' : 'Using a login saved on this install.';
-      dlg.showModal(); return undefined;
-    }
+    const c = d.selcam || d.edit || d.rm; const cam = (V.cameras || []).find((x) => x.id === c);
     if (d.selcam) return run(cmd('select', { cam: c }));
     if (d.edit) { const name = prompt('Camera name', cam.name); if (name === null) return undefined; const host = prompt('Camera IP address', cam.host); if (host === null) return undefined; const port = prompt('HTTP port', String(cam.port)); if (port === null) return undefined; return run(api('POST', `/api/sys/ptz/cameras/${c}`, { name, host, port: Number(port) || 80 }).then(() => toast('Camera saved'))); }
     if (d.rm) { if (!confirm(`Remove ${cam.name} from this system?`)) return undefined; return run(api('DELETE', `/api/sys/ptz/cameras/${c}`).then(() => toast('Camera removed'))); }
     return undefined;
   });
-  $('#dlgPtzLogin').addEventListener('close', () => {
-    const dlg = $('#dlgPtzLogin'); const fm = $('#formPtzLogin'); const id = fm.dataset.cam; const pass = fm.elements.pass.value; fm.elements.pass.value = '';
-    if (!id || !['save', 'factory'].includes(dlg.returnValue)) return;
-    const user = fm.elements.user.value.trim();
-    const body = dlg.returnValue === 'factory' ? { user: null, pass: null } : { user: user && user !== 'admin' ? user : null, ...(pass ? { pass } : {}) };
-    run(api('POST', `/api/sys/ptz/cameras/${encodeURIComponent(id)}`, body).then(() => toast(dlg.returnValue === 'factory' ? 'Camera login back to the factory default' : 'Camera login saved')).finally(S.refetch));
-  });
   $('#ptzAdd').addEventListener('submit', (ev) => {
     ev.preventDefault(); const fm = ev.target; const body = { name: fm.elements.name.value.trim(), host: fm.elements.host.value.trim(), port: Number(fm.elements.port.value) || 80 };
     run(api('POST', '/api/sys/ptz/cameras', body).then(() => { fm.reset(); toast(`Added ${body.name || 'camera'}`); }).finally(S.refetch));
   });
-  // ---------- 0.11.1 dockable dashboard (public/dock.js) ----------
-  // Panels move (drag the header; touch: hold, then drag), resize from the edges / bottom corners, collapse, pop out,
-  // close into the PANELS tray; snapped to a 24 / 12 / 2-column grid with one layout per breakpoint, saved per install
-  // (CCPREFS 'ptz.dock.<bp>'), named layouts and RESET under LAYOUT ▾. Nothing is rearranged while a joystick, rocker
-  // or arrow key is held, and arranging never sends a camera command. Defaults follow the 0.9.8 / 0.11.0 layout.
-  // Units: x / w in columns, y / h in rows (30 px + 8 px gap). Panels added by other features join at the bottom.
+  // ---------- 0.11.0 rearrangeable dashboard panels ----------
+  // Each panel has a grip (⠿, top right). Drag it onto another panel to swap the two places (mouse / pen: just drag;
+  // touch: press and hold, then drag). Arrow keys on a focused grip swap with the previous / next place.
+  // The layout is a per-install UI preference (CCPREFS 'ptz.panelOrder': which panel sits in each grid place, in
+  // DEFAULT_ORDER's order), so every browser of this install shows the same layout; ↺ RESET LAYOUT clears it.
+  const DEFAULT_ORDER = ['joy', 'lens', 'iris', 'paint', 'presets', 'view', 'sys'];
+  const LAYOUT_KEY = 'ptz.panelOrder';
   const rcp = $('#pane-pctl .rcp');
-  const P = (id, x, y, w, h) => ({ id, x, y, w, h });
-  const DOCK_DEFAULTS = {
-    xl: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 4, 17), P('paint', 11, 0, 13, 17), P('presets', 0, 17, 11, 15), P('view', 11, 17, 6, 15), P('sys', 17, 17, 7, 15)],
-    lg: [P('joy', 0, 0, 6, 17), P('lens', 6, 0, 4, 17), P('iris', 10, 0, 5, 17), P('sys', 15, 0, 9, 17), P('paint', 0, 17, 24, 16), P('presets', 0, 33, 15, 15), P('view', 15, 33, 9, 15)],
-    md: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 5, 17), P('paint', 0, 17, 12, 17), P('presets', 0, 34, 12, 12), P('view', 0, 46, 5, 16), P('sys', 5, 46, 7, 16)],
-    sm: [P('joy', 0, 0, 2, 16), P('lens', 0, 16, 1, 17), P('iris', 1, 16, 1, 17), P('paint', 0, 33, 2, 20), P('presets', 0, 53, 2, 12), P('view', 0, 65, 1, 17), P('sys', 1, 65, 1, 17)],
-  };
-  const DOCK_PANELS = [['joy', 'PAN / TILT', 3, 8], ['lens', 'ZOOM · FOCUS', 2, 8], ['iris', 'IRIS · EXPOSURE', 3, 8], ['paint', 'PAINT', 4, 6], ['presets', 'PRESETS', 4, 6], ['view', 'PREVIEW', 3, 6], ['sys', 'CAMERA', 4, 6]]
-    .map(([id, title, minW, minH]) => ({ id, title, minW, minH, selector: `:scope > .panel.rcp-${id}` }));
-  const dock = window.CCDOCK.create(rcp, { key: 'ptz', panels: DOCK_PANELS, defaults: DOCK_DEFAULTS, bar: $('#ptzDock'), toast: (m, e) => toast(m, e), canArrange: () => !anyHeld() });
+  const panelOf = (name) => rcp.querySelector(`.panel.rcp-${name}`);
+  const cleanOrder = (o) => (Array.isArray(o) && o.length === DEFAULT_ORDER.length && DEFAULT_ORDER.every((n) => o.includes(n)) ? o.slice() : DEFAULT_ORDER.slice());
+  let order = cleanOrder(window.CCPREFS && window.CCPREFS.get(LAYOUT_KEY, null));
+  const NAMES = { joy: 'PAN / TILT', lens: 'ZOOM · FOCUS', iris: 'IRIS · EXPOSURE', paint: 'PAINT', presets: 'PRESETS', view: 'PREVIEW', sys: 'CAMERA' };
+  for (const n of DEFAULT_ORDER) {
+    const el = panelOf(n); if (!el) continue; el.dataset.panel = n;
+    el.insertAdjacentHTML('afterbegin', `<button class="pgrip" type="button" data-grip="${n}" title="Move the ${NAMES[n]} panel: drag onto another panel (touch: hold, then drag) · arrow keys" aria-label="Move the ${NAMES[n]} panel">⠿</button>`);
+  }
+  function applyLayout() {
+    order.forEach((n, i) => { const el = panelOf(n); if (el) { el.style.gridArea = DEFAULT_ORDER[i]; el.dataset.place = DEFAULT_ORDER[i]; } });
+    const custom = order.some((n, i) => n !== DEFAULT_ORDER[i]);
+    $('#ptzResetLayout').hidden = !custom; rcp.classList.toggle('custom-layout', custom);
+  }
+  function setOrder(next, why) {
+    order = cleanOrder(next); applyLayout();
+    if (window.CCPREFS) window.CCPREFS.set(LAYOUT_KEY, order.every((n, i) => n === DEFAULT_ORDER[i]) ? null : order);
+    if (why) toast(why);
+  }
+  const swap = (a, b) => { const o = order.slice(); const i = o.indexOf(a); const j = o.indexOf(b); if (i < 0 || j < 0 || i === j) return; [o[i], o[j]] = [o[j], o[i]]; setOrder(o); };
+  applyLayout();
+  if (window.CCPREFS) { window.CCPREFS.ready.then(() => { order = cleanOrder(window.CCPREFS.get(LAYOUT_KEY, null)); applyLayout(); }); window.CCPREFS.on(() => { order = cleanOrder(window.CCPREFS.get(LAYOUT_KEY, null)); applyLayout(); }); }
+  if (window.CCDRAG) {
+    window.CCDRAG.attach(rcp, {
+      handle: '.pgrip',
+      start: (el) => (Object.values(held).some(Boolean) ? null : el.dataset.grip), // never while a camera is moving
+      target: (under, from) => { const p = under.closest('.rcp > .panel[data-panel]'); return p && p.dataset.panel !== from ? p : null; },
+      drop: (p, from) => swap(from, p.dataset.panel),
+      ghost: (el, from) => `⠿ ${NAMES[from]}`,
+      begin: (from) => { rcp.classList.add('arranging'); panelOf(from).classList.add('moving'); },
+      end: (from) => { rcp.classList.remove('arranging'); const p = panelOf(from); if (p) p.classList.remove('moving'); },
+    });
+  }
+  rcp.addEventListener('keydown', (ev) => {
+    const g = ev.target.closest('.pgrip'); if (!g) return;
+    const d = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[ev.key]; if (!d) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const i = order.indexOf(g.dataset.grip); const j = i + d; if (j < 0 || j >= order.length) return;
+    swap(order[i], order[j]); g.focus();
+  });
+  $('#ptzResetLayout').addEventListener('click', () => setOrder(DEFAULT_ORDER, 'Dashboard layout reset'));
   window.CCPTZ = { releaseAll, held: () => ({ ...held }) };
-  window.CCPTZ.dock = dock;
+  window.CCPTZ.layout = () => order.slice();
 })();

@@ -12,6 +12,7 @@
   const LS = (k, v) => { const key = `cc.scopes.${k}`; if (v === undefined) return localStorage.getItem(key); if (v === null) localStorage.removeItem(key); else localStorage.setItem(key, String(v)); return v; };
   if (Q.get('embed')) document.body.classList.add('embed');
   const TEST = Q.get('test') === '1';
+  const BENCH = Q.get('bench') === '1'; // draw cost includes the GPU (1-pixel readback per frame)
   const M = window.ScopesMath;
 
   // ---------- state ----------
@@ -28,7 +29,7 @@
   // ---------- GL ----------
   const glCanvas = $('#gl'); const ov = $('#ov'); const octx = ov.getContext('2d');
   let G = null;
-  try { G = new window.ScopesGL(glCanvas, { preserve: TEST }); } catch (e) { showMsg('WebGL2 unavailable', `${e.message}. The scopes need WebGL 2 (Safari 15+, Chrome 56+, Firefox 51+).`); }
+  try { G = new window.ScopesGL(glCanvas, { preserve: TEST, analysisWidth: Number(Q.get('aw')) || Number(LS('aw')) || 640 }); } catch (e) { showMsg('WebGL2 unavailable', `${e.message}. The scopes need WebGL 2 (Safari 15+, Chrome 56+, Firefox 51+).`); }
   let rects = {}; let dirty = true; let overlayDirty = true;
   function layout() {
     const stage = $('#stage'); const dpr = window.devicePixelRatio || 1; const W = stage.clientWidth; const H = stage.clientHeight;
@@ -140,7 +141,7 @@
     if (mode === 'jpeg') { if (!camId) { showMsg('JPEG snapshots are for cameras', 'Pick a camera source, or DECODE: AUTO for this test video.'); return; } startJpeg(s, camId); return; }
     openWs(s);
   }
-  function resetStats() { Object.assign(stats, { drawn: 0, decoded: 0, skipped: 0, bytes: 0, resets: 0, decodeMs: [], drawMs: [], uploadMs: [], latMs: [], winStart: performance.now(), fps: 0, kbps: 0, lastLat: null, frames0: 0, bytes0: 0 }); }
+  function resetStats() { Object.assign(stats, { catchups: 0, drawn: 0, decoded: 0, skipped: 0, bytes: 0, resets: 0, decodeMs: [], drawMs: [], uploadMs: [], latMs: [], winStart: performance.now(), fps: 0, kbps: 0, lastLat: null, frames0: 0, bytes0: 0 }); }
   function openWs(s) {
     const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/scopes/ws?src=${encodeURIComponent(s.src.key)}`);
     ws.binaryType = 'arraybuffer'; s.ws = ws;
@@ -197,6 +198,8 @@
       const d = s.dec; if (!d || d.state !== 'configured') return;
       if (s.waitKey && !key) return; s.waitKey = false;
       if (d.decodeQueueSize > 20 && !key) { stats.skipped++; s.waitKey = true; return; } // decoder behind: skip to the next IDR
+      // latency guard: frames come out late (slow GPU / main thread) -> drop the backlog at the next IDR
+      if (key && s.behind && !catchup) { s.behind = false; stats.catchups = (stats.catchups || 0) + 1; try { d.reset(); d.configure(s.conf); } catch { /* */ } s.meta.clear(); if (pending) { pending.frame.close(); pending = null; } }
       s.meta.set(pts, { serverMs, catchup, replay, t: performance.now() }); if (s.meta.size > 120) s.meta.delete(s.meta.keys().next().value);
       try { d.decode(new EncodedVideoChunk({ type: key ? 'key' : 'delta', timestamp: pts, data })); } catch (e) { s.waitKey = true; }
     } else if (s.path === 'mse' && s.mse) {
@@ -207,7 +210,7 @@
   let pending = null; let busy = false;
   function onFrame(s, frame) {
     const m = s.meta.get(frame.timestamp); if (m) s.meta.delete(frame.timestamp);
-    stats.decoded++; if (m) push(stats.decodeMs, performance.now() - m.t);
+    stats.decoded++; if (m) { const dt = performance.now() - m.t; push(stats.decodeMs, dt); if (!m.catchup && !m.replay && dt > 400) s.behind = true; }
     if (s.closed || (m && m.catchup)) { frame.close(); return; }
     if (pending) { pending.frame.close(); stats.skipped++; }
     pending = { frame, m: m || null, s };
@@ -225,7 +228,7 @@
         p.s.exact = true;
       } else { G.uploadImage(f, w, h); p.s.exact = false; } // RGB / opaque GPU frames: the browser's conversion
       const t1 = performance.now(); push(stats.uploadMs, t1 - t0);
-      G.render(rects, performance.now() / 1000); if (TEST || Q.get('bench')) G.finish();
+      G.render(rects, performance.now() / 1000); if (BENCH) G.sync();
       push(stats.drawMs, performance.now() - t0);
       stats.drawn++;
       if (p.m && !p.m.replay) { const lat = Date.now() + stats.offset - p.m.serverMs; stats.lastLat = lat; push(stats.latMs, lat); }
@@ -237,7 +240,7 @@
     const step = (now, md) => {
       if (s.closed) return;
       if (v.videoWidth && G) {
-        const t0 = performance.now(); G.uploadImage(v, v.videoWidth, v.videoHeight); G.render(rects, t0 / 1000); if (TEST || Q.get('bench')) G.finish();
+        const t0 = performance.now(); G.uploadImage(v, v.videoWidth, v.videoHeight); G.render(rects, t0 / 1000); if (BENCH) G.sync();
         push(stats.drawMs, performance.now() - t0); stats.drawn++; stats.decoded++;
         const m = md && s.mse ? s.mse.metaFor(md.mediaTime) : null; if (m && !m.replay) { const lat = Date.now() + stats.offset - m.serverMs; stats.lastLat = lat; push(stats.latMs, lat); }
         if (overlayDirty) drawOverlay(); dirty = false;
@@ -275,6 +278,7 @@
     const now = performance.now(); const secs = (now - stats.winStart) / 1000;
     if (secs >= 1) { stats.fps = (stats.drawn - (stats.frames0 || 0)) / secs; stats.kbps = ((stats.bytes - (stats.bytes0 || 0)) * 8) / secs / 1000; stats.frames0 = stats.drawn; stats.bytes0 = stats.bytes; stats.winStart = now; }
     const s = session; const c = st.cfg || {};
+    adapt();
     const f1 = (v) => (Number.isFinite(v) ? v.toFixed(1) : '—'); const f0 = (v) => (Number.isFinite(v) ? Math.round(v) : '—');
     const path = s ? ({ webcodecs: `WEBCODECS${s.exact === false ? ' (RGB)' : ' · exact Y′'}`, mse: 'MSE · RGB', jpeg: 'JPEG' }[s.path] || '—') : 'STOPPED';
     const range = G ? (G.effFull ? 'FULL' : 'LEGAL') + (st.range === 'auto' ? ` (auto${c.fullRange === true ? ', VUI full' : c.fullRange === false ? ', VUI legal' : ''})` : '') : '';
@@ -285,11 +289,23 @@
       `<span>LATENCY <b data-ro="lat">${f0(avg(stats.latMs))}</b> ms</span>`,
       `<span>DECODE <b data-ro="dec">${f1(avg(stats.decodeMs))}</b> ms</span>`,
       `<span>DRAW <b data-ro="draw">${f1(avg(stats.drawMs))}</b> ms</span>`,
-      `<span>${f0(stats.kbps)} kb/s</span>`, `<span>${range}</span>`,
-      stats.skipped ? `<span>SKIPPED ${stats.skipped}</span>` : '', stats.resets ? `<span>RESETS ${stats.resets}</span>` : '',
+      `<span>${f0(stats.kbps)} kb/s</span>`, `<span>${range}</span>`, G ? `<span>DETAIL <b data-ro="aw">${G.analysisSize.join('×')}</b></span>` : '',
+      stats.skipped ? `<span>SKIPPED ${stats.skipped}</span>` : '', stats.resets ? `<span>RESETS ${stats.resets}</span>` : '', stats.catchups ? `<span>CATCH-UPS ${stats.catchups}</span>` : '',
     ].filter(Boolean).join('');
   }
   setInterval(readout, 500);
+  // DETAIL auto: a GPU that cannot keep up (frames replaced before they were drawn) gets fewer analysis columns
+  // (640 -> 480 -> 320 -> 240 -> 160); after 10 s without skips it steps back up. ?aw=<n> fixes it.
+  const adaptSt = { skipped: 0, drawn: 0, calmSince: performance.now() };
+  function adapt() {
+    if (!G || Q.get('aw') || !session || session.path === 'jpeg') return;
+    const sk = stats.skipped - adaptSt.skipped; const dr = stats.drawn - adaptSt.drawn; adaptSt.skipped = stats.skipped; adaptSt.drawn = stats.drawn;
+    const steps = [160, 240, 320, 480, 640]; const i = steps.indexOf(G.maxAW);
+    const late = avg(stats.decodeMs.slice(-10)) > 250;
+    if (((dr + sk > 4 && sk / (dr + sk) > 0.25) || late) && i > 0) { G.maxAW = steps[i - 1]; adaptSt.calmSince = performance.now(); dirty = true; }
+    else if (sk > 0) adaptSt.calmSince = performance.now();
+    else if (performance.now() - adaptSt.calmSince > 10000 && i >= 0 && i < steps.length - 1) { G.maxAW = steps[i + 1]; adaptSt.calmSince = performance.now(); }
+  }
 
   // ---------- settings dialog ----------
   $('#btnSettings').addEventListener('click', async () => {

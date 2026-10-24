@@ -79,7 +79,7 @@
   precision highp float;
   in vec2 v_uv; uniform sampler2D u_acc; uniform float u_k; uniform int u_tint; out vec4 o;
   void main(){
-    float c = texture(u_acc, v_uv).r; float b = 1.0 - exp(-c * u_k);
+    float c = texture(u_acc, v_uv).r; float b = 1.0 - exp(-sqrt(c * u_k) * 1.2);
     vec3 t = vec3(0.55, 1.0, 0.65);
     if (u_tint == 1) { float th = v_uv.x * 3.0; t = th < 1.0 ? vec3(1.0, 0.3, 0.3) : th < 2.0 ? vec3(0.35, 1.0, 0.35) : vec3(0.4, 0.55, 1.0); }
     else if (u_tint == 2) t = vec3(0.75, 1.0, 0.8);
@@ -133,7 +133,7 @@
       this.opts = { full: false, gain: 1, vgain: 1, view: 0, zebra: 95, matrix: 0, show: { pic: true, wfm: true, parade: true, vec: true } };
       gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     }
-    _tex(filter) { const gl = this.gl; const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, filter || gl.LINEAR], [gl.TEXTURE_MAG_FILTER, filter || gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v); return t; }
+    _tex(filter) { const gl = this.gl; const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, t); for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, filter || gl.LINEAR], [gl.TEXTURE_MAG_FILTER, filter || gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v); return t; }
     _target(name, w, h, float) {
       const gl = this.gl; let t = this.targets[name];
       if (t && t.w === w && t.h === h) return t;
@@ -146,7 +146,7 @@
     }
     // planes: {format:'I420'|'NV12', width, height, data: Uint8Array, layout:[{offset, stride}...]} (VideoFrame.copyTo)
     uploadPlanes(f) {
-      const gl = this.gl; const { width: w, height: h, data, layout } = f; const cw = Math.ceil(w / 2); const ch = Math.ceil(h / 2);
+      const gl = this.gl; gl.activeTexture(gl.TEXTURE7); const { width: w, height: h, data, layout } = f; const cw = Math.ceil(w / 2); const ch = Math.ceil(h / 2);
       const plane = (tex, i, pw, ph, ifmt, fmt, bpp) => {
         gl.bindTexture(gl.TEXTURE_2D, tex); gl.pixelStorei(gl.UNPACK_ROW_LENGTH, layout[i].stride / bpp);
         gl.texImage2D(gl.TEXTURE_2D, 0, ifmt, pw, ph, 0, fmt, gl.UNSIGNED_BYTE, data, layout[i].offset);
@@ -157,7 +157,7 @@
     }
     // RGB picture: VideoFrame, HTMLVideoElement, HTMLImageElement, ImageBitmap, canvas
     uploadImage(img, w, h) {
-      const gl = this.gl; gl.bindTexture(gl.TEXTURE_2D, this.tex.y);
+      const gl = this.gl; gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, this.tex.y);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, img);
       this.src = { mode: 2, w, h };
     }
@@ -216,6 +216,7 @@
       gl.disable(gl.SCISSOR_TEST);
     }
     finish() { this.gl.finish(); }
+    sync() { this.readCanvas(0, 0); } // a 1-pixel read waits for the GPU: draw-cost measurement only
     // test / measurement helpers: accumulated counts (r channel) of a scope target, analysis texel codes
     readTarget(name) {
       const gl = this.gl; const t = this.targets[name]; if (!t) return null;

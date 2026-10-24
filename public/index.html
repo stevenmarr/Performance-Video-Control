@@ -292,7 +292,7 @@
     <div class="rcp-bus">
       <div id="ptzStrip" class="cam-strip" title="Tap to select · keys 1-9"></div>
       <span class="spacer"></span>
-      <div id="ptzDock" class="rcp-dock"></div>
+      <button class="btn mini rcp-layout" id="ptzResetLayout" type="button" title="Put the dashboard panels back in their default places" hidden>↺ RESET LAYOUT</button>
       <button class="btn rcp-allstop" id="ptzAllStop" type="button" title="Stop every camera (Esc)">■ ALL STOP</button>
     </div>
     <div class="rcp-read" id="ptzRead"></div>
@@ -544,23 +544,6 @@
 </dialog>
 
 <!-- Save -->
-<dialog id="dlgPtzLogin">
-  <form method="dialog" id="formPtzLogin" class="form">
-    <h2>Camera login <small id="ptzLoginCam"></small></h2>
-    <div class="note small">Sent as HTTP Digest or Basic authentication, only when the camera asks for it. Factory default on the AW-UE150: user <b>admin</b>, password <b>12345</b>. A password you set here is kept only in this install's data folder (never in show files).</div>
-    <div class="row2">
-      <label>User <input name="user" maxlength="64" autocomplete="off" spellcheck="false" placeholder="admin"></label>
-      <label>Password <input name="pass" type="password" maxlength="128" autocomplete="new-password" placeholder="unchanged"></label>
-    </div>
-    <div class="note small" id="ptzLoginState"></div>
-    <div class="actions">
-      <button value="factory" class="btn ghost" formnovalidate title="Forget the saved login and use admin / 12345">FACTORY DEFAULT</button>
-      <span class="spacer"></span>
-      <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
-      <button value="save" class="btn primary">Save</button>
-    </div>
-  </form>
-</dialog>
 <dialog id="dlgSave">
   <form method="dialog" id="formSave" class="form">
     <h2 id="saveTitle">Save preset</h2>
@@ -703,7 +686,6 @@
 <div id="undoBar" class="undo-bar" role="status" hidden></div>
 <script src="/prefs.js"></script>
 <script src="/drag.js"></script>
-<script src="/dock.js"></script>
 <script src="/app.js"></script>
 <script src="/sys.js"></script>
 <script src="/atem.js"></script>
