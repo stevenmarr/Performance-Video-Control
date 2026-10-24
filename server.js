@@ -66,7 +66,7 @@ async function main() {
     const atem = new MockAtem({ model: arg('atem-model', undefined) || undefined }); sysOverrides.atem = { host: '127.0.0.1', port: await atem.start(0), me: 1 }; sysMocks.push(atem);
     const cams = [['Cam 1 Wide', 'AW-UE150'], ['Cam 2 Stage', 'AW-UE100'], ['Cam 3 Lectern', 'AW-HE130']];
     sysOverrides.ptz = { cameras: [] };
-    for (const [i, [name, model]] of cams.entries()) { const m = new MockPTZ({ model, title: name.toUpperCase().replace(/\s+/g, '-') }); sysOverrides.ptz.cameras.push({ id: `cam${i + 1}`, name, host: '127.0.0.1', port: await m.start(0) }); sysMocks.push(m); }
+    for (const [i, [name, model]] of cams.entries()) { const m = new MockPTZ({ model, title: name.toUpperCase().replace(/\s+/g, '-'), auth: model === 'AW-UE150' ? 'digest' : null }); sysOverrides.ptz.cameras.push({ id: `cam${i + 1}`, name, host: '127.0.0.1', port: await m.start(0) }); sysMocks.push(m); }
     console.log(`MOCK ATEM udp 127.0.0.1:${sysOverrides.atem.port}  MOCK PTZ cameras ${sysOverrides.ptz.cameras.map((c) => c.port).join(', ')}`);
     // 0.9.4: a mock Pixera (TCP JSON-RPC) and a mock Millumin (UDP OSC), both on 127.0.0.1
     const pixera = new MockPixera(); sysOverrides.pixera = { host: '127.0.0.1', port: await pixera.start(0) }; sysMocks.push(pixera);
