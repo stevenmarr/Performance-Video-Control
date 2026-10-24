@@ -1,0 +1,98 @@
+{
+	"$schema": "https://schemas.elgato.com/streamdeck/plugins/manifest.json",
+	"Name": "Performance Video Control",
+	"Version": "0.20.0.0",
+	"Author": "Performance Video",
+	"Actions": [
+		{
+			"Name": "Home",
+			"UUID": "com.performancevideo.control.home",
+			"Icon": "imgs/actions/home/icon",
+			"Tooltip": "M4 Viewport. Opens Control Center. Does not talk to a camera.",
+			"PropertyInspectorPath": "ui/settings.html",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"UserTitleEnabled": false,
+			"States": [{ "Image": "imgs/actions/home/key", "TitleAlignment": "middle" }]
+		},
+		{
+			"Name": "Camera",
+			"UUID": "com.performancevideo.control.camera",
+			"Icon": "imgs/actions/camera/icon",
+			"Tooltip": "Select a camera. Red is program only.",
+			"PropertyInspectorPath": "ui/settings.html",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"UserTitleEnabled": false,
+			"States": [{ "Image": "imgs/actions/camera/key", "TitleAlignment": "middle" }]
+		},
+		{
+			"Name": "Preset",
+			"UUID": "com.performancevideo.control.preset",
+			"Icon": "imgs/actions/preset/icon",
+			"Tooltip": "Recall a preset through Control Center. A live camera asks for a hold.",
+			"PropertyInspectorPath": "ui/settings.html",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"UserTitleEnabled": false,
+			"States": [{ "Image": "imgs/actions/preset/key", "TitleAlignment": "middle" }]
+		},
+		{
+			"Name": "Page",
+			"UUID": "com.performancevideo.control.page",
+			"Icon": "imgs/actions/page/icon",
+			"Tooltip": "LIVE, PAINT, FUNC or MOVE.",
+			"PropertyInspectorPath": "ui/settings.html",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"UserTitleEnabled": false,
+			"States": [{ "Image": "imgs/actions/page/key", "TitleAlignment": "middle" }]
+		},
+		{
+			"Name": "Key",
+			"UUID": "com.performancevideo.control.key",
+			"Icon": "imgs/actions/key/icon",
+			"Tooltip": "A toggle, cycle or hold. R/B gain and pedestal stay on the dials.",
+			"PropertyInspectorPath": "ui/settings.html",
+			"Controllers": ["Keypad"],
+			"DisableAutomaticStates": true,
+			"UserTitleEnabled": false,
+			"States": [{ "Image": "imgs/actions/key/key", "TitleAlignment": "middle" }]
+		},
+		{
+			"Name": "Knob",
+			"UUID": "com.performancevideo.control.dial",
+			"Icon": "imgs/actions/dial/icon",
+			"Tooltip": "Circular paint knob. Push cycles fine/coarse. A paired knob cycles R and B.",
+			"PropertyInspectorPath": "ui/settings.html",
+			"Controllers": ["Encoder"],
+			"DisableAutomaticStates": true,
+			"UserTitleEnabled": false,
+			"Encoder": {
+				"Icon": "imgs/actions/dial/encoder",
+				"layout": "layouts/knob.json",
+				"StackColor": "#7c8cff",
+				"TriggerDescription": {
+					"Rotate": "Step the value (fine, or coarse)",
+					"Push": "Cycle fine / coarse, or R / B on a paired knob",
+					"Touch": "Run the knob (A/M, AWB, ABB, reset, stop, push AF)",
+					"LongTouch": "Same as touch"
+				}
+			},
+			"States": [{ "Image": "imgs/actions/dial/key", "TitleAlignment": "middle" }]
+		}
+	],
+	"Category": "Performance Video Control",
+	"CategoryIcon": "imgs/plugin/category-icon",
+	"CodePath": "bin/plugin.js",
+	"Description": "PTZ through Performance Video Control Center. The Stream Deck never talks to a camera.",
+	"Icon": "imgs/plugin/marketplace",
+	"SDKVersion": 3,
+	"Software": { "MinimumVersion": "7.1" },
+	"OS": [
+		{ "Platform": "mac", "MinimumVersion": "12" },
+		{ "Platform": "windows", "MinimumVersion": "10" }
+	],
+	"Nodejs": { "Version": "24", "Debug": "enabled" },
+	"UUID": "com.performancevideo.control"
+}

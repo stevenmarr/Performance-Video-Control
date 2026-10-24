@@ -1,0 +1,5 @@
+node_modules/
+*.streamDeckPlugin
+com.performancevideo.control.sdPlugin/logs/*
+!com.performancevideo.control.sdPlugin/logs/.gitkeep
+com.performancevideo.control.sdPlugin/bin/*.map

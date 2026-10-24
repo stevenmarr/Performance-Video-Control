@@ -40,9 +40,94 @@ network can open.
   (Save / Save as / Open, a library with backups, autosave), **24/48/72/96 tiles** with a pager, the fix for
   **tiles re-ordering after switching tabs**, and `GET /api/version` for Companion. See [v0.5.0](#v050-persistence-show-files-more-tiles-reorder-fix).
 - A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API** for Bitfocus
-  Companion (a module ships separately in `companion-module-rs6-presets`).
+  Companion (a module ships separately in `companion-module-rs6-presets`). Companion is not how PTZ
+  decks run in 0.20. See [Stream Deck (Path C)](#video-control-020-stream-deck-path-c).
 
-No dependencies, no build step. You need Node.js 16 or later (tested on 16 and 20).
+No dependencies, no build step for the app. You need Node.js 16 or later (tested on 16 and 20).
+The Stream Deck plugin is a separate package and needs Node.js 24.
+
+---
+
+## Video Control 0.20: Stream Deck Path C
+
+Path C is the show deck for Panasonic AW-UE150 cameras. An official Elgato plugin
+(`com.performancevideo.control`) calls this app over HTTP. This app calls the camera. The Stream Deck
+never opens a camera connection, and Companion is not in that path. The Companion page generator from
+0.9.0 is still there for other surfaces. It is not the PTZ deck.
+
+NDI ingest (Lightning) is a separate 0.20 change. This section is only the plugin.
+
+### Where it lives
+
+| | |
+|---|---|
+| Plugin | `streamdeck/` |
+| UUID | `com.performancevideo.control` |
+| Bundle | `streamdeck/com.performancevideo.control.sdPlugin` |
+| Version | 0.20.0 (manifest `0.20.0.0`) |
+
+### Build and load
+
+Stream Deck 7.1 or newer runs the plugin on Node.js 24. Building it uses the same `@elgato/cli` layout
+as `streamdeck create` (rollup, `src/plugin.ts`, `manifest.json`).
+
+```bash
+cd streamdeck
+npm install
+npm run build
+npx @elgato/cli link com.performancevideo.control.sdPlugin
+```
+
+`npm run watch` rebuilds and restarts the plugin while Stream Deck is running. If the category
+Performance Video Control does not appear, quit Stream Deck and open it again (a fresh install sometimes
+starts the app elevated, and a restart clears that).
+
+`npx @elgato/cli pack com.performancevideo.control.sdPlugin` writes a `.streamDeckPlugin` installer
+you can double-click. That file is not a GitHub Release. Releases are cut separately, after this lands.
+
+In each action's property inspector set the Control Center host and port. The default is
+`127.0.0.1` port `8080`, which is this app's default. There is no camera address and no password on
+the deck.
+
+### Architecture
+
+```
+Stream Deck  →  HTTP  →  Control Center  →  Panasonic AW-UE150
+                GET /api/deck/ptz          the camera CGI stays here
+                POST /api/sys/ptz/cmd/…
+```
+
+The plugin long-polls `GET /api/deck/ptz?since=<rev>`. One snapshot has the cameras (name, selected,
+red tally), presets 1–18, paint readouts in the same labels as the paint pane, the live recall guard
+and the session speeds. A dial sends `POST /api/sys/ptz/cmd/step` with a step count (1 in FINE, 5 in
+COARSE). The app reads the current value and adds the step, so two decks cannot race a stale number.
+Paint that is locked still returns HTTP 423.
+
+### + XL
+
+The strip is the circular paint knobs (the same 270° arc as the app, gap at the bottom). Keys are
+toggles, cycles, recalls and hold-to-run moves. **R gain, B gain, R pedestal and B pedestal are not
+keys.** They share two encoders. Push cycles **R · FINE → R · COARSE → B · FINE → B · COARSE**. A tap
+on the gain knob runs AWB. A tap on the pedestal knob runs ABB.
+
+HOME, at column 0 row 0 on every page, is the **M4 Viewport** mark. Pressing it opens Control Center.
+It does not recall a shot and it does not move a camera.
+
+Red **#C42020** is PGM / LIVE only: a camera key fills red when that camera's red tally is on, and a
+preset key takes a red outline and the caption HOLD while the selected camera is live. A feature that
+is on uses accent **#3B8CFF**. The idle chip is **#222226** on **#101012**.
+
+| Page | Keys | Dials (columns 0, 2, 3, 5, 6, 8) |
+|---|---|---|
+| LIVE | Cameras, presets 1–18, IRIS AUTO, PUSH AF, AWB, LIVE GUARD, ALL STOP | IRIS, M.PED, R/B GAIN, R/B PED, ZOOM, FOCUS |
+| PAINT | Exposure and white-balance toggles (no R/B −/+) | R/B GAIN, R/B PED, M.DTL, GAMMA, CHROMA, K.POINT |
+| FUNC | Tally, power, AF, O.I.S., bars, D.EXT, DRS, night, guard, … | ZOOM, FOCUS, IRIS, M.PED, GAIN, SHUTTER |
+| MOVE | 8-way pan/tilt, TELE/WIDE, FAR/NEAR, camera HOME | ZOOM, FOCUS, IRIS, M.PED, PT SPD, ZF SPD |
+
+Page tabs switch Stream Deck profiles named `PTZ Live`, `PTZ Paint`, `PTZ Functions` and `PTZ Move`
+when those profiles are installed. `GET /api/deck/ptz/layout` is the same grid, for placing the actions.
+ALL STOP is the bottom-right key on every page. On a live camera, preset recall stays in **hold**
+(600 ms) unless the guard key cycles it.
 
 ---
 
@@ -256,6 +341,13 @@ Neither is contacted until it has an address, and neither joins the desk until *
 **ADD TO DESK AS SIMULATOR**. A simulator does not replace an address already saved for that system.
 
 ---
+
+## v0.20.0: Stream Deck plugin (Path C)
+
+The PTZ deck is an Elgato plugin in `streamdeck/`, UUID `com.performancevideo.control`. It calls
+`GET /api/deck/ptz` and `POST /api/sys/ptz/cmd/…` (including `step`). See
+[Stream Deck (Path C)](#video-control-020-stream-deck-path-c). New `/api/version` features:
+`streamDeck`, `ptzDeck`. API stays 9. No release is cut from this change.
 
 ## v0.12.0: video scopes, Stream Deck camera functions
 
@@ -1121,7 +1213,10 @@ Everything returns JSON. Errors return HTTP 4xx with `{ "error": "…" }`.
 | `DELETE /api/presets/{n}` | | Delete |
 | `POST /api/presets/swap` | `{"a":3,"b":7}` or `{"from":3,"to":7}` | **0.4.0** Swap two tiles, or move into an empty one (numbers swap; Companion buttons follow the tile) |
 | `GET /api/webrcs` | | **0.4.0** Web RCS URL and whether its headers allow embedding (`framable`, `blockedBy`) |
-| `GET /api/version` | | **0.5.0** `{app, appVersion, apiVersion, features}` (Companion checks this) |
+| `GET /api/version` | | **0.5.0** `{app, appVersion, apiVersion, features}` (Companion checks this). **0.20.0** adds `streamDeck` and `ptzDeck` |
+| `GET /api/deck/ptz` | | **0.20.0** Stream Deck snapshot: cameras, presets 1–18, paint readouts, live guard, speeds. `?since=&timeout=` long-polls |
+| `GET /api/deck/ptz/layout` | | **0.20.0** + XL key and dial grid (Path C). R/B gain and pedestal are dials, not keys |
+| `POST /api/sys/ptz/cmd/step` | `{"cam","op","steps"}` | **0.20.0** Move a range or list by `steps` codes (FINE is ±1, COARSE is ±5). Paint lock still returns 423 |
 | `GET /api/shows` | | **0.5.0** Show library, backups, current show (`name`, `dirty`) and folder |
 | `POST /api/shows/save` | `{"name"?,"asNew"?,"includeConnection"?,"includePassword"?}` | **0.5.0** Save the current state as a show |
 | `POST /api/shows/new` | `{"name"?}` | **0.5.0** Start a new empty show (backs up the current one) |
@@ -1276,6 +1371,9 @@ test/                node:test suites
 lib/datadir.js       per-user data folder + first-start migration from older copies (0.5.0)
 lib/shows.js         show file format, validation/migration, show library (0.5.0; format 2 in 0.6.0)
 lib/systems.js       SystemManager: active system, connections, sessions, tally, live status (0.6.0)
+lib/deck.js          0.20 Path C: Stream Deck snapshot, + XL layout, the HTTP calls the plugin sends
+lib/deck-image.js    0.20 Path C: Control Dark keys and circular paint knobs
+streamdeck/          Elgato plugin com.performancevideo.control (Node 24, Stream Deck 7.1)
 lib/drivers/         common driver interface + rs6 (adapter), e2 (Barco JSON-RPC), pixelhue (OpenAPI V2)
 lib/mocks/           mock Event Master and mock PixelHue (0.6.0)
 public/sys.js        Control Center dashboard + shared E2 / PixelHue tabs (0.6.0)

@@ -1,0 +1,26 @@
+{
+  "name": "com.performancevideo.control",
+  "version": "0.20.0",
+  "private": true,
+  "description": "Performance Video Control Center Stream Deck plugin (Path C). Talks HTTP to Control Center. Never to a camera.",
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.performancevideo.control\""
+  },
+  "devDependencies": {
+    "@elgato/cli": "^1.10.3",
+    "@rollup/plugin-commonjs": "^29.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^1.0.0",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@tsconfig/node20": "^20.1.9",
+    "@types/node": "~24.1.0",
+    "rollup": "^4.52.4",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "^3.0.3"
+  }
+}

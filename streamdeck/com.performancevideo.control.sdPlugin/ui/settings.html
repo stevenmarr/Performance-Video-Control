@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Performance Video Control</title>
+	<style>
+		:root { color-scheme: dark; }
+		body { margin: 0; padding: 12px; background: #101012; color: #E6E6E8; font: 12px/1.4 Arial, Helvetica, sans-serif; }
+		h1 { margin: 0 0 8px; font-size: 13px; letter-spacing: .08em; font-weight: 700; }
+		p { margin: 0 0 10px; color: #9A9AA2; }
+		label { display: block; margin: 8px 0 4px; color: #9A9AA2; letter-spacing: .08em; font-size: 10px; font-weight: 700; }
+		input, select { width: 100%; box-sizing: border-box; background: #222226; color: #E6E6E8; border: 1px solid #2a313b; border-radius: 8px; padding: 6px 8px; font: 13px/1.3 ui-monospace, Menlo, Consolas, monospace; }
+		.row { display: flex; gap: 8px; }
+		.row > div { flex: 1; }
+		.hidden { display: none; }
+	</style>
+</head>
+<body>
+	<h1>CONTROL CENTER</h1>
+	<p>The deck calls this app. It does not store a camera address or password.</p>
+	<div class="row">
+		<div>
+			<label for="host">HOST</label>
+			<input id="host" value="127.0.0.1" autocomplete="off" spellcheck="false" />
+		</div>
+		<div>
+			<label for="port">PORT</label>
+			<input id="port" value="8080" inputmode="numeric" />
+		</div>
+	</div>
+
+	<div id="slot-field" class="hidden">
+		<label for="slot">CAMERA SLOT</label>
+		<select id="slot">
+			<option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+			<option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8 (or CAM ▸)</option>
+		</select>
+	</div>
+	<div id="preset-field" class="hidden">
+		<label for="preset">PRESET</label>
+		<input id="preset" value="1" inputmode="numeric" />
+	</div>
+	<div id="page-field" class="hidden">
+		<label for="page">PAGE</label>
+		<select id="page">
+			<option value="live">LIVE</option>
+			<option value="paint">PAINT</option>
+			<option value="func">FUNC</option>
+			<option value="move">MOVE</option>
+		</select>
+	</div>
+	<div id="role-field" class="hidden">
+		<label for="role">KEY</label>
+		<select id="role">
+			<option value="irisMode">IRIS AUTO</option>
+			<option value="oneTouchAF">PUSH AF</option>
+			<option value="awb">AWB</option>
+			<option value="abb">ABB</option>
+			<option value="guard">LIVE GUARD</option>
+			<option value="allStop">ALL STOP</option>
+			<option value="detail">DETAIL</option>
+			<option value="power">POWER</option>
+			<option value="tallyRed">TALLY</option>
+			<option value="focusMode">FOCUS AF</option>
+			<option value="ois">O.I.S.</option>
+			<option value="colorBars">BARS</option>
+			<option value="freezePreset">FREEZE</option>
+			<option value="dayNight">NIGHT</option>
+			<option value="dExtender">D.EXT</option>
+			<option value="drs">DRS</option>
+			<option value="ndFilter">ND FILTER</option>
+			<option value="wbMode">WHITE BAL</option>
+			<option value="gammaMode">GAMMA MODE</option>
+			<option value="kneeMode">KNEE</option>
+			<option value="gain">GAIN</option>
+			<option value="shutter">SHUTTER</option>
+			<option value="presetSpeed">PRESET SPEED</option>
+			<option value="matrixType">MATRIX</option>
+			<option value="digitalZoom">D.ZOOM</option>
+			<option value="scene">SCENE</option>
+			<option value="ptzHome">CAMERA HOME</option>
+			<option value="moveUp">TILT UP</option>
+			<option value="moveDown">TILT DOWN</option>
+			<option value="moveLeft">PAN LEFT</option>
+			<option value="moveRight">PAN RIGHT</option>
+			<option value="moveUpLeft">UP LEFT</option>
+			<option value="moveUpRight">UP RIGHT</option>
+			<option value="moveDownLeft">DOWN LEFT</option>
+			<option value="moveDownRight">DOWN RIGHT</option>
+			<option value="zoomTele">TELE</option>
+			<option value="zoomWide">WIDE</option>
+			<option value="focusFar">FAR</option>
+			<option value="focusNear">NEAR</option>
+		</select>
+	</div>
+	<div id="widget-field" class="hidden">
+		<label for="widget">KNOB</label>
+		<select id="widget">
+			<option value="iris">IRIS</option>
+			<option value="masterPed">M.PED</option>
+			<option value="gainRb">R / B GAIN</option>
+			<option value="pedRb">R / B PED</option>
+			<option value="zoom">ZOOM</option>
+			<option value="focus">FOCUS</option>
+			<option value="masterDetail">M.DTL</option>
+			<option value="gamma">GAMMA</option>
+			<option value="chroma">CHROMA</option>
+			<option value="kneePoint">K.POINT</option>
+			<option value="gain">GAIN</option>
+			<option value="shutter">SHUTTER</option>
+			<option value="ptSpeed">PT SPD</option>
+			<option value="zfSpeed">ZF SPD</option>
+		</select>
+	</div>
+
+	<script>
+		let socket = null;
+		let context = null;
+		let uuid = '';
+		const $ = (id) => document.getElementById(id);
+		function send(event, payload) {
+			if (!socket || socket.readyState !== 1) return;
+			socket.send(JSON.stringify(payload ? { event, context, payload } : { event, context }));
+		}
+		function saveAction(extra) {
+			send('setSettings', extra);
+		}
+		function saveGlobal() {
+			const port = Number($('port').value);
+			send('setGlobalSettings', { host: $('host').value.trim() || '127.0.0.1', port: Number.isInteger(port) ? port : 8080 });
+		}
+		function show(action) {
+			const id = action || '';
+			$('slot-field').classList.toggle('hidden', !id.endsWith('.camera'));
+			$('preset-field').classList.toggle('hidden', !id.endsWith('.preset'));
+			$('page-field').classList.toggle('hidden', !id.endsWith('.page'));
+			$('role-field').classList.toggle('hidden', !id.endsWith('.key'));
+			$('widget-field').classList.toggle('hidden', !id.endsWith('.dial'));
+		}
+		function apply(settings) {
+			if (!settings) return;
+			if (settings.slot != null) $('slot').value = String(settings.slot);
+			if (settings.preset != null) $('preset').value = String(settings.preset);
+			if (settings.page) $('page').value = settings.page;
+			if (settings.role) $('role').value = settings.role;
+			if (settings.widget) $('widget').value = settings.widget;
+		}
+		function applyGlobal(settings) {
+			if (!settings) return;
+			if (settings.host) $('host').value = settings.host;
+			if (settings.port != null) $('port').value = String(settings.port);
+		}
+		$('host').addEventListener('change', saveGlobal);
+		$('port').addEventListener('change', saveGlobal);
+		$('slot').addEventListener('change', () => saveAction({ slot: Number($('slot').value) }));
+		$('preset').addEventListener('change', () => saveAction({ preset: Number($('preset').value) }));
+		$('page').addEventListener('change', () => saveAction({ page: $('page').value }));
+		$('role').addEventListener('change', () => saveAction({ role: $('role').value }));
+		$('widget').addEventListener('change', () => saveAction({ widget: $('widget').value }));
+
+		function connectElgatoStreamDeckSocket(inPort, inUUID, inRegisterEvent, inInfo, inActionInfo) {
+			uuid = inUUID;
+			const info = JSON.parse(inActionInfo);
+			context = info.context;
+			show(info.action);
+			apply(info.payload && info.payload.settings);
+			socket = new WebSocket('ws://127.0.0.1:' + inPort);
+			socket.onopen = () => {
+				socket.send(JSON.stringify({ event: inRegisterEvent, uuid }));
+				send('getSettings');
+				send('getGlobalSettings');
+			};
+			socket.onmessage = (msg) => {
+				const data = JSON.parse(msg.data);
+				if (data.event === 'didReceiveSettings') apply(data.payload && data.payload.settings);
+				if (data.event === 'didReceiveGlobalSettings') applyGlobal(data.payload && data.payload.settings);
+			};
+		}
+	</script>
+</body>
+</html>
