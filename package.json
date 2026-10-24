@@ -1,7 +1,7 @@
 {
   "name": "rs6-presets",
-  "version": "0.13.0-dev",
-  "description": "Show control center: Barco E2-style destination-aware presets for Analog Way Aquilon RS6, plus Barco Event Master (E2 / S3), PixelHue, Blackmagic ATEM switchers, Panasonic PTZ cameras, AV Stumpfl Pixera and Millumin, over their documented protocols.",
+  "version": "0.20.0-dev",
+  "description": "Performance Video Control (repo Performance-Video-Control): Control Center for Analog Way Aquilon RS6, Barco Event Master, PixelHue, Blackmagic ATEM, direct Panasonic PTZ HTTP, Pixera and Millumin. Lightning is NDI ingest into scopes. TSL tallies are a separate setup.",
   "main": "server.js",
   "license": "MIT",
   "private": true,
@@ -11,6 +11,7 @@
   "scripts": {
     "start": "node server.js",
     "mock": "node server.js --mock",
+    "ndi-sidecar": "node sidecar/ndi/ndi-sidecar.js",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {}

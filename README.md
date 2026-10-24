@@ -1,6 +1,11 @@
-# RS6 Presets
+# Performance Video Control
 
 <img src="public/pv-logo.png" alt="Performance Video LLC" height="48">
+
+**Control Center** for live video. GitHub repo:
+[Performance-Video-Control](https://github.com/stevenmarr/Performance-Video-Control)
+(formerly `rs6-presets`). This tree is **0.20.0-dev**. The HTTP API still reports `app: "rs6-presets"`
+so existing clients keep working; `product` is `Performance Video Control`.
 
 Barco E2-style preset save and recall for an **Analog Way Aquilon RS6** (firmware 6.2.x), in a
 browser. It runs on your Mac and serves a dark, touch-friendly UI that an iPad or phone on the same
@@ -39,10 +44,40 @@ network can open.
   not in the app folder, and the first start of a new version copies them from the old copy. **Show files**
   (Save / Save as / Open, a library with backups, autosave), **24/48/72/96 tiles** with a pager, the fix for
   **tiles re-ordering after switching tabs**, and `GET /api/version` for Companion. See [v0.5.0](#v050-persistence-show-files-more-tiles-reorder-fix).
-- A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API** for Bitfocus
-  Companion (a module ships separately in `companion-module-rs6-presets`).
+- A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API**. Bitfocus
+  Companion (a module ships separately in `companion-module-rs6-presets`) is an optional gateway.
+  **0.20 PTZ decks do not need Companion** — see [v0.20.0-dev](#v0200-dev).
 
 No dependencies, no build step. You need Node.js 16 or later (tested on 16 and 20).
+
+---
+
+## v0.20.0-dev
+
+Lightning and TSL are two features. They are not shipped or named as one.
+
+- **Path C — Elgato Stream Deck.** PTZ decks call an official Elgato plugin (`.sdPlugin`, proposed
+  UUID `com.performancevideo.control`) which talks **HTTP to Control Center**. The plugin package is
+  part of the 0.20 release train and is not this server tree. **Companion is not required** for those
+  decks. Companion page export on SYSTEMS → DESK stays available for other surfaces and is **out of
+  the 0.20 cut**.
+- **Direct Panasonic PTZ.** Control Center talks to AW-UE150 cameras over HTTP (CGI). The Stream Deck
+  never talks to a camera. The Bitfocus `panasonic-ptz` Companion module is a command reference only.
+- **Lightning = NDI ingest → scopes.** On the **LIGHTNING** tab the operator picks an NDI source and
+  runs the existing WebGL scopes (waveform, RGB parade, vectorscope, false colour, zebra) on that
+  feed. A **Mac sidecar** (`sidecar/ndi/ndi-sidecar.js`) receives NDI and pushes H.264 into the same
+  relay the camera RTSP path uses (`/api/scopes/ws`). Browsers cannot open NDI. **The Pi does not
+  receive NDI** (no NDI SDK, no native npm addon). `--mock` lists **NDI · Mock bars** so CI and demo
+  run with no hardware. This is not “publish scopes as NDI.” See [docs/scopes.md](docs/scopes.md).
+- **TSL tallies are separate.** **⌂ SYSTEMS → TALLIES** (DESK | TALLIES). TSL 5.0 UDP sender, mock or
+  loopback only. See [docs/tsl-tally.md](docs/tsl-tally.md).
+- Version **0.20.0-dev**. API stays 9. New `/api/version` feature: `ndiIngest`. `lightning` and
+  `tslTally` stay separate flags.
+
+```
+node server.js --mock
+node sidecar/ndi/ndi-sidecar.js --mock --app http://127.0.0.1:8080
+```
 
 ---
 
@@ -260,15 +295,16 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ## v0.13.0-dev: Lightning scopes tab, TSL 5.0 tally (first slice)
 
+Superseded for NDI by [v0.20.0-dev](#v0200-dev): Lightning is NDI **ingest** into scopes, and TSL stays
+on its own SYSTEMS page. The 0.13 notes below are the first slice.
+
 - **Lightning** top-level engineering tab: waveform, RGB parade, vectorscope, false colour and zebra (the
   existing scopes UI). Not stage lighting and not NewTek CG. Brand tokens black / `#121212`, white /
-  `#F5F5F5`, accent `#C42020`. **PTZ → SCOPES** remains a shortcut into the same frame.
+  `#F5F5F5`, accent `#C42020`. **PTZ → SCOPES** remains a camera-RTSP shortcut into the same WebGL page.
 - Standalone URLs: `/lightning.html` (alias) and `/scopes.html`.
-- **NDI**: in-app help only (OBS DistroAV / NDI Tools on a Mac; one composite source). No NDI SDK or npm
-  deps on the Pi. Placeholder for a future Mac sidecar — not a fake working publish button.
 - **TSL 5.0** tally sender (mock or UDP loopback only): map ATEM PGM→red / PVW→green to show-file
   addresses; optional Follow PTZ lamps. UI under **⌂ SYSTEMS → TALLIES**. See [docs/tsl-tally.md](docs/tsl-tally.md).
-- New `/api/version` features: `lightning`, `tslTally`. API stays 9. Package version `0.13.0-dev`.
+- `/api/version` features from this slice: `lightning`, `tslTally`. API stays 9.
 
 ## v0.12.0: video scopes, Stream Deck camera functions
 

@@ -93,7 +93,20 @@
   for (const p of document.querySelectorAll('.pnl')) p.style.pointerEvents = 'auto';
   // pause while hidden (saves the camera's stream slot and the Pi's bandwidth); resume on return
   document.addEventListener('visibilitychange', () => { if (document.hidden) { if (session) stop(true); } else if (st.playing && !session) start(); });
-  window.addEventListener('message', (e) => { if (e.origin !== location.origin || !e.data || e.data.type !== 'scopes') return; if (e.data.visible === false) stop(true); else if (st.playing) start(); });
+  window.addEventListener('message', (e) => {
+    if (e.origin !== location.origin || !e.data || e.data.type !== 'scopes') return;
+    const go = () => {
+      if (typeof e.data.src === 'string') {
+        st.src = e.data.src; const sel = $('#src');
+        if (sel && [...sel.options].some((o) => o.value === st.src)) sel.value = st.src;
+        LS('src', st.src);
+      }
+      if (e.data.visible === false) stop(true);
+      else if (st.playing && (e.data.visible === true || typeof e.data.src === 'string')) start();
+    };
+    if (typeof e.data.src === 'string' && !st.sources.some((s) => s.key === e.data.src)) loadSources().then(go).catch(go);
+    else go();
+  });
 
   function showMsg(title, html) { const m = $('#msg'); if (!title) { m.hidden = true; return; } m.innerHTML = `<h3>${title}</h3><div>${html}</div>`; m.hidden = false; }
   function note(t) { const n = $('#note'); n.textContent = t || ''; n.hidden = !t; }
@@ -105,7 +118,11 @@
     st.sources = r.sources; st.settings = r.settings;
     const sel = $('#src');
     sel.innerHTML = r.sources.map((s) => `<option value="${esc(s.key)}" ${s.ok ? '' : 'data-noh264="1"'}>${esc(s.label)}${s.ok ? '' : ' — JPEG only'}</option>`).join('') || '<option value="">no sources</option>';
-    if (!r.sources.some((s) => s.key === st.src)) st.src = (r.sources.find((s) => s.kind === 'camera' && s.ok) || r.sources[0] || {}).key || '';
+    const known = r.sources.some((s) => s.key === st.src);
+    const preferNdi = Q.get('prefer') === 'ndi';
+    if (preferNdi && !(known && String(st.src).startsWith('ndi:'))) {
+      st.src = (r.sources.find((s) => s.kind === 'ndi' && s.ok) || {}).key || '';
+    } else if (!known) st.src = (r.sources.find((s) => s.kind === 'camera' && s.ok) || r.sources[0] || {}).key || '';
     sel.value = st.src;
     return r;
   }
@@ -123,7 +140,13 @@
   }
   const canWebCodecs = () => typeof window.VideoDecoder === 'function' && window.isSecureContext;
   function start() {
-    stop(true); showMsg(null); if (!st.playing || !st.src) return;
+    stop(true);
+    if (!st.playing || !st.src) {
+      if (Q.get('prefer') === 'ndi' && !st.src) showMsg('No NDI source', 'Lightning reads an NDI <b>ingest</b>. Start the Mac sidecar (<code>sidecar/ndi/ndi-sidecar.js</code>) or run Control Center with <code>--mock</code> for <b>NDI · Mock bars</b>. This page does not open NDI, and the Pi does not receive it.');
+      else showMsg(null);
+      return;
+    }
+    showMsg(null);
     const src = st.sources.find((s) => s.key === st.src) || { key: st.src, kind: '' };
     const s = { src, closed: false, path: null, waitKey: true, meta: new Map() }; session = s;
     st.active = st.src; st.cfg = null; resetStats();

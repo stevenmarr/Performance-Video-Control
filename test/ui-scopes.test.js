@@ -148,6 +148,9 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     assert.equal(await p4.locator('#pane-lightning').isVisible(), true);
     await p4.click('#btnLightningNdi');
     assert.equal(await p4.locator('#lightningNdi').isVisible(), true);
+    assert.match(await p4.locator('#lightningNdi').innerText(), /ingest/i);
+    const ndiLabels = await p4.$$eval('#ndiSource option', (os) => os.map((o) => o.textContent));
+    assert.ok(ndiLabels.some((t) => /Mock/.test(t)), `NDI picker: ${ndiLabels.join(' | ')}`);
     const f = p4.frameLocator('#scopesFrame');
     await f.locator('#ro').waitFor({ timeout: 10000 });
     const fr = p4.frame({ url: /scopes\.html/ });

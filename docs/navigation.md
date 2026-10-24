@@ -8,7 +8,8 @@ The app has two rows of tabs under the header.
 [⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [● LIGHTNING]
 ```
 
-* **⌂ SYSTEMS** is always first. It is the home page: what is on the desk, connection settings, and status.
+* **⌂ SYSTEMS** is always first. It is the home page. **DESK** is what is on the desk, connection
+  settings, and status. **TALLIES** is the TSL tally map (its own setup, not part of Lightning).
   The app opens here unless the URL has a deep link (`/#arouter`, `/#xpresets`, ...).
 * After it comes **one button per system group on the desk**. The order is always the same, no matter
   what order the systems were added in: RS6, E2 / PIXELHUE, ATEM, PTZ, PIXERA, MILLUMIN. A group that is
@@ -18,7 +19,8 @@ The app has two rows of tabs under the header.
   see each system's status.
 * E2 and PixelHue share one group because they share the preset pages. The button shows whichever of the
   two are on the desk, for example `E2 / PIXELHUE`.
-* **LIGHTNING** is always shown (engineering scopes). It is not a device to ADD TO DESK.
+* **LIGHTNING** is always shown. It is NDI ingest into the engineering scopes (waveform, parade,
+  vectorscope, false colour). It is not a device to ADD TO DESK, and it is not the TSL tally page.
 * Tapping a group button opens **the page you last used in that group**. The first time, it opens the
   group's main page (PRESETS, SWITCHER, CAMERA CONTROL, TIMELINES, COLUMNS). The last page is remembered
   in this browser.
@@ -32,10 +34,10 @@ Only the pages of the selected group are shown, always in the same order:
 | RS6 | PRESETS · INPUTS · BACKUP · AUDIO · WEB RCS |
 | E2 / PIXELHUE | (E2 \| PIXELHUE focus) · PRESETS · CUES · SOURCES · STILLS · BACKUP |
 | ATEM | SWITCHER · ROUTER · AUDIO · DVE / SS / KEYS · MACROS |
-| PTZ | CAMERA CONTROL · CAMERAS · SCOPES (shortcut into Lightning) |
+| PTZ | CAMERA CONTROL · CAMERAS · SCOPES (camera RTSP shortcut into the same WebGL scopes) |
 | PIXERA | TIMELINES · CUES |
 | MILLUMIN | COLUMNS · LAYER |
-| LIGHTNING | SCOPES (engineering waveform / parade / vectorscope / false colour; always available) |
+| LIGHTNING | SCOPES (pick an NDI ingest, then waveform / parade / vectorscope / false colour) |
 
 A page that the connected system does not support is not shown (for example, PixelHue has no CUES).
 On the SYSTEMS page this row shows a short hint instead of tabs.

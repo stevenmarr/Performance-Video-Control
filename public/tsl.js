@@ -1,5 +1,5 @@
 'use strict';
-// 0.13.0-dev TSL 5.0 tally map UI on SYSTEMS (mock / loopback sender only).
+// TSL 5.0 tally map. SYSTEMS → TALLIES only. Not part of Lightning.
 (() => {
   const $ = (s) => document.querySelector(s);
   const CC = window.CC;
@@ -80,7 +80,21 @@
     b.closest('tr').remove();
   });
 
-  window.addEventListener('cc:tab', (ev) => { if (ev.detail === 'system') load(); });
-  // first paint when SYSTEMS is current
+  const desk = $('#sysDesk');
+  const tallies = $('#sysTallies');
+  function show(view) {
+    const onTallies = view === 'tallies';
+    if (desk) desk.hidden = onTallies;
+    if (tallies) tallies.hidden = !onTallies;
+    document.querySelectorAll('#sysViews [data-sysview]').forEach((b) => b.classList.toggle('active', b.dataset.sysview === (onTallies ? 'tallies' : 'desk')));
+    if (onTallies) load();
+  }
+  const views = $('#sysViews');
+  if (views) views.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-sysview]'); if (!b) return;
+    show(b.dataset.sysview);
+  });
+
+  window.addEventListener('cc:tab', (ev) => { if (ev.detail === 'system') { show('desk'); load(); } });
   if (CC.getTab && CC.getTab() === 'system') load();
 })();

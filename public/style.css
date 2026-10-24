@@ -1051,14 +1051,20 @@ body.dk-busy-rz-e *,body.dk-busy-rz-w *{cursor:ew-resize!important}body.dk-busy-
 #formPtzLogin h2 small{font-size:12px;color:var(--dim);font-weight:600;margin-left:6px}
 
 
-/* 0.13.0-dev Lightning engineering tab + TSL tallies */
+/* Lightning (NDI ingest → scopes) and TSL tallies are separate surfaces */
 .tgrp-eng .led.ok { box-shadow: 0 0 0 1px #C42020; }
 body[data-tabgrp="lightning"] .tgrp[data-tabgrp="lightning"] { color: #F5F5F5; border-color: #C42020; }
-.lightning-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px 4px; background: #121212; border-bottom: 1px solid #262626; }
+.lightning-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px 4px; background: #121212; border-bottom: 1px solid #262626; }
+.lightning-head .section-title { margin: 0; }
+.ndi-pick { display: flex; flex-direction: column; gap: 2px; font-size: 11px; letter-spacing: .06em; color: #9a9a9a; }
+.ndi-pick select { min-width: 200px; max-width: 320px; background: #1a1a1a; color: #F5F5F5; border: 1px solid #333; border-radius: 6px; padding: 4px 8px; }
+.ndi-status { font-size: 12px; color: #9a9a9a; }
 .lightning-ndi { margin: 8px 12px; padding: 10px 12px; background: #121212; border: 1px solid #2a2a2a; border-radius: 8px; color: #F5F5F5; }
 .lightning-ndi .ndi-steps { margin: 6px 0 10px 1.2em; color: #F5F5F5; }
-.lightning-ndi .ndi-future { opacity: .7; }
+.lightning-ndi code { color: #F5F5F5; }
 #pane-lightning { background: #121212; }
+#sysTallies { margin-top: 8px; }
+#sysTallies .dash-sub { color: #a8a8a8; margin: 0 0 8px; }
 .tsl-panel { margin: 18px 0; padding: 12px 14px; background: #121212; border: 1px solid #2a2a2a; border-radius: 10px; }
 .tsl-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 8px 0; }
 .tsl-row label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #a8a8a8; }

@@ -1,4 +1,6 @@
-# TSL tally (0.13.0-dev)
+# TSL tally (0.20.0-dev)
+
+TSL is its own setup. It is **not** part of Lightning (NDI ingest → scopes).
 
 Control Center is a **TSL 5.0 UDP sender**. It maps switcher **PGM → red** and **PVW → green** onto
 addresses stored with the show file (and in `<dataDir>/tsl.json` while you edit).
@@ -13,7 +15,7 @@ addresses stored with the show file (and in `<dataDir>/tsl.json` while you edit)
 | Colour | LH = PGM red (`1`), RH = PVW green (`2`), brightness 3, ASCII labels |
 | Source of truth (now) | **ATEM** M/E 1 program / preview input ids |
 | Optional | **Follow PTZ lamps**: cameras listed on a map row get red/green CGI from the same map (other cameras keep their own TLR path) |
-| UI | **⌂ SYSTEMS → TALLIES · TSL 5.0** |
+| UI | **⌂ SYSTEMS → TALLIES** (the DESK \| TALLIES switch). Not a Lightning control. |
 | API | `GET/POST /api/tsl`, `POST /api/tsl/tick` |
 
 LAN UDP to a real UMD / Tally Arbiter is **not enabled** yet (public-repo safety). Enable later behind an
