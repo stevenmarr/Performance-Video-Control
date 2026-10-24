@@ -130,7 +130,7 @@
     abs: ['zoomPos', 'focusPos'],
     limits: ['limitUp', 'limitLeft', 'limitRight', 'limitDown'],
     iris: ['iris', 'irisMode'],
-    exposure: ['gain', 'superGain', 'ndFilter', 'shutter', 'shutterMode', 'shutterStepDown', 'shutterStep', 'shutterStepUp', 'synchroDown', 'synchro', 'synchroUp', 'masterPed', 'pedestal'],
+    exposure: ['gain', 'ndFilter', 'shutter', 'shutterMode', 'shutterStepDown', 'shutterStep', 'shutterStepUp', 'pedestal'],
     preset: ['presetScope', 'presetSpeedMode', 'presetSpeed', 'presetTime', 'presetDExt'],
     system: ['power', 'install', 'sdRec'],
     scene: ['scene'],
@@ -138,15 +138,29 @@
     tracking: ['trackSerial', 'trackIP'],
     menu: ['menu', 'menuUp', 'menuLeft', 'menuEnter', 'menuRight', 'menuDown', 'menuCancel'],
   };
+  // 0.11.0: rarely used controls sit in a closed expander (MORE) under their panel / card; the open state is remembered
+  const ADV = {
+    iris: ['autoIrisSpeed', 'autoIrisWindow', 'autoIrisLimit', 'pictureLevel'],
+    exposure: ['superGain', 'synchroDown', 'synchro', 'synchroUp', 'elcLimit'],
+    detail: ['skinDetail', 'skinEffect'],
+    knee: ['kneeSlope'],
+    matrix: ['matrixRG', 'matrixRB', 'matrixGR', 'matrixGB', 'matrixBR', 'matrixBG'],
+    chroma: ['chromaPhase'],
+    bars: ['colorBarsSetup', 'colorBarsTitle', 'colorBarsTone', 'colorBarsType'],
+  };
+  const ADV_T = { iris: 'AUTO IRIS SETUP', exposure: 'MORE EXPOSURE', detail: 'SKIN DETAIL', knee: 'SLOPE', matrix: 'LINEAR MATRIX', chroma: 'PHASE', bars: 'BARS SETUP' };
+  // 0.11.0 compact R / G / B gain + pedestal matrix (one row each, master pedestal last) instead of five knobs
+  const RGB = [['GAIN', ['rGain', null, 'bGain', null]], ['PED', ['rPed', 'gPed', 'bPed', 'masterPed']]];
+  const xpOpen = (n) => localStorage.getItem(`cc.ptzXp.${n}`) === '1';
   const PAINT = [
     ['wb', 'WHITE · BLACK', ['wbMode', 'awb', 'abb', 'colorTemp', 'varTempDown', 'varTemp', 'varTempUp']],
-    ['paint', 'PAINT', ['rGain', 'bGain', 'rPed', 'gPed', 'bPed']],
-    ['detail', 'DETAIL', ['detail', 'masterDetail', 'skinDetail', 'skinEffect']],
+    ['paint', 'GAIN · PEDESTAL', ['rGain', 'bGain', 'rPed', 'gPed', 'bPed', 'masterPed']],
+    ['detail', 'DETAIL', ['detail', 'masterDetail']],
     ['gamma', 'GAMMA', ['gammaMode', 'gamma']],
-    ['knee', 'KNEE', ['kneeMode', 'kneePoint', 'kneeSlope']],
-    ['matrix', 'MATRIX', ['matrixType', 'adaptiveMatrix', 'matrixRG', 'matrixRB', 'matrixGR', 'matrixGB', 'matrixBR', 'matrixBG']],
-    ['chroma', 'CHROMA', ['chromaLevel', 'chromaPhase']],
-    ['bars', 'BARS', ['colorBars', 'colorBarsSetup', 'colorBarsTitle', 'colorBarsTone', 'colorBarsType']],
+    ['knee', 'KNEE', ['kneeMode', 'kneePoint']],
+    ['matrix', 'MATRIX', ['matrixType', 'adaptiveMatrix']],
+    ['chroma', 'CHROMA', ['chromaLevel']],
+    ['bars', 'BARS', ['colorBars']],
   ];
   const NOT_CTL = new Set(['move', 'zoom', 'focus', 'stop', 'recall', 'store', 'presetName', 'thumbnail', 'speeds', 'keepalive', 'home', 'snapshot', 'streamInfo']);
   const SHORT = { focusMode: 'FOCUS', oneTouchAF: 'PUSH AF', irisMode: 'IRIS', iris: 'IRIS', superGain: 'SUPER GAIN', ndFilter: 'ND', shutterMode: 'SHUTTER', shutterStep: 'STEP', shutterStepUp: 'STEP +', shutterStepDown: 'STEP −',
@@ -157,12 +171,12 @@
     scene: 'SCENE', install: 'INSTALL', sdRec: 'SD REC', colorBars: 'BARS', colorBarsSetup: 'SETUP', colorBarsTitle: 'TITLE', colorBarsTone: 'TONE', colorBarsType: 'TYPE', menu: 'MENU',
     menuUp: '▲', menuDown: '▼', menuLeft: '◀', menuRight: '▶', menuEnter: 'ENTER', menuCancel: 'CANCEL',
     zoomPos: 'ZOOM', focusPos: 'FOCUS', dExtender: 'D.EXT', digitalZoom: 'D.ZOOM', ois: 'O.I.S.', presetDExt: 'PRESET D.EXT', limitUp: 'UP', limitDown: 'DOWN', limitLeft: 'LEFT', limitRight: 'RIGHT',
-    tallyEnable: 'TALLY', tallyBright: 'BRIGHTNESS', tallyLimitR: 'R LIMIT', tallyLimitG: 'G LIMIT', trackSerial: 'SERIAL OUT', trackIP: 'IP OUT' };
+    tallyEnable: 'TALLY', tallyBright: 'BRIGHTNESS', tallyLimitR: 'R LIMIT', tallyLimitG: 'G LIMIT', trackSerial: 'SERIAL OUT', trackIP: 'IP OUT', autoIrisSpeed: 'A.IRIS SPEED', autoIrisWindow: 'A.IRIS WINDOW', autoIrisLimit: 'CLOSE LIMIT', pictureLevel: 'PIC LEVEL', elcLimit: 'ELC LIMIT' };
   const TG = { focusMode: ['AF', 'MF'], irisMode: ['AUTO', 'MANUAL'], power: ['ON', 'STANDBY'], limitUp: ['SET', 'OFF'], limitDown: ['SET', 'OFF'], limitLeft: ['SET', 'OFF'], limitRight: ['SET', 'OFF'], tallyLimitR: ['LIMITED', 'FULL'], tallyLimitG: ['LIMITED', 'FULL'] };
   const FMT = { varTemp: (v) => `${Math.round(v)}K`, gamma: (v) => (v / 100).toFixed(2), kneePoint: (v) => `${Number(v).toFixed(2)}%`, chromaLevel: (v) => (v <= -100 ? 'OFF' : `${v > 0 ? '+' : ''}${v}%`), synchro: (v) => `${Number(v).toFixed(1)}`, iris: (v) => String(v), zoomPos: (v) => `${Number(v).toFixed(1)}%`, focusPos: (v) => `${Number(v).toFixed(1)}%` };
   const fmt = (o, v) => (v === undefined || v === null || Number.isNaN(v) ? '—' : FMT[o.id] ? FMT[o.id](v) : (o.range && o.range.min < 0 && v > 0 ? `+${v}` : String(v)));
   const ARC = (f) => { const a0 = 135; const a = a0 + 270 * Math.max(0, Math.min(1, f)); const p = (deg) => { const r = (deg * Math.PI) / 180; return `${50 + 40 * Math.cos(r)} ${50 + 40 * Math.sin(r)}`; }; return `M ${p(a0)} A 40 40 0 ${a - a0 > 180 ? 1 : 0} 1 ${p(a)}`; };
-  function ctlHtml(o) {
+  function ctlHtml(o, cell = false) {
     const lbl = SHORT[o.id] || o.label.toUpperCase(); const t = `title="${esc(`${o.label} · ${o.src === 'spec' ? 'Panasonic spec' : 'Companion module'}: ${o.ref}`)}"`;
     if (o.type === 'button') return `<button class="btn mini ctl-b ${/^menu/.test(o.id) ? `mn ${o.id}` : ''} ${['awb', 'abb'].includes(o.id) ? 'exec' : ''}" data-op="${o.id}" data-type="button" type="button" ${t}>${esc(lbl)}</button>`;
     if (o.type === 'toggle') return `<button class="mode ctl-t tg-${o.id}" data-op="${o.id}" data-type="toggle" type="button" ${t}><small>${esc(lbl)}</small><b>—</b></button>`;
@@ -171,12 +185,27 @@
       return `<label class="ctl-sel" ${t}><span class="lbl">${esc(lbl)}</span><select data-op="${o.id}" data-type="list"><option value="" disabled>—</option>${o.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select></label>`;
     }
     if (SLOTS.abs.includes(o.id)) return `<label class="ctl-abs" data-op="${o.id}" data-type="range" data-abs="1" ${t}><span class="lbl">${esc(lbl)}</span><input type="range" min="${o.range.min}" max="${o.range.max}" step="${o.range.step}"><b>—</b></label>`;
+    if (cell) return `<div class="knob cell" data-op="${o.id}" data-type="range" tabindex="0" ${t}><b>—</b><span class="kb"><button data-step="-1" type="button" aria-label="${esc(lbl)} −">−</button><button data-step="1" type="button" aria-label="${esc(lbl)} +">+</button></span></div>`;
     const big = o.id === 'iris' ? 'big' : '';
     return `<div class="knob ${big}" data-op="${o.id}" data-type="range" tabindex="0" ${t}><svg viewBox="0 0 100 100" aria-hidden="true"><path class="trk" d="${ARC(1)}"/><path class="val" d="${ARC(0)}"/></svg><b>—</b><span class="kl">${esc(lbl)}</span>
       <span class="kb"><button data-step="-1" type="button">−</button><button data-step="1" type="button">+</button></span></div>`;
   }
+  const opsOf = (ids, k) => ids.map((id) => k.ops.find((o) => o.id === id)).filter(Boolean);
+  function xp(name, k) {
+    const ops = opsOf(ADV[name] || [], k); if (!ops.length) return '';
+    const cells = name === 'matrix';
+    const body = cells ? `<div class="lm-grid">${ops.map((o) => `<label class="lm"><span>${esc(SHORT[o.id] || o.label)}</span>${ctlHtml(o, true)}</label>`).join('')}</div>` : ops.map((o) => ctlHtml(o)).join('');
+    return `<details class="xp" data-xp="${name}" ${xpOpen(name) ? 'open' : ''}><summary>${ADV_T[name] || 'MORE'} <small>${ops.length}</small></summary><div class="xp-b">${body}</div></details>`;
+  }
+  function rgbMatrix(k) {
+    const has = (id) => id && k.ops.find((o) => o.id === id);
+    if (!RGB.some(([, ids]) => ids.some(has))) return '';
+    const cols = ['R', 'G', 'B', 'M'];
+    return `<table class="rgbm"><thead><tr><th></th>${cols.map((c) => `<th class="c-${c}">${c}</th>`).join('')}</tr></thead><tbody>${RGB.map(([row, ids]) => `<tr><th>${row}</th>${ids.map((id, i) => { const o = has(id); return `<td class="c-${cols[i]}">${o ? ctlHtml(o, true) : '<span class="na">—</span>'}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`;
+  }
   function slot(name, ids, k) {
-    const ops = ids.map((id) => k.ops.find((o) => o.id === id)).filter(Boolean);
+    if (name === 'paint') return rgbMatrix(k);
+    const ops = opsOf(ids.filter((i) => !(ADV[name] || []).includes(i)), k);
     if (name === 'menu') {
       const g = (id) => { const o = ops.find((x) => x.id === id); return o ? ctlHtml(o) : '<span></span>'; };
       return ops.length ? `<div class="menu-pad"><div class="mp-side">${g('menu')}${g('menuCancel')}</div><div class="cross"><span></span>${g('menuUp')}<span></span>${g('menuLeft')}${g('menuEnter')}${g('menuRight')}<span></span>${g('menuDown')}<span></span></div></div>` : '';
@@ -185,7 +214,7 @@
       const g = (id) => { const o = ops.find((x) => x.id === id); return o ? ctlHtml(o) : '<span></span>'; };
       return ops.length ? `<div class="lim-cross"><span></span>${g('limitUp')}<span></span>${g('limitLeft')}<span class="lim-c">LIMIT</span>${g('limitRight')}<span></span>${g('limitDown')}<span></span></div>` : '';
     }
-    return ops.map(ctlHtml).join('');
+    return ops.map((o) => ctlHtml(o)).join('') + xp(name, k);
   }
   // paint cards: as many side by side as the panel width allows; tabs choose the first card shown when not all fit
   function layoutPaint() {
@@ -213,10 +242,10 @@
       let h = slot(name, ids, k);
       if (!h && ['abs', 'limits', 'tracking', 'scene'].includes(name)) { el.innerHTML = ''; el.closest('.panel').querySelectorAll(`[data-for=${name}]`).forEach((x) => { x.hidden = true; }); continue; }
       el.closest('.panel').querySelectorAll(`[data-for=${name}]`).forEach((x) => { x.hidden = false; });
-      if (name === 'system') { const rest = k.ops.filter((o) => !NOT_CTL.has(o.id) && !Object.values(SLOTS).flat().includes(o.id) && !PAINT.some(([, , l]) => l.includes(o.id))); if (rest.length) h += `<div class="sub">OTHER</div>${rest.map(ctlHtml).join('')}`; }
+      if (name === 'system') { const rest = k.ops.filter((o) => !NOT_CTL.has(o.id) && !Object.values(SLOTS).flat().includes(o.id) && !Object.values(ADV).flat().includes(o.id) && !PAINT.some(([, , l]) => l.includes(o.id))); if (rest.length) h += `<div class="sub">OTHER</div>${rest.map(ctlHtml).join('')}`; }
       el.innerHTML = h || `<div class="note small">Not available on the ${esc(sid)} series.</div>`;
     }
-    const tabs = PAINT.map(([id, l, ids]) => [id, l, ids.filter((i) => k.ops.some((o) => o.id === i))]);
+    const tabs = PAINT.map(([id, l, ids]) => [id, l, ids.filter((i) => k.ops.some((o) => o.id === i)).concat((ADV[id] || []).filter((i) => k.ops.some((o) => o.id === i)))]);
     if (!tabs.some(([id, , l]) => id === paintTab && l.length)) { const f = tabs.find(([, , l]) => l.length); paintTab = f ? f[0] : 'wb'; }
     $('#ptzPaintTabs').innerHTML = `<span class="pt-all">PAINT · ALL GROUPS</span>${tabs.map(([id, l, ids]) => `<button class="ptab ${id === paintTab ? 'on' : ''}" data-ptab="${id}" ${ids.length ? '' : 'disabled title="not on this model"'} type="button">${l}</button>`).join('')}`;
     const pane = document.querySelector('#pane-pctl [data-slot=paint]');
@@ -227,6 +256,8 @@
     $('#ptzFocusR').classList.toggle('na', !k.ops.some((o) => o.id === 'focus'));
   }
   $('#ptzPaintTabs').addEventListener('click', (ev) => { const b = ev.target.closest('[data-ptab]'); if (!b || b.disabled) return; paintTab = b.dataset.ptab; localStorage.setItem('cc.ptzPaint', paintTab); layoutPaint(); });
+  // expanders remember open / closed ('toggle' does not bubble: capture)
+  $('#pane-pctl').addEventListener('toggle', (ev) => { const d = ev.target; if (d && d.matches && d.matches('details.xp')) { localStorage.setItem(`cc.ptzXp.${d.dataset.xp}`, d.open ? '1' : '0'); if (d.closest('.pcard')) layoutPaint(); } }, true);
   const stepBtns = () => document.querySelectorAll('[data-stepmul]').forEach((b) => b.classList.toggle('active', Number(b.dataset.stepmul) === stepMul));
   document.querySelectorAll('[data-stepmul]').forEach((b) => b.addEventListener('click', () => { stepMul = Number(b.dataset.stepmul); localStorage.setItem('cc.ptzStep', String(stepMul)); stepBtns(); })); stepBtns();
 
@@ -244,7 +275,7 @@
       else if (el.dataset.type === 'range') {
         const r = o.range; const n = v === undefined ? null : Number(v);
         el.querySelector('b').textContent = fmt(o, n);
-        el.querySelector('.val').setAttribute('d', ARC(n === null ? 0 : (n - r.min) / (r.max - r.min)));
+        const arc = el.querySelector('.val'); if (arc) arc.setAttribute('d', ARC(n === null ? 0 : (n - r.min) / (r.max - r.min)));
         el.classList.toggle('centre', r.centre !== undefined && n === r.centre);
       }
       const pl = c.locked && PAINT_GROUPS.has(o.group);
@@ -449,5 +480,54 @@
     ev.preventDefault(); const fm = ev.target; const body = { name: fm.elements.name.value.trim(), host: fm.elements.host.value.trim(), port: Number(fm.elements.port.value) || 80 };
     run(api('POST', '/api/sys/ptz/cameras', body).then(() => { fm.reset(); toast(`Added ${body.name || 'camera'}`); }).finally(S.refetch));
   });
+  // ---------- 0.11.0 rearrangeable dashboard panels ----------
+  // Each panel has a grip (⠿, top right). Drag it onto another panel to swap the two places (mouse / pen: just drag;
+  // touch: press and hold, then drag). Arrow keys on a focused grip swap with the previous / next place.
+  // The layout is a per-install UI preference (CCPREFS 'ptz.panelOrder': which panel sits in each grid place, in
+  // DEFAULT_ORDER's order), so every browser of this install shows the same layout; ↺ RESET LAYOUT clears it.
+  const DEFAULT_ORDER = ['joy', 'lens', 'iris', 'paint', 'presets', 'view', 'sys'];
+  const LAYOUT_KEY = 'ptz.panelOrder';
+  const rcp = $('#pane-pctl .rcp');
+  const panelOf = (name) => rcp.querySelector(`.panel.rcp-${name}`);
+  const cleanOrder = (o) => (Array.isArray(o) && o.length === DEFAULT_ORDER.length && DEFAULT_ORDER.every((n) => o.includes(n)) ? o.slice() : DEFAULT_ORDER.slice());
+  let order = cleanOrder(window.CCPREFS && window.CCPREFS.get(LAYOUT_KEY, null));
+  const NAMES = { joy: 'PAN / TILT', lens: 'ZOOM · FOCUS', iris: 'IRIS · EXPOSURE', paint: 'PAINT', presets: 'PRESETS', view: 'PREVIEW', sys: 'CAMERA' };
+  for (const n of DEFAULT_ORDER) {
+    const el = panelOf(n); if (!el) continue; el.dataset.panel = n;
+    el.insertAdjacentHTML('afterbegin', `<button class="pgrip" type="button" data-grip="${n}" title="Move the ${NAMES[n]} panel: drag onto another panel (touch: hold, then drag) · arrow keys" aria-label="Move the ${NAMES[n]} panel">⠿</button>`);
+  }
+  function applyLayout() {
+    order.forEach((n, i) => { const el = panelOf(n); if (el) { el.style.gridArea = DEFAULT_ORDER[i]; el.dataset.place = DEFAULT_ORDER[i]; } });
+    const custom = order.some((n, i) => n !== DEFAULT_ORDER[i]);
+    $('#ptzResetLayout').hidden = !custom; rcp.classList.toggle('custom-layout', custom);
+  }
+  function setOrder(next, why) {
+    order = cleanOrder(next); applyLayout();
+    if (window.CCPREFS) window.CCPREFS.set(LAYOUT_KEY, order.every((n, i) => n === DEFAULT_ORDER[i]) ? null : order);
+    if (why) toast(why);
+  }
+  const swap = (a, b) => { const o = order.slice(); const i = o.indexOf(a); const j = o.indexOf(b); if (i < 0 || j < 0 || i === j) return; [o[i], o[j]] = [o[j], o[i]]; setOrder(o); };
+  applyLayout();
+  if (window.CCPREFS) { window.CCPREFS.ready.then(() => { order = cleanOrder(window.CCPREFS.get(LAYOUT_KEY, null)); applyLayout(); }); window.CCPREFS.on(() => { order = cleanOrder(window.CCPREFS.get(LAYOUT_KEY, null)); applyLayout(); }); }
+  if (window.CCDRAG) {
+    window.CCDRAG.attach(rcp, {
+      handle: '.pgrip',
+      start: (el) => (Object.values(held).some(Boolean) ? null : el.dataset.grip), // never while a camera is moving
+      target: (under, from) => { const p = under.closest('.rcp > .panel[data-panel]'); return p && p.dataset.panel !== from ? p : null; },
+      drop: (p, from) => swap(from, p.dataset.panel),
+      ghost: (el, from) => `⠿ ${NAMES[from]}`,
+      begin: (from) => { rcp.classList.add('arranging'); panelOf(from).classList.add('moving'); },
+      end: (from) => { rcp.classList.remove('arranging'); const p = panelOf(from); if (p) p.classList.remove('moving'); },
+    });
+  }
+  rcp.addEventListener('keydown', (ev) => {
+    const g = ev.target.closest('.pgrip'); if (!g) return;
+    const d = { ArrowLeft: -1, ArrowUp: -1, ArrowRight: 1, ArrowDown: 1 }[ev.key]; if (!d) return;
+    ev.preventDefault(); ev.stopPropagation();
+    const i = order.indexOf(g.dataset.grip); const j = i + d; if (j < 0 || j >= order.length) return;
+    swap(order[i], order[j]); g.focus();
+  });
+  $('#ptzResetLayout').addEventListener('click', () => setOrder(DEFAULT_ORDER, 'Dashboard layout reset'));
   window.CCPTZ = { releaseAll, held: () => ({ ...held }) };
+  window.CCPTZ.layout = () => order.slice();
 })();

@@ -174,7 +174,7 @@ test('Control Center 0.8.0: CAMERA CONTROL dashboard: proportional joystick, roc
   const rk = page.locator('#pane-pctl [data-pane=paint] [data-op=rGain]');
   await page.click('[data-ptab=paint]'); await rk.locator('[data-step="1"]').click(); await rk.locator('[data-step="1"]').click();
   await until(async () => (await cam()).values.rGain === 2, 'R gain +2');
-  const kb = await rk.locator('svg').boundingBox();
+  const kb = await rk.locator('b').boundingBox(); // 0.11.0: a compact matrix cell (drag its value up / down)
   await page.mouse.move(kb.x + kb.width / 2, kb.y + kb.height / 2); await page.mouse.down(); await page.mouse.move(kb.x + kb.width / 2, kb.y + kb.height / 2 - 30, { steps: 3 }); await page.mouse.up();
   await until(async () => (await cam()).values.rGain > 20, 'R gain drag');
   await page.click('[data-ptab=wb]'); await page.click('#pane-pctl [data-pane=wb] [data-op=wbMode] [data-v="9"]');

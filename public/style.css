@@ -961,3 +961,36 @@ nav.tabs{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:4p
 .tabs-home-note{align-self:center;font-size:12px;color:var(--dim);padding:0 4px}
 .tabs-home-note[hidden]{display:none}
 #tabsSub .tab-group:not(.preset-grp){display:none !important}
+
+/* 0.11.0 PTZ paint compaction: R / G / B gain + pedestal matrix, compact cells, expanders for rarely used controls */
+.knob.cell{width:auto;min-width:0;display:flex;align-items:center;gap:4px;padding:2px;border-radius:7px;background:#0c0f13;border:1px solid #232b35;cursor:ns-resize}
+.knob.cell>b{position:static;flex:1;text-align:center;font:800 13px ui-monospace,Menlo,monospace;min-width:38px}
+.knob.cell .kb{margin:0;gap:2px}.knob.cell .kb button{width:24px;height:24px}
+.knob.cell.centre>b{color:#8794a6}.knob.cell.drag{border-color:#ffd35c}
+.rgbm{width:100%;border-collapse:separate;border-spacing:3px;table-layout:fixed}
+.rgbm th{font:900 10px/1 -apple-system,Segoe UI,sans-serif;letter-spacing:.14em;color:#9fb4cf;padding:2px 0}
+.rgbm thead th.c-R{color:#ff8a8f}.rgbm thead th.c-G{color:#6fe39b}.rgbm thead th.c-B{color:#8fb8ff}.rgbm thead th.c-M{color:#cfd6e0}
+.rgbm tbody th{text-align:left;width:38px}
+.rgbm td{padding:0}.rgbm td .na{display:block;text-align:center;color:#3a4350}
+
+.rgbm .knob.cell{flex-direction:column;padding:3px 1px}.rgbm .knob.cell>b{min-width:0;font-size:12px}.rgbm .knob.cell .kb button{width:18px;height:20px}
+details.xp{flex-basis:100%;width:100%;border-top:1px solid #222a34;margin-top:4px;padding-top:4px}
+details.xp>summary{cursor:pointer;list-style:none;font:800 9px/1.6 -apple-system,Segoe UI,sans-serif;letter-spacing:.14em;color:#6f8fb8;padding:3px 2px;user-select:none}
+details.xp>summary::-webkit-details-marker{display:none}
+details.xp>summary::before{content:'▸ ';}details.xp[open]>summary::before{content:'▾ '}
+details.xp>summary small{color:var(--dim);font-weight:700}
+.xp-b{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;padding-top:4px}
+.xp-b .ctl-sel{flex:1 1 100%}.xp-b .ctl-sel select{width:100%;max-width:none}.xp-b .ctl-seg{flex:1 1 100%}
+.lm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;width:100%}
+.lm{display:flex;align-items:center;gap:4px}.lm>span{font:800 9px/1 ui-monospace,Menlo,monospace;color:#9fb4cf;width:26px}.lm .knob.cell{flex:1}
+
+/* 0.11.0 rearrangeable PTZ panels */
+.rcp>.panel{position:relative}
+.pgrip{position:absolute;top:4px;right:4px;z-index:3;width:30px;height:26px;padding:0;border-radius:7px;background:transparent;border:1px solid transparent;color:#5d6b7c;font-size:16px;line-height:1;cursor:grab;touch-action:none;opacity:.7}
+.pgrip:hover,.pgrip:focus-visible{background:#141a22;border-color:var(--line);color:#cfe2ff;opacity:1}
+.rcp.arranging>.panel{outline:2px dashed #3b4f6a;outline-offset:-2px}
+.rcp.arranging>.panel.moving{opacity:.55}
+.rcp>.panel.cc-drop-hover{outline:3px solid #ffd35c!important}
+.rcp-paint .paint-head{padding-right:30px}
+.rcp-layout{align-self:center;color:#ffd35c;border-color:#5a4210}
+.rcp-layout[hidden]{display:none}

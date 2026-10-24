@@ -23,6 +23,10 @@ module's model table); other models may support some of them; confirm on hardwar
 | `oneTouchAF` | Push AF (one-touch auto focus) | module | focusOTAF | ● | ● | ● | ● | ● | ● | ● |  |  | ● |  | ● |
 | `irisMode` | Auto iris | module | irisM | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |  | ● |
 | `iris` | Iris | module | irisS (#I, 01 close .. 99 open) | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● |  | ● |
+| `autoIrisSpeed` | Auto iris speed | spec | Auto Iris Speed OSJ:01 (0 Slow, 1 Normal, 2 Fast) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `autoIrisWindow` | Auto iris window | spec | Auto Iris Window OSJ:02 (0 Normal1, 1 Normal2, 2 Center) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `autoIrisLimit` | Auto iris close limit | spec | Auto Iris Close Limit OSJ:C0 (0 Normal, 1 F8, 2 F7, 3 F5.6) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `pictureLevel` | Picture level | spec | Picture Level OSD:48 (00h = -50, 32h = 0, 64h = +50; with auto iris, ELC or AGC) | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `home` | Home (pan / tilt centre) | module | home | ● | ● | ● | ● | ● | ● | ● | ● | ● |  |  | ● |
 | `install` | Install position | module | insPosition | ● | ● | ● | ● | ● | ● | ● | ● |  |  |  | ● |
 | `gain` | Gain | module | gainS | ● | ● | ● | ● | ● | ● | ● | ● |  | ● | ● | ● |
@@ -30,12 +34,13 @@ module's model table); other models may support some of them; confirm on hardwar
 | `ndFilter` | ND filter | module | filterS | ● | ● | ● | ● |  | ● | ● |  |  | ● | ● | ● |
 | `shutter` | Shutter | module | shutS |  | ● | ● | ● | ● | ● | ● | ● |  |  | ● | ● |
 | `shutterMode` | Shutter mode | spec | Shutter Mode OSJ:03 | ● |  |  |  |  |  |  |  |  |  |  |  |
-| `shutterStep` | Shutter step (1/n s) | spec | Step VAL OSJ:06 (shutter denominator, hex) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `shutterStep` | Shutter step (1/n s) | spec | Step VAL OSJ:06 (shutter denominator, 4 hex digits; 1/24 .. 1/50 depend on the format, the camera answers ER3 otherwise) | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `shutterStepUp` | Shutter step + | spec | Step Inc OSJ:04 | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `shutterStepDown` | Shutter step − | spec | Step Dec OSJ:05 | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `synchro` | Synchro scan (Hz) | spec | Synchro VAL OSJ:09 (0.1 Hz units, hex) | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `synchroUp` | Synchro + | spec | Synchro Inc OSJ:07 | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `synchroDown` | Synchro − | spec | Synchro Dec OSJ:08 | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `elcLimit` | ELC limit (auto shutter) | spec | ELC Limit OSD:BF (2 1/100, 3 1/120, 4 1/250; shutter mode ELC) | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `pedestal` | Master pedestal | module | pedS |  | ● | ● | ● | ● | ● | ● |  |  | ● |  | ● |
 | `wbMode` | White balance mode | module | sceneSet (OAW 0/1/2) + spec OAW 4/5/9 | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `awb` | AWB execute | spec | AWB OWS | ● |  |  |  |  |  |  |  |  |  |  |  |
