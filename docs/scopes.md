@@ -1,26 +1,39 @@
-# Video scopes (0.12.0-dev)
+# Video scopes / Lightning (0.20.0)
 
-Waveform, RGB parade, vectorscope and false colour from a camera's **H.264 stream**. The picture is not
+Waveform, RGB parade, vectorscope and false colour from an **H.264** feed. The picture is not
 re-encoded on the way; the browser decodes it and the scopes are drawn on the GPU (WebGL2) from the decoded
 Y′CbCr values.
 
-Open it from **PTZ → SCOPES** (in the app) or on its own page at **`/scopes.html`**. The page also works in a
-separate window (the **⤢ WINDOW** button).
+Open it from the top-level **LIGHTNING** tab (engineering scopes on an NDI ingest), from **PTZ → SCOPES**
+(same frame, camera sources), or on its own page at **`/lightning.html`** / **`/scopes.html`**. The page
+also works in a separate window (the **⤢ WINDOW** button).
+
+**Lightning** means this engineering scopes surface — not stage lighting, not NewTek CG, and not TSL tallies.
+Tallies live under **SYSTEMS → TALLIES** ([docs/tsl-tally.md](tsl-tally.md)).
+
+## NDI ingest (Mac sidecar)
+
+The operator picks an **NDI source** on the Lightning tab. Scopes run on that feed. The app does **not**
+publish scopes as an NDI output, and it does **not** open NDI itself (browsers cannot; a Pi should not).
+
+A Mac sidecar receives NDI and pushes H.264 into the same relay the camera RTSP path already uses.
+`--mock` on the app adds fixture sources (`ndi:mock-bars`, `ndi:mock-ramps`) so CI and a desk with no
+hardware still have something to select. Details: [docs/ndi-ingest.md](ndi-ingest.md).
 
 ```
 camera RTSP (TCP interleaved RTP, H.264)  ─┐
 test file (.h264 Annex-B / .mp4 / .mov)  ──┼─► lib/stream-relay.js ──WebSocket /api/scopes/ws──► browser
-mock UE150 RTSP camera (--mock)          ─┘   (access units, no transcoding)      │
-                                                                                  ├─ WebCodecs VideoDecoder → I420 planes (exact Y′)
-                                                                                  ├─ or MSE <video> (fMP4 muxed in the page) → RGB
-                                                                                  └─ WebGL2: analyse → waveform / parade / vectorscope / false colour
+mock UE150 RTSP camera (--mock)          ─┤   (access units, no transcoding)      │
+NDI mock fixtures (--mock, in-process)   ─┤                                        ├─ WebCodecs VideoDecoder → I420 planes (exact Y′)
+Mac sidecar (NDI receive → H.264 push)   ─┘                                        ├─ or MSE <video> (fMP4 muxed in the page) → RGB
+                                                                                   └─ WebGL2: analyse → waveform / parade / vectorscope / false colour
 ```
 
 ## Using it
 
 | Control | What it does |
 |---|---|
-| SOURCE | A camera (`cam:<id>`), a built-in test clip, a clip in the test folder, or the custom input |
+| SOURCE | An NDI ingest (`ndi:<id>`), a camera (`cam:<id>`), a built-in test clip, a clip in the test folder, or the custom input |
 | PIC / WFM / PARADE / VEC | Choose which panels to show; they lay out side by side. Double-click a panel to show it alone. |
 | NORMAL / FALSE / ZEBRA | Picture mode. ZEBRA uses the level next to it (%). |
 | RANGE | AUTO uses the stream's VUI `video_full_range_flag`. LEGAL is 16–235 = 0–100 %; FULL is 0–255 = 0–100 %. |
@@ -209,5 +222,6 @@ node server.js --mock                                                    # mock 
 
 | Part | Files |
 |---|---|
-| Server | `lib/scopes/{h264,rtp,rtsp-client,sources,ws,service}.js`, `lib/stream-relay.js`, `lib/mocks/rtsp-camera.js` |
+| Server | `lib/scopes/{h264,rtp,rtsp-client,sources,ws,service,ndi-ingest}.js`, `lib/stream-relay.js`, `lib/ndi/host.js`, `lib/mocks/rtsp-camera.js` |
+| NDI sidecar | `tools/ndi-sidecar.js` (Mac receive or `--mock`), `lib/ndi/ingest-client.js`. Not started by the Pi app. |
 | Browser | `public/scopes.{html,js}`, `public/scopes-gl.js`, `public/scopes-mse.js`, `public/scopes-tab.js` |

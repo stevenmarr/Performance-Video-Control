@@ -41,7 +41,8 @@ network can open.
   **tiles re-ordering after switching tabs**, and `GET /api/version` for Companion. See [v0.5.0](#v050-persistence-show-files-more-tiles-reorder-fix).
 - A **settings page**, a **log panel**, a **mock device mode** and an **HTTP API** for Bitfocus
   Companion (a module ships separately in `companion-module-rs6-presets`). Companion is not how PTZ
-  decks run in 0.20. See [Stream Deck (Path C)](#video-control-020-stream-deck-path-c).
+  decks run in 0.20. See [Stream Deck (Path C)](#video-control-020-stream-deck-path-c) and
+  [Lightning and TSL](#video-control-020-lightning-and-tsl).
 
 No dependencies, no build step for the app. You need Node.js 16 or later (tested on 16 and 20).
 The Stream Deck plugin is a separate package and needs Node.js 24.
@@ -55,7 +56,8 @@ Path C is the show deck for Panasonic AW-UE150 cameras. An official Elgato plugi
 never opens a camera connection, and Companion is not in that path. The Companion page generator from
 0.9.0 is still there for other surfaces. It is not the PTZ deck.
 
-NDI ingest (Lightning) is a separate 0.20 change. This section is only the plugin.
+Lightning (NDI ingest into the scopes) and TSL tallies are the other half of 0.20. They are separate
+from this plugin. See [Lightning and TSL](#video-control-020-lightning-and-tsl).
 
 ### Where it lives
 
@@ -128,6 +130,31 @@ Page tabs switch Stream Deck profiles named `PTZ Live`, `PTZ Paint`, `PTZ Functi
 when those profiles are installed. `GET /api/deck/ptz/layout` is the same grid, for placing the actions.
 ALL STOP is the bottom-right key on every page. On a live camera, preset recall stays in **hold**
 (600 ms) unless the guard key cycles it.
+
+---
+
+## Video Control 0.20: Lightning and TSL
+
+These two setups ship in the same 0.20.0 app as Path C. They are not one feature, and neither is the
+Stream Deck plugin.
+
+**Lightning** is the engineering scopes tab. The operator picks an NDI source and waveform, RGB parade,
+vectorscope and false colour run on that feed. The app does not open NDI. A Mac sidecar receives it and
+pushes H.264 into the same relay the camera RTSP path already uses. The Pi does not receive NDI.
+`node server.js --mock` adds `ndi:mock-bars` and `ndi:mock-ramps` so a desk with no hardware can select
+a source. See [docs/ndi-ingest.md](docs/ndi-ingest.md).
+
+**TSL** is **⌂ SYSTEMS → TALLIES**. Control Center sends TSL 5.0 (mock, or UDP to loopback) from the show
+map: PGM red, PVW green. See [docs/tsl-tally.md](docs/tsl-tally.md).
+
+```
+node server.js --mock
+# Lightning: open the LIGHTNING tab and pick NDI · MOCK BARS
+node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080
+```
+
+On a Mac, `node tools/ndi-sidecar.js --ndi "SOURCE NAME" --app http://127.0.0.1:8080` receives one NDI
+source (ffmpeg with `libndi_newtek`, or `RS6_NDI_RECV`). `--ndi` does not run on Linux or on a Pi.
 
 ---
 
@@ -342,12 +369,33 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ---
 
-## v0.20.0: Stream Deck plugin (Path C)
+## v0.20.0: Stream Deck Path C, Lightning NDI ingest, TSL tallies
 
-The PTZ deck is an Elgato plugin in `streamdeck/`, UUID `com.performancevideo.control`. It calls
-`GET /api/deck/ptz` and `POST /api/sys/ptz/cmd/…` (including `step`). See
-[Stream Deck (Path C)](#video-control-020-stream-deck-path-c). New `/api/version` features:
-`streamDeck`, `ptzDeck`. API stays 9. No release is cut from this change.
+Package version **0.20.0**. API stays 9. Path C, Lightning, and TSL are three separate surfaces in that
+version.
+
+- **Path C.** Elgato plugin in `streamdeck/`, UUID `com.performancevideo.control`. It calls
+  `GET /api/deck/ptz` and `POST /api/sys/ptz/cmd/…` (including `step`). See
+  [Stream Deck (Path C)](#video-control-020-stream-deck-path-c). Features: `streamDeck`, `ptzDeck`.
+- **Lightning.** Engineering scopes on an NDI ingest (Mac sidecar, or mock fixtures). See
+  [Lightning and TSL](#video-control-020-lightning-and-tsl) and [docs/ndi-ingest.md](docs/ndi-ingest.md).
+  Features: `lightning`, `ndiIngest`.
+- **TSL.** **⌂ SYSTEMS → TALLIES**, TSL 5.0 mock or UDP loopback. See [docs/tsl-tally.md](docs/tsl-tally.md).
+  Feature: `tslTally`.
+
+No GitHub Release and no tag are created from this branch.
+
+## v0.13.0-dev: Lightning scopes tab, TSL 5.0 tally (first slice)
+
+- **Lightning** top-level engineering tab: waveform, RGB parade, vectorscope, false colour and zebra (the
+  existing scopes UI). Not stage lighting and not NewTek CG. Brand tokens black / `#121212`, white /
+  `#F5F5F5`, accent `#C42020`. **PTZ → SCOPES** remains a shortcut into the same frame.
+- Standalone URLs: `/lightning.html` (alias) and `/scopes.html`.
+- **NDI** in 0.13 was in-app help for publishing a browser window (OBS DistroAV / NDI Tools). That publish
+  path is superseded in 0.20 by NDI **ingest**. See the 0.20 section above.
+- **TSL 5.0** tally sender (mock or UDP loopback only): map ATEM PGM→red / PVW→green to show-file
+  addresses; optional Follow PTZ lamps. UI under **⌂ SYSTEMS → TALLIES**. See [docs/tsl-tally.md](docs/tsl-tally.md).
+- `/api/version` features added then: `lightning`, `tslTally`. API stays 9.
 
 ## v0.12.0: video scopes, Stream Deck camera functions
 
@@ -1213,10 +1261,14 @@ Everything returns JSON. Errors return HTTP 4xx with `{ "error": "…" }`.
 | `DELETE /api/presets/{n}` | | Delete |
 | `POST /api/presets/swap` | `{"a":3,"b":7}` or `{"from":3,"to":7}` | **0.4.0** Swap two tiles, or move into an empty one (numbers swap; Companion buttons follow the tile) |
 | `GET /api/webrcs` | | **0.4.0** Web RCS URL and whether its headers allow embedding (`framable`, `blockedBy`) |
-| `GET /api/version` | | **0.5.0** `{app, appVersion, apiVersion, features}` (Companion checks this). **0.20.0** adds `streamDeck` and `ptzDeck` |
+| `GET /api/version` | | **0.5.0** `{app, appVersion, apiVersion, features}` (Companion checks this). **0.20.0** adds `streamDeck`, `ptzDeck`, `lightning`, `ndiIngest`, `tslTally` |
 | `GET /api/deck/ptz` | | **0.20.0** Stream Deck snapshot: cameras, presets 1–18, paint readouts, live guard, speeds. `?since=&timeout=` long-polls |
 | `GET /api/deck/ptz/layout` | | **0.20.0** + XL key and dial grid (Path C). R/B gain and pedestal are dials, not keys |
 | `POST /api/sys/ptz/cmd/step` | `{"cam","op","steps"}` | **0.20.0** Move a range or list by `steps` codes (FINE is ±1, COARSE is ±5). Paint lock still returns 423 |
+| `GET /api/scopes/sources` | | **0.12.0** Scope sources. **0.20.0** includes `ndi:` keys (mock fixtures and sidecar ingest) |
+| `GET /api/scopes/ndi` | | **0.20.0** Lightning NDI ingest status. Receive stays a Mac sidecar; this process does not open NDI |
+| `WS /api/scopes/ndi/ingest` | | **0.20.0** Sidecar pushes Annex-B H.264. Loopback unless `RS6_NDI_INGEST_LAN=1` |
+| `GET/POST /api/tsl` | | **0.20.0** TSL 5.0 map on SYSTEMS → TALLIES. `POST /api/tsl/tick` sends now |
 | `GET /api/shows` | | **0.5.0** Show library, backups, current show (`name`, `dirty`) and folder |
 | `POST /api/shows/save` | `{"name"?,"asNew"?,"includeConnection"?,"includePassword"?}` | **0.5.0** Save the current state as a show |
 | `POST /api/shows/new` | `{"name"?}` | **0.5.0** Start a new empty show (backs up the current one) |

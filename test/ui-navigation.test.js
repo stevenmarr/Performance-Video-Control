@@ -26,7 +26,8 @@ test('navigation 0.11.0: group row, page row, deep link, last page per group, ov
   await page.waitForFunction(() => document.body.classList.contains('tab-arouter'));
   assert.equal(await page.locator('.tgrp[data-tabgrp=atem].active').count(), 1);
   const order = await page.$$eval('#tabsTop .tgrp:not([hidden])', (b) => b.map((x) => x.dataset.tabgrp));
-  assert.deepEqual(order, ['rs6', 'atem', 'ptz', 'pixera'], 'groups in the fixed order, whatever order they were added in');
+  assert.deepEqual(order, ['rs6', 'atem', 'ptz', 'pixera', 'lightning'], 'groups in the fixed order; Lightning always present');
+  assert.equal(await page.locator('.tgrp[data-tabgrp=lightning]:not([hidden])').count(), 1, 'Lightning always on the desk');
   const sub = await page.$$eval('#tabsSub .tab', (b) => b.filter((x) => x.offsetParent).map((x) => x.dataset.tab));
   assert.deepEqual(sub, ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], 'second row = ATEM pages only');
   await page.locator('.tgrp[data-tabgrp=atem] .led.ok').waitFor();
@@ -42,7 +43,17 @@ test('navigation 0.11.0: group row, page row, deep link, last page per group, ov
   // narrow: each row is one line that scrolls sideways (no wrapping), the active tab stays in view
   await page.setViewportSize({ width: 420, height: 800 });
   await page.click('.tgrp[data-tabgrp=atem]'); await page.click('.tab[data-tab=amacros]');
-  const m = await page.evaluate(() => { const r = document.querySelector('#tabsSub'); const a = document.querySelector('#tabsSub .tab.active'); const rb = r.getBoundingClientRect(); const ab = a.getBoundingClientRect(); return { over: r.scrollWidth > r.clientWidth, h: rb.height, inView: ab.left >= rb.left - 1 && ab.right <= rb.right + 1 }; });
+  await page.waitForFunction(() => {
+    const r = document.querySelector('#tabsSub'); const a = document.querySelector('#tabsSub .tab.active');
+    if (!r || !a || !(r.scrollWidth > r.clientWidth)) return false;
+    a.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const rb = r.getBoundingClientRect(); const ab = a.getBoundingClientRect();
+    return ab.left >= rb.left - 2 && ab.right <= rb.right + 2;
+  });
+  const m = await page.evaluate(() => { const r = document.querySelector('#tabsSub'); const a = document.querySelector('#tabsSub .tab.active'); const rb = r.getBoundingClientRect(); const ab = a.getBoundingClientRect(); return { over: r.scrollWidth > r.clientWidth, h: rb.height, inView: ab.left >= rb.left - 2 && ab.right <= rb.right + 2 }; });
   assert.ok(m.over, 'the page row overflows at 420 px'); assert.ok(m.h < 70, `one line (${m.h}px)`); assert.ok(m.inView, 'active tab scrolled into view');
+  // Lightning engineering tab (always available)
+  await page.click('.tgrp[data-tabgrp=lightning]'); await page.waitForFunction(() => document.body.classList.contains('tab-lightning'));
+  assert.equal(await page.locator('#pane-lightning').isVisible(), true);
   assert.deepEqual(errors, []);
 });

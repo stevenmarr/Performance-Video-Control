@@ -75,7 +75,9 @@ async function main() {
   }
   const systems = new SystemManager({ dataDir, engine, overrides: sysOverrides });
   const server = createServer(engine, systems);
-  // 0.12.0 video scopes: H.264 relay (WebSocket /api/scopes/ws) + /api/scopes/*; in --mock a mock RTSP camera
+  // 0.12.0 video scopes: H.264 relay (WebSocket /api/scopes/ws) + /api/scopes/*; in --mock a mock RTSP camera.
+  // 0.20.0 Lightning NDI ingest: this process never receives NDI (not on a Pi, not in-process).
+  // A Mac sidecar pushes H.264 to /api/scopes/ndi/ingest. --mock adds fixture sources ndi:mock-bars / ndi:mock-ramps.
   const scopes = require('./lib/scopes/service').attachScopes(server, { systems, dataDir, mock, log: (lv, m) => engine.log(lv, m) });
   server.listen(port, bind, async () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
