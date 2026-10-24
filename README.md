@@ -257,6 +257,19 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ---
 
+
+## v0.13.0-dev: Lightning scopes tab, TSL 5.0 tally (first slice)
+
+- **Lightning** top-level engineering tab: waveform, RGB parade, vectorscope, false colour and zebra (the
+  existing scopes UI). Not stage lighting and not NewTek CG. Brand tokens black / `#121212`, white /
+  `#F5F5F5`, accent `#C42020`. **PTZ → SCOPES** remains a shortcut into the same frame.
+- Standalone URLs: `/lightning.html` (alias) and `/scopes.html`.
+- **NDI**: in-app help only (OBS DistroAV / NDI Tools on a Mac; one composite source). No NDI SDK or npm
+  deps on the Pi. Placeholder for a future Mac sidecar — not a fake working publish button.
+- **TSL 5.0** tally sender (mock or UDP loopback only): map ATEM PGM→red / PVW→green to show-file
+  addresses; optional Follow PTZ lamps. UI under **⌂ SYSTEMS → TALLIES**. See [docs/tsl-tally.md](docs/tsl-tally.md).
+- New `/api/version` features: `lightning`, `tslTally`. API stays 9. Package version `0.13.0-dev`.
+
 ## v0.12.0: video scopes, Stream Deck camera functions
 
 - **SCOPES tab** in the PTZ group: waveform, RGB parade, vectorscope, false colour and zebra from a camera's H.264
