@@ -100,6 +100,9 @@ module's model table); other models may support some of them; confirm on hardwar
 | `dExtender` | Digital extender | spec | Digital Extender OSJ:4E (0 OFF, 1 x1.4, 2 x2.0; Opt. zoom mode) | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `digitalZoom` | Digital zoom | spec | Digital Zoom OSE:70 (0 disable, 1 enable) | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `ois` | Image stabilizer (O.I.S.) | spec | O.I.S. Mode OIS (0 off, 1 on) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `drs` | DRS (dynamic range stretch) | spec | DRS OSE:33 (0 OFF, 1 LOW, 2 MID, 3 HIGH; not with Gamma Mode HLG) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `dayNight` | Night mode (Day/Night) | spec | Day/Night #D6 (0 Day / off, 1 Night / on; with Color Setting Normal; AWB is refused at night) | ● |  |  |  |  |  |  |  |  |  |  |  |
+| `freezePreset` | Freeze during preset | spec | Freeze During Preset #PRF (0 off, 1 on) | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `presetDExt` | Preset digital extender | spec | Preset D-Extender OSE:7C (0 off, 1 on) | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `limitUp` | Pan/tilt limit up (set at the current position) | spec | Limitation Control #LC1<0 release/1 set> | ● |  |  |  |  |  |  |  |  |  |  |  |
 | `limitDown` | Pan/tilt limit down (set at the current position) | spec | Limitation Control #LC2<0 release/1 set> | ● |  |  |  |  |  |  |  |  |  |  |  |

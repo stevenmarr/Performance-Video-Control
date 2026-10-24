@@ -257,6 +257,25 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ---
 
+## v0.12.0: video scopes, Stream Deck camera functions
+
+- **SCOPES tab** in the PTZ group: waveform, RGB parade, vectorscope, false colour and zebra from a camera's H.264
+  stream, relayed by the app (`lib/stream-relay.js`, `lib/scopes/`). See [docs/scopes.md](docs/scopes.md). It uses
+  the camera's own login from the CAMERAS tab when one is set, and offers an optional HTTPS mirror
+  (`RS6_TLS_CERT` / `RS6_TLS_KEY` / `RS6_TLS_PORT`) so LAN browsers get WebCodecs.
+- **UE150 functions for the Stream Deck pages** (spec v2.94; UE150 series only): `drs` (DRS `OSE:33`, OFF / LOW /
+  MID / HIGH), `dayNight` (night mode `#D6`) and `freezePreset` (Freeze During Preset `#PRF`). They go through
+  `POST /api/sys/ptz/cmd/op {cam, op, value}`, are read back from camdata.html and are in the mock camera.
+- **Live recall guard** for deck recalls on a camera whose red tally is on:
+  - `POST /api/sys/ptz/cmd/guard {mode: off|hold|lock|cycle, holdMs}`, saved per install and in shows when changed.
+  - It shows in the PTZ view as `liveGuard: {mode, holdMs}`. The default is `hold` at 600 ms.
+  - A recall with `{guarded: true}` on a live camera gets HTTP 423 unless the mode is `off`, or the mode is `hold`
+    and the deck sends `{confirmed: true}` after the key was held for `holdMs`.
+  - Recalls from the app's own UI (no `guarded`) are not affected.
+- New `/api/version` features: `scopes`, `ptzLiveGuard`, `ptzDeckFunctions`. API stays 9.
+
+---
+
 ## v0.11.1: dockable PTZ workspace, UE150 camera login
 
 - **PTZ CAMERA CONTROL is a dockable workspace** (`public/dock.js`, plain JS). The panels sit on a grid: 24 columns
