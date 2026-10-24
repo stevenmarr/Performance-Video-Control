@@ -66,6 +66,7 @@
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
   <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
   <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras" data-sys="ptz">CAMERAS</button>
+  <button class="tab x-only" data-tab="pscopes" data-cap="ptzCameras" data-sys="ptz" title="Waveform, RGB parade, vectorscope and false colour from the camera's H.264 stream">SCOPES</button>
   <span class="tab-group x-only pixera-grp" data-grp="pixera">PIXERA</span>
   <button class="tab x-only" data-tab="pxplay" data-cap="pixeraTransport" data-sys="pixera">TIMELINES</button>
   <button class="tab x-only" data-tab="pxcues" data-cap="pixeraCues" data-sys="pixera">CUES</button>
@@ -380,6 +381,8 @@
     <div class="section-title" style="margin-top:18px">COMMAND REFERENCE <small>every command the dashboard can send to the selected camera, with its source (Companion module action or Panasonic spec)</small></div>
     <div id="ptzRef" class="rows ref"></div>
   </section>
+  <!-- 0.12.0 video scopes (public/scopes.html in a frame; public/scopes-tab.js) -->
+  <section class="grid-wrap pane" id="pane-pscopes" hidden><iframe id="scopesFrame" title="Video scopes" style="display:block;width:100%;border:0;border-radius:8px;background:#0b0d10"></iframe></section>
 
   <!-- 0.9.4 AV Stumpfl Pixera (public/pixera.js): JSON-RPC over TCP, port 1400 -->
   <section class="grid-wrap pane" id="pane-pxplay" hidden>
@@ -694,5 +697,6 @@
 <script src="/pixera.js"></script>
 <script src="/millumin.js"></script>
 <script src="/companion.js"></script>
+<script src="/scopes-tab.js"></script>
 </body>
 </html>

@@ -45,6 +45,7 @@
   dialog input { width: 100%; }
   dialog .hint { color: var(--dim); font-size: 12px; }
   body.embed .bar .home { display: none; }
+  body:not(.embed) .bar .pop { display: none; }
   @media (max-width: 760px) { .panels { --cols: 1 !important; } select { max-width: 160px; } }
 </style>
 </head>
@@ -68,6 +69,7 @@
   <select id="mode" aria-label="Decode path"><option value="auto">AUTO</option><option value="webcodecs">WEBCODECS</option><option value="mse">MSE (RGB)</option><option value="jpeg">JPEG SNAPSHOT</option></select>
   <span class="legend" id="legend" hidden></span>
   <button id="btnSettings" title="Camera streams, test video, custom input" style="margin-left:auto">⚙ INPUTS</button>
+  <a class="pop" href="/scopes.html" target="_blank" rel="noopener" title="Open the scopes in their own window" style="color:var(--dim);text-decoration:none">⤢ WINDOW</a>
 </div>
 <div class="stage" id="stage">
   <div class="panels" id="panels">
