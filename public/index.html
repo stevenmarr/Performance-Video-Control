@@ -42,7 +42,7 @@
     <button type="button" class="tgrp" data-tabgrp="ptz" hidden><i class="led"></i>PTZ</button>
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
-    <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. NDI is an input, from a Mac sidecar or --mock fixtures.">SCOPES</button>
+    <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
@@ -74,7 +74,7 @@
   <span class="tab-group x-only millumin-grp" data-grp="millumin">MILLUMIN</span>
   <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin">COLUMNS</button>
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
-  <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. NDI sources come from --mock or a Mac sidecar.</span>
+  <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. Live video is Desktop Video from a Mac sidecar.</span>
   </div>
 </nav>
 
@@ -164,40 +164,19 @@
   <!-- 0.6.0 SYSTEMS dashboard: one card per system, live status, connection, and the switch between them -->
   <section class="grid-wrap pane dash" id="pane-system" hidden>
     <div class="dash-head">
-      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">ADD puts a system on the desk (its tabs appear), REMOVE takes it off. SIM uses a built-in fixture and is not saved. OPEN goes to its tabs. ⚙ sets the address.</div></div>
+      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">ON THE DESK is what you are running. ADD TO DESK puts a system on the desk and shows its tabs. OPEN goes to those tabs. CONFIGURE sets the address. REMOVE FROM DESK takes it off. ADD TO DESK AS SIMULATOR uses a built-in fixture and is not saved.</div></div>
       <span class="spacer"></span>
       <div class="dash-tools"><div id="dashSummary" class="dash-summary"></div>
-        <input type="search" id="dashSearch" class="dash-search" placeholder="Filter systems… (name, group, status, address)" autocomplete="off">
-        <div class="seg-row" role="group" aria-label="Card size"><button class="mode" data-density="list" type="button" title="Dense list: one line per system">LIST</button><button class="mode" data-density="compact" type="button">COMPACT</button><button class="mode" data-density="cards" type="button">CARDS</button></div></div>
+        <input type="search" id="dashSearch" class="dash-search" placeholder="Filter systems… (name, group, status, address)" autocomplete="off"></div>
       <div id="dashClock" class="dash-clock"></div>
     </div>
     <div class="dash-filters"><div id="dashGroups" class="seg-row dash-groups" role="group" aria-label="Show systems of"></div><span class="spacer"></span><div id="dashStatus" class="seg-row" role="group" aria-label="Show systems that are"></div></div>
     <div id="sysCards"></div>
     <div id="sysPlannedWrap" hidden><div class="section-title">MORE SYSTEMS <small>driver interface ready, drivers not built yet</small></div>
     <div id="sysPlanned" class="sys-cards planned"></div></div>
-    <!-- 0.13.0-dev TSL 5.0 tally map (docs/tsl-tally.md); mock / loopback only -->
-    <div class="tsl-panel" id="tslPanel">
-      <div class="section-title">TALLIES · TSL 5.0 <small>Control Center as UDP sender · PGM→red · PVW→green · show-file map</small></div>
-      <div class="tsl-row">
-        <label class="chk"><input type="checkbox" id="tslEnabled"> Enable sender</label>
-        <label class="chk"><input type="checkbox" id="tslFollowPtz" title="Also set Panasonic red/green from the map (cameras listed in a row)"> Follow PTZ lamps</label>
-        <label>Transport
-          <select id="tslTransport"><option value="mock">MOCK (log only)</option><option value="udp">UDP loopback</option></select>
-        </label>
-        <label>Host <input id="tslHost" type="text" value="127.0.0.1" spellcheck="false" autocomplete="off"></label>
-        <label>Port <input id="tslPort" type="number" min="1" max="65535" value="8900"></label>
-        <button type="button" class="btn mini primary" id="tslSave">SAVE MAP</button>
-        <button type="button" class="btn mini" id="tslTick">SEND NOW</button>
-      </div>
-      <div class="note small">Tallies are their own setup on this SYSTEMS page. They are separate from Scopes. UDP is limited to <code>127.0.0.1</code> / <code>::1</code> in this build. Default port <b>8900</b> (configurable). Address map is saved with the show.</div>
-      <table class="tsl-table" id="tslTable"><thead><tr><th>#</th><th>LABEL</th><th>ATEM IN</th><th>PTZ CAM</th><th></th></tr></thead><tbody></tbody></table>
-      <div class="tsl-row"><button type="button" class="btn mini" id="tslAdd">＋ ADDRESS</button><span id="tslMsg" class="cc-msg"></span></div>
-      <div class="section-title" style="margin-top:10px">LAST PACKETS <small>mock / loopback log</small></div>
-      <pre id="tslLog" class="tsl-log"></pre>
-    </div>
-    <!-- 0.9.0 Companion pages: ready-made Stream Deck pages for Steven's Companion fork -->
+    <!-- Companion page download stays available, but it is not the system cards and it is not Path C. -->
     <div class="cc-pages" id="ccPages">
-      <div class="section-title">COMPANION PAGES <small>Stream Deck pages for every configured system, as a file for Companion (the feat/lcars-gui fork). Buttons are linked to the PV Control Center module's presets (module 0.7.0+), so they keep up with the app.</small></div>
+      <div class="section-title">STREAM DECK PAGES <small>Companion page file for the other surfaces. PTZ Live / Paint / Functions / Move are the Path C plugin (<code>streamdeck/</code>), not these cards.</small></div>
       <div id="ccSurfaces" class="cc-surfaces"></div>
       <div class="cc-row">
         <label>App address Companion uses <input id="ccHost" type="text" autocomplete="off" spellcheck="false"></label>
@@ -268,6 +247,25 @@
         <div class="rate-row"><label>MIX RATE <input id="atemRate" type="number" min="1" max="250" inputmode="numeric"> frames</label><button class="btn mini" id="atemRateSet" type="button">SET</button></div></div>
       <div class="panel"><div class="section-title">UPSTREAM KEYS <small>ON AIR</small></div><div id="atemUsk" class="key-grid"></div></div>
       <div class="panel"><div class="section-title">DOWNSTREAM KEYS</div><div id="atemDsk" class="dsk-list"></div></div>
+    </div>
+    <div class="tsl-panel" id="tslPanel">
+      <div class="section-title">TSL TALLY <small>map ATEM sources to a TSL 5.0 receiver · PGM red · PVW green</small></div>
+      <div class="tsl-row">
+        <label class="chk"><input type="checkbox" id="tslEnabled"> Enable sender</label>
+        <label class="chk"><input type="checkbox" id="tslFollowPtz" title="Also set Panasonic red/green from the map (cameras listed in a row)"> Follow PTZ lamps</label>
+        <label>Transport
+          <select id="tslTransport"><option value="mock">MOCK (log only)</option><option value="udp">UDP</option></select>
+        </label>
+        <label>Host <input id="tslHost" type="text" value="127.0.0.1" spellcheck="false" autocomplete="off"></label>
+        <label>Port <input id="tslPort" type="number" min="1" max="65535" value="8900"></label>
+        <button type="button" class="btn mini primary" id="tslSave">SAVE MAP</button>
+        <button type="button" class="btn mini" id="tslTick">SEND NOW</button>
+      </div>
+      <div class="note small">Each row is an ATEM input that triggers a TSL address. UDP sends to the host and port above (default port <b>8900</b>). A simulator session keeps UDP on loopback. The map is saved with the show. Scopes do not use this map.</div>
+      <table class="tsl-table" id="tslTable"><thead><tr><th>#</th><th>LABEL</th><th>ATEM IN</th><th>PTZ CAM</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="tsl-row"><button type="button" class="btn mini" id="tslAdd">＋ ADDRESS</button><span id="tslMsg" class="cc-msg"></span></div>
+      <div class="section-title" style="margin-top:10px">LAST PACKETS <small>sender log</small></div>
+      <pre id="tslLog" class="tsl-log"></pre>
     </div>
   </section>
   <!-- 0.10.0 ATEM ROUTER / AUDIO / DVE-SS-KEYS (public/atem-ext.js) -->
@@ -403,26 +401,25 @@
     <div class="section-title" style="margin-top:18px">COMMAND REFERENCE <small>every command the dashboard can send to the selected camera, with its source (Companion module action or Panasonic spec)</small></div>
     <div id="ptzRef" class="rows ref"></div>
   </section>
-  <!-- SCOPES: persistent engineering tab. Lightning is a mode inside the scope strip. NDI is an input path. public/scopes-tab.js -->
+  <!-- SCOPES: persistent engineering tab. Lightning is a mode inside the scope strip. Desktop Video is the live input. public/scopes-tab.js -->
   <section class="grid-wrap pane" id="pane-scopes" hidden>
     <div class="scopes-head">
       <div class="section-title">SCOPES <small>waveform · RGB parade · vectorscope · Lightning (Y / R−Y / B−Y) · false colour · zebra</small></div>
       <span class="spacer"></span>
       <a class="btn mini" href="/scopes.html" target="_blank" rel="noopener" title="Open Scopes in their own window">⤢ WINDOW</a>
-      <button type="button" class="btn mini" id="btnNdiRefresh" title="Re-read mock fixtures and sidecar feeds">⟳ REFRESH</button>
+      <button type="button" class="btn mini" id="btnNdiRefresh" title="Re-read Desktop Video feeds">⟳ REFRESH</button>
     </div>
     <aside id="scopesNdi" class="scopes-ndi">
-      <div class="section-title">SIDECAR / DISCOVERED NDI <small>the list only shows sources that already exist</small></div>
-      <p class="note small">You cannot type a new name into this list. A source appears when the app is running with <b>--mock</b> (fixture clips) or when a Mac sidecar is pushing H.264. This page does not discover NDI, and the Pi does not run an NDI SDK.</p>
-      <div class="ndi-block"><h4>MOCK FIXTURES</h4><div id="ndiMock" class="ndi-sources" role="listbox" aria-label="Mock NDI fixtures"></div></div>
-      <div class="ndi-block"><h4>SIDECAR FEEDS</h4><div id="ndiSide" class="ndi-sources" role="listbox" aria-label="Sidecar NDI feeds"></div></div>
+      <div class="section-title">DESKTOP VIDEO <small>DeckLink into Scopes · the list only shows a feed that is already pushing</small></div>
+      <p class="note small">You cannot type a new name into this list. This menu does not invent a device. A row appears when a Mac is running <code>decklink-sidecar.js</code>. This page does not open Desktop Video, and the Pi does not capture DeckLink.</p>
+      <div class="ndi-block"><h4>DESKTOP VIDEO</h4><div id="ndiDeck" class="ndi-sources" role="listbox" aria-label="Desktop Video feeds"></div></div>
+      <div class="ndi-block" id="ndiSideBlock" hidden><h4>NDI (ADVANCED)</h4><div id="ndiSide" class="ndi-sources" role="listbox" aria-label="Legacy NDI sidecar feeds"></div></div>
       <p class="note small" id="ndiStatus"></p>
       <div id="ndiHow" class="ndi-how">
-        <p>On a Mac, discover sources, then receive one. The sidecar pushes H.264 into Control Center. Scopes read that feed the same way they read a camera RTSP stream.</p>
-        <pre class="ndi-cmd" id="ndiCmds">node tools/ndi-sidecar.js --list
-node tools/ndi-sidecar.js --ndi "NAME" --app http://127.0.0.1:8080
-node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080</pre>
-        <p class="note small"><code>--list</code> and <code>--ndi</code> are macOS only. They need ffmpeg built with <code>libndi_newtek</code>, or <code>RS6_NDI_RECV</code> pointing at a helper that writes Annex-B H.264 to stdout. <code>--mock</code> needs no hardware. See <code>docs/ndi-ingest.md</code>.</p>
+        <p>On a Mac with Desktop Video installed, list inputs, then capture one. The sidecar pushes H.264 into Control Center. Scopes decode that feed the same way they decode a camera RTSP stream.</p>
+        <pre class="ndi-cmd" id="ndiCmds">node tools/decklink-sidecar.js --list
+node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
+        <p class="note small">Capture is macOS only. Build <code>tools/native/decklink-recv</code> (the DeckLink SDK is not in this repo), or set <code>RS6_DECKLINK_RECV</code>. See <code>docs/decklink-ingest.md</code>. Legacy NDI stays hidden until a sidecar is pushing.</p>
       </div>
     </aside>
     <iframe id="scopesFrame" title="Scopes" style="display:block;width:100%;border:0;border-radius:8px;background:#121212"></iframe>
@@ -763,6 +760,7 @@ node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080</pre>
 <script src="/pixera.js"></script>
 <script src="/millumin.js"></script>
 <script src="/companion.js"></script>
+<script src="/scopes-sources.js"></script>
 <script src="/scopes-tab.js"></script>
 <script src="/tsl.js"></script>
 </body>

@@ -160,19 +160,18 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     await p3.close();
   });
 
-  await t.test('SCOPES tab: NDI picker runs scopes on a mock fixture; Lightning is a mode', { skip: wc ? false : 'no WebCodecs H.264' }, async () => {
+  await t.test('SCOPES tab: Desktop Video picker, no mock NDI fixtures; Lightning is a mode', { skip: wc ? false : 'no WebCodecs H.264' }, async () => {
     const p4 = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     await p4.goto(`${B}/`); await p4.waitForTimeout(400);
     await p4.evaluate(() => localStorage.setItem('cc.scopes.src', 'builtin:bars.h264'));
     await openTab(p4, 'scopes');
     assert.equal(await p4.locator('#pane-scopes').isVisible(), true);
     assert.equal(await p4.locator('.tgrp[data-tabgrp=lightning]').count(), 0);
-    assert.match(await p4.locator('#scopesNdi').innerText(), /SIDECAR \/ DISCOVERED NDI/);
-    assert.match(await p4.locator('#ndiHow').innerText(), /ndi-sidecar\.js --list/);
-    assert.match(await p4.locator('#ndiHow').innerText(), /--ndi "NAME"/);
-    assert.match(await p4.locator('#ndiMock').innerText(), /MOCK BARS/);
-    await p4.locator('.ndi-src[data-key="ndi:mock-bars"][data-via="mock"]').waitFor();
-    await p4.click('.ndi-src[data-key="ndi:mock-bars"]');
+    assert.match(await p4.locator('#scopesNdi').innerText(), /DESKTOP VIDEO/);
+    assert.match(await p4.locator('#ndiHow').innerText(), /decklink-sidecar\.js --list/);
+    assert.match(await p4.locator('#ndiHow').innerText(), /--device/);
+    assert.equal(await p4.locator('#ndiMock').count(), 0);
+    assert.doesNotMatch(await p4.locator('#scopesNdi').innerText(), /MOCK BARS/);
     const f = p4.frameLocator('#scopesFrame');
     await f.locator('#ro').waitFor({ timeout: 10000 });
     await f.locator('[data-show="ltng"]').waitFor();

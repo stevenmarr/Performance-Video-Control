@@ -40,7 +40,7 @@ Only the pages of the selected group are shown, always in the same order:
 | MILLUMIN | COLUMNS · LAYER |
 
 **SCOPES** has no second-row page of its own. The top-row button opens the pane. The second row shows a
-one-line hint (modes, and that NDI names come from `--mock` or a Mac sidecar).
+one-line hint (modes, and that live video is Desktop Video from a Mac sidecar).
 
 A page that the connected system does not support is not shown (for example, PixelHue has no CUES).
 On the SYSTEMS page this row shows a short hint instead of tabs.

@@ -83,7 +83,7 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   await page.click('[data-group="Cameras"]');
   await page.waitForFunction(() => document.querySelectorAll('.sys-card[data-card]').length === 1);
   assert.equal(await page.locator('.sys-card[data-card=ptz]').count(), 1);
-  await page.click('[data-group="all"]'); await page.click('[data-density=compact]'); await page.click('[data-density=cards]');
+  await page.click('[data-group="all"]');
   assert.equal(await page.locator('[data-group].active').count(), 1, 'only the chosen group chip is lit');
   assert.equal(await page.locator('.mode[data-mode].active').count(), 1, 'RS6 tile mode untouched');
   // ATEM: preview from the bus, then CUT

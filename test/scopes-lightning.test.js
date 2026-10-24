@@ -1,6 +1,6 @@
 'use strict';
 // 0.20.1: SCOPES is the persistent tab. Lightning is a component-vectorscope mode (Y / R−Y / B−Y),
-// not a top-level tab. The NDI picker tells operators the list is mock fixtures or sidecar feeds.
+// not a top-level tab. Live video on that tab is Desktop Video, not an invented NDI source.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -18,10 +18,16 @@ test('SCOPES is the persistent top tab; LIGHTNING is not a nav group', () => {
   assert.doesNotMatch(html, /data-tab="lightning"/);
   assert.doesNotMatch(html, /id="pane-lightning"/);
   assert.match(html, /id="pane-scopes"/);
-  assert.match(html, /ndi-sidecar\.js --list/);
-  assert.match(html, /--ndi "NAME"/);
-  assert.match(html, /SIDECAR \/ DISCOVERED NDI/);
+  assert.match(html, /decklink-sidecar\.js --list/);
+  assert.match(html, /--device 0/);
+  assert.match(html, /DESKTOP VIDEO/);
   assert.match(html, /cannot type a new name/i);
+  assert.doesNotMatch(html, /MOCK FIXTURES/);
+  assert.doesNotMatch(html, /id="ndiMock"/);
+  const atem = html.slice(html.indexOf('id="pane-atem"'), html.indexOf('id="pane-arouter"'));
+  const system = html.slice(html.indexOf('id="pane-system"'), html.indexOf('id="pane-xpresets"'));
+  assert.match(atem, /id="tslPanel"/);
+  assert.doesNotMatch(system, /id="tslPanel"/);
   assert.match(nav, /scopes: \['scopes'\]/);
   assert.doesNotMatch(nav, /lightning:/);
   assert.match(nav, /h === 'lightning'\) h = 'scopes'/);

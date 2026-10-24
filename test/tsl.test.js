@@ -64,6 +64,19 @@ test('TslService mock: ATEM PGM/PVW map → packets (no real sockets)', async ()
   fs.rmSync(dir, { recursive: true, force: true });
 });
 
+test('a live desk may store a TSL UDP address; a simulator session stays on loopback', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tsl-live-'));
+  const live = new TslService({ dataDir: dir, forceMock: false });
+  live.setConfig({ transport: 'udp', host: '192.0.2.10', port: 8900, enabled: false });
+  assert.equal(live.getConfig().host, '192.0.2.10');
+  assert.equal(live.status().via, 'udp');
+  const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'tsl-sim-'));
+  const sim = new TslService({ dataDir: dir2, forceMock: true });
+  assert.throws(() => sim.setConfig({ transport: 'udp', host: '192.0.2.10', port: 8900 }), /loopback/);
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.rmSync(dir2, { recursive: true, force: true });
+});
+
 test('cleanConfig defaults', () => {
   const c = cleanConfig({});
   assert.equal(c.version, '5.0');

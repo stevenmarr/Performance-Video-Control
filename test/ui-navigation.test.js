@@ -56,9 +56,10 @@ test('navigation 0.11.0: group row, page row, deep link, last page per group, ov
   // SCOPES is always on the top row, including on a narrow viewport. Lightning is not a tab.
   await page.click('.tab[data-tab=scopes]'); await page.waitForFunction(() => document.body.classList.contains('tab-scopes'));
   assert.equal(await page.locator('#pane-scopes').isVisible(), true);
-  assert.match(await page.locator('#pane-scopes').innerText(), /SIDECAR \/ DISCOVERED NDI/);
-  assert.match(await page.locator('#ndiCmds').innerText(), /ndi-sidecar\.js --list/);
-  assert.match(await page.locator('#ndiCmds').innerText(), /--ndi "NAME"/);
+  assert.match(await page.locator('#pane-scopes').innerText(), /DESKTOP VIDEO/);
+  assert.match(await page.locator('#ndiCmds').innerText(), /decklink-sidecar\.js --list/);
+  assert.match(await page.locator('#ndiCmds').innerText(), /--device 0/);
+  assert.equal(await page.locator('#ndiMock').count(), 0);
   const fr = page.frameLocator('#scopesFrame');
   await fr.locator('[data-show="ltng"]').waitFor({ timeout: 10000 });
   assert.equal(await fr.locator('[data-show="wfm"]').count(), 1);

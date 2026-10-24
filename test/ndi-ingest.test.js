@@ -90,7 +90,7 @@ test('sidecar --ndi is refused on this host (no receive, no ffmpeg spawn)', { sk
   });
 });
 
-test('scopes: mock NDI fixtures and a sidecar push share the RTSP relay path', async (t) => {
+test('scopes: --mock does not invent NDI fixtures; a sidecar push still shares the relay', async (t) => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'ndi-ingest-')); t.after(() => fs.rmSync(data, { recursive: true, force: true }));
   const systems = { drivers: { ptz: { cams: new Map() } } };
   const srv = http.createServer((req, res) => { res.writeHead(200); res.end('app'); });
@@ -102,15 +102,10 @@ test('scopes: mock NDI fixtures and a sidecar push share the RTSP relay path', a
   const listed = await (await fetch(`${B}/api/scopes/ndi`)).json();
   assert.equal(listed.receive, 'sidecar'); assert.equal(listed.inProcess, false); assert.equal(listed.mock, true);
   assert.equal(listed.ingest, 'loopback');
-  assert.ok(listed.sources.some((s) => s.key === 'ndi:mock-bars' && s.kind === 'ndi' && s.via === 'mock' && s.ok));
-  assert.ok(listed.sources.some((s) => s.key === 'ndi:mock-ramps' && s.via === 'mock'));
+  assert.ok(!listed.sources.some((s) => String(s.key || '').startsWith('ndi:mock-')), 'no in-process NDI fixtures');
+  assert.ok(!listed.sources.some((s) => s.via === 'mock'));
 
-  const viewer = await wsConnect(`${B}/api/scopes/ws?src=ndi:mock-bars`); t.after(() => viewer.close());
-  await until(() => viewer.msgs.filter(Buffer.isBuffer).length >= 3);
-  const cfg = viewer.msgs.find((m) => m && m.type === 'config');
-  assert.equal(cfg.kind, 'ndi'); assert.equal(cfg.codec, 'avc1.64001f');
-  assert.equal(viewer.msgs.find(Buffer.isBuffer)[1] & 1, 1, 'first picture is an IDR');
-
+  await assert.rejects(wsConnect(`${B}/api/scopes/ws?src=ndi:mock-bars`), /HTTP 404|no NDI source|ECONNRESET|socket hang up/);
   await assert.rejects(wsConnect(`${B}/api/scopes/ndi/ingest?id=mock-bars&name=nope`), /HTTP 400|bad NDI|ECONNRESET|socket hang up/);
   await assert.rejects(wsConnect(`${B}/api/scopes/ndi/ingest?id=Bad_ID&name=nope`), /HTTP 400|bad NDI|ECONNRESET|socket hang up/);
 

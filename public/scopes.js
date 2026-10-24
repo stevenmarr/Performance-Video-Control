@@ -9,7 +9,7 @@
   'use strict';
   const $ = (s) => document.querySelector(s);
   const Q = new URLSearchParams(location.search);
-  const preferNdi = Q.get('prefer') === 'ndi' || /\/lightning(?:\.html)?$/.test(location.pathname);
+  const preferLive = Q.get('prefer') === 'live' || Q.get('prefer') === 'ndi' || /\/lightning(?:\.html)?$/.test(location.pathname);
   const LS = (k, v) => { const key = `cc.scopes.${k}`; if (v === undefined) return localStorage.getItem(key); if (v === null) localStorage.removeItem(key); else localStorage.setItem(key, String(v)); return v; };
   if (Q.get('embed')) document.body.classList.add('embed');
   const TEST = Q.get('test') === '1';
@@ -109,38 +109,25 @@
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   // ---------- sources ----------
-  let ndiPreferApplied = false;
-  // The menu is a list of sources that already exist. A disabled row explains an empty group.
-  // Operators cannot type a new NDI name into it.
-  function sourceMenu(sources, mockOn) {
-    const buckets = [
-      { label: 'Sidecar / discovered NDI', items: sources.filter((s) => s.kind === 'ndi' && s.via === 'sidecar'), empty: 'No sidecar feed — ndi-sidecar.js --list, then --ndi "NAME"' },
-      { label: 'Mock fixtures (--mock)', items: sources.filter((s) => s.kind === 'ndi' && s.via === 'mock'), empty: mockOn ? 'No fixture files found' : 'Not listed. Start the app with --mock' },
-      { label: 'Cameras', items: sources.filter((s) => s.kind === 'camera'), empty: '' },
-      { label: 'Test clips and custom', items: sources.filter((s) => s.kind !== 'ndi' && s.kind !== 'camera'), empty: '' },
-    ];
-    const html = buckets.map((b) => {
-      if (!b.items.length && !b.empty) return '';
-      const opts = b.items.map((s) => `<option value="${esc(s.key)}" ${s.ok ? '' : 'data-noh264="1"'}>${esc(s.label)}${s.ok ? '' : ' — JPEG only'}</option>`).join('');
-      const hole = !b.items.length ? `<option disabled value="">${esc(b.empty)}</option>` : '';
-      return `<optgroup label="${esc(b.label)}">${opts}${hole}</optgroup>`;
-    }).join('');
-    return html || '<option value="">no sources</option>';
+  let livePreferApplied = false;
+  // Desktop Video first. Empty groups with no explanation are omitted (no mock-fixture group).
+  function sourceMenu(sources) {
+    return (window.ScopesSources && window.ScopesSources.sourceMenu(sources)) || '<option value="">no sources</option>';
   }
   async function loadSources() {
     const first = !st.sources.length;
     const r = await fetch('/api/scopes/sources').then((x) => x.json());
     st.sources = r.sources; st.settings = r.settings; st.ndi = r.ndi || null; st.mock = !!r.mock;
     const sel = $('#src');
-    sel.innerHTML = sourceMenu(r.sources, st.mock);
+    sel.innerHTML = sourceMenu(r.sources);
     if (first) {
       if (!r.sources.some((s) => s.key === st.src)) st.src = (r.sources.find((s) => s.kind === 'camera' && s.ok) || r.sources[0] || {}).key || '';
-      // The SCOPES tab prefers an NDI ingest. PTZ → SCOPES keeps the camera preference.
-      if (!ndiPreferApplied && preferNdi) {
-        ndiPreferApplied = true;
-        const ndi = r.sources.find((s) => s.kind === 'ndi' && s.ok);
+      // The SCOPES tab prefers a Desktop Video ingest. PTZ → SCOPES keeps the camera preference.
+      if (!livePreferApplied && preferLive) {
+        livePreferApplied = true;
+        const live = window.ScopesSources ? window.ScopesSources.preferLiveSource(r.sources) : null;
         const cur = r.sources.find((s) => s.key === st.src);
-        if (ndi && (!cur || cur.kind !== 'ndi')) { st.src = ndi.key; LS('src', st.src); }
+        if (live && (!cur || (cur.via !== 'decklink' && cur.via !== 'sidecar'))) { st.src = live.key; LS('src', st.src); }
       }
     }
     if ([...sel.options].some((o) => o.value === st.src)) sel.value = st.src;

@@ -1,26 +1,28 @@
-# TSL tally (0.20.0)
+# TSL tally
 
-TSL is its own setup. It is not part of Scopes. Lightning is a scope mode on the SCOPES tab, not this page.
+TSL is a function of the **ATEM** page. It is not a SYSTEMS home, and it is not part of Scopes.
+Lightning is a scope mode on the SCOPES tab.
 
-Control Center is a **TSL 5.0 UDP sender**. It maps switcher **PGM → red** and **PVW → green** onto
-addresses stored with the show file (and in `<dataDir>/tsl.json` while you edit). Open it from
-**⌂ SYSTEMS → TALLIES**.
+Control Center is a **TSL 5.0 UDP sender**. On the ATEM switcher page, map ATEM inputs to a receiver
+address: **PGM → red**, **PVW → green**. The map is stored with the show file and in `<dataDir>/tsl.json`
+while you edit.
 
-## First slice (this build)
+## What you set
 
 | Piece | Behaviour |
 |---|---|
-| Protocol | **TSL 5.0** only (not 3.1 yet) |
-| Transport | **`mock`** (in-memory packet log) or **`udp`** to **loopback only** (`127.0.0.1` / `::1`) |
+| Protocol | **TSL 5.0** (not 3.1) |
+| Where | **ATEM → TSL TALLY**, under the switcher buses |
+| Transport | **`mock`** (packet log) or **`udp`** to the host and port on that page |
 | Default port | **8900** (configurable 1–65535) |
 | Colour | LH = PGM red (`1`), RH = PVW green (`2`), brightness 3, ASCII labels |
-| Source of truth (now) | **ATEM** M/E 1 program / preview input ids |
-| Optional | **Follow PTZ lamps**: cameras listed on a map row get red/green CGI from the same map (other cameras keep their own TLR path) |
-| UI | **⌂ SYSTEMS → TALLIES · TSL 5.0** |
+| Source of truth | **ATEM** M/E 1 program / preview input ids |
+| Optional | **Follow PTZ lamps**: cameras listed on a map row get red/green CGI from the same map |
 | API | `GET/POST /api/tsl`, `POST /api/tsl/tick` |
 
-LAN UDP to a real UMD / Tally Arbiter is **not enabled** yet (public-repo safety). Enable later behind an
-explicit operator choice after loopback proving.
+On a live desk, UDP sends to the IP and port you type. A simulator session (`node server.js --mock`,
+or a connection override used by tests) refuses any UDP target that is not loopback
+(`127.0.0.1` / `::1` / `localhost`). Do not put a show IP in the repo.
 
 ## Address map
 
@@ -29,17 +31,11 @@ Each row:
 - **index** — TSL display INDEX (0–65534)
 - **label** — up to 16 ASCII characters (UMD text)
 - **ATEM IN** — switcher input id (same numbers as the SWITCHER bus)
-- **PTZ CAM** — optional `cameraId` (e.g. `cam1`) when Follow PTZ lamps is on
+- **PTZ CAM** — optional `cameraId` (for example `cam1`) when Follow PTZ lamps is on
 
 A show file may carry a top-level `tsl` object (same shape as the API config). Older apps ignore it.
 
-## Mock / tests
+## Tests
 
-`--mock` forces the mock transport. Unit tests assert packet bytes and PGM/PVW mapping without opening
-sockets to real devices. Never point the public repo at a show IP (e.g. `192.168.21.125`).
-
-## Open questions
-
-1. Keep default port **8900**, or prefer another fleet default (9100, etc.)?
-2. ATEM-only first (current), or also RS6 / E2 / PixelHue sources in the same table next?
-3. Should Follow PTZ be on by default for shows that already use camera TLR elsewhere?
+Unit tests assert packet bytes and PGM/PVW mapping without opening sockets to a show network.
+`--mock` forces the mock transport for that process.

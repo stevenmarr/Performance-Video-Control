@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 'use strict';
-// RS6 Presets: E2-style destination-aware presets for Analog Way Aquilon RS6, built from the memories on the device.
-// 0.6.0: also drives Barco Event Master (E2 / S3) and PixelHue switchers (SYSTEM tab).
-// Usage: node server.js [--mock] [--port 8080] [--host 0.0.0.0] [--data <dir>]
+// Performance Video Control Center. One desk for the show systems (RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin).
+// Usage: node server.js [--port 8080] [--host 0.0.0.0] [--data <dir>]
+// --mock starts built-in simulators for tests. It is not the desk path, and it does not add NDI fixture sources.
 const path = require('path');
 const os = require('os');
 const { Engine } = require('./lib/engine');
@@ -75,13 +75,14 @@ async function main() {
   }
   const systems = new SystemManager({ dataDir, engine, overrides: sysOverrides });
   const server = createServer(engine, systems);
-  // 0.12.0 video scopes: H.264 relay (WebSocket /api/scopes/ws) + /api/scopes/*; in --mock a mock RTSP camera.
-  // 0.20.1 Scopes: this process never receives NDI (not on a Pi, not in-process).
-  // A Mac sidecar pushes H.264 to /api/scopes/ndi/ingest. --mock adds fixture sources ndi:mock-bars / ndi:mock-ramps.
+  // Video scopes: H.264 relay (WebSocket /api/scopes/ws) + /api/scopes/*.
+  // This process never receives DeckLink or NDI (not on a Pi, not in-process).
+  // A Mac sidecar pushes H.264 to /api/scopes/ndi/ingest. Live video is Desktop Video.
+  // --mock does not add NDI fixture sources.
   const scopes = require('./lib/scopes/service').attachScopes(server, { systems, dataDir, mock, log: (lv, m) => engine.log(lv, m) });
   server.listen(port, bind, async () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
-    console.log(`RS6 Presets UI: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
+    console.log(`Control Center: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
     console.log(`Data dir: ${dataDir}`);
     await engine.connect();
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);

@@ -10,32 +10,32 @@ page. The page also works in a separate window (the **⤢ WINDOW** button).
 
 **SCOPES** is the tab. **Lightning** is one mode in the scope strip: a component vectorscope with luminance
 (Y) vertical, B−Y on the left half and R−Y on the right half. It is not stage lighting, not NewTek CG, and
-not a separate tab. Tallies live under **SYSTEMS → TALLIES** ([docs/tsl-tally.md](tsl-tally.md)).
+not a separate tab. TSL tallies are on the **ATEM** page ([docs/tsl-tally.md](tsl-tally.md)).
 
-## NDI ingest (Mac sidecar)
+## Desktop Video ingest (Mac sidecar)
 
-NDI is an **input** into Scopes. The operator picks a source that is already in the list. The list is not
-a place to invent a name:
+Live scopes come from a **Blackmagic Desktop Video** input. The operator picks a feed that is already
+pushing. The list does not invent a device:
 
-* **`--mock`** on the app adds fixture sources (`ndi:mock-bars`, `ndi:mock-ramps`).
-* A **Mac sidecar** that is pushing H.264 shows up under sidecar / discovered NDI.
+* **Desktop Video** is the first group. It is empty until `decklink-sidecar.js --device N` is connected.
+* Cameras, test clips, and a custom input stay in the SOURCE menu on the scopes page.
+* **NDI** is optional and legacy. That group is hidden until a sidecar is actually pushing. There is no mock-fixture group.
 
-The app does **not** publish scopes as an NDI output, and it does **not** open NDI itself (browsers cannot;
-a Pi should not). Discover and receive on a Mac:
+The app does **not** open DeckLink itself (browsers cannot; a Pi should not). Capture on a Mac:
 
 ```
-node tools/ndi-sidecar.js --list
-node tools/ndi-sidecar.js --ndi "NAME" --app http://127.0.0.1:8080
+node tools/decklink-sidecar.js --list
+node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080
 ```
 
-Details: [docs/ndi-ingest.md](ndi-ingest.md).
+Details: [docs/decklink-ingest.md](decklink-ingest.md). Legacy NDI: [docs/ndi-ingest.md](ndi-ingest.md).
 
 ```
 camera RTSP (TCP interleaved RTP, H.264)  ─┐
 test file (.h264 Annex-B / .mp4 / .mov)  ──┼─► lib/stream-relay.js ──WebSocket /api/scopes/ws──► browser
-mock UE150 RTSP camera (--mock)          ─┤   (access units, no transcoding)      │
-NDI mock fixtures (--mock, in-process)   ─┤                                        ├─ WebCodecs VideoDecoder → I420 planes (exact Y′)
-Mac sidecar (NDI receive → H.264 push)   ─┘                                        ├─ or MSE <video> (fMP4 muxed in the page) → RGB
+Desktop Video sidecar (DeckLink → H.264) ─┤   (access units, no transcoding)      │
+legacy NDI sidecar (optional)            ─┘                                        ├─ WebCodecs VideoDecoder → I420 planes (exact Y′)
+                                                                                   ├─ or MSE <video> (fMP4 muxed in the page) → RGB
                                                                                    └─ WebGL2: analyse → waveform / parade / vectorscope / Lightning / false colour
 ```
 
@@ -43,7 +43,7 @@ Mac sidecar (NDI receive → H.264 push)   ─┘                               
 
 | Control | What it does |
 |---|---|
-| SOURCE | Grouped menu: sidecar / discovered NDI, mock fixtures, cameras, test clips. Empty NDI groups say why. You cannot type a new source in. |
+| SOURCE | Grouped menu: Desktop Video, then cameras, test clips, and legacy NDI only when a sidecar is pushing. Empty groups with nothing to say are hidden. You cannot type a new source in. |
 | PIC / WFM / PARADE / VEC / LIGHTNING | Choose which panels to show; they lay out side by side. Double-click a panel to show it alone. Lightning is the component vectorscope (Y / B−Y / R−Y). |
 | NORMAL / FALSE / ZEBRA | Picture mode. ZEBRA uses the level next to it (%). |
 | RANGE | AUTO uses the stream's VUI `video_full_range_flag`. LEGAL is 16–235 = 0–100 %; FULL is 0–255 = 0–100 %. |
