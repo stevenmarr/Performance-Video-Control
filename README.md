@@ -257,6 +257,48 @@ Neither is contacted until it has an address, and neither joins the desk until *
 
 ---
 
+## v0.11.1: dockable PTZ workspace, UE150 camera login
+
+- **PTZ CAMERA CONTROL is a dockable workspace** (`public/dock.js`, plain JS). The panels sit on a grid: 24 columns
+  at 1200 px and wider, 12 columns at 820–1199 px, 2 columns under 820 px, and one stacked column under 560 px.
+  Rows are 30 px (plus an 8 px gap). Each panel has a header bar:
+  - **Move**: drag the header. The panel follows the pointer, and a dashed placeholder shows the snapped place.
+    Neighbours are pushed down and the grid closes up, so panels never overlap. **Esc** cancels. On touch,
+    press and hold the header, then drag. A quick swipe still scrolls.
+  - **Resize**: drag the left, right or bottom edge, or a bottom corner. The size snaps to columns and rows (a
+    badge shows it), and each panel has a minimum size.
+  - **▾ collapse** to the header (double-clicking the header does the same), **⧉ pop out** as a floating window
+    (drag and resize it freely, ⧉ again docks it), **✕ close** into the **PANELS** tray beside ALL STOP. A tray
+    chip reopens the panel where it was.
+  - **Keyboard**: Tab to a header, then use the arrow keys to move and **Shift** + the arrow keys to resize. **Enter**
+    collapses and **Delete** closes. Arrow keys on a header never pan the camera.
+  - Panel content adapts to the panel's size (CSS container queries): the joystick, rockers, preset grid and
+    camera columns scale or wrap.
+  - Each breakpoint keeps its own layout, **saved per install** (UI preferences `ptz.dock.xl|lg|md|sm`), so every
+    browser of the install sees it. A layout equal to the default is not stored.
+  - **LAYOUT ▾**: show / hide panels, save the current layout under a name (for example "Paint op" or
+    "Shader + joystick"; it covers every screen size), and load, rename or delete saved layouts. **↺ RESET TO
+    DEFAULT** restores the default on every screen size. Saved layouts are kept per install (`ptz.dockPresets`, up
+    to 16).
+  - **Motion safety**: nothing is moved, resized or reflowed while the joystick, a rocker or a pan / tilt key is
+    held. A screen-size change waits for the release. While a panel is being dragged, other pointers (a second
+    finger on the joystick) and keys are held off. **Esc** still reaches ALL STOP. Arranging panels sends no
+    camera command, and the joystick keep-alive is untouched.
+  - The 0.11.0 ⠿ grip and its `ptz.panelOrder` preference are retired, so a 0.11.0 swapped layout starts again
+    from the new default.
+- **Camera login (AW-UE150 and others)**: CAMERAS → **LOGIN** sets the user and password per camera. The default is
+  the UE150 factory login, user `admin` and password `12345`. Credentials are sent only when a camera asks for them
+  (HTTP 401 with `WWW-Authenticate`). Digest (MD5, MD5-sess, SHA-256, qop=auth) and Basic are supported. After the
+  first challenge, the answer goes with that camera's following requests. A refused login shows as
+  **LOGIN REFUSED** on the camera row, and the camera reads as offline with the reason. **FACTORY DEFAULT** forgets
+  a saved login. A password you set is kept only in the install's data folder (`systems.json`). It is never in an
+  API answer, a show file or the log. A show loaded with its connections keeps the install's login for the same
+  camera. API: `POST /api/sys/ptz/cameras/:id {user, pass}` (`pass: null` = back to the factory default).
+  `GET /api/sys/ptz` reports `user`, `passSet`, `loginDefault`, `authScheme` and `authError` per camera. In
+  `--mock` the UE150 mock camera requires Digest with the factory login.
+
+---
+
 ## v0.11.0: every M/E, router drag, audio monitor, desk SAVE, auto recall / bail-to, compact SYSTEMS, two-row tabs, PTZ layout
 
 - **Every M/E** on 2 M/E and 4 M/E switchers: the SWITCHER and DVE / SS / KEYS pages share one M/E selector, and
@@ -292,7 +334,7 @@ Neither is contacted until it has an address, and neither joins the desk until *
   (auto-iris setup, synchro, ELC limit, skin detail, linear matrix, chroma phase, bars setup) are in closed
   expanders. Panels can be rearranged: drag a panel's ⠿ grip onto another panel to swap them (touch: hold, then
   drag; keyboard: arrow keys on the grip). The layout is saved per install, and **↺ RESET LAYOUT** restores the
-  default.
+  default. (0.11.1 replaces this with the dockable workspace above.)
 - **AW-UE150 is the default PTZ profile**: a camera whose model is not known yet gets the UE150 command set. A model
   the camera reports still decides. The UE150 shutter and auto-iris codes were checked against the Panasonic
   interface spec v2.94: auto iris `#D31` / `#D30`, shutter mode `OSJ:03`, step `OSJ:06` (4-hex denominator, with

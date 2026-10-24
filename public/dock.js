@@ -258,8 +258,8 @@
       if (rz && it.c) return;
       if (!can()) { toast('Release the camera controls before rearranging the panels', true); return; }
       const touch = e.pointerType === 'touch';
-      act = { id, el, mode: rz ? 'resize' : 'move', edge: rz ? rz.dataset.rz : null, pid: e.pointerId, id0: e.pointerId, x0: e.clientX, y0: e.clientY, on: false, touch, base: clone(layout), it: { ...it, f: it.f ? { ...it.f } : null }, timer: 0 };
-      act.id = e.pointerId; act.pid = id;
+      // act.id: the pointer driving the drag; act.pid: the panel being moved / resized
+      act = { id: e.pointerId, pid: id, el, mode: rz ? 'resize' : 'move', edge: rz ? rz.dataset.rz : null, x0: e.clientX, y0: e.clientY, on: false, touch, base: clone(layout), it: { ...it, f: it.f ? { ...it.f } : null }, timer: 0 };
       listen(true);
       if (rz) { e.preventDefault(); try { rz.setPointerCapture(e.pointerId); } catch { /* */ } begin(e); }
       else if (touch) { el.classList.add('dk-pending'); act.timer = setTimeout(() => { if (act && !act.on) { if (can()) begin({ clientX: act.x0, clientY: act.y0 }); else stop(); } }, HOLD); }

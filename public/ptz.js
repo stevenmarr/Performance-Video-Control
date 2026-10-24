@@ -510,6 +510,8 @@
   };
   const DOCK_PANELS = [['joy', 'PAN / TILT', 3, 8], ['lens', 'ZOOM · FOCUS', 2, 8], ['iris', 'IRIS · EXPOSURE', 3, 8], ['paint', 'PAINT', 4, 6], ['presets', 'PRESETS', 4, 6], ['view', 'PREVIEW', 3, 6], ['sys', 'CAMERA', 4, 6]]
     .map(([id, title, minW, minH]) => ({ id, title, minW, minH, selector: `:scope > .panel.rcp-${id}` }));
+  // the 0.11.0 grip-swap order is retired: forget it so it does not linger in the install's preferences
+  if (window.CCPREFS) window.CCPREFS.ready.then(() => { if (window.CCPREFS.get('ptz.panelOrder', null)) window.CCPREFS.set('ptz.panelOrder', null); });
   const dock = window.CCDOCK.create(rcp, { key: 'ptz', panels: DOCK_PANELS, defaults: DOCK_DEFAULTS, bar: $('#ptzDock'), toast: (m, e) => toast(m, e), canArrange: () => !anyHeld() });
   window.CCPTZ = { releaseAll, held: () => ({ ...held }) };
   window.CCPTZ.dock = dock;
