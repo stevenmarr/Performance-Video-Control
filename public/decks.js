@@ -196,8 +196,8 @@
     }
     if (b.id === 'btnDeckPush') {
       return run(api('POST', '/api/decks/deploy', { deviceId: selected }).then((r) => {
-        const w = (r.warnings || []).map((x) => x.message).join(' ');
-        toast(w ? `Pushed. ${w}` : 'Pushed to the Stream Deck');
+        const painted = r.plugin && r.plugin.painted;
+        toast(painted ? `Pushed ${painted} ${painted === 1 ? "key" : "keys"} to the Stream Deck` : "Pushed, but the deck has no Performance Video keys on it yet. In Stream Deck, drag Key onto the buttons you want, or pick the PTZ Paint profile if it is in the profile list. A Knob with no setting follows the page you pushed, not iris.");
         sig = '';
         return load();
       }));
