@@ -51,7 +51,7 @@
     if (note) {
       note.textContent = plug.online
         ? `Plugin is running. ${view.devices.length} Stream Deck${view.devices.length === 1 ? '' : 's'}.`
-        : 'Plugin is not running, so no deck is listed. The pages are still here. Install the plugin in the Stream Deck app, then Scan USB.';
+        : `Plugin is not running${plug.error ? `: ${plug.error}` : ''}. The pages are still here.`;
     }
     const devs = view.devices || [];
     if (selected && !devs.some((d) => d.id === selected)) selected = '';
@@ -163,7 +163,7 @@
         view = next;
         sig = '';
         render();
-        toast(next.plugin && next.plugin.online ? `${(next.devices || []).length} Stream Deck${(next.devices || []).length === 1 ? '' : 's'}` : 'Plugin is not running');
+        toast(next.plugin && next.plugin.online ? `${(next.devices || []).length} Stream Deck${(next.devices || []).length === 1 ? '' : 's'}` : `Plugin is not running${next.plugin && next.plugin.error ? `: ${next.plugin.error}` : ''}`);
       }));
     }
     if (b.dataset.select) {
