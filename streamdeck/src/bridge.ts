@@ -1,6 +1,6 @@
 import streamDeck from "@elgato/streamdeck";
 
-import { controlCenterBase, DECK_PATH, plan, type DeckPlan, type DeckSnapshot } from "../../lib/deck.js";
+import { controlCenterBase, DECK_PATH, plan, PLUSXL, type DeckPlan, type DeckSnapshot } from "../../lib/deck.js";
 
 type GlobalSettings = { host?: string; port?: number };
 
@@ -18,6 +18,7 @@ class Bridge {
 	private wait: ReturnType<typeof setTimeout> | null = null;
 	private views = new Map<string, () => Promise<void>>();
 	private cells = new Map<string, { id: string; deviceId: string; column: number; row: number; action: any }>();
+	private dials = new Map<string, { id: string; deviceId: string; column: number; action: any }>();
 	private stacks = new Map<string, Array<{ id: string; title?: string; profile?: string | null; device?: unknown; keys?: Array<Record<string, unknown>> }>>();
 	private showing = new Map<string, { id: string; title?: string; profile?: string | null; device?: unknown; keys?: Array<Record<string, unknown>> } | null>();
 	private pendingPaint = new Map<string, ReturnType<typeof setTimeout>>();
@@ -89,6 +90,17 @@ class Bridge {
 		this.unwatch(id);
 	}
 
+	/** A knob already on the device. Push assigns it by dial position, left to right. */
+	noteDial(cell: { id: string; deviceId: string; column: number; action: any }): void {
+		this.dials.set(cell.id, cell);
+		if (this.showing.get(cell.deviceId)) void this.paintDials(cell.deviceId);
+	}
+
+	forgetDial(id: string): void {
+		this.dials.delete(id);
+		this.unwatch(id);
+	}
+
 	private schedulePaint(deviceId: string): void {
 		const page = this.showing.get(deviceId);
 		if (!page) return;
@@ -101,18 +113,19 @@ class Bridge {
 	}
 
 	/**
-	 * Store the stack Control Center pushed and paint the first page onto keys that are
-	 * already on the device. A named profile is switched when Stream Deck has it installed.
-	 * Keys that are not on screen are still stored so a later page jump can find them.
+	 * Store the stack and write it onto the buttons and knobs already on the deck.
+	 * Stream Deck does not create keys. The operator fills the deck with Button and Knob.
 	 */
-	async applyDeploy(deviceId: string, body: { pages?: Array<{ id: string; title?: string; profile?: string | null; device?: unknown; keys?: Array<Record<string, unknown>> }> } = {}): Promise<{ ok: boolean; deviceId: string; loaded: string[] }> {
+	async applyDeploy(deviceId: string, body: { pages?: Array<{ id: string; title?: string; profile?: string | null; device?: unknown; keys?: Array<Record<string, unknown>> }> } = {}): Promise<{ ok: boolean; deviceId: string; loaded: string[]; painted: number }> {
 		const pages = Array.isArray(body.pages) ? body.pages : [];
 		this.stacks.set(deviceId, pages);
 		const first = pages[0] || null;
 		this.showing.set(deviceId, first);
-		if (first) await this.switchProfile(deviceId, first.profile || "Control Center");
+		this.page = this.pageName(first);
 		await this.paintPage(deviceId, first);
-		return { ok: true, deviceId, loaded: pages.map((p) => p.title || p.id) };
+		const knobs = await this.paintDials(deviceId);
+		const keys = [...this.cells.values()].filter((c) => c.deviceId === deviceId).length;
+		return { ok: true, deviceId, loaded: pages.map((p) => p.title || p.id), painted: keys + knobs };
 	}
 
 	/** Page-jump key. A target that is not in the pushed stack is refused. */
@@ -121,8 +134,9 @@ class Bridge {
 		const page = stack.find((p) => p.id === pageId);
 		if (!page) return { ok: false, warning: `Page ${pageId} is not on this deck` };
 		this.showing.set(deviceId, page);
-		await this.switchProfile(deviceId, page.profile || "Control Center");
+		this.page = this.pageName(page);
 		await this.paintPage(deviceId, page);
+		await this.paintDials(deviceId);
 		return { ok: true, pageId, title: page.title || pageId };
 	}
 
@@ -150,6 +164,40 @@ class Bridge {
 		} catch (e) {
 			streamDeck.logger.warn(`${e instanceof Error ? e.message : e}`);
 		}
+	}
+
+	private pageName(page: { id?: string; profile?: string | null } | null): string {
+		const id = String((page && (page.profile || page.id)) || "");
+		if (/paint/i.test(id)) return "paint";
+		if (/func/i.test(id)) return "func";
+		if (/move/i.test(id)) return "move";
+		return "live";
+	}
+
+	private async paintDials(deviceId: string): Promise<number> {
+		const name = this.pageName(this.showing.get(deviceId) || null);
+		this.page = name;
+		const layout = PLUSXL.pages.find((p) => p.id === name) || PLUSXL.pages[0];
+		let n = 0;
+		for (const dial of this.dials.values()) {
+			if (dial.deviceId !== deviceId) continue;
+			const settings = { widget: layout.dials[dial.column] || layout.dials[0] };
+			try {
+				await dial.action.setSettings(settings);
+			} catch (e) {
+				streamDeck.logger.warn(String(e));
+			}
+			const paint = this.views.get(dial.id);
+			if (paint) {
+				try {
+					await paint();
+				} catch (e) {
+					streamDeck.logger.warn(String(e));
+				}
+			}
+			n += 1;
+		}
+		return n;
 	}
 
 	private async switchProfile(deviceId: string, profile: string): Promise<void> {

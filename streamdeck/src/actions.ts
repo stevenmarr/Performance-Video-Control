@@ -212,6 +212,7 @@ export class KeyAction extends SingletonAction<Settings> {
 	override async onKeyDown(ev: KeyDownEvent<Settings>): Promise<void> {
 		if (await runDeployed(ev)) return;
 		const role = String(ev.payload.settings.role || "");
+		if (!role) return;
 		if (HOLD_ROLES.has(role)) {
 			beginHold(ev.action.id, (phase, factor) => {
 				void bridge.perform({ gesture: "hold", role, phase, factor });
@@ -238,20 +239,26 @@ export class KeyAction extends SingletonAction<Settings> {
 @action({ UUID: `${UUID}.dial` })
 export class DialAction extends SingletonAction<Settings> {
 	override async onWillAppear(ev: WillAppearEvent<Settings>): Promise<void> {
-		bridge.watch(ev.action.id, () => paintDial(ev.action, ev.payload.settings));
+		const column = Number((ev.payload as { coordinates?: { column?: number } }).coordinates?.column) || 0;
+		bridge.noteDial({ id: ev.action.id, deviceId: ev.action.device.id, column, action: ev.action });
+		bridge.watch(ev.action.id, async () => {
+			const settings = await ev.action.getSettings();
+			await paintDial(ev.action, settings);
+		});
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<Settings>): void {
-		bridge.unwatch(ev.action.id);
+		bridge.forgetDial(ev.action.id);
 	}
 
 	override async onDialRotate(ev: DialRotateEvent<Settings>): Promise<void> {
+		const settings = await ev.action.getSettings();
 		await bridge.perform({
 			gesture: "dial",
-			widget: String(ev.payload.settings.widget || "iris"),
+			widget: String(settings.widget || ev.payload.settings.widget || ""),
 			event: "rotate",
 			ticks: ev.payload.ticks,
-			stepIndex: num(ev.payload.settings.stepIndex, 0),
+			stepIndex: num(settings.stepIndex ?? ev.payload.settings.stepIndex, 0),
 		});
 	}
 

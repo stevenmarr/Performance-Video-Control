@@ -20,7 +20,8 @@
 					"Image": "imgs/actions/home/key",
 					"TitleAlignment": "middle"
 				}
-			]
+			],
+			"VisibleInActionsList": false
 		},
 		{
 			"Name": "Camera",
@@ -38,7 +39,8 @@
 					"Image": "imgs/actions/camera/key",
 					"TitleAlignment": "middle"
 				}
-			]
+			],
+			"VisibleInActionsList": false
 		},
 		{
 			"Name": "Preset",
@@ -56,7 +58,8 @@
 					"Image": "imgs/actions/preset/key",
 					"TitleAlignment": "middle"
 				}
-			]
+			],
+			"VisibleInActionsList": false
 		},
 		{
 			"Name": "Page",
@@ -74,13 +77,14 @@
 					"Image": "imgs/actions/page/key",
 					"TitleAlignment": "middle"
 				}
-			]
+			],
+			"VisibleInActionsList": false
 		},
 		{
-			"Name": "Key",
+			"Name": "Button",
 			"UUID": "com.performancevideo.control.key",
 			"Icon": "imgs/actions/key/icon",
-			"Tooltip": "A toggle, cycle or hold. R/B gain and pedestal stay on the dials.",
+			"Tooltip": "Put this on every key. Push from Control Center writes the page onto this position.",
 			"PropertyInspectorPath": "ui/settings.html",
 			"Controllers": [
 				"Keypad"
@@ -98,7 +102,7 @@
 			"Name": "Knob",
 			"UUID": "com.performancevideo.control.dial",
 			"Icon": "imgs/actions/dial/icon",
-			"Tooltip": "Circular paint knob. Push cycles fine/coarse. A paired knob cycles R and B.",
+			"Tooltip": "Put this on every dial. Push from Control Center assigns this position.",
 			"PropertyInspectorPath": "ui/settings.html",
 			"Controllers": [
 				"Encoder"
