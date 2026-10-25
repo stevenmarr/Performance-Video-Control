@@ -175,13 +175,16 @@ class Bridge {
 	}
 
 	private async paintDials(deviceId: string): Promise<number> {
-		const name = this.pageName(this.showing.get(deviceId) || null);
-		this.page = name;
+		const page = this.showing.get(deviceId) || null;
+		const fromPage = page && Array.isArray((page as { dials?: string[] }).dials) ? (page as { dials: string[] }).dials : null;
+		const name = fromPage && !fromPage.length ? "" : this.pageName(page);
+		if (name) this.page = name;
 		const layout = PLUSXL.pages.find((p) => p.id === name) || PLUSXL.pages[0];
+		const list = fromPage || layout.dials;
 		let n = 0;
 		for (const dial of this.dials.values()) {
 			if (dial.deviceId !== deviceId) continue;
-			const settings = { widget: layout.dials[dial.column] || layout.dials[0] };
+			const settings = { widget: list[dial.column] || "off" };
 			try {
 				await dial.action.setSettings(settings);
 			} catch (e) {

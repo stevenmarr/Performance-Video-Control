@@ -83,6 +83,11 @@ async function runDeployed(ev: KeyDownEvent<Settings>): Promise<boolean> {
 
 async function paintDial(evAction: Action<Settings>, settings: Settings): Promise<void> {
 	if (!evAction.isDial()) return;
+	if (settings.widget === "off") {
+		await evAction.setFeedbackLayout("layouts/knob.json");
+		await evAction.setFeedback({ canvas: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"></svg>') });
+		return;
+	}
 	const face = dialFace(String(settings.widget || "iris"), bridge.snap ?? {}, num(settings.stepIndex, 0));
 	await evAction.setFeedbackLayout("layouts/knob.json");
 	await evAction.setFeedback({ canvas: svgDataUrl(knobSvg(face)) });
@@ -253,9 +258,11 @@ export class DialAction extends SingletonAction<Settings> {
 
 	override async onDialRotate(ev: DialRotateEvent<Settings>): Promise<void> {
 		const settings = await ev.action.getSettings();
+		const widget = String(settings.widget || ev.payload.settings.widget || "");
+		if (!widget || widget === "off") return;
 		await bridge.perform({
 			gesture: "dial",
-			widget: String(settings.widget || ev.payload.settings.widget || ""),
+			widget,
 			event: "rotate",
 			ticks: ev.payload.ticks,
 			stepIndex: num(settings.stepIndex ?? ev.payload.settings.stepIndex, 0),
