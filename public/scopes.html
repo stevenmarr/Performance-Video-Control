@@ -70,14 +70,13 @@
   <span class="legend" id="legend" hidden></span>
   <button id="btnSettings" title="Camera streams, test video, custom input" style="margin-left:auto">⚙ INPUTS</button>
   <a class="pop" href="/scopes.html" target="_blank" rel="noopener" title="Open Scopes in their own window" style="color:var(--dim);text-decoration:none">⤢ WINDOW</a>
-  <button type="button" id="btnNdi" title="Sidecar / discovered NDI: the SOURCE list only shows feeds that already exist">NDI</button>
+  <button type="button" id="btnNdi" title="Desktop Video: the SOURCE list only shows a DeckLink feed that is already pushing">DESKTOP VIDEO</button>
 </div>
 <aside id="ndiHelp" hidden style="padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);font-size:12px;color:var(--dim)">
-  <b style="color:var(--txt)">Sidecar / discovered NDI.</b> The SOURCE list is not a place to invent a name. A row appears only when this app was started with <code>--mock</code> (fixture clips) or when a Mac sidecar is pushing H.264. This page does not discover NDI. The Pi does not run an NDI SDK.
-  <pre style="margin:6px 0;padding:8px 10px;background:#0a0a0a;border:1px solid var(--line);border-radius:6px;color:var(--txt);overflow:auto">node tools/ndi-sidecar.js --list
-node tools/ndi-sidecar.js --ndi "NAME" --app http://127.0.0.1:8080
-node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080</pre>
-  <span><code>--list</code> and <code>--ndi</code> are macOS only (ffmpeg with <code>libndi_newtek</code>, or <code>RS6_NDI_RECV</code>). <code>--mock</code> needs no hardware. See <code>docs/ndi-ingest.md</code>.</span>
+  <b style="color:var(--txt)">Desktop Video.</b> Live scopes come from a Blackmagic DeckLink input. The SOURCE list does not invent a device. A Desktop Video row appears when <code>decklink-sidecar.js</code> is pushing H.264 from a Mac. This page does not open Desktop Video itself, and the Pi does not capture DeckLink.
+  <pre style="margin:6px 0;padding:8px 10px;background:#0a0a0a;border:1px solid var(--line);border-radius:6px;color:var(--txt);overflow:auto">node tools/decklink-sidecar.js --list
+node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
+  <span>Capture is macOS only. Build <code>tools/native/decklink-recv</code> against the DeckLink SDK (not in this repo), or set <code>RS6_DECKLINK_RECV</code>. See <code>docs/decklink-ingest.md</code>. Legacy NDI is optional and stays hidden until a sidecar is actually pushing.</span>
 </aside>
 <div class="stage" id="stage">
   <div class="panels" id="panels">
@@ -106,6 +105,7 @@ node tools/ndi-sidecar.js --mock --app http://127.0.0.1:8080</pre>
 </dialog>
 <script src="scopes-gl.js"></script>
 <script src="scopes-mse.js"></script>
+<script src="scopes-sources.js"></script>
 <script src="scopes.js"></script>
 <script>
 (function () {

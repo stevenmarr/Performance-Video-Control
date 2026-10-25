@@ -1,6 +1,6 @@
 'use strict';
-// TSL 5.0 tally map on SYSTEMS → TALLIES (mock / loopback sender only).
-// Separate from Scopes. NDI ingest is an input on the SCOPES tab. Lightning is a scope mode.
+// TSL 5.0 tally map on the ATEM page: ATEM sources → TSL IP and port.
+// Separate from Scopes. Desktop Video ingest is an input on the SCOPES tab. Lightning is a scope mode.
 (() => {
   const $ = (s) => document.querySelector(s);
   const CC = window.CC;
@@ -81,7 +81,6 @@
     b.closest('tr').remove();
   });
 
-  window.addEventListener('cc:tab', (ev) => { if (ev.detail === 'system') load(); });
-  // first paint when SYSTEMS is current
-  if (CC.getTab && CC.getTab() === 'system') load();
+  window.addEventListener('cc:tab', (ev) => { if (ev.detail === 'atem') load(); });
+  if (CC.getTab && CC.getTab() === 'atem') load();
 })();

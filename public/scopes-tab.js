@@ -1,15 +1,16 @@
 // SCOPES tab (and the PTZ → SCOPES shortcut) loads public/scopes.html in a frame,
 // sizes it, and posts visible/hidden so the stream stops when left.
-// The picker lists mock fixtures and sidecar-pushed NDI feeds. It does not discover NDI.
-// Lightning is a mode inside the scopes page, not this tab. TSL tallies are on SYSTEMS.
+// Desktop Video is the live source. Empty legacy NDI is omitted. No mock-fixture group.
+// Lightning is a mode inside the scopes page. TSL tallies are on the ATEM page.
 (function () {
   'use strict';
   const frame = document.getElementById('scopesFrame'); if (!frame) return;
   const paneS = document.getElementById('pane-scopes');
   const hostP = document.getElementById('pscopesHost');
   const ndi = document.getElementById('scopesNdi');
-  const mockEl = document.getElementById('ndiMock');
+  const deckEl = document.getElementById('ndiDeck');
   const sideEl = document.getElementById('ndiSide');
+  const sideBlock = document.getElementById('ndiSideBlock');
   const status = document.getElementById('ndiStatus');
   const cmds = document.getElementById('ndiCmds');
   const btnRefresh = document.getElementById('btnNdiRefresh');
@@ -18,9 +19,8 @@
   let selected = '';
   try { selected = localStorage.getItem('cc.scopes.src') || ''; } catch { /* */ }
   if (cmds) {
-    cmds.textContent = `node tools/ndi-sidecar.js --list
-node tools/ndi-sidecar.js --ndi "NAME" --app ${location.origin}
-node tools/ndi-sidecar.js --mock --app ${location.origin}`;
+    cmds.textContent = `node tools/decklink-sidecar.js --list
+node tools/decklink-sidecar.js --device 0 --app ${location.origin}`;
   }
 
   function highlight(key) {
@@ -30,27 +30,32 @@ node tools/ndi-sidecar.js --mock --app ${location.origin}`;
   function select(key) {
     highlight(key);
     try { localStorage.setItem('cc.scopes.src', key); } catch { /* */ }
-    if (!frame.getAttribute('src')) frame.src = `/scopes.html?embed=1&prefer=ndi&src=${encodeURIComponent(key)}`;
+    if (!frame.getAttribute('src')) frame.src = `/scopes.html?embed=1&prefer=live&src=${encodeURIComponent(key)}`;
     else { try { frame.contentWindow.postMessage({ type: 'scopes', src: key }, location.origin); } catch { /* */ } }
   }
   function buttons(sources) {
     return sources.map((s) => `<button type="button" class="btn mini ndi-src" data-key="${esc(s.key)}" data-via="${esc(s.via || '')}" data-ok="${s.ok ? '1' : '0'}" aria-pressed="${s.key === selected ? 'true' : 'false'}">${esc(s.label)}</button>`).join('');
   }
   async function refresh() {
-    if (!mockEl || !sideEl) return;
+    if (!deckEl) return;
     let r; try { r = await fetch('/api/scopes/ndi').then((x) => x.json()); } catch { return; }
-    const sources = r.sources || [];
-    const mocks = sources.filter((s) => s.via === 'mock');
+    const sources = (r.sources || []).filter((s) => s.via !== 'mock' && !String(s.key || '').startsWith('ndi:mock-'));
+    const decks = sources.filter((s) => s.via === 'decklink');
     const sides = sources.filter((s) => s.via === 'sidecar');
-    mockEl.innerHTML = mocks.length ? buttons(mocks) : (r.mock
-      ? '<p class="ndi-empty">--mock is on, but no fixture clips were found next to the app.</p>'
-      : '<p class="ndi-empty">No fixture clips in this list. They appear only when the app is started with <code>node server.js --mock</code>. This list cannot invent one.</p>');
-    sideEl.innerHTML = sides.length ? buttons(sides) : `<p class="ndi-empty">No sidecar is pushing a feed. On a Mac, <code>node tools/ndi-sidecar.js --list</code> prints discovered names, then <code>--ndi "NAME"</code> receives one. A name you have not received does not show up here.</p>`;
+    deckEl.innerHTML = decks.length
+      ? buttons(decks)
+      : '<p class="ndi-empty">No Desktop Video feed yet. On a Mac: <code>node tools/decklink-sidecar.js --list</code>, then <code>--device N</code>. This menu does not create a device.</p>';
+    if (sideBlock) sideBlock.hidden = !sides.length;
+    if (sideEl) sideEl.innerHTML = sides.length ? buttons(sides) : '';
     if (status) {
-      const mockLine = r.mock ? `Mock mode: ${mocks.length} fixture${mocks.length === 1 ? '' : 's'} listed.` : 'Mock mode is off, so fixture clips are not listed.';
-      const sideLine = sides.some((s) => s.ok) ? `${sides.filter((s) => s.ok).length} sidecar feed${sides.filter((s) => s.ok).length === 1 ? '' : 's'} connected.` : 'No sidecar is connected.';
-      const host = r.pi ? 'This host looks like a Pi. NDI receive stays on a Mac.' : (r.ndiReceiveAllowed ? 'This Mac can run the receive sidecar.' : 'NDI receive runs on a Mac sidecar. This app only relays H.264.');
-      status.textContent = `${mockLine} ${sideLine} ${host} Ingest is ${r.ingest === 'lan' ? 'open to the LAN (RS6_NDI_INGEST_LAN).' : 'loopback only.'} This list is not an NDI finder.`;
+      const nOk = decks.filter((s) => s.ok).length;
+      const deckLine = nOk ? `${nOk} Desktop Video feed${nOk === 1 ? '' : 's'} connected.` : 'No Desktop Video sidecar is connected.';
+      const sideOk = sides.filter((s) => s.ok).length;
+      const sideLine = sides.length ? (sideOk ? ` ${sideOk} legacy NDI feed connected.` : ' A legacy NDI sidecar is listed but not sending.') : '';
+      const host = r.pi
+        ? 'This host looks like a Pi. Desktop Video capture stays on a Mac.'
+        : (r.decklinkReceiveAllowed ? 'This Mac can run the Desktop Video sidecar.' : 'Desktop Video capture runs on a Mac sidecar. This app only relays H.264.');
+      status.textContent = `${deckLine}${sideLine} ${host} Ingest is ${r.ingest === 'lan' ? 'open to the LAN (RS6_NDI_INGEST_LAN).' : 'loopback only.'}`;
     }
   }
   if (ndi) ndi.addEventListener('click', (ev) => { const b = ev.target.closest('.ndi-src'); if (b) select(b.dataset.key); });
@@ -80,7 +85,7 @@ node tools/ndi-sidecar.js --mock --app ${location.origin}`;
 
   function show(tab) {
     place(tab);
-    if (!frame.getAttribute('src')) frame.src = `/scopes.html?embed=1${tab === 'scopes' ? '&prefer=ndi' : ''}`;
+    if (!frame.getAttribute('src')) frame.src = `/scopes.html?embed=1${tab === 'scopes' ? '&prefer=live' : ''}`;
     else if (!open) post(true);
     if (tab === 'scopes') refresh();
     requestAnimationFrame(fit);

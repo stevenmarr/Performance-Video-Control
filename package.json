@@ -1,7 +1,7 @@
 {
   "name": "rs6-presets",
   "version": "0.20.1",
-  "description": "Show control center: Barco E2-style destination-aware presets for Analog Way Aquilon RS6, plus Barco Event Master (E2 / S3), PixelHue, Blackmagic ATEM switchers, Panasonic PTZ cameras, AV Stumpfl Pixera and Millumin, over their documented protocols.",
+  "description": "Performance Video Control Center: one desk for RS6, E2, PixelHue, ATEM, Panasonic PTZ, Pixera and Millumin, with SCOPES (Desktop Video ingest), Path C Stream Deck pages, and TSL tally on the ATEM page.",
   "main": "server.js",
   "license": "MIT",
   "private": true,
@@ -12,7 +12,8 @@
     "start": "node server.js",
     "mock": "node server.js --mock",
     "test": "node --test test/*.test.js",
-    "ndi-sidecar": "node tools/ndi-sidecar.js"
+    "ndi-sidecar": "node tools/ndi-sidecar.js",
+    "decklink-sidecar": "node tools/decklink-sidecar.js"
   },
   "dependencies": {}
 }

@@ -17,6 +17,10 @@ class Bridge {
 	private chain: Promise<void> = Promise.resolve();
 	private wait: ReturnType<typeof setTimeout> | null = null;
 	private views = new Map<string, () => Promise<void>>();
+	private cells = new Map<string, { id: string; deviceId: string; column: number; row: number; action: any }>();
+	private stacks = new Map<string, Array<{ id: string; title?: string; profile?: string | null; device?: unknown; keys?: Array<Record<string, unknown>> }>>();
+	private showing = new Map<string, { id: string; title?: string; profile?: string | null; device?: unknown; keys?: Array<Record<string, unknown>> } | null>();
+	private pendingPaint = new Map<string, ReturnType<typeof setTimeout>>();
 
 	configure(settings: GlobalSettings = {}): void {
 		let next = this.base;
@@ -72,6 +76,119 @@ class Bridge {
 
 	unwatch(id: string): void {
 		this.views.delete(id);
+	}
+
+	/** A key that is on screen. Deploy writes the page stack onto these cells. */
+	note(cell: { id: string; deviceId: string; column: number; row: number; action: any }): void {
+		this.cells.set(cell.id, cell);
+		this.schedulePaint(cell.deviceId);
+	}
+
+	forget(id: string): void {
+		this.cells.delete(id);
+		this.unwatch(id);
+	}
+
+	private schedulePaint(deviceId: string): void {
+		const page = this.showing.get(deviceId);
+		if (!page) return;
+		const prev = this.pendingPaint.get(deviceId);
+		if (prev) clearTimeout(prev);
+		this.pendingPaint.set(deviceId, setTimeout(() => {
+			this.pendingPaint.delete(deviceId);
+			void this.paintPage(deviceId, page);
+		}, 40));
+	}
+
+	/**
+	 * Store the stack Control Center pushed and paint the first page onto keys that are
+	 * already on the device. A named profile is switched when Stream Deck has it installed.
+	 * Keys that are not on screen are still stored so a later page jump can find them.
+	 */
+	async applyDeploy(deviceId: string, body: { pages?: Array<{ id: string; title?: string; profile?: string | null; device?: unknown; keys?: Array<Record<string, unknown>> }> } = {}): Promise<{ ok: boolean; deviceId: string; loaded: string[] }> {
+		const pages = Array.isArray(body.pages) ? body.pages : [];
+		this.stacks.set(deviceId, pages);
+		const first = pages[0] || null;
+		this.showing.set(deviceId, first);
+		if (first?.profile) await this.switchProfile(deviceId, first.profile);
+		await this.paintPage(deviceId, first);
+		return { ok: true, deviceId, loaded: pages.map((p) => p.title || p.id) };
+	}
+
+	/** Page-jump key. A target that is not in the pushed stack is refused. */
+	async showPage(deviceId: string, pageId: string): Promise<{ ok: boolean; warning?: string; pageId?: string; title?: string }> {
+		const stack = this.stacks.get(deviceId) || [];
+		const page = stack.find((p) => p.id === pageId);
+		if (!page) return { ok: false, warning: `Page ${pageId} is not on this deck` };
+		this.showing.set(deviceId, page);
+		if (page.profile) await this.switchProfile(deviceId, page.profile);
+		await this.paintPage(deviceId, page);
+		return { ok: true, pageId, title: page.title || pageId };
+	}
+
+	/** POST one stamped key action back to Control Center. The path stays on this app. */
+	async runAction(action: { method?: string; path?: string; body?: Record<string, unknown> }): Promise<void> {
+		const path = String(action?.path || "");
+		if (!path.startsWith("/api/") || path.includes("..")) {
+			streamDeck.logger.warn(`Refused deck action path ${path}`);
+			return;
+		}
+		try {
+			const res = await fetch(`${this.base}${path}`, {
+				method: action.method || "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify(action.body ?? {}),
+			});
+			if (!res.ok) {
+				let message = `HTTP ${res.status}`;
+				try {
+					const body = (await res.json()) as { error?: string };
+					if (body.error) message = body.error;
+				} catch { /* the status is enough */ }
+				throw new Error(message);
+			}
+		} catch (e) {
+			streamDeck.logger.warn(`${e instanceof Error ? e.message : e}`);
+		}
+	}
+
+	private async switchProfile(deviceId: string, profile: string): Promise<void> {
+		try {
+			await streamDeck.profiles.switchToProfile(deviceId, profile);
+		} catch (e) {
+			streamDeck.logger.info(`Profile "${profile}" is not installed (${e instanceof Error ? e.message : e})`);
+		}
+	}
+
+	private async paintPage(deviceId: string, page: { device?: unknown; keys?: Array<Record<string, unknown>> } | null): Promise<void> {
+		if (!page) return;
+		const keys = page.keys || [];
+		for (const cell of this.cells.values()) {
+			if (cell.deviceId !== deviceId) continue;
+			const key = keys.find((k) => k.col === cell.column && k.row === cell.row);
+			if (!key) continue;
+			const settings: Record<string, unknown> = {
+				label: key.label || "",
+				value: key.value || "",
+				caption: key.caption || "",
+				role: key.role || "",
+			};
+			if (key.jump) settings.jump = key.jump;
+			if (key.action) settings.action = key.action;
+			if (key.device || page.device) settings.device = key.device || page.device;
+			try {
+				await cell.action.setSettings(settings);
+			} catch (e) {
+				streamDeck.logger.warn(String(e));
+			}
+			const paint = this.views.get(cell.id);
+			if (!paint) continue;
+			try {
+				await paint();
+			} catch (e) {
+				streamDeck.logger.warn(String(e));
+			}
+		}
 	}
 
 	async repaint(): Promise<void> {

@@ -16,8 +16,8 @@
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS && SYS.systems[SYS.active] ? SYS.systems[SYS.active].kind : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
-  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams', 'pscopes'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'] };
-  const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes' };
+  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams', 'pscopes'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], decks: ['decks'] };
+  const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes', decks: 'decks' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
   const RS6TABS = KIND_TABS.rs6;
@@ -58,6 +58,7 @@
     });
     $('#tabsHomeNote').hidden = g !== 'home';
     const scopesNote = $('#tabsScopesNote'); if (scopesNote) scopesNote.hidden = g !== 'scopes';
+    const decksNote = $('#tabsDecksNote'); if (decksNote) decksNote.hidden = g !== 'decks';
     for (const b of document.querySelectorAll('.tgrp[data-tabgrp]')) {
       const k = b.dataset.tabgrp; const list = armedOf(k);
       b.hidden = !list.length; b.classList.toggle('active', k === g);
@@ -142,7 +143,7 @@
     }
     // a tab whose system left the desk goes home; a deep link to a system not yet armed brings it on
     const tab = CC.getTab(); const kn = TAB_KIND[tab];
-    if (tab !== 'system' && kn && kn !== 'scopes' && !armedOf(kn).length) {
+    if (tab !== 'system' && kn && kn !== 'scopes' && kn !== 'decks' && !armedOf(kn).length) {
       if (!landed) return armForTab(tab);
       const home = armedOf('rs6').length ? 'presets' : (armed()[0] ? HOME_TAB[SYS.systems[armed()[0]].kind] : 'system');
       CC.setTab(home);
@@ -167,7 +168,6 @@
   })();
 
   // ---------- dashboard (home): status + every connection setting ----------
-  let density = localStorage.getItem('cc.density') || 'list'; // 0.11.0: dense LIST is the default
   let dashQ = ''; let dashSt = localStorage.getItem('cc.dashSt') || 'all';
   let groupSel = localStorage.getItem('cc.group') || 'all';
   const f = (name, label, type, val, ph, dis, extra = '') => `<label>${label}<input name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${esc(ph)}" ${dis} ${extra}></label>`;
@@ -226,54 +226,30 @@
     const clock = $('#dashClock'); if (clock) clock.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const all = Object.values(SYS.systems); const sts = all.map(statusOf);
     $('#dashSummary').innerHTML = `<b>${all.length}</b> systems · <span class="ok">${sts.filter((x) => x.cls === 'ok').length} online</span> · <span class="off">${sts.filter((x) => x.cls === 'off' || x.cls === 'warn').length} offline / degraded</span> · <span class="idle">${sts.filter((x) => x.cls === 'idle').length} not configured</span>`;
-    document.querySelectorAll('[data-density]').forEach((b) => b.classList.toggle('active', b.dataset.density === density));
     const card = (s) => {
       const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
       const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : 'PRESETS';
-      // Corner button: ADD TO DESK, or REMOVE FROM DESK once it is on the desk. Opening stays on the
-      // tabs and on OPEN {home} → (that button keeps data-use so the desk tests still find one control).
-      const head = on
-        ? `<button type="button" class="btn mini danger" data-armoff="${s.key}">REMOVE FROM DESK</button>`
-        : `<button type="button" class="btn mini primary" data-use="${s.key}">ADD TO DESK</button>`;
+      const addr = (s.connection && (s.connection.host || s.connection.mock))
+        ? (s.connection.mock ? 'simulator' : `${s.connection.host || ''}${s.connection.port ? `:${s.connection.port}` : ''}`)
+        : 'no address';
+      // Off the desk: ADD has data-use and no data-open, so it does not switch tabs before the operator asks.
+      // On the desk: OPEN keeps data-use and data-open together. REMOVE is its own button.
+      const add = on ? '' : `<button type="button" class="btn mini primary" data-use="${s.key}">ADD TO DESK</button>`;
       const sim = !on && s.key !== 'rs6' && !(s.connection && s.connection.mock)
         ? `<button type="button" class="btn mini" data-sim="${s.key}">ADD TO DESK AS SIMULATOR</button>` : '';
-      const actions = on
-        ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}">OPEN ${open} →</button>`
-        : sim;
+      const openBtn = on
+        ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}">OPEN ${open}</button>`
+        : '';
+      const remove = on ? `<button type="button" class="btn mini danger" data-armoff="${s.key}">REMOVE FROM DESK</button>` : '';
       return `<article class="sys-card ${active ? 'active' : ''} ${on ? 'on-desk' : ''} ${st.cls}" data-card="${s.key}">
         <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
-          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}</div></div>
-          ${head}</header>
+          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}${on ? ' <span class="desk-tag">ON THE DESK</span>' : ''}</div></div></header>
         ${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<div class="err small">${esc(s.status.error).slice(0, 140)}</div>` : ''}
+        <div class="sys-acts">${openBtn}${add}${remove}${sim}</div>
         <div class="stats">${statsOf(s)}</div>${liveLine(s)}
-        ${actions ? `<div class="actions left">${actions}</div>` : ''}
-        <details data-det="${s.key}" ${openDet.has(s.key) ? 'open' : ''}><summary>CONFIGURE</summary>${connForm(s)}</details>
+        <details data-det="${s.key}" ${openDet.has(s.key) ? 'open' : ''}><summary>CONFIGURE <span class="cfg-sum">${esc(addr)}</span></summary>${connForm(s)}</details>
       </article>`;
     };
-    // 0.11.0 LIST: one dense line per system — LED, name, status, the key numbers, live line, actions; ⚙ expands CONFIGURE
-    const row = (s) => {
-      const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
-      const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : 'PRESETS';
-      const n = s.counts || {};
-      const stats = (s.kind === 'atem' ? [['src', n.sources], ['macros', n.macros], ['keys', n.keyers]] : s.kind === 'ptz' ? [['cams', n.cameras], ['online', n.online], ['tally', n.tally]]
-        : s.kind === 'pixera' ? [['timelines', n.timelines], ['playing', n.playing]] : s.kind === 'millumin' ? [['running', n.running]] : [['presets', n.presets], ['dests', n.destinations], ['src', n.sources]])
-        .filter(([, v]) => v !== undefined && v !== null).map(([k, v]) => `<span><b>${v}</b> ${k}</span>`).join('');
-      const live = s.kind === 'atem' && n.program ? `<span class="lg pgm">PGM</span> ${esc(n.program)} <span class="lg pvw">PVW</span> ${esc(n.preview)}`
-        : s.kind === 'ptz' && (s.cameras || []).length ? s.cameras.slice(0, 6).map((c) => `<span class="cam-chip ${c.connected ? '' : 'off'} ${c.tally ? 'tally' : ''}"><span class="led ${c.connected ? 'ok' : 'off'}"></span>${esc(c.name)}</span>`).join('') + (s.cameras.length > 6 ? ` +${s.cameras.length - 6}` : '') : '';
-      const host = s.connection && s.connection.host ? s.connection.host : '';
-      const acts = on
-        ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}" title="Open its tabs">OPEN ${open}</button><button type="button" class="btn mini danger" data-armoff="${s.key}" title="Remove from the desk">REMOVE</button>`
-        : `<button type="button" class="btn mini primary" data-use="${s.key}" title="Add to the desk">ADD</button>${s.key !== 'rs6' && !(s.connection && s.connection.mock) ? `<button type="button" class="btn mini" data-sim="${s.key}" title="Add to the desk as a simulator (not saved)">SIM</button>` : ''}`;
-      return `<article class="sys-card sys-line ${active ? 'active' : ''} ${on ? 'on-desk' : ''} ${st.cls}" data-card="${s.key}">
-        <div class="row-main"><span class="led ${st.cls}" title="${esc(st.txt)}"></span><span class="mono">${MONO[s.key] || '?'}</span>
-          <span class="row-nm" title="${esc(s.label)}"><b>${esc(s.short || s.label)}</b> <small>${esc(s.label)}${s.group ? ` · ${esc(s.group)}` : ''}</small></span>
-          <span class="row-st ${st.cls}">${st.txt}${info.model ? ` · ${esc(info.model)}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}${on ? ' <span class="desk-tag">DESK</span>' : ''}</span>
-          <span class="row-stats">${stats}</span><span class="row-live">${live}${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<span class="err-inline" title="${esc(s.status.error)}">${esc(s.status.error).slice(0, 60)}</span>` : ''}</span>
-          <span class="row-host">${esc(host)}</span><span class="row-acts">${acts}</span></div>
-        <details data-det="${s.key}" ${openDet.has(s.key) ? 'open' : ''}><summary title="Configure the connection">⚙</summary>${connForm(s)}</details>
-      </article>`;
-    };
-    // one flowing grid (scales to many cards); group chips filter it; the active system always comes first
     const groups = SYS.groups || [{ name: 'Systems', systems: Object.keys(SYS.systems) }];
     if (groupSel !== 'all' && !groups.some((g) => g.name === groupSel)) groupSel = 'all';
     const chip = (key, label, n) => `<button class="mode ${groupSel === key ? 'active' : ''}" data-group="${esc(key)}" type="button">${esc(label)} <small>${n}</small></button>`;
@@ -288,7 +264,10 @@
     const stChip = (k, l, f) => `<button class="mode ${dashSt === k ? 'active' : ''}" data-dashst="${k}" type="button">${l} <small>${cnt(f)}</small></button>`;
     set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('online', 'ONLINE', (k) => statusOf(SYS.systems[k]).cls === 'ok') + stChip('issues', 'ISSUES', (k) => ['off', 'warn'].includes(statusOf(SYS.systems[k]).cls)) + stChip('desk', 'ON DESK', (k) => armed().includes(k)) + stChip('idle', 'NOT SET UP', (k) => statusOf(SYS.systems[k]).cls === 'idle'));
     const shown = keys.filter((k) => SYS.systems[k] && qOk(k) && stOk(k));
-    const cards = `<div class="sys-cards ${density}">${shown.map((k) => (density === 'list' ? row : card)(SYS.systems[k])).join('') || '<div class="note">No system matches the filter.</div>'}</div>`;
+    const onKeys = shown.filter((k) => armed().includes(k));
+    const offKeys = shown.filter((k) => !armed().includes(k));
+    const block = (title, hint, list) => (list.length ? `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div><div class="sys-cards cards">${list.map((k) => card(SYS.systems[k])).join('')}</div></section>` : '');
+    const cards = block('ON THE DESK', 'OPEN goes to its pages · REMOVE takes it off', onKeys) + block('AVAILABLE', 'ADD puts it on the desk · CONFIGURE sets the address', offKeys) || '<div class="note">No system matches the filter.</div>';
     // keep a focused connection form from being replaced while typing
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#sysCards')) set($('#sysCards'), 'cards', cards);
     $('#sysPlannedWrap').hidden = !(SYS.planned || []).length;
@@ -299,7 +278,6 @@
   $('#dashSearch').addEventListener('input', () => { dashQ = $('#dashSearch').value; renderDash(); });
   $('#dashStatus').addEventListener('click', (ev) => { const b = ev.target.closest('[data-dashst]'); if (!b) return; dashSt = b.dataset.dashst; localStorage.setItem('cc.dashSt', dashSt); renderDash(); });
   $('#dashGroups').addEventListener('click', (ev) => { const b = ev.target.closest('[data-group]'); if (!b) return; groupSel = b.dataset.group; localStorage.setItem('cc.group', groupSel); renderDash(); });
-  document.querySelectorAll('[data-density]').forEach((b) => b.addEventListener('click', () => { density = b.dataset.density; localStorage.setItem('cc.density', density); html.cards = null; renderDash(); }));
   const camRow = (el) => ({ name: el.querySelector('[name=name]').value.trim(), host: el.querySelector('[name=host]').value.trim(), port: Number(el.querySelector('[name=port]').value) || 80 });
   $('#sysCards').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return;

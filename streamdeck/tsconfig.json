@@ -7,6 +7,6 @@
 		"noImplicitOverride": true,
 		"rootDir": ".."
 	},
-	"include": ["src/**/*.ts", "../lib/deck.d.ts", "../lib/deck-image.d.ts"],
+	"include": ["src/**/*.ts", "../lib/deck.d.ts", "../lib/deck-image.d.ts", "../lib/decks/plugin-server.d.ts"],
 	"exclude": ["node_modules"]
 }
