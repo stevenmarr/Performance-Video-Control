@@ -200,12 +200,7 @@ HTTP API to list hardware and to push a page stack. See [DECKS](#decks) below.
 
 ## DECKS
 
-**DECKS** sits on the top row beside **SCOPES**. It is where you put pages from the systems on
-the desk onto a Stream Deck that is plugged in.
-
-The page library follows the desk: RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin. Mini keys are
-drawn at the size of the selected deck. The stack on that deck is ordered; drag a row or use the
-arrows. **PUSH** sends the stack. **DEPLOY ALL ON DESK** does that for every online deck.
+**DECKS** sits on the top row beside **SCOPES**. The surface dropdown picks XL, + XL, +, and the rest. Pages for the systems on the desk are on the left. Click one and the page is drawn in the middle. Connected decks are on the right. **Scan USB** asks the plugin again. **Push** sends the stack to the selected deck. **DEPLOY ALL ON DESK** does that for every online deck.
 
 A push stamps the live connection into the page. A PTZ page carries the selected camera's id and
 IP, so the keys talk to that camera. A key that jumps to a page you did not put on the stack is
