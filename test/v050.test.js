@@ -182,7 +182,7 @@ test('GET /api/version and apiVersion in the state', async () => {
     // 0.11.0: additive features, API stays 9
     assert.equal(require('../package.json').version, '0.20.1');
     for (const f of ['uiPrefs', 'deskSave', 'followUp', 'followUpGroups', 'atemMuteAll', 'atemDeskZero']) assert.ok(v.features.includes(f), f);
-    for (const f of ['scopes', 'lightning', 'ndiIngest', 'tslTally', 'streamDeck', 'ptzDeck']) assert.ok(v.features.includes(f), f);
+    for (const f of ['scopes', 'lightning', 'ndiIngest', 'tslTally', 'streamDeck', 'ptzDeck', 'deckSurfaces']) assert.ok(v.features.includes(f), f);
     const st = (await call('GET', '/api/state')).json;
     assert.equal(st.apiVersion, 9); for (const f of ['atem', 'ptz', 'sysLongpoll', 'sysViews', 'ptzCatalog', 'companionGateway']) assert.ok(v.features.includes(f), f); assert.equal(st.appVersion, v.appVersion);
   });

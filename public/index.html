@@ -43,6 +43,7 @@
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
     <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
+    <button class="tab tab-decks" data-tab="decks" title="Map pages from the systems on the desk onto connected Stream Decks. Push goes through the Path C plugin.">DECKS</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
@@ -75,6 +76,7 @@
   <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin">COLUMNS</button>
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
   <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. Live video is Desktop Video from a Mac sidecar.</span>
+  <span class="tabs-home-note" id="tabsDecksNote" hidden>Connected Stream Decks and the page stack for each one. Push sends that stack through the Path C plugin.</span>
   </div>
 </nav>
 
@@ -424,6 +426,15 @@ node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
     </aside>
     <iframe id="scopesFrame" title="Scopes" style="display:block;width:100%;border:0;border-radius:8px;background:#121212"></iframe>
   </section>
+  <section class="grid-wrap pane" id="pane-decks" hidden>
+    <div class="scopes-head">
+      <div class="section-title">DECKS <small>pages from the systems on the desk · sized to the Stream Deck · pushed by the Path C plugin</small></div>
+      <span class="spacer"></span>
+      <button type="button" class="btn mini primary" id="btnDeckAll">DEPLOY ALL ON DESK</button>
+    </div>
+    <p class="note small" id="deckPluginNote"></p>
+    <div id="deckRoot" class="deck-layout"></div>
+  </section>
   <section class="grid-wrap pane" id="pane-pscopes" hidden>
     <div class="note small" style="margin:8px 12px">PTZ → SCOPES is a shortcut into the same Scopes pane. The persistent tab is <b>SCOPES</b> on the top row. Lightning is a mode in the scope strip (Y / R−Y / B−Y), not its own tab.</div>
     <div id="pscopesHost"></div>
@@ -762,6 +773,7 @@ node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
 <script src="/companion.js"></script>
 <script src="/scopes-sources.js"></script>
 <script src="/scopes-tab.js"></script>
+<script src="/decks.js"></script>
 <script src="/tsl.js"></script>
 </body>
 </html>

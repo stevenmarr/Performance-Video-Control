@@ -5,8 +5,8 @@
 One desk for the show. The app runs on a Mac (or a Pi that only relays video) and serves a dark,
 touch-friendly UI. An iPad or phone on the same network opens it in a browser.
 
-The top row is **SYSTEMS**, the systems you have put on the desk, and **SCOPES**. Each system you add
-gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green.
+The top row is **SYSTEMS**, the systems you have put on the desk, **SCOPES**, and **DECKS**. Each system you add
+gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green. **DECKS** pushes those pages to connected Stream Decks.
 
 | On the desk | What it drives |
 |---|---|
@@ -192,6 +192,42 @@ ALL STOP is the bottom-right key on every page.
 
 The Companion page file under **SYSTEMS → STREAM DECK PAGES** is a separate export for other
 surfaces (the older Companion module). It does not build these four PTZ profiles.
+
+The same plugin listens on `127.0.0.1:9721` for the **DECKS** tab. Control Center calls that
+HTTP API to list hardware and to push a page stack. See [DECKS](#decks) below.
+
+---
+
+## DECKS
+
+**DECKS** sits on the top row beside **SCOPES**. It is where you put pages from the systems on
+the desk onto a Stream Deck that is plugged in.
+
+The page library follows the desk: RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin. Mini keys are
+drawn at the size of the selected deck. The stack on that deck is ordered; drag a row or use the
+arrows. **PUSH** sends the stack. **DEPLOY ALL ON DESK** does that for every online deck.
+
+A push stamps the live connection into the page. A PTZ page carries the selected camera's id and
+IP, so the keys talk to that camera. A key that jumps to a page you did not put on the stack is
+called out before the push.
+
+```
+Control Center  →  HTTP  →  Path C plugin  →  Stream Deck
+                   GET  /v1/devices
+                   POST /v1/deploy   { deviceId, pages }
+```
+
+The plugin is still `com.performancevideo.control` (build steps above). It must be running for
+any deck to appear. Control Center does not add a placeholder deck.
+
+| | |
+|---|---|
+| Plugin listen | `127.0.0.1:9721` |
+| Control Center override | `RS6_DECK_PLUGIN` (default `http://127.0.0.1:9721`) |
+| Plugin port / host | `RS6_DECK_PLUGIN_PORT`, `RS6_DECK_PLUGIN_HOST` |
+| Non-loopback clients | `RS6_DECK_PLUGIN_LAN=1` |
+
+Details: [docs/decks.md](docs/decks.md).
 
 ---
 

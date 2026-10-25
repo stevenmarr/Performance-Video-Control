@@ -12,7 +12,7 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 import type { JsonObject, JsonValue } from "@elgato/utils";
 
-import { dialFace } from "../../lib/deck.js";
+import { dialFace, KEY_ROLES } from "../../lib/deck.js";
 import { keySvg, knobSvg, presentKey, svgDataUrl } from "../../lib/deck-image.js";
 import { beginHold, endHold } from "./hold.js";
 import { bridge } from "./bridge.js";
@@ -31,11 +31,54 @@ function num(value: JsonValue | undefined, fallback: number): number {
 	return Number.isFinite(n) ? n : fallback;
 }
 
+const KNOWN = new Set(["home", "camera", "preset", "page", ...Object.keys(KEY_ROLES)]);
+
 async function paintKey(evAction: Action<Settings>, settings: Settings, role: string): Promise<void> {
 	if (!evAction.isKey()) return;
-	const model = presentKey({ ...settings, role }, bridge.snap ?? {}, { page: bridge.page });
+	const live = { ...settings, role: String(settings.role || role || "") } as Settings & { label?: string; caption?: string; jump?: string; value?: string };
+	const known = KNOWN.has(String(live.role || ""));
+	if (live.label && !known) {
+		const model = {
+			title: String(live.caption || ""),
+			value: String(live.label),
+			caption: live.jump ? "PAGE" : String(live.value || (bridge.snap ? "" : "NO LINK")),
+		};
+		await evAction.setImage(svgDataUrl(keySvg(model)));
+		return;
+	}
+	const model = presentKey(live, bridge.snap ?? {}, { page: bridge.page });
 	if (!bridge.snap) model.caption = "NO LINK";
 	await evAction.setImage(svgDataUrl(keySvg(model)));
+}
+
+async function paintFrom(evAction: Action<Settings>, fallback: string): Promise<void> {
+	const settings = await evAction.getSettings();
+	const deployed = !!(settings.label || settings.jump || (settings.action && typeof settings.action === "object" && (settings.action as { path?: string }).path));
+	const role = deployed ? String(settings.role || "") : String(settings.role || fallback);
+	await paintKey(evAction, { ...settings, role }, role);
+}
+
+function track(ev: WillAppearEvent<Settings>): void {
+	if (!ev.action.isKey()) return;
+	const c = (ev.payload as { coordinates?: { column?: number; row?: number } }).coordinates;
+	if (!c || c.column == null || c.row == null) return;
+	bridge.note({ id: ev.action.id, deviceId: ev.action.device.id, column: c.column, row: c.row, action: ev.action });
+}
+
+async function runDeployed(ev: KeyDownEvent<Settings>): Promise<boolean> {
+	const settings = ev.payload.settings;
+	const jump = settings.jump;
+	if (typeof jump === "string" && jump) {
+		const result = await bridge.showPage(deviceId(ev.action), jump);
+		if (!result.ok && result.warning) streamDeck.logger.warn(result.warning);
+		return true;
+	}
+	const action = settings.action as { method?: string; path?: string; body?: Record<string, unknown> } | undefined;
+	if (action && typeof action.path === "string" && action.path.startsWith("/api/")) {
+		await bridge.runAction(action);
+		return true;
+	}
+	return false;
 }
 
 async function paintDial(evAction: Action<Settings>, settings: Settings): Promise<void> {
@@ -53,14 +96,16 @@ function deviceId(evAction: Action<Settings>): string {
 @action({ UUID: `${UUID}.home` })
 export class HomeAction extends SingletonAction<Settings> {
 	override async onWillAppear(ev: WillAppearEvent<Settings>): Promise<void> {
-		bridge.watch(ev.action.id, () => paintKey(ev.action, { role: "home" }, "home"));
+		track(ev);
+		bridge.watch(ev.action.id, () => paintFrom(ev.action, "home"));
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<Settings>): void {
-		bridge.unwatch(ev.action.id);
+		bridge.forget(ev.action.id);
 	}
 
-	override async onKeyDown(): Promise<void> {
+	override async onKeyDown(ev: KeyDownEvent<Settings>): Promise<void> {
+		if (await runDeployed(ev)) return;
 		await bridge.perform({ gesture: "home" });
 	}
 }
@@ -69,14 +114,16 @@ export class HomeAction extends SingletonAction<Settings> {
 @action({ UUID: `${UUID}.camera` })
 export class CameraAction extends SingletonAction<Settings> {
 	override async onWillAppear(ev: WillAppearEvent<Settings>): Promise<void> {
-		bridge.watch(ev.action.id, () => paintKey(ev.action, ev.payload.settings, "camera"));
+		track(ev);
+		bridge.watch(ev.action.id, () => paintFrom(ev.action, "camera"));
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<Settings>): void {
-		bridge.unwatch(ev.action.id);
+		bridge.forget(ev.action.id);
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<Settings>): Promise<void> {
+		if (await runDeployed(ev)) return;
 		await bridge.perform({ gesture: "select", slot: num(ev.payload.settings.slot, 1) });
 	}
 }
@@ -90,15 +137,17 @@ export class PresetAction extends SingletonAction<Settings> {
 	private down = new Map<string, number>();
 
 	override async onWillAppear(ev: WillAppearEvent<Settings>): Promise<void> {
-		bridge.watch(ev.action.id, () => paintKey(ev.action, ev.payload.settings, "preset"));
+		track(ev);
+		bridge.watch(ev.action.id, () => paintFrom(ev.action, "preset"));
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<Settings>): void {
 		this.down.delete(ev.action.id);
-		bridge.unwatch(ev.action.id);
+		bridge.forget(ev.action.id);
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<Settings>): Promise<void> {
+		if (await runDeployed(ev)) return;
 		const cam = (bridge.snap?.cameras || []).find((c) => c.selected);
 		const guard = bridge.snap?.liveGuard;
 		if (cam?.tally && guard?.mode === "hold") {
@@ -122,14 +171,16 @@ export class PresetAction extends SingletonAction<Settings> {
 @action({ UUID: `${UUID}.page` })
 export class PageAction extends SingletonAction<Settings> {
 	override async onWillAppear(ev: WillAppearEvent<Settings>): Promise<void> {
-		bridge.watch(ev.action.id, () => paintKey(ev.action, ev.payload.settings, "page"));
+		track(ev);
+		bridge.watch(ev.action.id, () => paintFrom(ev.action, "page"));
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<Settings>): void {
-		bridge.unwatch(ev.action.id);
+		bridge.forget(ev.action.id);
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<Settings>): Promise<void> {
+		if (await runDeployed(ev)) return;
 		const page = String(ev.payload.settings.page || "live");
 		const planned = await bridge.perform({ gesture: "page", page });
 		await bridge.repaint();
@@ -146,7 +197,8 @@ export class PageAction extends SingletonAction<Settings> {
 @action({ UUID: `${UUID}.key` })
 export class KeyAction extends SingletonAction<Settings> {
 	override async onWillAppear(ev: WillAppearEvent<Settings>): Promise<void> {
-		bridge.watch(ev.action.id, () => paintKey(ev.action, ev.payload.settings, String(ev.payload.settings.role || "")));
+		track(ev);
+		bridge.watch(ev.action.id, () => paintFrom(ev.action, String(ev.payload.settings.role || "")));
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<Settings>): void {
@@ -154,10 +206,11 @@ export class KeyAction extends SingletonAction<Settings> {
 		endHold(ev.action.id, (phase) => {
 			void bridge.perform({ gesture: "hold", role, phase });
 		});
-		bridge.unwatch(ev.action.id);
+		bridge.forget(ev.action.id);
 	}
 
 	override async onKeyDown(ev: KeyDownEvent<Settings>): Promise<void> {
+		if (await runDeployed(ev)) return;
 		const role = String(ev.payload.settings.role || "");
 		if (HOLD_ROLES.has(role)) {
 			beginHold(ev.action.id, (phase, factor) => {

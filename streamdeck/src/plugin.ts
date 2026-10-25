@@ -2,6 +2,7 @@ import streamDeck from "@elgato/streamdeck";
 
 import { CameraAction, DialAction, HomeAction, KeyAction, PageAction, PresetAction } from "./actions";
 import { bridge } from "./bridge";
+import { startDeckServer } from "./serve";
 
 streamDeck.logger.setLevel("info");
 
@@ -19,3 +20,4 @@ streamDeck.settings.onDidReceiveGlobalSettings((ev) => {
 
 streamDeck.connect();
 bridge.start();
+startDeckServer();
