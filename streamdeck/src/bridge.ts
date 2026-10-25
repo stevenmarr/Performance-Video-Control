@@ -110,7 +110,7 @@ class Bridge {
 		this.stacks.set(deviceId, pages);
 		const first = pages[0] || null;
 		this.showing.set(deviceId, first);
-		if (first?.profile) await this.switchProfile(deviceId, first.profile);
+		if (first) await this.switchProfile(deviceId, first.profile || "Control Center");
 		await this.paintPage(deviceId, first);
 		return { ok: true, deviceId, loaded: pages.map((p) => p.title || p.id) };
 	}
@@ -121,7 +121,7 @@ class Bridge {
 		const page = stack.find((p) => p.id === pageId);
 		if (!page) return { ok: false, warning: `Page ${pageId} is not on this deck` };
 		this.showing.set(deviceId, page);
-		if (page.profile) await this.switchProfile(deviceId, page.profile);
+		await this.switchProfile(deviceId, page.profile || "Control Center");
 		await this.paintPage(deviceId, page);
 		return { ok: true, pageId, title: page.title || pageId };
 	}
@@ -153,11 +153,20 @@ class Bridge {
 	}
 
 	private async switchProfile(deviceId: string, profile: string): Promise<void> {
-		try {
-			await streamDeck.profiles.switchToProfile(deviceId, profile);
-		} catch (e) {
-			streamDeck.logger.info(`Profile "${profile}" is not installed (${e instanceof Error ? e.message : e})`);
+		const device = [...streamDeck.devices].find((d) => d.id === deviceId);
+		const type = (device as { type?: number } | undefined)?.type;
+		const suffix: Record<number, string> = { 0: "", 1: " Mini", 2: " XL", 7: " +", 9: " Neo", 11: " + XL" };
+		const tail = type != null && suffix[type] != null ? suffix[type] : "";
+		const names = [`Profiles/${profile}${tail}`, `${profile}${tail}`, `Profiles/Control Center${tail}`, `Control Center${tail}`];
+		for (const name of names) {
+			try {
+				await streamDeck.profiles.switchToProfile(deviceId, name);
+				return;
+			} catch {
+				/* try the next name this device type installs */
+			}
 		}
+		streamDeck.logger.info(`Profile "${profile}" is not installed`);
 	}
 
 	private async paintPage(deviceId: string, page: { device?: unknown; keys?: Array<Record<string, unknown>> } | null): Promise<void> {

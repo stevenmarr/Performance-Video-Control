@@ -10,10 +10,17 @@
 			"Icon": "imgs/actions/home/icon",
 			"Tooltip": "M4 Viewport. Opens Control Center. Does not talk to a camera.",
 			"PropertyInspectorPath": "ui/settings.html",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"DisableAutomaticStates": true,
 			"UserTitleEnabled": false,
-			"States": [{ "Image": "imgs/actions/home/key", "TitleAlignment": "middle" }]
+			"States": [
+				{
+					"Image": "imgs/actions/home/key",
+					"TitleAlignment": "middle"
+				}
+			]
 		},
 		{
 			"Name": "Camera",
@@ -21,10 +28,17 @@
 			"Icon": "imgs/actions/camera/icon",
 			"Tooltip": "Select a camera. Red is program only.",
 			"PropertyInspectorPath": "ui/settings.html",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"DisableAutomaticStates": true,
 			"UserTitleEnabled": false,
-			"States": [{ "Image": "imgs/actions/camera/key", "TitleAlignment": "middle" }]
+			"States": [
+				{
+					"Image": "imgs/actions/camera/key",
+					"TitleAlignment": "middle"
+				}
+			]
 		},
 		{
 			"Name": "Preset",
@@ -32,10 +46,17 @@
 			"Icon": "imgs/actions/preset/icon",
 			"Tooltip": "Recall a preset through Control Center. A live camera asks for a hold.",
 			"PropertyInspectorPath": "ui/settings.html",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"DisableAutomaticStates": true,
 			"UserTitleEnabled": false,
-			"States": [{ "Image": "imgs/actions/preset/key", "TitleAlignment": "middle" }]
+			"States": [
+				{
+					"Image": "imgs/actions/preset/key",
+					"TitleAlignment": "middle"
+				}
+			]
 		},
 		{
 			"Name": "Page",
@@ -43,10 +64,17 @@
 			"Icon": "imgs/actions/page/icon",
 			"Tooltip": "LIVE, PAINT, FUNC or MOVE.",
 			"PropertyInspectorPath": "ui/settings.html",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"DisableAutomaticStates": true,
 			"UserTitleEnabled": false,
-			"States": [{ "Image": "imgs/actions/page/key", "TitleAlignment": "middle" }]
+			"States": [
+				{
+					"Image": "imgs/actions/page/key",
+					"TitleAlignment": "middle"
+				}
+			]
 		},
 		{
 			"Name": "Key",
@@ -54,10 +82,17 @@
 			"Icon": "imgs/actions/key/icon",
 			"Tooltip": "A toggle, cycle or hold. R/B gain and pedestal stay on the dials.",
 			"PropertyInspectorPath": "ui/settings.html",
-			"Controllers": ["Keypad"],
+			"Controllers": [
+				"Keypad"
+			],
 			"DisableAutomaticStates": true,
 			"UserTitleEnabled": false,
-			"States": [{ "Image": "imgs/actions/key/key", "TitleAlignment": "middle" }]
+			"States": [
+				{
+					"Image": "imgs/actions/key/key",
+					"TitleAlignment": "middle"
+				}
+			]
 		},
 		{
 			"Name": "Knob",
@@ -65,7 +100,9 @@
 			"Icon": "imgs/actions/dial/icon",
 			"Tooltip": "Circular paint knob. Push cycles fine/coarse. A paired knob cycles R and B.",
 			"PropertyInspectorPath": "ui/settings.html",
-			"Controllers": ["Encoder"],
+			"Controllers": [
+				"Encoder"
+			],
 			"DisableAutomaticStates": true,
 			"UserTitleEnabled": false,
 			"Encoder": {
@@ -79,7 +116,12 @@
 					"LongTouch": "Same as touch"
 				}
 			},
-			"States": [{ "Image": "imgs/actions/dial/key", "TitleAlignment": "middle" }]
+			"States": [
+				{
+					"Image": "imgs/actions/dial/key",
+					"TitleAlignment": "middle"
+				}
+			]
 		}
 	],
 	"Category": "Performance Video Control",
@@ -88,11 +130,234 @@
 	"Description": "PTZ through Performance Video Control Center. The Stream Deck never talks to a camera.",
 	"Icon": "imgs/plugin/marketplace",
 	"SDKVersion": 3,
-	"Software": { "MinimumVersion": "7.1" },
+	"Software": {
+		"MinimumVersion": "7.1"
+	},
 	"OS": [
-		{ "Platform": "mac", "MinimumVersion": "12" },
-		{ "Platform": "windows", "MinimumVersion": "10" }
+		{
+			"Platform": "mac",
+			"MinimumVersion": "12"
+		},
+		{
+			"Platform": "windows",
+			"MinimumVersion": "10"
+		}
 	],
-	"Nodejs": { "Version": "24", "Debug": "enabled" },
-	"UUID": "com.performancevideo.control"
+	"Nodejs": {
+		"Version": "24",
+		"Debug": "enabled"
+	},
+	"UUID": "com.performancevideo.control",
+	"Profiles": [
+		{
+			"Name": "Profiles/Control Center",
+			"DeviceType": 0,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Live",
+			"DeviceType": 0,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Paint",
+			"DeviceType": 0,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Functions",
+			"DeviceType": 0,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Move",
+			"DeviceType": 0,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/Control Center Mini",
+			"DeviceType": 1,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Live Mini",
+			"DeviceType": 1,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Paint Mini",
+			"DeviceType": 1,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Functions Mini",
+			"DeviceType": 1,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Move Mini",
+			"DeviceType": 1,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/Control Center XL",
+			"DeviceType": 2,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Live XL",
+			"DeviceType": 2,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Paint XL",
+			"DeviceType": 2,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Functions XL",
+			"DeviceType": 2,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Move XL",
+			"DeviceType": 2,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/Control Center +",
+			"DeviceType": 7,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Live +",
+			"DeviceType": 7,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Paint +",
+			"DeviceType": 7,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Functions +",
+			"DeviceType": 7,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Move +",
+			"DeviceType": 7,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/Control Center Neo",
+			"DeviceType": 9,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Live Neo",
+			"DeviceType": 9,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Paint Neo",
+			"DeviceType": 9,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Functions Neo",
+			"DeviceType": 9,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Move Neo",
+			"DeviceType": 9,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/Control Center + XL",
+			"DeviceType": 11,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Live + XL",
+			"DeviceType": 11,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Paint + XL",
+			"DeviceType": 11,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Functions + XL",
+			"DeviceType": 11,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		},
+		{
+			"Name": "Profiles/PTZ Move + XL",
+			"DeviceType": 11,
+			"Readonly": false,
+			"DontAutoSwitchWhenInstalled": true,
+			"AutoInstall": true
+		}
+	]
 }
