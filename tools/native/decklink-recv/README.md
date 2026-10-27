@@ -8,7 +8,9 @@ The DeckLink SDK is **not** in git. On this Mac it stays at:
 
 `~/deck-link-sdk/Blackmagic DeckLink SDK 16.0`
 
-`make` uses that path and the macOS SDK from `xcrun`. Pass `DECKLINK_SDK` only if the tree moves. If the build says `string file not found`, the C++ headers are missing: run `xcode-select --install`, then `make` again.
+`make` uses that path. Pass `DECKLINK_SDK` only if the tree moves.
+
+`<string> file not found` is not a DeckLink problem. The compiler is using a leftover C++ header folder from an older macOS (`/Library/Developer/CommandLineTools/usr/include/c++`) that no longer contains `<string>`. The headers that do exist are inside the Mac SDK. `make` ignores the leftover folder and uses the SDK copy. Pull, then `make` again. The `clang` line must contain `-nostdinc++` and `-isystem` ending in `c++/v1`.
 
 ## Build (Mac)
 
