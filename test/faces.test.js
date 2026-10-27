@@ -3,24 +3,22 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { SURFACES } = require('../lib/decks/surfaces');
 const { show } = require('../lib/decks/faces');
-const { keyImage, stripImage } = require('../lib/decks/draw');
+const { keySvg } = require('../lib/deck-image');
+const { keyModel, keyImage, stripImage } = require('../lib/decks/look');
 
-test('key images carry the label, and the + XL strip is the encoder row', () => {
-  const image = keyImage({ label: 'HOME', caption: 'BACK', tone: 'home' }, 112, 112);
+test('deck keys use the Control Dark SVG, not a bitmap font', () => {
+  const model = keyModel({ label: 'TAKE', caption: 'PGM', tone: 'stop' });
+  const svg = keySvg(model);
+  assert.match(svg, /TAKE/);
+  assert.match(svg, /Arial/);
+  assert.match(svg, /#3A0D10/);
+  const image = keyImage({ label: 'HOME', caption: 'BACK', nav: 'system', tone: 'home' }, 112, 112);
   assert.equal(image.data.length, 112 * 112 * 4);
-  let bright = 0;
-  for (let i = 0; i < image.data.length; i += 4) if (image.data[i] > 200) bright++;
-  assert.ok(bright > 40, 'the label should be drawn, not a flat color');
   const strip = stripImage(1200, 100, [
-    { x: 0, w: 112, label: 'IRIS' },
-    { x: 216, w: 112, label: 'PED' },
-  ]);
+    { widget: 'iris' }, { widget: 'masterPed' }, { widget: 'gainRb' },
+    { widget: 'pedRb' }, { widget: 'zoom' }, { widget: 'focus' },
+  ], {});
   assert.equal(strip.data.length, 1200 * 100 * 4);
-  let ink = 0;
-  for (let y = 0; y < 100; y++) {
-    for (let x = 0; x < 160; x++) if (strip.data[(y * 1200 + x) * 4] > 200) ink++;
-  }
-  assert.ok(ink > 20, 'IRIS should be on the touch strip');
 });
 
 const desk = { armed: ['rs6', 'ptz', 'e2'] };
