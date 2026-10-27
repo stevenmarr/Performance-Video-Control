@@ -5,8 +5,8 @@
 One desk for the show. The app runs on a Mac (or a Pi that only relays video) and serves a dark,
 touch-friendly UI. An iPad or phone on the same network opens it in a browser.
 
-The top row is **SYSTEMS**, the systems you have put on the desk, **SCOPES**, and **DECKS**. Each system you add
-gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green. **DECKS** pushes those pages to connected Stream Decks.
+The top row is **SYSTEMS**, the systems you have put on the desk, **SCOPES**, and **Control Devices**. Each system you add
+gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green. **Control Devices** draws those pages on Stream Decks over USB.
 
 | On the desk | What it drives |
 |---|---|
@@ -142,7 +142,11 @@ See [docs/tsl-tally.md](docs/tsl-tally.md).
 
 ---
 
-## Stream Deck (Path C)
+## Stream Deck (older Path C plugin)
+
+Control Devices, above, is how a deck is driven now: this app owns the USB
+device, including on a Pi. The Elgato plugin below is the previous path. Leave
+the Elgato app quit if Control Center should draw the keys.
 
 Path C is the show deck for Panasonic AW-UE150 cameras. The Elgato plugin
 `com.performancevideo.control` calls this app over HTTP. This app calls the camera. The Stream Deck
@@ -193,36 +197,41 @@ ALL STOP is the bottom-right key on every page.
 The Companion page file under **SYSTEMS → STREAM DECK PAGES** is a separate export for other
 surfaces (the older Companion module). It does not build these four PTZ profiles.
 
-The same plugin listens on `127.0.0.1:9721` for the **DECKS** tab. Control Center calls that
-HTTP API to list hardware and to push a page stack. See [DECKS](#decks) below.
+The same plugin listens on `127.0.0.1:9721`. That is the old push path. Control Devices does not use it.
 
 ---
 
-## DECKS
+## Control Devices
 
-**DECKS** sits on the top row beside **SCOPES**. The surface dropdown picks XL, + XL, +, and the rest. Pages for the systems on the desk are on the left. Click one and the page is drawn in the middle. Connected decks are on the right. **Scan USB** asks the plugin again. **Push** sends the stack to the selected deck. **DEPLOY ALL ON DESK** does that for every online deck.
+Stream Decks are owned over USB, the same way Companion does it. The Elgato
+desktop app is not required and does not run on a Pi. Quit that app before
+scanning, or it keeps the USB device.
 
-A push stamps the live connection into the page. A PTZ page carries the selected camera's id and
-IP, so the keys talk to that camera. A key that jumps to a page you did not put on the stack is
-called out before the push.
+The deck opens on **Home**. Each key is one system on the desk (RS6, a PTZ
+system, E2, Pixelhue, and the rest). Choosing one fills the deck with that
+system only. The top-left key is **Home** on every page after that.
 
+How many pages that system takes depends on the deck. A Stream Deck + has
+8 keys, so PTZ spills across more pages. A Stream Deck + XL has 36 keys and
+6 knobs, so the same controls fit in fewer pages. PREV and NEXT show up only
+when a page is not enough.
+
+RS6, E2 and Pixelhue preset keys are memories. Pressing one loads the stored
+look onto preview. It does not toggle a key the way a macro does. Take commits
+the preview. That is the Ross memory model: the recall is the absolute state
+that was stored, including whether a key was on air or off air.
+
+On a Pi, copy `tools/udev/50-elgato-stream-deck.rules` to `/etc/udev/rules.d/`,
+reload udev, and replug the deck. The USB driver needs Node 18 or newer:
+
+```bash
+npm install
 ```
-Control Center  →  HTTP  →  Path C plugin  →  Stream Deck
-                   GET  /v1/devices
-                   POST /v1/deploy   { deviceId, pages }
-```
 
-The plugin is still `com.performancevideo.control` (build steps above). It must be running for
-any deck to appear. Control Center does not add a placeholder deck.
+`@elgato-stream-deck/node` is optional. Without it, Control Devices still opens
+and Scan explains that the driver is missing.
 
-| | |
-|---|---|
-| Plugin listen | `127.0.0.1:9721` |
-| Control Center override | `RS6_DECK_PLUGIN` (default `http://127.0.0.1:9721`) |
-| Plugin port / host | `RS6_DECK_PLUGIN_PORT`, `RS6_DECK_PLUGIN_HOST` |
-| Non-loopback clients | `RS6_DECK_PLUGIN_LAN=1` |
-
-Details: [docs/decks.md](docs/decks.md).
+The older plugin on port 9721 is documented in [docs/decks.md](docs/decks.md). It is not required.
 
 ---
 

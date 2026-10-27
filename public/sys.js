@@ -266,8 +266,10 @@
     const shown = keys.filter((k) => SYS.systems[k] && qOk(k) && stOk(k));
     const onKeys = shown.filter((k) => armed().includes(k));
     const offKeys = shown.filter((k) => !armed().includes(k));
-    const block = (title, hint, list) => (list.length ? `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div><div class="sys-cards cards">${list.map((k) => card(SYS.systems[k])).join('')}</div></section>` : '');
-    const cards = block('ON THE DESK', 'OPEN goes to its pages · REMOVE takes it off', onKeys) + block('AVAILABLE', 'ADD puts it on the desk · CONFIGURE sets the address', offKeys) || '<div class="note">No system matches the filter.</div>';
+    const block = (title, hint, list) => `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div><div class="sys-cards cards">${list.length ? list.map((k) => card(SYS.systems[k])).join('') : '<p class="note small">Nothing in this column.</p>'}</div></section>`;
+    const cards = shown.length
+      ? `<div class="sys-cols">${block('AVAILABLE', 'ADD puts it on the desk · ADD AS SIMULATOR uses a fake device', offKeys)}${block('ON THE DESK', 'CONFIGURE sets the address · REMOVE takes it off', onKeys)}</div>`
+      : '<div class="note">No system matches the filter.</div>';
     // keep a focused connection form from being replaced while typing
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#sysCards')) set($('#sysCards'), 'cards', cards);
     $('#sysPlannedWrap').hidden = !(SYS.planned || []).length;

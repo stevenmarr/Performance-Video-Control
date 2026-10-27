@@ -15,5 +15,10 @@
     "ndi-sidecar": "node tools/ndi-sidecar.js",
     "decklink-sidecar": "node tools/decklink-sidecar.js"
   },
-  "dependencies": {}
+  "dependencies": {
+    "jpeg-js": "^0.4.4"
+  },
+  "optionalDependencies": {
+    "@elgato-stream-deck/node": "^7.3.0"
+  }
 }

@@ -164,20 +164,18 @@ test('Control Center lists plugin decks, stamps on push, warns, reorders, and de
   }
 });
 
-test('DECKS is a top tab and the client calls the plugin routes, not Companion', () => {
+test('Control Devices is a top tab and the client owns Stream Decks over USB, not Companion', () => {
   const html = read('public/index.html');
   const js = read('public/decks.js');
   assert.match(html, /class="tab tab-decks" data-tab="decks"/);
+  assert.match(html, /Control Devices/);
   assert.match(html, /id="pane-decks"/);
-  assert.match(html, /id="btnDeckAll"/);
+  assert.match(html, /id="btnDeckScan"/);
   assert.match(html, /src="\/decks\.js"/);
   assert.match(read('public/app.js'), /'decks'/);
   assert.match(read('public/sys.js'), /decks: \['decks'\]/);
-  assert.match(js, /\/api\/decks\/deploy/);
-  assert.match(js, /\/api\/decks\/deploy-all/);
-  assert.match(js, /\/api\/decks\/stack/);
+  assert.match(js, /\/api\/decks\/press/);
+  assert.match(js, /\/api\/decks\/refresh/);
   assert.doesNotMatch(js, /\/api\/companion/);
-  assert.match(read('lib/server.js'), /\\\/api\\\/decks\\\/deploy/);
-  assert.match(read('streamdeck/src/plugin.ts'), /startDeckServer/);
-  assert.match(read('streamdeck/src/serve.ts'), /\/api\/decks\/hello/);
+  assert.match(read('lib/server.js'), /\\\/api\\\/decks\\\/press/);
 });

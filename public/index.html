@@ -43,7 +43,7 @@
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
     <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
-    <button class="tab tab-decks" data-tab="decks" title="Map pages from the systems on the desk onto connected Stream Decks. Push goes through the Path C plugin.">DECKS</button>
+    <button class="tab tab-decks" data-tab="decks" title="Stream Decks connected over USB. Home picks one system. This app draws the keys. The Elgato app is not used.">Control Devices</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
@@ -76,7 +76,7 @@
   <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin">COLUMNS</button>
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
   <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. Live video is Desktop Video from a Mac sidecar.</span>
-  <span class="tabs-home-note" id="tabsDecksNote" hidden>Connected Stream Decks and the page stack for each one. Push sends that stack through the Path C plugin.</span>
+  <span class="tabs-home-note" id="tabsDecksNote" hidden>Stream Decks on USB. Home picks one system. Every page has a Home key. Quit the Elgato Stream Deck app so this app can own the device.</span>
   </div>
 </nav>
 
@@ -166,7 +166,7 @@
   <!-- 0.6.0 SYSTEMS dashboard: one card per system, live status, connection, and the switch between them -->
   <section class="grid-wrap pane dash" id="pane-system" hidden>
     <div class="dash-head">
-      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">ON THE DESK is what you are running. ADD TO DESK puts a system on the desk and shows its tabs. OPEN goes to those tabs. CONFIGURE sets the address. REMOVE FROM DESK takes it off. ADD TO DESK AS SIMULATOR uses a built-in fixture and is not saved.</div></div>
+      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Left: systems you can add. Right: devices on the desk. CONFIGURE sets the address. ADD AS SIMULATOR puts a fake device on the desk so a Stream Deck can be built with nothing connected. That simulator is not saved in the show.</div></div>
       <span class="spacer"></span>
       <div class="dash-tools"><div id="dashSummary" class="dash-summary"></div>
         <input type="search" id="dashSearch" class="dash-search" placeholder="Filter systems… (name, group, status, address)" autocomplete="off"></div>
@@ -428,9 +428,9 @@ node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
   </section>
   <section class="grid-wrap pane" id="pane-decks" hidden>
     <div class="scopes-head">
-      <div class="section-title">DECKS <small>pick a surface, the page is in the middle, Push sends it to a connected Stream Deck</small></div>
+      <div class="section-title">CONTROL DEVICES <small>USB Stream Decks. Home picks one system. The keys fill that deck.</small></div>
       <span class="spacer"></span>
-      <button type="button" class="btn mini primary" id="btnDeckAll">DEPLOY ALL ON DESK</button>
+      <button type="button" class="btn mini primary" id="btnDeckScan">Scan USB</button>
     </div>
     <p class="note small" id="deckPluginNote"></p>
     <div id="deckRoot" class="deck-layout"></div>

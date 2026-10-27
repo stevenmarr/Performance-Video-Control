@@ -436,8 +436,17 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .dash-clock{font:700 28px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#cfe2ff;letter-spacing:.06em;background:#0f1318;border:1px solid var(--line);border-radius:10px;padding:10px 14px}
 /* Cards stay inside the window. 340px let five systems share a row and the two-column
    connection form (inputs' default min-content) paint across the next card. */
-.sys-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;margin-bottom:22px}
-.sys-cards{grid-template-columns:repeat(auto-fill,minmax(min(100%,480px),1fr))}
+.sys-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+@media (max-width:980px){.sys-cols{grid-template-columns:1fr}}
+.deck-key.tone-home{background:#1c3a6e}
+.deck-key.tone-nav{background:#2a313c}
+.deck-key.tone-go{background:#164830}
+.deck-key.tone-stop{background:#6e2024}
+.deck-key.tone-memory{background:#4e3a16}
+.deck-key.tone-func{background:#2a3040}
+.deck-key.tone-blank{background:#12141a;color:#445}
+.deck-key small{display:block;font-size:9px;letter-spacing:.08em;opacity:.75}
+.sys-cards{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:22px}
 .sys-card{background:linear-gradient(180deg,#171c23,#12161b);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;position:relative;min-width:0;overflow:hidden;container-type:inline-size;container-name:syscard}
 .sys-card::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:#3a4350}
 .sys-card.ok::before{background:#2bd46b}.sys-card.off::before{background:#ff4d55}
