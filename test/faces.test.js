@@ -40,6 +40,12 @@ test('a smaller deck needs more PTZ pages than a + XL', () => {
   assert.ok(big.pages <= 2, '+ XL should hold PTZ in one or two pages');
   assert.equal(big.dials.length, 6);
   assert.equal(show(SURFACES.xl, desk, { system: 'ptz', page: 0 }).dials.length, 0);
+  const labels = big.keys.map((k) => k.label);
+  assert.ok(!labels.includes('PREV') && !labels.includes('NEXT'));
+  assert.equal(big.keys.find((k) => k.col === big.keys.reduce((m, k) => Math.max(m, k.col), 0) && k.row === 3).label, 'FUNC');
+  const rs6 = show(SURFACES.xl, desk, { system: 'rs6', page: 0 });
+  assert.equal(rs6.keys.find((k) => k.col === 1 && k.row === 0).label, 'TAKE');
+  assert.equal(rs6.keys.find((k) => k.col === 2 && k.row === 0).label, 'CUT');
 });
 
 test('one system at a time, and switcher memories are absolute recalls', () => {
