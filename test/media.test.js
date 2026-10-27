@@ -160,7 +160,7 @@ test('Pixera and Millumin connections are saved per install and stay out of a sh
 
 test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops it, RS6 is refused', async () => {
   const ui = fs.readFileSync(path.join(__dirname, '..', 'public', 'sys.js'), 'utf8');
-  assert.match(ui, /ADD TO DESK AS SIMULATOR/);
+  assert.match(ui, /ADD AS SIMULATOR/);
   assert.match(ui, /REMOVE FROM DESK/);
   assert.match(ui, /data-use="\$\{s\.key\}" data-open="\$\{s\.key\}">OPEN /);
   assert.doesNotMatch(ui, /data-open="\$\{s\.key\}">OPEN</);

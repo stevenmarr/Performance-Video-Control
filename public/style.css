@@ -461,6 +461,11 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .sys-card header .btn{margin-left:auto;white-space:nowrap}
 .sys-card .mono{width:46px;height:46px;border-radius:10px;display:grid;place-items:center;background:#140c0d;border:1px solid #3a2426;font-weight:900;letter-spacing:.06em;color:#f0c8c8;font-size:14px;flex-shrink:0}
 .sys-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.sys-cards.avail{gap:6px}
+.sys-card.avail{flex-direction:row;align-items:center;padding:8px 10px;gap:8px}
+.sys-card.avail header{flex:1;min-width:0}
+.sys-card.avail .sys-acts{margin-left:auto;display:flex;gap:6px;flex-shrink:0}
+.sys-card.avail .mono{width:36px;height:36px;font-size:12px}
 .sys-sec{margin:0 0 18px}
 .sys-sec>.section-title{margin:0 0 8px}
 .cfg-sum{margin-left:8px;font-weight:700;letter-spacing:.04em;color:var(--dim);text-transform:none}

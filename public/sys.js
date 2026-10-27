@@ -169,6 +169,7 @@
 
   // ---------- dashboard (home): status + every connection setting ----------
   let dashQ = ''; let dashSt = localStorage.getItem('cc.dashSt') || 'all';
+  if (dashSt === 'desk') dashSt = 'all';
   let groupSel = localStorage.getItem('cc.group') || 'all';
   const f = (name, label, type, val, ph, dis, extra = '') => `<label>${label}<input name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${esc(ph)}" ${dis} ${extra}></label>`;
   function connForm(s) {
@@ -226,26 +227,31 @@
     const clock = $('#dashClock'); if (clock) clock.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const all = Object.values(SYS.systems); const sts = all.map(statusOf);
     $('#dashSummary').innerHTML = `<b>${all.length}</b> systems · <span class="ok">${sts.filter((x) => x.cls === 'ok').length} online</span> · <span class="off">${sts.filter((x) => x.cls === 'off' || x.cls === 'warn').length} offline / degraded</span> · <span class="idle">${sts.filter((x) => x.cls === 'idle').length} not configured</span>`;
-    const card = (s) => {
+    const row = (s, collapsed) => {
       const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
       const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : 'PRESETS';
       const addr = (s.connection && (s.connection.host || s.connection.mock))
         ? (s.connection.mock ? 'simulator' : `${s.connection.host || ''}${s.connection.port ? `:${s.connection.port}` : ''}`)
         : 'no address';
-      // Off the desk: ADD has data-use and no data-open, so it does not switch tabs before the operator asks.
-      // On the desk: OPEN keeps data-use and data-open together. REMOVE is its own button.
       const add = on ? '' : `<button type="button" class="btn mini primary" data-use="${s.key}">ADD TO DESK</button>`;
       const sim = !on && s.key !== 'rs6' && !(s.connection && s.connection.mock)
-        ? `<button type="button" class="btn mini" data-sim="${s.key}">ADD TO DESK AS SIMULATOR</button>` : '';
+        ? `<button type="button" class="btn mini" data-sim="${s.key}">ADD AS SIMULATOR</button>` : '';
       const openBtn = on
         ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}">OPEN ${open}</button>`
         : '';
       const remove = on ? `<button type="button" class="btn mini danger" data-armoff="${s.key}">REMOVE FROM DESK</button>` : '';
-      return `<article class="sys-card ${active ? 'active' : ''} ${on ? 'on-desk' : ''} ${st.cls}" data-card="${s.key}">
+      if (collapsed) {
+        return `<article class="sys-card avail ${st.cls}" data-card="${s.key}">
+          <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
+            <div class="st"><span class="led ${st.cls}"></span>${st.txt}</div></div></header>
+          <div class="sys-acts">${add}${sim}</div>
+        </article>`;
+      }
+      return `<article class="sys-card ${active ? 'active' : ''} on-desk ${st.cls}" data-card="${s.key}">
         <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
-          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}${on ? ' <span class="desk-tag">ON THE DESK</span>' : ''}</div></div></header>
+          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}</div></div></header>
         ${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<div class="err small">${esc(s.status.error).slice(0, 140)}</div>` : ''}
-        <div class="sys-acts">${openBtn}${add}${remove}${sim}</div>
+        <div class="sys-acts">${openBtn}${remove}</div>
         <div class="stats">${statsOf(s)}</div>${liveLine(s)}
         <details data-det="${s.key}" ${openDet.has(s.key) ? 'open' : ''}><summary>CONFIGURE <span class="cfg-sum">${esc(addr)}</span></summary>${connForm(s)}</details>
       </article>`;
@@ -254,22 +260,24 @@
     if (groupSel !== 'all' && !groups.some((g) => g.name === groupSel)) groupSel = 'all';
     const chip = (key, label, n) => `<button class="mode ${groupSel === key ? 'active' : ''}" data-group="${esc(key)}" type="button">${esc(label)} <small>${n}</small></button>`;
     set($('#dashGroups'), 'groups', chip('all', 'ALL', all.length) + groups.map((g) => chip(g.name, g.name.toUpperCase(), g.systems.length)).join(''));
-    const keys = (groupSel === 'all' ? groups.flatMap((g) => g.systems) : groups.find((g) => g.name === groupSel).systems).slice().sort((x, y) => (armed().includes(x) === armed().includes(y) ? (x === SYS.active ? -1 : y === SYS.active ? 1 : 0) : armed().includes(x) ? -1 : 1));
-    // 0.11.0 search + status filter
+    const order = groups.flatMap((g) => g.systems);
+    const onKeys = order.filter((k) => SYS.systems[k] && armed().includes(k));
+    const leftPool = (groupSel === 'all' ? order : groups.find((g) => g.name === groupSel).systems).filter((k) => SYS.systems[k] && !armed().includes(k));
     const q = dashQ.trim().toLowerCase();
-    const stOk = (k) => { const x = SYS.systems[k]; const c = statusOf(x).cls; return dashSt === 'all' || (dashSt === 'online' && c === 'ok') || (dashSt === 'issues' && (c === 'off' || c === 'warn')) || (dashSt === 'desk' && armed().includes(k)) || (dashSt === 'idle' && c === 'idle'); };
-    const qOk = (k) => { const x = SYS.systems[k]; return !q || `${x.key} ${x.short} ${x.label} ${x.group || ''} ${x.kind} ${statusOf(x).txt} ${(x.connection && x.connection.host) || ''} ${armed().includes(k) ? 'desk' : ''}`.toLowerCase().includes(q); };
-    const base0 = groupSel === 'all' ? groups.flatMap((g) => g.systems) : groups.find((g) => g.name === groupSel).systems;
-    const cnt = (f) => base0.filter((k) => SYS.systems[k] && qOk(k) && f(k)).length;
+    const stOk = (k) => { const x = SYS.systems[k]; const c = statusOf(x).cls; return dashSt === 'all' || (dashSt === 'online' && c === 'ok') || (dashSt === 'issues' && (c === 'off' || c === 'warn')) || (dashSt === 'idle' && c === 'idle'); };
+    const qOk = (k) => { const x = SYS.systems[k]; return !q || `${x.key} ${x.short} ${x.label} ${x.group || ''} ${x.kind} ${statusOf(x).txt} ${(x.connection && x.connection.host) || ''}`.toLowerCase().includes(q); };
+    const cnt = (f) => leftPool.filter((k) => qOk(k) && f(k)).length;
     const stChip = (k, l, f) => `<button class="mode ${dashSt === k ? 'active' : ''}" data-dashst="${k}" type="button">${l} <small>${cnt(f)}</small></button>`;
-    set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('online', 'ONLINE', (k) => statusOf(SYS.systems[k]).cls === 'ok') + stChip('issues', 'ISSUES', (k) => ['off', 'warn'].includes(statusOf(SYS.systems[k]).cls)) + stChip('desk', 'ON DESK', (k) => armed().includes(k)) + stChip('idle', 'NOT SET UP', (k) => statusOf(SYS.systems[k]).cls === 'idle'));
-    const shown = keys.filter((k) => SYS.systems[k] && qOk(k) && stOk(k));
-    const onKeys = shown.filter((k) => armed().includes(k));
-    const offKeys = shown.filter((k) => !armed().includes(k));
-    const block = (title, hint, list) => `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div><div class="sys-cards cards">${list.length ? list.map((k) => card(SYS.systems[k])).join('') : '<p class="note small">Nothing in this column.</p>'}</div></section>`;
-    const cards = shown.length
-      ? `<div class="sys-cols">${block('AVAILABLE', 'ADD puts it on the desk · ADD AS SIMULATOR uses a fake device', offKeys)}${block('ON THE DESK', 'CONFIGURE sets the address · REMOVE takes it off', onKeys)}</div>`
-      : '<div class="note">No system matches the filter.</div>';
+    set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('online', 'ONLINE', (k) => statusOf(SYS.systems[k]).cls === 'ok') + stChip('issues', 'ISSUES', (k) => ['off', 'warn'].includes(statusOf(SYS.systems[k]).cls)) + stChip('idle', 'NOT SET UP', (k) => statusOf(SYS.systems[k]).cls === 'idle'));
+    const offKeys = leftPool.filter((k) => qOk(k) && stOk(k));
+    const block = (title, hint, html) => `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div>${html}</section>`;
+    const leftHtml = offKeys.length
+      ? `<div class="sys-cards cards avail">${offKeys.map((k) => row(SYS.systems[k], true)).join('')}</div>`
+      : '<p class="note small">Nothing matches this filter.</p>';
+    const rightHtml = onKeys.length
+      ? `<div class="sys-cards cards">${onKeys.map((k) => row(SYS.systems[k], false)).join('')}</div>`
+      : '<p class="note small">Nothing on the desk.</p>';
+    const cards = `<div class="sys-cols">${block('AVAILABLE', 'Filtered. Add it, then set the address on the desk.', leftHtml)}${block('ON THE DESK', 'Every system on the desk, including while the list is filtered.', rightHtml)}</div>`;
     // keep a focused connection form from being replaced while typing
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#sysCards')) set($('#sysCards'), 'cards', cards);
     $('#sysPlannedWrap').hidden = !(SYS.planned || []).length;
