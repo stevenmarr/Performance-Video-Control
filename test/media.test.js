@@ -149,7 +149,7 @@ test('Pixera and Millumin connections are saved per install and stay out of a sh
     sm.updateConnection('pixera', { host: '192.0.2.40', port: 1400 });
     sm.updateConnection('millumin', { host: '192.0.2.41', port: 99999 });
     assert.equal(sm.conn('millumin').port, 5000, 'a port out of range keeps the default');
-    assert.deepEqual(sm.cfg.armed, ['rs6', 'pixera', 'millumin'], 'saving an address puts it on the desk');
+    assert.deepEqual(sm.cfg.armed, ['pixera', 'millumin'], 'saving an address puts it on the desk');
     assert.equal(sm.showPart().systems.pixera, undefined);
     assert.equal(sm.showPart({ includeConnection: true }).systems.pixera.connection.host, '192.0.2.40');
     sm.applyShowPart({ system: 'rs6', armed: ['rs6'], systems: {} });
@@ -235,12 +235,11 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
     await systems.setArmed('rs6', false);
     assert.deepEqual(systems.cfg.armed, ['e2']);
     st = await systems.setArmed('e2', false);
-    assert.deepEqual(st.armed, ['rs6'], 'a simulator can leave even when it is the only system');
-    assert.equal(st.active, 'rs6');
+    assert.deepEqual(st.armed, [], 'the last system can leave, and RS6 is not put back');
     assert.equal(systems.isMock('e2'), false);
     assert.equal(systems.cfg.connections.e2.host, '');
     saved = file();
-    assert.deepEqual(saved.armed, ['rs6']);
+    assert.deepEqual(saved.armed, []);
     assert.equal(saved.connections.e2.host, '');
     assert.equal(saved.connections.millumin.host, '192.0.2.41');
   } finally {

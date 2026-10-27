@@ -22,7 +22,7 @@
   const XTABS = KIND_TABS.preset;
   const RS6TABS = KIND_TABS.rs6;
   const listeners = [];
-  const armed = () => (SYS && SYS.armed) || (SYS ? [SYS.active] : ['rs6']);
+  const armed = () => (SYS && Array.isArray(SYS.armed) ? SYS.armed : []);
   const armedOf = (kindName) => armed().filter((k) => SYS.systems[k] && SYS.systems[k].kind === kindName);
   const HINTS = {
     recall: '<b>RECALL → PVW</b> · tap a tile to recall that preset to <b>Preview</b> on the destinations stored in it, then TAKE or CUT the selected destinations.',
