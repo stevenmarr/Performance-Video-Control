@@ -2,7 +2,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const { SURFACES } = require('../lib/decks/surfaces');
-const { show } = require('../lib/decks/faces');
+const { show, applyReadouts } = require('../lib/decks/faces');
 const { keySvg } = require('../lib/deck-image');
 const { keyModel, keyImage, stripImage } = require('../lib/decks/look');
 
@@ -57,4 +57,31 @@ test('one system at a time, and switcher memories are absolute recalls', () => {
   const e2 = show(SURFACES.xl, desk, { system: 'e2', page: 0 });
   const mem = e2.keys.find((k) => k.absolute);
   assert.equal(mem.action.body.target, 'preview');
+});
+
+test('PTZ camera keys are the cameras on the desk, and the selected one is marked', () => {
+  const ptzDesk = {
+    armed: ['ptz'],
+    byKey: {
+      ptz: {
+        cameras: [
+          { id: 'cam1', name: 'Wide' },
+          { id: 'cam2', name: 'Tight' },
+          { id: 'cam3', name: 'End' },
+        ],
+        selected: 'cam2',
+      },
+    },
+  };
+  const face = show(SURFACES.plusxl, ptzDesk, { system: 'ptz', page: 0 });
+  const cams = face.keys.filter((k) => k.cam);
+  assert.deepEqual(cams.map((k) => k.cam), ['cam1', 'cam2', 'cam3']);
+  assert.equal(cams.find((k) => k.cam === 'cam2').on, true);
+  assert.equal(cams.find((k) => k.cam === 'cam2').action.body.cam, 'cam2');
+  assert.equal(cams.find((k) => k.cam === 'cam1').action.body.slot, undefined);
+  const bars = applyReadouts([{ label: 'BARS', op: 'colorBars', caption: 'FUNC' }], { readouts: { colorBars: { on: true, text: 'ON' } } });
+  assert.equal(bars[0].caption, 'ON');
+  assert.equal(bars[0].on, true);
+  const func = show(SURFACES.plusxl, ptzDesk, { system: 'ptz', page: 1 });
+  assert.deepEqual(func.keys.filter((k) => k.cam).map((k) => k.label), ['Wide', 'Tight', 'End']);
 });
