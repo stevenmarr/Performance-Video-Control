@@ -219,9 +219,11 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
     assert.equal(st.systems.ptz.connection.cameras.length, 3);
     assert.ok(st.systems.ptz.connection.cameras.every((c) => c.host === '127.0.0.1'));
     assert.deepEqual(file().connections.ptz.cameras, []);
+    assert.deepEqual(file().simulators, ['ptz']);
     assert.deepEqual(systems.showPart({ includeConnection: true }).systems.ptz.cameras, []);
     await systems.setArmed('ptz', false);
     assert.equal(systems.mockCams, null);
+    assert.ok(!(file().simulators || []).includes('ptz'));
     assert.equal(systems.conn('ptz').cameras.length, 0);
     assert.equal(systems.cfg.connections.ptz.cameras.length, 0);
     st = await systems.setArmed('pixera', false);
@@ -248,6 +250,25 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
     await systems.close();
     await fixed.close();
     fs.rmSync(dir2, { recursive: true, force: true });
+    await ctx.teardown();
+  }
+});
+
+test('a PTZ simulator is rebuilt after the app restarts', async () => {
+  const ctx = await setup({});
+  const first = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, autoStart: false });
+  try {
+    await first.simulate('ptz');
+    assert.deepEqual(first.conn('ptz').cameras.map((c) => c.name), ['Cam 1 Wide', 'Cam 2 Stage', 'Cam 3 Lectern']);
+    await first.close();
+    const again = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, autoStart: false });
+    await again.restoreSims();
+    const cams = again.conn('ptz').cameras;
+    assert.deepEqual(cams.map((c) => c.name), ['Cam 1 Wide', 'Cam 2 Stage', 'Cam 3 Lectern']);
+    assert.ok(cams.every((c) => c.host === '127.0.0.1' && c.port > 0));
+    assert.ok(again.cfg.armed.includes('ptz'));
+    await again.close();
+  } finally {
     await ctx.teardown();
   }
 });

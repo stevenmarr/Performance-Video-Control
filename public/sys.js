@@ -242,8 +242,9 @@
       const remove = on ? `<button type="button" class="btn mini danger" data-armoff="${s.key}">REMOVE FROM DESK</button>` : '';
       if (collapsed) {
         return `<article class="sys-card avail ${st.cls}" data-card="${s.key}">
-          <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
-            <div class="st"><span class="led ${st.cls}"></span>${st.txt}</div></div></header>
+          <div class="mono">${MONO[s.key] || '?'}</div>
+          <div class="nm">${esc(s.label)}</div>
+          <div class="st"><span class="led ${st.cls}"></span>${st.txt}</div>
           <div class="sys-acts">${add}${sim}</div>
         </article>`;
       }
