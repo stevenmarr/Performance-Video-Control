@@ -21,6 +21,8 @@ test('a smaller deck needs more PTZ pages than a + XL', () => {
   const small = show(SURFACES.plus, desk, { system: 'ptz', page: 0 });
   assert.ok(small.pages > big.pages, `${small.pages} pages on + should be more than ${big.pages} on + XL`);
   assert.ok(big.pages <= 2, '+ XL should hold PTZ in one or two pages');
+  assert.equal(big.dials.length, 6);
+  assert.equal(show(SURFACES.xl, desk, { system: 'ptz', page: 0 }).dials.length, 0);
 });
 
 test('one system at a time, and switcher memories are absolute recalls', () => {
