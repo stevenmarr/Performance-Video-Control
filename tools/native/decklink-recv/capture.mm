@@ -36,11 +36,10 @@ static std::string sanitize(std::string s) {
 static bool iidIs(REFIID a, REFIID b) { return std::memcmp(&a, &b, sizeof(REFIID)) == 0; }
 
 static bool iidIsUnknown(REFIID iid) {
-    if (sizeof(REFIID) == sizeof(CFUUIDBytes)) {
-        CFUUIDBytes u = CFUUIDGetUUIDBytes(IUnknownUUID);
-        return std::memcmp(&iid, &u, sizeof(u)) == 0;
-    }
-    return iidIs(iid, static_cast<REFIID>(IUnknownUUID));
+    // SDK 16: REFIID is CFUUIDBytes. IUnknownUUID is a CFUUIDRef. A static_cast
+    // between them does not compile, and both branches of a plain if are type-checked.
+    const CFUUIDBytes u = CFUUIDGetUUIDBytes(IUnknownUUID);
+    return std::memcmp(&iid, &u, sizeof(u)) == 0;
 }
 
 struct ModeName { const char* name; BMDDisplayMode mode; };
@@ -169,33 +168,43 @@ public:
             return S_OK;
         }
         loggedNoSignal = false;
+        // SDK 16 moved the pixel pointer off the frame. IDeckLinkVideoBuffer owns it.
+        IDeckLinkVideoBuffer* buffer = nullptr;
+        if (frame->QueryInterface(IID_IDeckLinkVideoBuffer, reinterpret_cast<void**>(&buffer)) != S_OK || !buffer) return S_OK;
+        if (buffer->StartAccess(bmdBufferAccessRead) != S_OK) { buffer->Release(); return S_OK; }
         void* bytes = nullptr;
-        if (frame->GetBytes(&bytes) != S_OK || !bytes) return S_OK;
+        const bool got = buffer->GetBytes(&bytes) == S_OK && bytes;
+        auto finish = [&]() {
+            buffer->EndAccess(bmdBufferAccessRead);
+            buffer->Release();
+            return S_OK;
+        };
+        if (!got) return finish();
         const int w = static_cast<int>(frame->GetWidth());
         const int h = static_cast<int>(frame->GetHeight());
         const int row = static_cast<int>(frame->GetRowBytes());
         const BMDPixelFormat pf = frame->GetPixelFormat();
         if (raw) {
-            if (pf != bmdFormat8BitYUV) { logLine("raw mode wants 8-bit UYVY"); return S_OK; }
+            if (pf != bmdFormat8BitYUV) { logLine("raw mode wants 8-bit UYVY"); return finish(); }
             for (int y = 0; y < h; y++) {
                 const auto* rowp = static_cast<const uint8_t*>(bytes) + static_cast<size_t>(y) * row;
                 fwrite(rowp, 1, static_cast<size_t>(w) * 2, stdout);
             }
             fflush(stdout);
-            return S_OK;
+            return finish();
         }
         const bool useBgra = pf == bmdFormat8BitBGRA || (pf != bmdFormat8BitYUV && bgra);
         if (pf != bmdFormat8BitYUV && pf != bmdFormat8BitBGRA) {
             logLine("skipping a frame that is not 8-bit YUV or BGRA");
-            return S_OK;
+            return finish();
         }
         if (!encoderReady || w != width || h != height) {
             width = w; height = h;
             encoderReady = encoder.start(w, h, fps, err);
-            if (!encoderReady) return S_OK;
+            if (!encoderReady) return finish();
         }
         encoder.encode(static_cast<const uint8_t*>(bytes), row, w, h, useBgra, frames++);
-        return S_OK;
+        return finish();
     }
 
     void shutdown() {

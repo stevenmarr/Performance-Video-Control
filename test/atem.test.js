@@ -48,6 +48,10 @@ test('ATEM proto: command framing and serializers match atem-connection byte for
   assert.equal(hex(P.OUT.aux(1, 3010)), 'CAuS01010bc2');
   assert.equal(hex(P.OUT.macroRun(5)), 'MAct00050000');
   assert.equal(hex(P.OUT.macroStop()), 'MActffff0100');
+  assert.equal(hex(P.OUT.macroRecord(0)), 'MAct00000500');
+  assert.equal(hex(P.OUT.macroStopRecord()), 'MActffff0200');
+  assert.equal(hex(P.OUT.macroUserWait()), 'MActffff0300');
+  assert.equal(hex(P.OUT.macroContinue()), 'MActffff0400');
   for (const b of Object.values(P.OUT).map((f) => f(0, 1, 1))) assert.equal(b.readUInt16BE(0), b.length);
 });
 

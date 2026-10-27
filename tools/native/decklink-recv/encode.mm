@@ -62,9 +62,9 @@ struct AnnexBEncoder::Impl {
         if (CMBlockBufferCopyDataBytes(block, 0, total, buf.data()) != kCMBlockBufferNoErr) return;
         size_t nalLen = 4;
         CMVideoFormatDescriptionRef fmt = CMSampleBufferGetFormatDescription(sample);
-        size_t header = 4;
+        int header = 4;
         if (fmt && CMVideoFormatDescriptionGetH264ParameterSetAtIndex(fmt, 0, nullptr, nullptr, nullptr, &header) == noErr && header >= 1 && header <= 4)
-            nalLen = header;
+            nalLen = static_cast<size_t>(header);
         size_t off = 0;
         while (off + nalLen <= buf.size()) {
             uint32_t len = 0;

@@ -10,18 +10,14 @@
     { id: 'dsk0', label: 'DSK 1' }, { id: 'dsk1', label: 'DSK 2' },
   ];
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&', '<': '<', '>': '>', '"': '"' }[c]));
-  let system = 'rs6';
+  const HIRES = [
+    { id: 'rs6', label: 'RS6' },
+    { id: 'e2', label: 'E2' },
+    { id: 'pixelhue', label: 'PIXELHUE' },
+  ];
+  let system = localStorage.getItem('cc.looksSystem') || 'rs6';
   let looks = [];
-
-  function activeSystem() {
-    const badge = document.getElementById('sysBadgeName');
-    const name = badge ? badge.textContent.trim().toUpperCase() : '';
-    if (name.includes('PIXEL')) return 'pixelhue';
-    if (name === 'E2' || name.startsWith('E2')) return 'e2';
-    if (name.includes('ATEM')) return 'atem';
-    if (name.includes('PTZ') || name.includes('PIXERA') || name.includes('MILLUMIN')) return system;
-    return 'rs6';
-  }
+  let armed = [];
 
   function card(n) {
     const id = `${system}-${n}`;
@@ -46,8 +42,23 @@
     grid.innerHTML = Array.from({ length: SLOTS }, (_, i) => card(i + 1)).join('');
   }
 
+  function paintSystems() {
+    const bar = document.getElementById('looksSystems');
+    if (!bar) return;
+    const onDesk = HIRES.filter((s) => armed.includes(s.id));
+    const list = onDesk.length ? onDesk : HIRES;
+    bar.innerHTML = list.map((s) => `<button type="button" class="btn mini${s.id === system ? ' on' : ''}" data-looksys="${s.id}">${s.label}</button>`).join('');
+  }
+
   async function load() {
-    system = activeSystem();
+    try {
+      const sys = await fetch('/api/sys').then((r) => r.json());
+      armed = sys.armed || [];
+    } catch { armed = []; }
+    const hi = HIRES.map((s) => s.id).filter((id) => armed.includes(id));
+    if (hi.length && !hi.includes(system)) system = hi[0];
+    localStorage.setItem('cc.looksSystem', system);
+    paintSystems();
     const r = await fetch(`/api/looks?system=${encodeURIComponent(system)}`);
     const j = await r.json();
     looks = j.looks || [];
@@ -90,7 +101,13 @@
     await load();
   });
 
-  document.getElementById('tabsTop') && document.getElementById('tabsTop').addEventListener('click', () => setTimeout(load, 30));
+  document.getElementById('looksSystems')?.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-looksys]');
+    if (!b) return;
+    system = b.dataset.looksys;
+    localStorage.setItem('cc.looksSystem', system);
+    load().catch(() => paint());
+  });
   document.querySelectorAll('[data-tab="looks"]').forEach((b) => b.addEventListener('click', () => setTimeout(load, 30)));
   load().catch(() => paint());
 })();

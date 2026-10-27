@@ -244,7 +244,7 @@ test('GET /api/deck/ptz and POST step: the plugin path, with the camera password
   assert.ok(layout.bannedOnKeys.includes('rGain') && layout.bannedOnKeys.includes('bPed'));
   const ver = await (await fetch(`${B}/api/version`)).json();
   for (const f of ['streamDeck', 'ptzDeck']) assert.ok(ver.features.includes(f), f);
-  assert.equal(ver.appVersion, '0.20.8');
+  assert.equal(ver.appVersion, '0.20.9');
 
   assert.equal((await post('/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'iris', value: 20 })).status, 200);
   const stepped = await post('/api/sys/ptz/cmd/step', { cam: 'cam1', op: 'iris', steps: 5 });

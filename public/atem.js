@@ -122,6 +122,14 @@
   // 0.11.0 SAVE (#atemSave, data-desksave): handled in public/sys.js with the other switcher pages
   $('#atemMacros').addEventListener('click', (ev) => { const b = ev.target.closest('[data-macro]'); if (b && live()) cmd('macroRun', { macro: Number(b.dataset.macro) }).then(() => toast('Macro started')); });
   $('#atemMacroStop').addEventListener('click', () => cmd('macroStop'));
+  $('#atemMacroRecord').addEventListener('click', () => {
+    const n = Number(prompt('Record into macro number (1–100)', '1'));
+    if (!(n >= 1 && n <= 100)) return;
+    cmd('macroRecord', { macro: n - 1 }).then(() => toast(`Recording macro ${n}`));
+  });
+  $('#atemMacroStopRecord').addEventListener('click', () => cmd('macroStopRecord').then(() => toast('Recording stopped')));
+  $('#atemMacroWait').addEventListener('click', () => cmd('macroUserWait').then(() => toast('User wait inserted')));
+  $('#atemMacroContinue').addEventListener('click', () => cmd('macroContinue').then(() => toast('Macro continued')));
   document.addEventListener('keydown', (e) => {
     if (window.CC.getTab() !== 'atem' || !live() || document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || e.repeat) return;
     if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); cmd('auto', meBody()); }

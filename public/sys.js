@@ -16,7 +16,7 @@
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS && SYS.systems[SYS.active] ? SYS.systems[SYS.active].kind : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
-  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams', 'pscopes'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], decks: ['decks'] };
+  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams', 'pscopes'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], decks: ['decks'] };
   const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes', decks: 'decks' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
@@ -58,6 +58,7 @@
     });
     $('#tabsHomeNote').hidden = g !== 'home';
     const scopesNote = $('#tabsScopesNote'); if (scopesNote) scopesNote.hidden = g !== 'scopes';
+    const looksNote = $('#tabsLooksNote'); if (looksNote) looksNote.hidden = g !== 'looks';
     const decksNote = $('#tabsDecksNote'); if (decksNote) decksNote.hidden = g !== 'decks';
     for (const b of document.querySelectorAll('.tgrp[data-tabgrp]')) {
       const k = b.dataset.tabgrp; const list = armedOf(k);

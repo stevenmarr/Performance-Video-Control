@@ -43,20 +43,19 @@
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
     <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
+    <button class="tab tab-looks" data-tab="looks" title="One preset page for every hi-res system. Tie it to RS6, E2, or Pixelhue. Recall loads that preset onto preview.">PRESETS</button>
     <button class="tab tab-decks" data-tab="decks" title="Stream Decks connected over USB. Home picks one system. This app draws the keys. The Elgato app is not used.">Control Devices</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
   <span class="tab-group rs6-only" data-grp="rs6">RS6</span>
   <button class="tab active rs6-only" data-tab="presets" data-sys="rs6">PRESETS</button>
-  <button class="tab rs6-only" data-tab="looks" data-sys="rs6" title="One memory list for every switcher. Recall loads the preset to preview, then sets each key on or off.">LOOKS</button>
   <button class="tab rs6-only" data-tab="inputs" data-sys="rs6">INPUTS</button>
   <button class="tab rs6-only" data-tab="backup" data-sys="rs6">BACKUP</button>
   <button class="tab rs6-only" data-tab="audio" data-sys="rs6">AUDIO</button>
   <button class="tab rs6-only" data-tab="webrcs" data-sys="rs6" title="The device's own Web RCS, inside this app">WEB RCS</button>
   <span class="tab-group x-only preset-grp" data-grp="preset"><button type="button" class="grp-btn" data-focus="e2">E2</button><button type="button" class="grp-btn" data-focus="pixelhue">PIXELHUE</button></span>
   <button class="tab x-only" data-tab="xpresets" data-cap="presets" data-sys="preset">PRESETS</button>
-  <button class="tab x-only" data-tab="looks" data-sys="preset" title="One memory list for every switcher. Recall loads the preset to preview, then sets each key on or off.">LOOKS</button>
   <button class="tab x-only" data-tab="xcues" data-cap="cues" data-sys="preset">CUES</button>
   <button class="tab x-only" data-tab="xsources" data-cap="sources" data-sys="preset">SOURCES</button>
   <button class="tab x-only" data-tab="xstills" data-cap="stills" data-sys="preset">STILLS</button>
@@ -78,6 +77,7 @@
   <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin">COLUMNS</button>
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
   <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. Live video is Desktop Video from a Mac sidecar.</span>
+  <span class="tabs-home-note" id="tabsLooksNote" hidden>One preset page. Tie it to RS6, E2, or Pixelhue. Recall puts that memory on preview. Keys are stored on or off, not toggled.</span>
   <span class="tabs-home-note" id="tabsDecksNote" hidden>Stream Decks on USB. Home picks one system. Every page has a Home key. Quit the Elgato Stream Deck app so this app can own the device.</span>
   </div>
 </nav>
@@ -300,7 +300,12 @@
     <div id="akSs"></div>
   </section>
   <section class="grid-wrap pane" id="pane-amacros" hidden>
-    <div class="board-head"><div class="section-title">ATEM MACROS <small id="atemMacroInfo">tap to run</small></div><span class="spacer"></span><button class="btn mini danger" id="atemMacroStop" type="button">■ STOP MACRO</button></div>
+    <div class="board-head"><div class="section-title">ATEM MACROS <small id="atemMacroInfo">tap to run</small></div><span class="spacer"></span>
+      <button class="btn mini" id="atemMacroRecord" type="button" title="Record the next actions into a macro slot">● RECORD</button>
+      <button class="btn mini" id="atemMacroStopRecord" type="button">STOP RECORD</button>
+      <button class="btn mini" id="atemMacroWait" type="button" title="Insert a user wait while recording">USER WAIT</button>
+      <button class="btn mini" id="atemMacroContinue" type="button" title="Continue a macro that is waiting">CONTINUE</button>
+      <button class="btn mini danger" id="atemMacroStop" type="button">■ STOP</button></div>
     <div id="atemMacros" class="grid"></div>
   </section>
   <aside class="transport atransport">
@@ -764,7 +769,12 @@ node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
 <div id="undoBar" class="undo-bar" role="status" hidden></div>
 <section id="pane-looks" hidden>
   <div class="looks-wrap">
-    <p class="note small">A look is a memory, not a macro. Recall puts that preset on preview, then sets each key to the stored on or off. It does not toggle. Take on the switcher page commits preview.</p>
+    <div class="board-head">
+      <div class="section-title">PRESETS <small>one page for RS6, E2, and Pixelhue</small></div>
+      <span class="spacer"></span>
+      <span id="looksSystems" class="seg-row"></span>
+    </div>
+    <p class="note small">This page stays up, like Scopes. Tie it to one hi-res system. Recall puts that preset on preview, then sets each key to the stored on or off. Take on that system's page commits preview.</p>
     <div id="looksGrid" class="looks-grid"></div>
   </div>
 </section>
