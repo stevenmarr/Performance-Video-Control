@@ -13,6 +13,7 @@ const { helloExtras, connectIngest } = require('../lib/ndi/ingest-client');
 const { helperPath, missingHelperMessage, assertHelperPresent } = require('../tools/decklink-sidecar');
 const { sourceMenu, sourceGroups, preferLiveSource } = require('../public/scopes-sources');
 const { attachScopes } = require('../lib/scopes/service');
+const { parseList } = require('../lib/scopes/decklink-devices');
 
 const BARS = path.join(__dirname, 'fixtures', 'scopes', 'bars.h264');
 const until = async (fn, ms = 4000) => {
@@ -61,7 +62,8 @@ test('source menu: Desktop Video first, no mock group, NDI only when a sidecar e
   const empty = sourceGroups([]);
   assert.equal(empty[0].label, 'Desktop Video');
   assert.match(sourceMenu([]), /Desktop Video/);
-  assert.match(sourceMenu([]), /does not create a device/);
+  assert.match(sourceMenu([]), /No Desktop Video input/);
+  assert.doesNotMatch(sourceMenu([]), /does not create a device/);
   assert.doesNotMatch(sourceMenu([]), /Mock/);
   assert.doesNotMatch(sourceMenu([]), /NDI \(advanced\)/);
   const html = sourceMenu([
@@ -98,9 +100,9 @@ test('a decklink hello is listed as Desktop Video; --mock on the server adds no 
   t.after(() => cli.close());
   const row = await until(async () => {
     const j = await (await fetch(`${B}/api/scopes/ndi`)).json();
-    return j.sources.find((s) => s.key === 'ndi:decklink-0' && s.via === 'decklink' && s.ok);
+    return j.sources.find((s) => s.key === 'decklink:0' && s.via === 'decklink' && s.ok);
   });
-  assert.match(row.label, /Desktop Video/);
+  assert.equal(row.label, 'DECKLINK 0');
   assert.equal(row.kind, 'ndi');
 
   const child = spawn(process.execPath, [
@@ -114,6 +116,27 @@ test('a decklink hello is listed as Desktop Video; --mock on the server adds no 
   }, 5000);
   assert.match(side.label, /NDI · SIDE BARS/);
   assert.notEqual(side.via, 'decklink');
+});
+
+test('a listed Desktop Video device is an input before capture starts', async (t) => {
+  const data = fs.mkdtempSync(path.join(os.tmpdir(), 'decklink-list-'));
+  t.after(() => fs.rmSync(data, { recursive: true, force: true }));
+  const srv = http.createServer((req, res) => { res.writeHead(200); res.end('app'); });
+  const sc = attachScopes(srv, {
+    systems: { drivers: { ptz: { cams: new Map() } } },
+    dataDir: data,
+    log: () => {},
+    decklinkList: async () => ({ devices: [{ index: 0, name: 'UltraStudio Replay', connections: 'SDI' }], error: null }),
+  });
+  t.after(() => sc.close());
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+  t.after(() => srv.close());
+  const j = await (await fetch(`http://127.0.0.1:${srv.address().port}/api/scopes/sources`)).json();
+  const row = j.sources.find((s) => s.key === 'decklink:0');
+  assert.equal(row.label, 'UltraStudio Replay');
+  assert.equal(row.via, 'decklink');
+  assert.equal(row.ok, true);
+  assert.deepEqual(parseList('index\tname\tconnections\tmodes\n0\tUltraStudio Replay\tSDI\t1080p59.94\n'), [{ index: 0, name: 'UltraStudio Replay', connections: 'SDI', modes: '1080p59.94' }]);
 });
 
 test('native helper sources are present and do not reference an NDI SDK', () => {

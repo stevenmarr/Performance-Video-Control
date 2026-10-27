@@ -52,7 +52,7 @@
 <body>
 <div class="bar" role="toolbar" aria-label="Scope controls">
   <a class="home" href="/" style="color:var(--dim);text-decoration:none;margin-right:4px">◀ APP</a>
-  <span class="lbl">SOURCE</span><select id="src" aria-label="Video source"></select>
+  <span class="lbl">INPUT</span><select id="src" aria-label="Video input"></select>
   <button id="btnPlay" aria-pressed="true" title="Start / stop the stream">LIVE</button>
   <span class="lbl">SCOPES</span>
   <span class="grp" id="showGrp">
@@ -70,13 +70,10 @@
   <span class="legend" id="legend" hidden></span>
   <button id="btnSettings" title="Camera streams, test video, custom input" style="margin-left:auto">⚙ INPUTS</button>
   <a class="pop" href="/scopes.html" target="_blank" rel="noopener" title="Open Scopes in their own window" style="color:var(--dim);text-decoration:none">⤢ WINDOW</a>
-  <button type="button" id="btnNdi" title="Desktop Video: the SOURCE list only shows a DeckLink feed that is already pushing">DESKTOP VIDEO</button>
+  <button type="button" id="btnNdi" title="The INPUT list is every Desktop Video device this Mac can see. Picking one starts capture.">DESKTOP VIDEO</button>
 </div>
 <aside id="ndiHelp" hidden style="padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line);font-size:12px;color:var(--dim)">
-  <b style="color:var(--txt)">Desktop Video.</b> Live scopes come from a Blackmagic DeckLink input. The SOURCE list does not invent a device. A Desktop Video row appears when <code>decklink-sidecar.js</code> is pushing H.264 from a Mac. This page does not open Desktop Video itself, and the Pi does not capture DeckLink.
-  <pre style="margin:6px 0;padding:8px 10px;background:#0a0a0a;border:1px solid var(--line);border-radius:6px;color:var(--txt);overflow:auto">node tools/decklink-sidecar.js --list
-node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
-  <span>Capture is macOS only. Build <code>tools/native/decklink-recv</code> against the DeckLink SDK (not in this repo), or set <code>RS6_DECKLINK_RECV</code>. See <code>docs/decklink-ingest.md</code>. Legacy NDI is optional and stays hidden until a sidecar is actually pushing.</span>
+  <b style="color:var(--txt)">Desktop Video.</b> The INPUT list is every DeckLink input this Mac can see, including a Replay that already has a signal. Pick it and capture starts. The helper is built once with <code>make</code> in <code>tools/native/decklink-recv</code>. A Raspberry Pi only relays the picture.
 </aside>
 <div class="stage" id="stage">
   <div class="panels" id="panels">

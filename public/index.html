@@ -49,12 +49,14 @@
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
   <span class="tab-group rs6-only" data-grp="rs6">RS6</span>
   <button class="tab active rs6-only" data-tab="presets" data-sys="rs6">PRESETS</button>
+  <button class="tab rs6-only" data-tab="looks" data-sys="rs6" title="One memory list for every switcher. Recall loads the preset to preview, then sets each key on or off.">LOOKS</button>
   <button class="tab rs6-only" data-tab="inputs" data-sys="rs6">INPUTS</button>
   <button class="tab rs6-only" data-tab="backup" data-sys="rs6">BACKUP</button>
   <button class="tab rs6-only" data-tab="audio" data-sys="rs6">AUDIO</button>
   <button class="tab rs6-only" data-tab="webrcs" data-sys="rs6" title="The device's own Web RCS, inside this app">WEB RCS</button>
   <span class="tab-group x-only preset-grp" data-grp="preset"><button type="button" class="grp-btn" data-focus="e2">E2</button><button type="button" class="grp-btn" data-focus="pixelhue">PIXELHUE</button></span>
   <button class="tab x-only" data-tab="xpresets" data-cap="presets" data-sys="preset">PRESETS</button>
+  <button class="tab x-only" data-tab="looks" data-sys="preset" title="One memory list for every switcher. Recall loads the preset to preview, then sets each key on or off.">LOOKS</button>
   <button class="tab x-only" data-tab="xcues" data-cap="cues" data-sys="preset">CUES</button>
   <button class="tab x-only" data-tab="xsources" data-cap="sources" data-sys="preset">SOURCES</button>
   <button class="tab x-only" data-tab="xstills" data-cap="stills" data-sys="preset">STILLS</button>
@@ -412,8 +414,8 @@
       <button type="button" class="btn mini" id="btnNdiRefresh" title="Re-read Desktop Video feeds">⟳ REFRESH</button>
     </div>
     <aside id="scopesNdi" class="scopes-ndi">
-      <div class="section-title">DESKTOP VIDEO <small>DeckLink into Scopes · the list only shows a feed that is already pushing</small></div>
-      <p class="note small">You cannot type a new name into this list. This menu does not invent a device. A row appears when a Mac is running <code>decklink-sidecar.js</code>. This page does not open Desktop Video, and the Pi does not capture DeckLink.</p>
+      <div class="section-title">DESKTOP VIDEO <small>every DeckLink input this Mac can see</small></div>
+      <p class="note small">Pick an input and capture starts. The list is the devices Desktop Video reports, including a Replay that already has a signal. A Raspberry Pi only relays the picture.</p>
       <div class="ndi-block"><h4>DESKTOP VIDEO</h4><div id="ndiDeck" class="ndi-sources" role="listbox" aria-label="Desktop Video feeds"></div></div>
       <div class="ndi-block" id="ndiSideBlock" hidden><h4>NDI (ADVANCED)</h4><div id="ndiSide" class="ndi-sources" role="listbox" aria-label="Legacy NDI sidecar feeds"></div></div>
       <p class="note small" id="ndiStatus"></p>
@@ -760,6 +762,13 @@ node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
 <datalist id="memList"></datalist>
 <div id="toast" class="toast" hidden></div>
 <div id="undoBar" class="undo-bar" role="status" hidden></div>
+<section id="pane-looks" hidden>
+  <div class="looks-wrap">
+    <p class="note small">A look is a memory, not a macro. Recall puts that preset on preview, then sets each key to the stored on or off. It does not toggle. Take on the switcher page commits preview.</p>
+    <div id="looksGrid" class="looks-grid"></div>
+  </div>
+</section>
+<script src="/looks.js"></script>
 <script src="/prefs.js"></script>
 <script src="/drag.js"></script>
 <script src="/dock.js"></script>

@@ -17,7 +17,7 @@
   function sourceGroups(sources) {
     const p = partitionSources(sources);
     return [
-      { label: 'Desktop Video', items: p.decklink, empty: 'No Desktop Video feed yet. On a Mac: decklink-sidecar.js --list, then --device N. This menu does not create a device.' },
+      { label: 'Desktop Video', items: p.decklink, empty: 'No Desktop Video input on this Mac.' },
       { label: 'Cameras', items: p.camera, empty: '' },
       { label: 'Test clips and custom', items: p.other, empty: '' },
       { label: 'NDI (advanced)', items: p.sidecar, empty: '' },

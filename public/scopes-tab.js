@@ -44,12 +44,12 @@ node tools/decklink-sidecar.js --device 0 --app ${location.origin}`;
     const sides = sources.filter((s) => s.via === 'sidecar');
     deckEl.innerHTML = decks.length
       ? buttons(decks)
-      : '<p class="ndi-empty">No Desktop Video feed yet. On a Mac: <code>node tools/decklink-sidecar.js --list</code>, then <code>--device N</code>. This menu does not create a device.</p>';
+      : '<p class="ndi-empty">No Desktop Video input on this Mac. Build the helper once, then this list fills itself.</p>';
     if (sideBlock) sideBlock.hidden = !sides.length;
     if (sideEl) sideEl.innerHTML = sides.length ? buttons(sides) : '';
     if (status) {
       const nOk = decks.filter((s) => s.ok).length;
-      const deckLine = nOk ? `${nOk} Desktop Video feed${nOk === 1 ? '' : 's'} connected.` : 'No Desktop Video sidecar is connected.';
+      const deckLine = nOk ? `${nOk} Desktop Video input${nOk === 1 ? '' : 's'}.` : (r.decklinkError || 'No Desktop Video input.');
       const sideOk = sides.filter((s) => s.ok).length;
       const sideLine = sides.length ? (sideOk ? ` ${sideOk} legacy NDI feed connected.` : ' A legacy NDI sidecar is listed but not sending.') : '';
       const host = r.pi
