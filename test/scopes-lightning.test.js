@@ -43,10 +43,12 @@ test('Lightning is an extra mode beside WFM, parade, vectorscope and false colou
   assert.match(page, /data-show="vec"/);
   assert.match(page, /data-view="1"/);
   assert.match(page, /data-show="ltng"/);
-  assert.match(page, /LIGHTNING/);
+  assert.match(page, /DIAMOND/);
+  assert.match(page, /id="fcMode"/);
+  assert.match(page, /ST 2084/);
   assert.match(page, /data-k="ltng"/);
   assert.match(gl, /u_mode == 3/);
-  assert.match(gl, /LIGHTNING  Y \/ B−Y/);
+  assert.match(gl, /DIAMOND/);
   assert.match(read('public/scopes.js'), /lightningPeaks/);
 });
 
@@ -70,4 +72,17 @@ test('Lightning plots positive B−Y left of the left axis and positive R−Y ri
   assert.equal(black.by.x, -0.5);
   assert.equal(black.ry.x, 0.5);
   assert.ok(Math.abs(black.by.y - (-0.5 * SM.LTNG_Y)) < 1e-9);
+});
+
+test('Diamond is the WFM display: G left of B on top, G left of R below', () => {
+  const green = SM.diamondOf(0, 1, 0);
+  const blue = SM.diamondOf(0, 0, 1);
+  const red = SM.diamondOf(1, 0, 0);
+  assert.ok(green.upper.x < 0 && blue.upper.x > 0, 'upper diamond: G left, B right');
+  assert.ok(green.lower.x < 0 && red.lower.x > 0, 'lower diamond: G left, R right');
+  assert.ok(green.upper.y > 0 && red.lower.y < 0);
+  const black = SM.diamondOf(0, 0, 0);
+  assert.ok(Math.abs(black.upper.x) < 1e-9);
+  assert.ok(Math.abs(black.upper.y) < 1e-9);
+  assert.ok(Math.abs(black.lower.y) < 1e-9);
 });

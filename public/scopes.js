@@ -21,6 +21,7 @@
     src: Q.get('src') || LS('src') || '', mode: Q.get('mode') || LS('mode') || 'auto', range: LS('range') || 'auto',
     show: new Set((Q.get('show') || LS('show') || 'pic,wfm,parade,vec').split(',').filter(Boolean)),
     view: Number(Q.get('view') || LS('view') || 0), gain: Number(LS('gain') || 1), vgain: Number(LS('vgain') || 1), zebra: Number(LS('zebra') || 95),
+    fc: LS('fc') || 'arri', gem: null,
     playing: true, solo: null, cfg: null, active: '', sources: [],
   };
   const stats = { drawn: 0, decoded: 0, skipped: 0, bytes: 0, resets: 0, decodeMs: [], drawMs: [], uploadMs: [], latMs: [], winStart: performance.now(), fps: 0, kbps: 0, offset: 0, rtt: Infinity, lastLat: null };
@@ -31,22 +32,26 @@
   const glCanvas = $('#gl'); const ov = $('#ov'); const octx = ov.getContext('2d');
   let G = null;
   try { G = new window.ScopesGL(glCanvas, { preserve: TEST, analysisWidth: Number(Q.get('aw')) || Number(LS('aw')) || 640 }); } catch (e) { showMsg('WebGL2 unavailable', `${e.message}. The scopes need WebGL 2 (Safari 15+, Chrome 56+, Firefox 51+).`); }
-  let rects = {}; let dirty = true; let overlayDirty = true;
+  let rects = {}; let dirty = true; let overlayDirty = true; let scopeDock = null;
   function layout() {
     const stage = $('#stage'); const dpr = window.devicePixelRatio || 1; const W = stage.clientWidth; const H = stage.clientHeight;
     for (const c of [glCanvas, ov]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
-    const vis = [...document.querySelectorAll('.pnl')].filter((p) => { const on = st.show.has(p.dataset.k); p.hidden = !on; return on; });
-    const n = vis.length; $('#panels').style.setProperty('--cols', String(n <= 1 ? 1 : n === 2 ? 2 : W > 1500 && n === 3 ? 3 : 2));
-    $('#panels').classList.toggle('solo', !!st.solo && st.show.has(st.solo));
+    if (!scopeDock) document.querySelectorAll('.pnl').forEach((p) => { p.hidden = !st.show.has(p.dataset.k); });
+    const vis = [...document.querySelectorAll('.pnl')].filter((p) => !p.hidden);
+    if (!scopeDock) {
+      const n = vis.length; $('#panels').style.setProperty('--cols', String(n <= 1 ? 1 : n === 2 ? 2 : W > 1500 && n === 3 ? 3 : 2));
+      $('#panels').classList.toggle('solo', !!st.solo && st.show.has(st.solo));
+    }
     document.querySelectorAll('.pnl').forEach((p) => p.classList.toggle('max', p.dataset.k === st.solo));
     const sb = stage.getBoundingClientRect(); rects = {};
     for (const p of vis) {
       if (p.offsetParent === null) continue;
-      const b = p.getBoundingClientRect(); let r = [(b.left - sb.left + 1) * dpr, (b.top - sb.top + 1) * dpr, (b.width - 2) * dpr, (b.height - 2) * dpr];
+      const box = p.querySelector('.dk-body') || p;
+      const b = box.getBoundingClientRect(); let r = [(b.left - sb.left) * dpr, (b.top - sb.top) * dpr, b.width * dpr, b.height * dpr];
       const k = p.dataset.k;
       if (k === 'pic') { const ar = st.cfg ? st.cfg.width / st.cfg.height : 16 / 9; r = fit(r, ar); }
       if (k === 'vec') r = fit(r, 1);
-      if (k === 'ltng') r = fit(r, 2);
+      if (k === 'ltng') r = fit(r, 1);
       rects[k] = r.map(Math.round);
     }
     dirty = true; overlayDirty = true;
@@ -55,7 +60,7 @@
   function drawOverlay() {
     overlayDirty = false; octx.clearRect(0, 0, ov.width, ov.height);
     const dpr = window.devicePixelRatio || 1; const full = G ? G.effFull : false;
-    for (const k of ['wfm', 'parade', 'vec', 'ltng']) if (rects[k]) M.drawGraticule(octx, k, rects[k], { full, dpr, vgain: st.vgain });
+    for (const k of ['wfm', 'parade', 'vec', 'ltng']) if (rects[k]) M.drawGraticule(octx, k, rects[k], { full, dpr, vgain: st.vgain, gem: st.gem });
     if (rects.pic) { octx.font = `${Math.round(10 * dpr)}px ui-monospace, Menlo, monospace`; octx.fillStyle = 'rgba(255,255,255,0.6)'; octx.fillText(['PICTURE', 'FALSE COLOUR', `ZEBRA ≥ ${st.zebra} %`][st.view] || '', rects.pic[0] + 6 * dpr, rects.pic[1] + 14 * dpr); }
   }
   new ResizeObserver(layout).observe($('#stage'));
@@ -66,7 +71,7 @@
     if (!G) return;
     const full = st.range === 'full' ? true : st.range === 'legal' ? false : !!(st.cfg && st.cfg.fullRange);
     const mx = st.cfg && st.cfg.colour && [5, 6].includes(st.cfg.colour.matrix) ? 1 : 0;
-    G.set({ full, gain: st.gain, vgain: st.vgain, view: st.view, zebra: st.zebra, matrix: mx });
+    G.set({ full, gain: st.gain, vgain: st.vgain, view: st.view, zebra: st.zebra, matrix: mx, fc: st.fc || 'arri' });
     dirty = true; overlayDirty = true;
   }
   function syncUi() {
@@ -75,10 +80,18 @@
     $('#range').value = st.range; $('#gain').value = st.gain; $('#vgain').value = String(st.vgain); $('#mode').value = st.mode; $('#zebra').value = st.zebra;
     $('#btnPlay').setAttribute('aria-pressed', String(st.playing)); $('#btnPlay').textContent = st.playing ? 'LIVE' : 'STOPPED';
     const lg = $('#legend'); lg.hidden = st.view !== 1;
-    if (!lg.dataset.done) { lg.dataset.done = '1'; lg.innerHTML = M.FALSE_COLOR.map((b) => `<span title="${b.label}"><i style="background:rgb(${b.rgb.map((v) => Math.round(v * 255)).join(',')})"></i>${b.label}</span>`).join(''); }
+    const bands = (M.falseBands ? M.falseBands(st.fc) : M.FALSE_COLOR).filter((b) => b.label);
+    lg.innerHTML = bands.map((b) => `<span title="${b.label}"><i style="background:rgb(${b.rgb.map((v) => Math.round(v * 255)).join(',')})"></i>${b.label}</span>`).join('');
+    const fc = $('#fcMode'); if (fc) fc.value = st.fc || 'arri';
   }
-  $('#showGrp').addEventListener('click', (e) => { const b = e.target.closest('[data-show]'); if (!b) return; const k = b.dataset.show; if (st.show.has(k)) { if (st.show.size > 1) st.show.delete(k); } else st.show.add(k); LS('show', [...st.show].join(',')); syncUi(); layout(); });
-  $('#viewGrp').addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (!b) return; st.view = Number(b.dataset.view); LS('view', st.view); if (st.view && !st.show.has('pic')) { st.show.add('pic'); layout(); } syncUi(); applyOpts(); });
+  $('#showGrp').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-show]'); if (!b) return; const k = b.dataset.show;
+    if (st.show.has(k)) { if (st.show.size <= 1) return; st.show.delete(k); if (scopeDock) scopeDock.close(k); }
+    else { st.show.add(k); if (scopeDock) scopeDock.reopen(k); }
+    LS('show', [...st.show].join(',')); syncUi(); layout();
+  });
+  $('#viewGrp').addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (!b) return; st.view = Number(b.dataset.view); LS('view', st.view); if (st.view && !st.show.has('pic')) { st.show.add('pic'); if (scopeDock) scopeDock.reopen('pic'); layout(); } syncUi(); applyOpts(); });
+  const fcSel = $('#fcMode'); if (fcSel) fcSel.addEventListener('change', (e) => { st.fc = e.target.value; LS('fc', st.fc); syncUi(); applyOpts(); });
   $('#range').addEventListener('change', (e) => { st.range = e.target.value; LS('range', st.range); applyOpts(); });
   $('#gain').addEventListener('input', (e) => { st.gain = Number(e.target.value); LS('gain', st.gain); applyOpts(); });
   $('#vgain').addEventListener('change', (e) => { st.vgain = Number(e.target.value); LS('vgain', st.vgain); applyOpts(); });
@@ -260,6 +273,7 @@
         const layout = await f.copyTo(planeBuf);
         G.uploadPlanes({ format: fmt === 'NV12' ? 'NV12' : 'I420', width: w, height: h, data: planeBuf, layout });
         p.s.exact = true;
+        st.gem = gemOf(fmt === 'NV12' ? 'NV12' : 'I420', w, h, planeBuf, layout, G.effFull);
       } else { G.uploadImage(f, w, h); p.s.exact = false; } // RGB / opaque GPU frames: the browser's conversion
       const t1 = performance.now(); push(stats.uploadMs, t1 - t0);
       G.render(rects, performance.now() / 1000); if (BENCH) G.sync();
@@ -402,6 +416,50 @@
     },
     start, stop, loadSources,
   };
+
+  function gemOf(fmt, w, h, data, lay, full) {
+    if (!data || !lay || !lay[0]) return null;
+    const yS = lay[0].stride; const yO = lay[0].offset;
+    let hi = -1e9; let lo = 1e9; let n = 0; let bad = 0;
+    const sx = Math.max(1, Math.floor(w / 64)); const sy = Math.max(1, Math.floor(h / 36));
+    for (let y = 0; y < h; y += sy) {
+      for (let x = 0; x < w; x += sx) {
+        const Yc = data[yO + y * yS + x];
+        const cx = x >> 1; const cy = y >> 1; let cb; let cr;
+        if (fmt === 'NV12') { const s = lay[1].stride; const o = lay[1].offset; cb = data[o + cy * s + cx * 2]; cr = data[o + cy * s + cx * 2 + 1]; }
+        else { cb = data[lay[1].offset + cy * lay[1].stride + cx]; cr = data[lay[2].offset + cy * lay[2].stride + cx]; }
+        const Y = full ? Yc / 255 : (Yc - 16) / 219;
+        const Pb = full ? (cb - 128) / 255 : (cb - 128) / 224;
+        const Pr = full ? (cr - 128) / 255 : (cr - 128) / 224;
+        const R = Y + 1.5748 * Pr; const G = Y - 0.1873 * Pb - 0.4681 * Pr; const B = Y + 1.8556 * Pb;
+        const hmv = Math.max(R, G, B) * 700; const lmv = Math.min(R, G, B) * 700;
+        if (hmv > hi) hi = hmv; if (lmv < lo) lo = lmv; if (hmv > 700.5 || lmv < -0.5) bad++; n++;
+      }
+    }
+    return n ? { high: Math.round(hi), low: Math.round(lo), area: Math.max(0, Math.round((bad / n) * 100)) } : null;
+  }
+  if (window.CCDOCK && $('#panels') && $('#scopeDock')) {
+    const P = (id, x, y, w, h) => ({ id, x, y, w, h });
+    scopeDock = window.CCDOCK.create($('#panels'), {
+      key: 'scopes',
+      panels: [
+        { id: 'pic', title: 'PICTURE', minW: 6, minH: 8, selector: '[data-k="pic"]' },
+        { id: 'wfm', title: 'WAVEFORM', minW: 6, minH: 8, selector: '[data-k="wfm"]' },
+        { id: 'parade', title: 'PARADE', minW: 6, minH: 8, selector: '[data-k="parade"]' },
+        { id: 'vec', title: 'VECTORSCOPE', minW: 5, minH: 8, selector: '[data-k="vec"]' },
+        { id: 'ltng', title: 'DIAMOND', minW: 5, minH: 8, selector: '[data-k="ltng"]' },
+      ],
+      defaults: {
+        xl: [P('pic', 0, 0, 12, 16), P('wfm', 12, 0, 12, 16), P('parade', 0, 16, 12, 16), P('vec', 12, 16, 6, 16), P('ltng', 18, 16, 6, 16)],
+        lg: [P('pic', 0, 0, 12, 16), P('wfm', 12, 0, 12, 16), P('parade', 0, 16, 12, 16), P('vec', 12, 16, 6, 16), P('ltng', 18, 16, 6, 16)],
+        md: [P('pic', 0, 0, 12, 14), P('wfm', 0, 14, 12, 14), P('parade', 0, 28, 12, 12), P('vec', 0, 40, 6, 12), P('ltng', 6, 40, 6, 12)],
+        sm: [P('pic', 0, 0, 2, 12), P('wfm', 0, 12, 2, 12), P('parade', 0, 24, 2, 12), P('vec', 0, 36, 2, 12), P('ltng', 0, 48, 2, 12)],
+      },
+      bar: $('#scopeDock'),
+      onLayout: () => layout(),
+    });
+    for (const id of ['pic', 'wfm', 'parade', 'vec', 'ltng']) if (!st.show.has(id)) scopeDock.close(id);
+  }
 
   syncUi(); layout();
   loadSources().then(() => { if (st.playing && !Q.get('idle')) start(); }).catch((e) => showMsg('Cannot list sources', esc(e.message)));

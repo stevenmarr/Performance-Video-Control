@@ -17,7 +17,7 @@
   const kind = () => (SYS && SYS.systems[SYS.active] ? SYS.systems[SYS.active].kind : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
   const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams', 'pscopes'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], decks: ['decks'] };
-  const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes', decks: 'decks' };
+  const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes', looks: 'looks', decks: 'decks' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
   const RS6TABS = KIND_TABS.rs6;
@@ -144,7 +144,7 @@
     }
     // a tab whose system left the desk goes home; a deep link to a system not yet armed brings it on
     const tab = CC.getTab(); const kn = TAB_KIND[tab];
-    if (tab !== 'system' && kn && kn !== 'scopes' && kn !== 'decks' && !armedOf(kn).length) {
+    if (tab !== 'system' && kn && kn !== 'scopes' && kn !== 'decks' && kn !== 'looks' && !armedOf(kn).length) {
       if (!landed) return armForTab(tab);
       const home = armedOf('rs6').length ? 'presets' : (armed()[0] ? HOME_TAB[SYS.systems[armed()[0]].kind] : 'system');
       CC.setTab(home);

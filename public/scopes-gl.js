@@ -19,6 +19,24 @@
     { lo: 97, hi: 99, rgb: [1.0, 0.92, 0.0], name: 'YELLOW', label: '97–99 % near clip' },
     { lo: 99, hi: 1000, rgb: [1.0, 0.0, 0.0], name: 'RED', label: '≥ 99 % clipped' },
   ];
+  const FALSE_IRE = [
+    { lo: -1000, hi: 0, rgb: [0.55, 0.0, 0.8], name: 'SUB', label: '< 0 % sub-black' },
+    { lo: 0, hi: 5, rgb: [0.05, 0.35, 1.0], name: 'BLACK', label: '0–5 % black' },
+    { lo: 45, hi: 55, rgb: [0.15, 0.8, 0.15], name: 'MID', label: '45–55 % mid grey' },
+    { lo: 90, hi: 100, rgb: [1.0, 0.92, 0.0], name: 'WHITE', label: '90–100 % white' },
+    { lo: 100, hi: 109, rgb: [1.0, 0.45, 0.0], name: 'SUPER', label: '100–109 % super-white' },
+    { lo: 109, hi: 1000, rgb: [1.0, 0.0, 0.0], name: 'CLIP', label: '≥ 109 % clipped' },
+  ];
+  const FALSE_PQ = [
+    { lo: 0, hi: 10, rgb: [0.05, 0.35, 1.0], name: 'SHADOW', label: '0–10 nt' },
+    { lo: 80, hi: 120, rgb: [0.15, 0.8, 0.15], name: 'SDR', label: '100 nt SDR white' },
+    { lo: 180, hi: 240, rgb: [1.0, 0.45, 0.75], name: 'REF', label: '203 nt HDR reference' },
+    { lo: 800, hi: 1200, rgb: [1.0, 0.92, 0.0], name: '1K', label: '1000 nt' },
+    { lo: 3000, hi: 5000, rgb: [1.0, 0.45, 0.0], name: '4K', label: '4000 nt' },
+    { lo: 8000, hi: 100000, rgb: [1.0, 0.0, 0.0], name: 'CLIP', label: '≥ 10000 nt' },
+  ];
+  const FALSE_MODES = { arri: FALSE_COLOR, ire: FALSE_IRE, st2084: FALSE_PQ };
+  function falseBands(mode) { return (FALSE_MODES[mode] || FALSE_COLOR).slice(0, 6); }
   const WFM_LO = -0.10; const WFM_HI = 1.10; // waveform display range (video level 0..1)
   const SKIN_ANGLE = 123; // degrees from +Pb (the "I" / flesh-tone line)
   const VEC_SCALE = 0.9 / 0.5; // Pb / Pr 0.5 -> 90 % of the vectorscope radius
@@ -45,7 +63,10 @@
     for (const amp of [0.75, 1]) for (const [name, r, g, b] of bars) { const y = 0.2126 * r * amp + 0.7152 * g * amp + 0.0722 * b * amp; out.push({ name, amp, y, pb: (b * amp - y) / 1.8556, pr: (r * amp - y) / 1.5748 }); }
     return out;
   }
-  const math = { FALSE_COLOR, falseColorOf, levelOf, chromaOf, ycbcrOf, targets, lightningOf, WFM_LO, WFM_HI, SKIN_ANGLE, VEC_SCALE, LTNG_X, LTNG_Y };
+  function diamondOf(r, g, b) {
+    return { upper: { x: (b - g) * 0.92, y: (b + g) * 0.46 }, lower: { x: (r - g) * 0.92, y: -(r + g) * 0.46 } };
+  }
+  const math = { FALSE_COLOR, FALSE_MODES, falseBands, falseColorOf, levelOf, chromaOf, ycbcrOf, targets, lightningOf, diamondOf, WFM_LO, WFM_HI, SKIN_ANGLE, VEC_SCALE, LTNG_X, LTNG_Y };
   if (typeof module !== 'undefined' && module.exports) { module.exports = math; return; }
 
   const VS_QUAD = `#version 300 es
@@ -67,7 +88,7 @@
   }`;
   const VS_POINTS = `#version 300 es
   precision highp float; precision highp int;
-  uniform sampler2D u_an; uniform ivec2 u_anSize; uniform int u_mode; uniform float u_full, u_vgain;
+  uniform sampler2D u_an; uniform ivec2 u_anSize; uniform int u_mode, u_matrix; uniform float u_full, u_vgain;
   void main(){
     int n = u_anSize.x * u_anSize.y; int id = gl_VertexID; int ch = 0; int side = 0;
     // Lightning draws each sample twice: side 0 is B-Y (left half), side 1 is R-Y (right half)
@@ -82,9 +103,12 @@
     float x; float v;
     if (u_mode == 2) { gl_Position = vec4(Pb * ${VEC_SCALE.toFixed(6)} * u_vgain, Pr * ${VEC_SCALE.toFixed(6)} * u_vgain, 0.0, 1.0); gl_PointSize = 1.0; return; }
     if (u_mode == 3) {
-      float cd = side == 0 ? -Pb : Pr;
-      float cx = side == 0 ? -0.5 : 0.5;
-      gl_Position = vec4(cx + cd * ${LTNG_X.toFixed(6)} * u_vgain, (Y - 0.5) * ${LTNG_Y.toFixed(6)}, 0.0, 1.0);
+      vec3 rgb = u_matrix == 1
+        ? vec3(Y + 1.402 * Pr, Y - 0.344136 * Pb - 0.714136 * Pr, Y + 1.772 * Pb)
+        : vec3(Y + 1.5748 * Pr, Y - 0.1873 * Pb - 0.4681 * Pr, Y + 1.8556 * Pb);
+      float x = side == 0 ? (rgb.b - rgb.g) : (rgb.r - rgb.g);
+      float y = side == 0 ? (rgb.b + rgb.g) * 0.5 : -(rgb.r + rgb.g) * 0.5;
+      gl_Position = vec4(x * 0.92, y * 0.92, 0.0, 1.0);
       gl_PointSize = 1.0; return;
     }
     if (u_mode == 1) { vec3 rgb = vec3(Y + 1.5748 * Pr, Y - 0.1873 * Pb - 0.4681 * Pr, Y + 1.8556 * Pb); v = ch == 0 ? rgb.r : ch == 1 ? rgb.g : rgb.b; x = (float(ch) + (float(p.x) + 0.5) / float(u_anSize.x)) / 3.0; }
@@ -108,7 +132,7 @@
   const FS_PICTURE = `#version 300 es
   precision highp float;
   in vec2 v_uv; uniform sampler2D u_y, u_u, u_v; uniform int u_src, u_view; uniform float u_full, u_zebra, u_time;
-  uniform vec2 u_px; uniform vec4 u_band[6]; uniform vec3 u_bandRgb[6]; uniform int u_matrix;
+  uniform vec2 u_px; uniform vec4 u_band[6]; uniform vec3 u_bandRgb[6]; uniform int u_matrix, u_fc;
   out vec4 o;
   void main(){
     vec2 uv = vec2(v_uv.x, 1.0 - v_uv.y);
@@ -121,9 +145,16 @@
       else rgb = vec3(ycc.x + 1.5748 * ycc.z, ycc.x - 0.1873 * ycc.y - 0.4681 * ycc.z, ycc.x + 1.8556 * ycc.y);
     }
     float pct = ycc.x * 100.0;
+    float level = pct;
+    if (u_fc == 1) {
+      float c = clamp(ycc.x, 0.0, 1.0);
+      float p = pow(c, 1.0 / 78.84375);
+      float v = max(p - 0.8359375, 0.0) / (18.8515625 - 0.1593017578125 * p);
+      level = 10000.0 * pow(max(v, 0.0), 1.0 / 0.1593017578125);
+    }
     if (u_view == 1) {
       vec3 g = vec3(clamp(ycc.x, 0.0, 1.0) * 0.85);
-      for (int i = 0; i < 6; i++) if (pct >= u_band[i].x && pct < u_band[i].y) g = u_bandRgb[i];
+      for (int i = 0; i < 6; i++) if (level >= u_band[i].x && level < u_band[i].y) g = u_bandRgb[i];
       o = vec4(g, 1.0); return;
     }
     if (u_view == 2 && pct >= u_zebra) { float s = mod((gl_FragCoord.x + gl_FragCoord.y) / 8.0 + u_time * 4.0, 2.0); if (s < 1.0) rgb = vec3(1.0, 1.0, 1.0) * 0.95; else rgb *= 0.35; }
@@ -150,7 +181,7 @@
       this.tex = { y: this._tex(), u: this._tex(), v: this._tex() };
       this.src = null; // {mode: 0 I420 | 1 NV12 | 2 RGB, w, h}
       this.targets = {};
-      this.opts = { full: false, gain: 1, vgain: 1, view: 0, zebra: 95, matrix: 0, show: { pic: true, wfm: true, parade: true, vec: true, ltng: false } };
+      this.opts = { full: false, gain: 1, vgain: 1, view: 0, zebra: 95, matrix: 0, fc: 'arri', show: { pic: true, wfm: true, parade: true, vec: true, ltng: false } };
       gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
     }
     _tex(filter) { const gl = this.gl; const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, t); for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, filter || gl.LINEAR], [gl.TEXTURE_MAG_FILTER, filter || gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v); return t; }
@@ -210,7 +241,7 @@
       // 2. accumulate
       const pp = this.prog.pts; gl.useProgram(pp.p);
       gl.activeTexture(gl.TEXTURE3); gl.bindTexture(gl.TEXTURE_2D, an.tex); gl.uniform1i(pp.u.u_an, 3);
-      gl.uniform2i(pp.u.u_anSize, aw, ah); gl.uniform1f(pp.u.u_full, full); gl.uniform1f(pp.u.u_vgain, o.vgain || 1);
+      gl.uniform2i(pp.u.u_anSize, aw, ah); gl.uniform1f(pp.u.u_full, full); gl.uniform1f(pp.u.u_vgain, o.vgain || 1); gl.uniform1i(pp.u.u_matrix, o.matrix | 0);
       gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.blendEquation(gl.FUNC_ADD); gl.clearColor(0, 0, 0, 0);
       const acc = (name, w, h, mode, count) => { const t = this._target(name, w, h, true); gl.bindFramebuffer(gl.FRAMEBUFFER, t.fb); gl.viewport(0, 0, w, h); gl.clear(gl.COLOR_BUFFER_BIT); gl.uniform1i(pp.u.u_mode, mode); gl.drawArrays(gl.POINTS, 0, count); };
       const scale8 = this.floatOk ? 1 : 255; // RGBA8 fallback saturates at 1 count: brightness is then on/off
@@ -232,7 +263,9 @@
       if (panels.pic) {
         vp(panels.pic); const pc = this.prog.pic; gl.useProgram(pc.p); this._bindSrc(pc);
         gl.uniform1i(pc.u.u_view, o.view | 0); gl.uniform1f(pc.u.u_full, full); gl.uniform1f(pc.u.u_zebra, o.zebra); gl.uniform1f(pc.u.u_time, time); gl.uniform1i(pc.u.u_matrix, o.matrix | 0);
-        gl.uniform4fv(pc.u.u_band, FALSE_COLOR.flatMap((b) => [b.lo, b.hi, 0, 0])); gl.uniform3fv(pc.u.u_bandRgb, FALSE_COLOR.flatMap((b) => b.rgb));
+        gl.uniform1i(pc.u.u_fc, o.fc === 'st2084' ? 1 : 0);
+        const bands = falseBands(o.fc);
+        gl.uniform4fv(pc.u.u_band, bands.flatMap((b) => [b.lo, b.hi, 0, 0])); gl.uniform3fv(pc.u.u_bandRgb, bands.flatMap((b) => b.rgb));
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       }
       gl.disable(gl.SCISSOR_TEST);
@@ -255,7 +288,7 @@
   }
 
   // 2D graticules for the overlay canvas (ctx in device pixels; r = [x, y, w, h])
-  function drawGraticule(ctx, kind, r, { full = false, dpr = 1, vgain = 1 } = {}) {
+  function drawGraticule(ctx, kind, r, { full = false, dpr = 1, vgain = 1, gem = null } = {}) {
     const [x, y, w, h] = r; const f = (px) => Math.round(px * dpr);
     ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
     ctx.font = `${f(10)}px ui-monospace, Menlo, monospace`; ctx.lineWidth = Math.max(1, dpr * 0.75);
@@ -289,48 +322,30 @@
       ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillText(`VECTORSCOPE${vgain !== 1 ? ` ×${vgain}` : ''}`, x + f(4), y + f(12));
       ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillText('□ 75 %  ○ 100 %', x + f(4), y + h - f(5));
     } else if (kind === 'ltng') {
-      const g = vgain || 1;
       const pix = (xClip, yClip) => [x + ((xClip + 1) / 2) * w, y + ((1 - yClip) / 2) * h];
-      const yClipOf = (lvl) => (lvl - 0.5) * LTNG_Y;
-      ctx.strokeStyle = 'rgba(255,200,80,0.4)';
-      ctx.fillStyle = 'rgba(255,210,120,0.75)';
-      for (const lvl of [0, 50, 100]) { const p = pix(-0.96, yClipOf(lvl / 100)); ctx.fillText(String(lvl), p[0], p[1] + f(3)); }
-      const bars = targets();
-      const order = ['YL', 'CY', 'G', 'MG', 'R', 'B'];
-      const bolt = (amp, side) => order.map((name) => {
-        const t = bars.find((b) => b.name === name && b.amp === amp);
-        const c = lightningOf(t.y, t.pb, t.pr, g)[side];
-        return pix(c.x, c.y);
-      });
-      for (const side of ['by', 'ry']) {
-        const cx = side === 'by' ? -0.5 : 0.5;
-        const top = pix(cx, yClipOf(1)); const bot = pix(cx, yClipOf(0));
-        ctx.beginPath(); ctx.moveTo(top[0], top[1]); ctx.lineTo(bot[0], bot[1]); ctx.stroke();
-        for (const [amp, alpha] of [[0.75, 0.85], [1, 0.35]]) {
-          const pts = bolt(amp, side);
-          ctx.strokeStyle = `rgba(255,200,80,${alpha})`;
-          ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
-          for (const p of pts.slice(1)) ctx.lineTo(p[0], p[1]);
-          ctx.stroke();
-        }
-      }
-      for (const t of bars) {
-        for (const side of ['by', 'ry']) {
-          const c = lightningOf(t.y, t.pb, t.pr, g)[side]; const [px, py] = pix(c.x, c.y); const s = f(t.amp === 1 ? 5 : 6);
-          ctx.strokeStyle = t.amp === 1 ? 'rgba(255,255,255,0.75)' : 'rgba(255,200,80,0.85)';
-          if (t.amp === 1) { ctx.beginPath(); ctx.arc(px, py, s * 0.65, 0, Math.PI * 2); ctx.stroke(); }
-          else ctx.strokeRect(px - s, py - s, 2 * s, 2 * s);
-          if (t.amp === 1) {
-            ctx.fillStyle = 'rgba(255,255,255,0.75)';
-            const outward = side === 'by' ? (t.pb >= 0 ? -f(20) : f(6)) : (t.pr >= 0 ? f(6) : -f(20));
-            ctx.fillText(t.name, px + outward, py + (t.y >= 0.5 ? -f(6) : f(12)));
-          }
-        }
-      }
-      const lAxis = pix(-0.5, yClipOf(0.5)); const rAxis = pix(0.5, yClipOf(0.5));
-      ctx.fillStyle = 'rgba(255,200,80,0.8)'; ctx.fillText('B−Y', lAxis[0] - f(28), y + f(24)); ctx.fillText('R−Y', rAxis[0] + f(8), y + f(24));
-      ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.fillText(`LIGHTNING  Y / B−Y · R−Y${vgain !== 1 ? ` ×${vgain}` : ''}`, x + f(4), y + f(12));
-      ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.fillText('□ 75 %  ○ 100 %', x + f(4), y + h - f(5));
+      const S = 0.92;
+      const diamond = (pts) => {
+        ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+        for (const p of pts.slice(1)) ctx.lineTo(p[0], p[1]);
+        ctx.closePath(); ctx.stroke();
+      };
+      ctx.setLineDash([f(5), f(4)]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      diamond([[0, S], [-S, S * 0.5], [0, 0], [S, S * 0.5]].map(([cx, cy]) => pix(cx, cy)));
+      diamond([[0, -S], [S, -S * 0.5], [0, 0], [-S, -S * 0.5]].map(([cx, cy]) => pix(cx, cy)));
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.fillText('G', pix(-S, S * 0.5)[0] - f(14), pix(-S, S * 0.5)[1] + f(4));
+      ctx.fillText('B', pix(S, S * 0.5)[0] + f(6), pix(S, S * 0.5)[1] + f(4));
+      ctx.fillText('G', pix(-S, -S * 0.5)[0] - f(14), pix(-S, -S * 0.5)[1] + f(4));
+      ctx.fillText('R', pix(S, -S * 0.5)[0] + f(6), pix(S, -S * 0.5)[1] + f(4));
+      const left = x + f(8);
+      ctx.fillStyle = 'rgba(120, 255, 160, 0.9)';
+      ctx.fillText(gem ? `High: ${gem.high} mV` : 'High: — mV', left, y + f(28));
+      ctx.fillText(gem ? `Low: ${gem.low} mV` : 'Low: — mV', left, y + f(42));
+      ctx.fillText(gem ? `Area: ${gem.area} %` : 'Area: — %', left, y + f(56));
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillText('DIAMOND', x + f(8), y + h - f(8));
     }
     ctx.restore();
   }
