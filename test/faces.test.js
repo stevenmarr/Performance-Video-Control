@@ -42,10 +42,16 @@ test('a smaller deck needs more PTZ pages than a + XL', () => {
   assert.equal(show(SURFACES.xl, desk, { system: 'ptz', page: 0 }).dials.length, 0);
   const labels = big.keys.map((k) => k.label);
   assert.ok(!labels.includes('PREV') && !labels.includes('NEXT'));
-  assert.equal(big.keys.find((k) => k.col === big.keys.reduce((m, k) => Math.max(m, k.col), 0) && k.row === 3).label, 'FUNC');
+  assert.equal(big.keys.find((k) => k.col === big.keys.reduce((m, k) => Math.max(m, k.col), 0) && k.row === 0).label, 'FUNC');
+  assert.equal(big.keys.find((k) => k.col === 1 && k.row === 1).label, 'UP');
+  assert.equal(big.keys.find((k) => k.col === 1 && k.row === 2).label, 'STOP');
+  assert.equal(big.keys.find((k) => k.col === 0 && k.row === 2).label, 'LEFT');
+  assert.equal(big.keys.find((k) => k.col === 5 && k.row === 1).label, '1');
+  assert.equal(big.keys.find((k) => k.col === 3 && k.row === 1).label, 'TELE');
   const rs6 = show(SURFACES.xl, desk, { system: 'rs6', page: 0 });
   assert.equal(rs6.keys.find((k) => k.col === 1 && k.row === 0).label, 'TAKE');
   assert.equal(rs6.keys.find((k) => k.col === 2 && k.row === 0).label, 'CUT');
+  assert.equal(rs6.keys.find((k) => k.absolute && k.label === '1').col, 3, 'memory 1 sits in the pad, not under Home');
 });
 
 test('one system at a time, and switcher memories are absolute recalls', () => {

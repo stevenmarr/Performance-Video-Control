@@ -1,6 +1,6 @@
 {
   "name": "rs6-presets",
-  "version": "0.20.6",
+  "version": "0.20.7",
   "description": "Performance Video Control Center: one desk for RS6, E2, PixelHue, ATEM, Panasonic PTZ, Pixera and Millumin, with SCOPES (Desktop Video ingest), Path C Stream Deck pages, and TSL tally on the ATEM page.",
   "main": "server.js",
   "license": "MIT",
