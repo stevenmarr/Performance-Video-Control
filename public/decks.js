@@ -12,15 +12,16 @@
   const device = () => devices().find((d) => d.id === selected) || devices()[0] || null;
 
   function grid(face, columns, rows) {
+    const knobs = (face.dials || []).filter((d) => d.svg).map((d) => `<div class="deck-knob-art">${d.svg}</div>`).join('');
     const cells = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < columns; c++) {
         const k = (face.keys || []).find((key) => key.row === r && key.col === c);
-        const tone = (k && k.tone) || 'blank';
-        cells.push(`<button type="button" class="deck-key big tone-${esc(tone)}" data-col="${c}" data-row="${r}" style="grid-column:${c + 1};grid-row:${r + 1}"><small>${esc((k && k.caption) || '')}</small>${esc((k && k.label) || '')}</button>`);
+        cells.push(`<button type="button" class="deck-key art" data-col="${c}" data-row="${r}" style="grid-column:${c + 1};grid-row:${r + 1}">${(k && k.svg) || ''}</button>`);
       }
     }
-    return `<div class="deck-mini deck-face" style="grid-template-columns:repeat(${columns},minmax(0,1fr));grid-template-rows:repeat(${rows},54px)">${cells.join('')}</div>`;
+    const strip = knobs ? `<div class="deck-strip">${knobs}</div>` : '';
+    return `${strip}<div class="deck-mini deck-face" style="grid-template-columns:repeat(${columns},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(72px,1fr))">${cells.join('')}</div>`;
   }
 
   function render() {
@@ -31,13 +32,14 @@
       note.textContent = !driver.installed
         ? (driver.error || 'USB driver is not installed.')
         : (live.length
-          ? `${live.length} Stream Deck${live.length === 1 ? '' : 's'} on USB. Home picks the system. The top left key comes back.`
-          : 'No Stream Deck on USB yet. The grid is the + XL layout. Quit the Elgato Stream Deck app, then scan.');
+          ? `${live.length} Stream Deck${live.length === 1 ? '' : 's'} on USB. Keys use the same art as the app.`
+          : 'No Stream Deck on USB yet. This is the + XL layout, drawn with the same key art.');
     }
     const list = devices();
     if (selected && !list.some((d) => d.id === selected)) selected = '';
     const cur = device();
     if (cur) selected = cur.id;
+    if (note && cur && cur.paintError) note.textContent += ` Paint failed: ${cur.paintError}`;
     const cards = list.map((d) => `<button type="button" class="deck-dev${d.id === selected ? ' on' : ''}" data-select="${esc(d.id)}">
       <b>${esc(d.name || d.model || 'Stream Deck')}</b>
       <small>${esc(d.model || '')} · ${d.online === false ? 'OFFLINE' : 'USB'}</small>
