@@ -27,11 +27,11 @@ relay. The row is labeled **Desktop Video · name** and `via` is `decklink`.
 
 ## On a Mac
 
-Install Blackmagic Desktop Video. Build the helper once (the SDK is not in this repo):
+Install Blackmagic Desktop Video. The SDK stays at `~/deck-link-sdk/Blackmagic DeckLink SDK 16.0` and is not in this repo. Build the helper once:
 
 ```
 cd tools/native/decklink-recv
-make DECKLINK_SDK="$HOME/Blackmagic DeckLink SDK 16.0"
+make
 ```
 
 Then, with Control Center already running:

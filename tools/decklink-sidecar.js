@@ -56,7 +56,9 @@ function helperPath() {
 function missingHelperMessage(bin) {
   return [
     `Desktop Video helper is not built (${bin}).`,
-    'Build it on a Mac with the Blackmagic DeckLink SDK. See tools/native/decklink-recv/README.md.',
+    'Build it once on this Mac:',
+    '  cd tools/native/decklink-recv && make',
+    'The SDK stays at ~/deck-link-sdk/Blackmagic DeckLink SDK 16.0.',
     'This process does not link Desktop Video. Control Center only relays H.264.',
   ].join('\n');
 }

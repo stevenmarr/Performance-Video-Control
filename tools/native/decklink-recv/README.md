@@ -4,20 +4,19 @@ Small macOS command-line capture helper for Control Center Scopes. It talks to *
 
 Control Center itself never links the DeckLink SDK. A Raspberry Pi only relays the H.264. This directory is source plus build notes. Linux CI does not compile it. If the binary is missing, the sidecar prints a message and exits. It does not invent a source.
 
-The DeckLink SDK is **not** in git. Point the build at a local SDK 16.0 tree, the same way Playout does.
+The DeckLink SDK is **not** in git. On this Mac it stays at:
+
+`~/deck-link-sdk/Blackmagic DeckLink SDK 16.0`
+
+`make` uses that path. Pass `DECKLINK_SDK` only if the tree moves.
 
 ## Build (Mac)
 
 Install [Blackmagic Desktop Video](https://www.blackmagicdesign.com/support) and allow the driver in **System Settings → Privacy & Security**.
 
-SDK locations Steven already has:
-
-- `~/playout/Playout/Blackmagic DeckLink SDK 16.0`
-- `~/Blackmagic DeckLink SDK 16.0`
-
 ```bash
 cd tools/native/decklink-recv
-make DECKLINK_SDK="$HOME/Blackmagic DeckLink SDK 16.0"
+make
 # binary: tools/native/decklink-recv/build/decklink-recv
 ```
 

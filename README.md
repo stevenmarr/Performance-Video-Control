@@ -103,7 +103,7 @@ in WebGL2.
 ```bash
 # Mac, once: build the helper. The DeckLink SDK is not in this repo.
 cd tools/native/decklink-recv
-make DECKLINK_SDK="$HOME/Blackmagic DeckLink SDK 16.0"
+make
 
 # Control Center already running:
 node tools/decklink-sidecar.js --list
