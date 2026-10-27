@@ -988,6 +988,10 @@ nav.tabs{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:4p
 .deck-layout{display:grid;grid-template-columns:220px minmax(320px,1fr) 240px;gap:16px;align-items:start}
 @media (max-width:1100px){.deck-layout{grid-template-columns:1fr}}
 .deck-list,.deck-stack,.deck-lib,.deck-stage{display:flex;flex-direction:column;gap:8px;min-width:0}
+#deckRoot{display:flex;flex-direction:column;gap:18px}
+.deck-one{display:flex;flex-direction:column;gap:8px;min-width:0}
+.deck-pick{display:flex;flex-wrap:wrap;gap:6px}
+.deck-pick .btn.on{background:#16345c;color:#fff;border-color:#3B8CFF}
 .deck-pages{display:flex;flex-direction:column;gap:6px}
 .deck-page{display:flex;align-items:center;gap:8px;text-align:left;background:#171c23;border:1px solid var(--line);border-radius:10px;padding:8px 10px;color:inherit;cursor:pointer}
 .deck-page.on{border-color:var(--pgm);box-shadow:inset 3px 0 0 var(--pgm)}

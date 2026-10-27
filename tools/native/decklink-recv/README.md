@@ -8,7 +8,7 @@ The DeckLink SDK is **not** in git. On this Mac it stays at:
 
 `~/deck-link-sdk/Blackmagic DeckLink SDK 16.0`
 
-`make` uses that path. Pass `DECKLINK_SDK` only if the tree moves.
+`make` uses that path and the macOS SDK from `xcrun`. Pass `DECKLINK_SDK` only if the tree moves. If the build says `string file not found`, the C++ headers are missing: run `xcode-select --install`, then `make` again.
 
 ## Build (Mac)
 
