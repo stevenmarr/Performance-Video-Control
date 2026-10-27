@@ -112,17 +112,16 @@ bool AnnexBEncoder::start(int width, int height, double fps, std::string& err) {
     VTSessionSetProperty(impl_->session, kVTCompressionPropertyKey_RealTime, kCFBooleanTrue);
     VTSessionSetProperty(impl_->session, kVTCompressionPropertyKey_AllowFrameReordering, kCFBooleanFalse);
     VTSessionSetProperty(impl_->session, kVTCompressionPropertyKey_ProfileLevel, kVTProfileLevel_H264_High_AutoLevel);
-    int gop = static_cast<int>(impl_->fps * 0.5 + 0.5);
-    if (gop < 1) gop = 1;
+    int gop = 1; // every frame is a key, so a dropped frame does not freeze the picture
     CFNumberRef gopN = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &gop);
     VTSessionSetProperty(impl_->session, kVTCompressionPropertyKey_MaxKeyFrameInterval, gopN);
     CFRelease(gopN);
-    double half = 0.5;
-    CFNumberRef halfN = CFNumberCreate(kCFAllocatorDefault, kCFNumberDoubleType, &half);
+    double gap = impl_->fps > 1 ? 1.0 / impl_->fps : 0.016;
+    CFNumberRef halfN = CFNumberCreate(kCFAllocatorDefault, kCFNumberDoubleType, &gap);
     VTSessionSetProperty(impl_->session, kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration, halfN);
     CFRelease(halfN);
-    int br = width * height * 4;
-    if (br < 2000000) br = 2000000;
+    int br = width * height * 20;
+    if (br < 12000000) br = 12000000;
     CFNumberRef brN = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &br);
     VTSessionSetProperty(impl_->session, kVTCompressionPropertyKey_AverageBitRate, brN);
     CFRelease(brN);
@@ -144,7 +143,7 @@ void AnnexBEncoder::stop() {
 bool AnnexBEncoder::encode(const uint8_t* src, int srcStride, int width, int height, bool bgra, int64_t frameIndex) {
     if (!impl_->session || !src) return false;
     if (width != impl_->width || height != impl_->height) return false;
-    if (impl_->inflight.load() >= 3) { drops_.fetch_add(1); return false; }
+    if (impl_->inflight.load() >= 2) { drops_.fetch_add(1); return false; }
     CVPixelBufferRef pb = nullptr;
     CVPixelBufferPoolRef pool = VTCompressionSessionGetPixelBufferPool(impl_->session);
     if (!pool || CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &pb) != kCVReturnSuccess || !pb) {

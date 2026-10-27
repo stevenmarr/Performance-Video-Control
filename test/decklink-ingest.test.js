@@ -13,7 +13,7 @@ const { helloExtras, connectIngest } = require('../lib/ndi/ingest-client');
 const { helperPath, missingHelperMessage, assertHelperPresent } = require('../tools/decklink-sidecar');
 const { sourceMenu, sourceGroups, preferLiveSource } = require('../public/scopes-sources');
 const { attachScopes } = require('../lib/scopes/service');
-const { parseList } = require('../lib/scopes/decklink-devices');
+const { parseList, parseSignal } = require('../lib/scopes/decklink-devices');
 
 const BARS = path.join(__dirname, 'fixtures', 'scopes', 'bars.h264');
 const until = async (fn, ms = 4000) => {
@@ -137,6 +137,7 @@ test('a listed Desktop Video device is an input before capture starts', async (t
   assert.equal(row.via, 'decklink');
   assert.equal(row.ok, true);
   assert.deepEqual(parseList('index\tname\tconnections\tmodes\n0\tUltraStudio Replay\tSDI\t1080p59.94\n'), [{ index: 0, name: 'UltraStudio Replay', connections: 'SDI', modes: '1080p59.94' }]);
+  assert.deepEqual(parseSignal('decklink-recv: SIGNAL 1920 1080 59.940 i 1080i59.94'), { width: 1920, height: 1080, fps: 59.94, scan: 'i', mode: '1080i59.94' });
 });
 
 test('native helper sources are present and do not reference an NDI SDK', () => {

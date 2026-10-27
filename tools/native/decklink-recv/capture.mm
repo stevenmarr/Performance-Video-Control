@@ -121,6 +121,7 @@ public:
     int width = 0;
     int height = 0;
     double fps = 30;
+    bool interlaced = false;
     int64_t frames = 0;
     bool loggedNoSignal = false;
     bool encoderReady = false;
@@ -132,8 +133,11 @@ public:
         BMDTimeValue dur = 0; BMDTimeScale scale = 0;
         if (mode->GetFrameRate(&dur, &scale) == S_OK && dur > 0) fps = static_cast<double>(scale) / static_cast<double>(dur);
         else fps = 30;
-        char buf[160];
-        std::snprintf(buf, sizeof(buf), "signal %s %dx%d %.3f fps", modeLabel(mode).c_str(), width, height, fps);
+        const BMDFieldDominance dom = mode->GetFieldDominance();
+        interlaced = dom == bmdLowerFieldFirst || dom == bmdUpperFieldFirst;
+        const char* scan = interlaced ? "i" : "p";
+        char buf[192];
+        std::snprintf(buf, sizeof(buf), "SIGNAL %d %d %.3f %s %s", width, height, fps, scan, modeLabel(mode).c_str());
         logLine(buf);
         if (!raw) {
             encoder.stop();
@@ -182,12 +186,29 @@ public:
         if (!got) return finish();
         const int w = static_cast<int>(frame->GetWidth());
         const int h = static_cast<int>(frame->GetHeight());
-        const int row = static_cast<int>(frame->GetRowBytes());
+        int row = static_cast<int>(frame->GetRowBytes());
+        const uint8_t* src = static_cast<const uint8_t*>(bytes);
+        // 1080i from a Replay bobs if both fields are shown as one picture. Average
+        // each line with the next so the frame holds still instead of jumping.
+        std::vector<uint8_t> blended;
+        if (interlaced && h > 2) {
+            const int tight = bgra ? w * 4 : w * 2;
+            blended.resize(static_cast<size_t>(tight) * h);
+            for (int y = 0; y < h; y++) {
+                const uint8_t* a = src + static_cast<size_t>(y) * row;
+                const uint8_t* b = src + static_cast<size_t>(y + 1 < h ? y + 1 : y) * row;
+                uint8_t* o = blended.data() + static_cast<size_t>(y) * tight;
+                for (int i = 0; i < tight; i++) o[i] = static_cast<uint8_t>((static_cast<int>(a[i]) + b[i]) >> 1);
+            }
+            src = blended.data();
+            row = tight;
+            bytes = blended.data();
+        }
         const BMDPixelFormat pf = frame->GetPixelFormat();
         if (raw) {
             if (pf != bmdFormat8BitYUV) { logLine("raw mode wants 8-bit UYVY"); return finish(); }
             for (int y = 0; y < h; y++) {
-                const auto* rowp = static_cast<const uint8_t*>(bytes) + static_cast<size_t>(y) * row;
+                const auto* rowp = src + static_cast<size_t>(y) * row;
                 fwrite(rowp, 1, static_cast<size_t>(w) * 2, stdout);
             }
             fflush(stdout);
@@ -203,7 +224,7 @@ public:
             encoderReady = encoder.start(w, h, fps, err);
             if (!encoderReady) return finish();
         }
-        encoder.encode(static_cast<const uint8_t*>(bytes), row, w, h, useBgra, frames++);
+        encoder.encode(src, row, w, h, useBgra, frames++);
         return finish();
     }
 

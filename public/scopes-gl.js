@@ -292,33 +292,27 @@
       const g = vgain || 1;
       const pix = (xClip, yClip) => [x + ((xClip + 1) / 2) * w, y + ((1 - yClip) / 2) * h];
       const yClipOf = (lvl) => (lvl - 0.5) * LTNG_Y;
-      const hull = (points) => {
-        const pts = points.map((p) => [p[0], p[1]]).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-        if (pts.length < 3) return pts;
-        const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-        const lower = []; const upper = [];
-        for (const p of pts) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
-        for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
-        lower.pop(); upper.pop(); return lower.concat(upper);
-      };
       ctx.strokeStyle = 'rgba(255,200,80,0.4)';
+      ctx.fillStyle = 'rgba(255,210,120,0.75)';
+      for (const lvl of [0, 50, 100]) { const p = pix(-0.96, yClipOf(lvl / 100)); ctx.fillText(String(lvl), p[0], p[1] + f(3)); }
+      const bars = targets();
+      const order = ['YL', 'CY', 'G', 'MG', 'R', 'B'];
+      const bolt = (amp, side) => order.map((name) => {
+        const t = bars.find((b) => b.name === name && b.amp === amp);
+        const c = lightningOf(t.y, t.pb, t.pr, g)[side];
+        return pix(c.x, c.y);
+      });
       for (const side of ['by', 'ry']) {
         const cx = side === 'by' ? -0.5 : 0.5;
         const top = pix(cx, yClipOf(1)); const bot = pix(cx, yClipOf(0));
         ctx.beginPath(); ctx.moveTo(top[0], top[1]); ctx.lineTo(bot[0], bot[1]); ctx.stroke();
-      }
-      ctx.fillStyle = 'rgba(255,210,120,0.75)';
-      for (const lvl of [0, 50, 100]) { const p = pix(-0.96, yClipOf(lvl / 100)); ctx.fillText(String(lvl), p[0], p[1] + f(3)); }
-      const bars = targets();
-      ctx.strokeStyle = 'rgba(255,200,80,0.28)';
-      for (const side of ['by', 'ry']) {
-        const cx = side === 'by' ? -0.5 : 0.5;
-        const pts = bars.filter((t) => t.amp === 1).map((t) => { const c = lightningOf(t.y, t.pb, t.pr, g); const clip = c[side]; return pix(clip.x, clip.y); });
-        pts.push(pix(cx, yClipOf(0)), pix(cx, yClipOf(1)));
-        const edge = hull(pts); if (edge.length < 3) continue;
-        ctx.beginPath(); ctx.moveTo(edge[0][0], edge[0][1]);
-        for (const p of edge.slice(1)) ctx.lineTo(p[0], p[1]);
-        ctx.closePath(); ctx.stroke();
+        for (const [amp, alpha] of [[0.75, 0.85], [1, 0.35]]) {
+          const pts = bolt(amp, side);
+          ctx.strokeStyle = `rgba(255,200,80,${alpha})`;
+          ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+          for (const p of pts.slice(1)) ctx.lineTo(p[0], p[1]);
+          ctx.stroke();
+        }
       }
       for (const t of bars) {
         for (const side of ['by', 'ry']) {

@@ -173,7 +173,14 @@
     ws.onopen = () => { const ping = () => ws.readyState === 1 && ws.send(JSON.stringify({ type: 'ping', t: Date.now() })); ping(); s.pingT = setInterval(ping, 2000); };
     ws.onmessage = (ev) => {
       if (s.closed) return;
-      if (typeof ev.data === 'string') { const m = JSON.parse(ev.data); if (m.type === 'config') onConfig(s, m); else if (m.type === 'status') onStatus(s, m); else if (m.type === 'pong') onPong(m); return; }
+      if (typeof ev.data === 'string') {
+        const m = JSON.parse(ev.data);
+        if (m.type === 'config') onConfig(s, m);
+        else if (m.type === 'format') onFormat(m);
+        else if (m.type === 'status') onStatus(s, m);
+        else if (m.type === 'pong') onPong(m);
+        return;
+      }
       onAu(s, ev.data);
     };
     ws.onclose = () => { clearInterval(s.pingT); if (!s.closed && session === s) { note('Stream connection lost — reconnecting…'); s.retryT = setTimeout(() => { if (session === s) start(); }, 1500); } };
@@ -185,6 +192,10 @@
     else if (m.state === 'playing') { showMsg(null); note(s.path === 'mse' && !canWebCodecs() ? $('#note').textContent : ''); }
   }
   const b64 = (t) => Uint8Array.from(atob(t), (c) => c.charCodeAt(0));
+  function onFormat(m) {
+    st.cfg = { ...(st.cfg || {}), width: m.width || (st.cfg && st.cfg.width), height: m.height || (st.cfg && st.cfg.height), fps: m.fps || (st.cfg && st.cfg.fps), scan: m.scan || (st.cfg && st.cfg.scan) || '', modeName: m.mode || (st.cfg && st.cfg.modeName) || '' };
+    if (m.width && m.height) layout();
+  }
   async function onConfig(s, cfg) {
     st.cfg = cfg; applyOpts(); layout();
     const desc = b64(cfg.description);
@@ -222,9 +233,7 @@
     if (s.path === 'webcodecs') {
       const d = s.dec; if (!d || d.state !== 'configured') return;
       if (s.waitKey && !key) return; s.waitKey = false;
-      if (d.decodeQueueSize > 20 && !key) { stats.skipped++; s.waitKey = true; return; } // decoder behind: skip to the next IDR
-      // latency guard: frames come out late (slow GPU / main thread) -> drop the backlog at the next IDR
-      if (key && s.behind && !catchup) { s.behind = false; stats.catchups = (stats.catchups || 0) + 1; try { d.reset(); d.configure(s.conf); } catch { /* */ } s.meta.clear(); if (pending) { pending.frame.close(); pending = null; } }
+      if (d.decodeQueueSize > 2) { stats.skipped++; if (!key) s.waitKey = true; return; }
       s.meta.set(pts, { serverMs, catchup, replay, t: performance.now() }); if (s.meta.size > 120) s.meta.delete(s.meta.keys().next().value);
       try { d.decode(new EncodedVideoChunk({ type: key ? 'key' : 'delta', timestamp: pts, data })); } catch (e) { s.waitKey = true; }
     } else if (s.path === 'mse' && s.mse) {
@@ -307,9 +316,21 @@
     const f1 = (v) => (Number.isFinite(v) ? v.toFixed(1) : '—'); const f0 = (v) => (Number.isFinite(v) ? Math.round(v) : '—');
     const path = s ? ({ webcodecs: `WEBCODECS${s.exact === false ? ' (RGB)' : ' · exact Y′'}`, mse: 'MSE · RGB', jpeg: 'JPEG' }[s.path] || '—') : 'STOPPED';
     const range = G ? (G.effFull ? 'FULL' : 'LEGAL') + (st.range === 'auto' ? ` (auto${c.fullRange === true ? ', VUI full' : c.fullRange === false ? ', VUI legal' : ''})` : '') : '';
+    const rate = (() => {
+      const fps = Number(c.fps);
+      if (!(fps > 0)) return '';
+      const named = [[23.976, '23.98'], [24, '24'], [25, '25'], [29.97, '29.97'], [30, '30'], [50, '50'], [59.94, '59.94'], [60, '60']];
+      const hit = named.find(([n]) => Math.abs(fps - n) < 0.05);
+      return `${hit ? hit[1] : fps.toFixed(2)}${c.scan === 'i' ? 'i' : 'p'}`;
+    })();
+    const size = c.width && c.height ? `${c.width}×${c.height}` : '';
+    const fmt = document.getElementById('fmt');
+    if (fmt) fmt.textContent = size || rate ? [size, rate, c.modeName || ''].filter(Boolean).join('  ') : '—';
     $('#ro').innerHTML = [
       `<span class="mode">${path}</span>`,
-      c.codec ? `<span>${esc(c.codec)} <b>${c.width}×${c.height}</b>${c.fps ? ` @ ${c.fps}` : ''}</span>` : '',
+      size ? `<span>SIZE <b>${size}</b></span>` : '',
+      rate ? `<span>RATE <b>${rate}</b></span>` : '',
+      c.codec ? `<span>${esc(c.codec)}</span>` : '',
       `<span>FPS <b data-ro="fps">${f1(stats.fps)}</b></span>`,
       `<span>LATENCY <b data-ro="lat">${f0(avg(stats.latMs))}</b> ms</span>`,
       `<span>DECODE <b data-ro="dec">${f1(avg(stats.decodeMs))}</b> ms</span>`,
