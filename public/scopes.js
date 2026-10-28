@@ -12,7 +12,6 @@
   const preferLive = Q.get('prefer') === 'live' || Q.get('prefer') === 'ndi' || /\/lightning(?:\.html)?$/.test(location.pathname);
   const LS = (k, v) => { const key = `cc.scopes.${k}`; if (v === undefined) return localStorage.getItem(key); if (v === null) localStorage.removeItem(key); else localStorage.setItem(key, String(v)); return v; };
   if (Q.get('embed')) document.body.classList.add('embed');
-  const TEST = Q.get('test') === '1';
   const BENCH = Q.get('bench') === '1'; // draw cost includes the GPU (1-pixel readback per frame)
   const M = window.ScopesMath;
 
@@ -31,11 +30,12 @@
   // ---------- GL ----------
   const glCanvas = $('#gl'); const ov = $('#ov'); const octx = ov.getContext('2d');
   let G = null;
-  try { G = new window.ScopesGL(glCanvas, { preserve: TEST, analysisWidth: Number(Q.get('aw')) || Number(LS('aw')) || 640 }); } catch (e) { showMsg('WebGL2 unavailable', `${e.message}. The scopes need WebGL 2 (Safari 15+, Chrome 56+, Firefox 51+).`); }
+  try { G = new window.ScopesGL(glCanvas, { preserve: true, analysisWidth: Number(Q.get('aw')) || Number(LS('aw')) || 640 }); } catch (e) { showMsg('WebGL2 unavailable', `${e.message}. The scopes need WebGL 2 (Safari 15+, Chrome 56+, Firefox 51+).`); }
   let rects = {}; let dirty = true; let overlayDirty = true; let scopeDock = null;
   function layout() {
     const stage = $('#stage'); const dpr = window.devicePixelRatio || 1; const W = stage.clientWidth; const H = stage.clientHeight;
-    for (const c of [glCanvas, ov]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+    const nw = Math.max(1, Math.round(W * dpr)); const nh = Math.max(1, Math.round(H * dpr));
+    for (const c of [glCanvas, ov]) { if (c.width !== nw || c.height !== nh) { c.width = nw; c.height = nh; } }
     if (!scopeDock) document.querySelectorAll('.pnl').forEach((p) => { p.hidden = !st.show.has(p.dataset.k); });
     const vis = [...document.querySelectorAll('.pnl')].filter((p) => !p.hidden);
     if (!scopeDock) {
@@ -254,8 +254,11 @@
   }
   const b64 = (t) => Uint8Array.from(atob(t), (c) => c.charCodeAt(0));
   function onFormat(m) {
-    st.cfg = { ...(st.cfg || {}), width: m.width || (st.cfg && st.cfg.width), height: m.height || (st.cfg && st.cfg.height), fps: m.fps || (st.cfg && st.cfg.fps), scan: m.scan || (st.cfg && st.cfg.scan) || '', modeName: m.mode || (st.cfg && st.cfg.modeName) || '' };
-    if (m.width && m.height) layout();
+    const prev = st.cfg || {};
+    const width = m.width || prev.width; const height = m.height || prev.height;
+    const changed = width !== prev.width || height !== prev.height || (m.fps && m.fps !== prev.fps) || (m.scan && m.scan !== prev.scan);
+    st.cfg = { ...prev, width, height, fps: m.fps || prev.fps, scan: m.scan || prev.scan || '', modeName: m.mode || prev.modeName || '' };
+    if (changed && width && height) layout();
   }
   async function onConfig(s, cfg) {
     st.cfg = cfg; applyOpts(); layout();

@@ -9,6 +9,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 
 #include <atomic>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <csignal>
@@ -147,8 +148,19 @@ public:
     }
 
     HRESULT onFormat(BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode* mode, BMDDetectedVideoInputFormatFlags) {
-        if (!(events & (bmdVideoInputDisplayModeChanged | bmdVideoInputColorspaceChanged))) return S_OK;
+        // A colorspace-only notice, or the same raster reported again, used to tear down
+        // the encoder. The Replay does that while the picture is fine, and the browser
+        // then waits on a new keyframe with a cleared canvas, so the scopes go black.
+        if (!(events & bmdVideoInputDisplayModeChanged)) return S_OK;
         if (!input || !mode) return S_OK;
+        const int w = static_cast<int>(mode->GetWidth());
+        const int h = static_cast<int>(mode->GetHeight());
+        BMDTimeValue dur = 0; BMDTimeScale scale = 0;
+        double nextFps = fps;
+        if (mode->GetFrameRate(&dur, &scale) == S_OK && dur > 0) nextFps = static_cast<double>(scale) / static_cast<double>(dur);
+        const BMDFieldDominance dom = mode->GetFieldDominance();
+        const bool nextInterlaced = dom == bmdLowerFieldFirst || dom == bmdUpperFieldFirst;
+        if (encoderReady && w == width && h == height && nextInterlaced == interlaced && std::fabs(nextFps - fps) < 0.05) return S_OK;
         input->PauseStreams();
         applyMode(mode);
         BMDVideoInputFlags vif = detect ? bmdVideoInputEnableFormatDetection : bmdVideoInputFlagDefault;
