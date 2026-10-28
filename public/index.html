@@ -69,7 +69,6 @@
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
   <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
   <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras" data-sys="ptz">CAMERAS</button>
-  <button class="tab x-only" data-tab="pscopes" data-cap="ptzCameras" data-sys="ptz" title="Shortcut into the SCOPES tab (same pane). Lightning is a scope mode, not a separate tab.">SCOPES</button>
   <span class="tab-group x-only pixera-grp" data-grp="pixera">PIXERA</span>
   <button class="tab x-only" data-tab="pxplay" data-cap="pixeraTransport" data-sys="pixera">TIMELINES</button>
   <button class="tab x-only" data-tab="pxcues" data-cap="pixeraCues" data-sys="pixera">CUES</button>
@@ -378,7 +377,15 @@
       </div>
       <div class="panel rcp-view">
         <div class="section-title">PREVIEW <small id="ptzSnapHint"></small></div>
-        <div class="snap" id="ptzSnap"><img alt="" id="ptzSnapImg"><span class="snap-na" id="ptzSnapNa"></span></div>
+        <div class="pv-tools" id="ptzPicTools">
+          <button class="mode" type="button" data-pview="0">NORMAL</button>
+          <button class="mode" type="button" data-pview="1" title="False colour, same bands as Scopes">FALSE</button>
+          <button class="mode" type="button" data-pview="2">ZEBRA</button>
+          <button class="mode" type="button" data-pguide="action" title="Safe action, outer box, 90% of the frame">ACTION</button>
+          <button class="mode" type="button" data-pguide="title" title="Safe title, inner box, 80% of the frame">TITLE</button>
+          <button class="mode" type="button" data-pguide="cross" title="Center crosshair">CROSS</button>
+        </div>
+        <div class="snap" id="ptzSnap"><img alt="" id="ptzSnapImg"><canvas id="ptzSnapCv"></canvas><span class="snap-na" id="ptzSnapNa"></span></div>
         <div class="kv" id="ptzInfo"></div>
         <label class="notes"><span class="lbl">NOTES <small id="ptzNotesSt"></small></span><textarea id="ptzNotes" rows="3" maxlength="2000" placeholder="Notes for this camera (lens, position, operator …)"></textarea></label>
       </div>
@@ -407,31 +414,12 @@
     <form id="ptzAdd" class="row add-cam"><span class="lbl">Add a camera<small>Panasonic AW-UE / AW-HE, HTTP (CGI) control</small></span>
       <input name="name" placeholder="Name" maxlength="40"><input name="host" placeholder="IP address" autocomplete="off" spellcheck="false"><input name="port" type="number" min="1" max="65535" placeholder="80" class="slot-in">
       <button class="btn mini primary">ADD CAMERA</button></form>
-    <div class="section-title" style="margin-top:18px">COMMAND REFERENCE <small>every command the dashboard can send to the selected camera, with its source (Companion module action or Panasonic spec)</small></div>
-    <div id="ptzRef" class="rows ref"></div>
+    <div class="section-title">COMMAND REFERENCE <small>closed unless you need the CGI list</small></div>
+    <details class="ptz-ref"><summary>Every command this camera accepts</summary><div id="ptzRef" class="rows ref"></div></details>
   </section>
   <!-- SCOPES: persistent engineering tab. Lightning is a mode inside the scope strip. Desktop Video is the live input. public/scopes-tab.js -->
-  <section class="grid-wrap pane" id="pane-scopes" hidden>
-    <div class="scopes-head">
-      <div class="section-title">SCOPES <small>waveform · RGB parade · vectorscope · Lightning (Y / R−Y / B−Y) · false colour · zebra</small></div>
-      <span class="spacer"></span>
-      <a class="btn mini" href="/scopes.html" target="_blank" rel="noopener" title="Open Scopes in their own window">⤢ WINDOW</a>
-      <button type="button" class="btn mini" id="btnNdiRefresh" title="Re-read Desktop Video feeds">⟳ REFRESH</button>
-    </div>
-    <aside id="scopesNdi" class="scopes-ndi">
-      <div class="section-title">DESKTOP VIDEO <small>every DeckLink input this Mac can see</small></div>
-      <p class="note small">Pick an input and capture starts. You cannot type a new name. The list is the devices Desktop Video reports, including a Replay that already has a signal. A Raspberry Pi only relays the picture.</p>
-      <div class="ndi-block"><h4>DESKTOP VIDEO</h4><div id="ndiDeck" class="ndi-sources" role="listbox" aria-label="Desktop Video feeds"></div></div>
-      <div class="ndi-block" id="ndiSideBlock" hidden><h4>NDI (ADVANCED)</h4><div id="ndiSide" class="ndi-sources" role="listbox" aria-label="Legacy NDI sidecar feeds"></div></div>
-      <p class="note small" id="ndiStatus"></p>
-      <div id="ndiHow" class="ndi-how">
-        <p>On a Mac with Desktop Video installed, list inputs, then capture one. The sidecar pushes H.264 into Control Center. Scopes decode that feed the same way they decode a camera RTSP stream.</p>
-        <pre class="ndi-cmd" id="ndiCmds">node tools/decklink-sidecar.js --list
-node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
-        <p class="note small">Capture is macOS only. Build <code>tools/native/decklink-recv</code> (the DeckLink SDK is not in this repo), or set <code>RS6_DECKLINK_RECV</code>. See <code>docs/decklink-ingest.md</code>. Legacy NDI stays hidden until a sidecar is pushing.</p>
-      </div>
-    </aside>
-    <iframe id="scopesFrame" title="Scopes" style="display:block;width:100%;border:0;border-radius:8px;background:#121212"></iframe>
+  <section class="grid-wrap pane scopes-pane" id="pane-scopes" hidden>
+    <iframe id="scopesFrame" title="Scopes" style="display:block;width:100%;border:0;background:#121212"></iframe>
   </section>
   <section class="grid-wrap pane" id="pane-decks" hidden>
     <div class="scopes-head">
@@ -442,12 +430,6 @@ node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080</pre>
     <p class="note small" id="deckPluginNote"></p>
     <div id="deckRoot" class="deck-layout"></div>
   </section>
-  <section class="grid-wrap pane" id="pane-pscopes" hidden>
-    <div class="note small" style="margin:8px 12px">PTZ → SCOPES is a shortcut into the same Scopes pane. The persistent tab is <b>SCOPES</b> on the top row. Lightning is a mode in the scope strip (Y / R−Y / B−Y), not its own tab.</div>
-    <div id="pscopesHost"></div>
-  </section>
-
-  <!-- 0.9.4 AV Stumpfl Pixera (public/pixera.js): JSON-RPC over TCP, port 1400 -->
   <section class="grid-wrap pane" id="pane-pxplay" hidden>
     <div class="board-head"><div class="section-title">PIXERA TIMELINES <small id="pxInfo">transport per timeline</small></div><span class="spacer"></span>
       <button class="btn mini" id="pxRefresh" type="button">⟳ REFRESH</button></div>

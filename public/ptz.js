@@ -377,6 +377,45 @@
   }
   // ---------- preview, info, notes, lock, paint memories ----------
   const info = {}; let snapCam = null; let snapBusy = false;
+  const pvView = () => localStorage.getItem('cc.ptzPic') || '0';
+  const pvGuides = () => new Set((localStorage.getItem('cc.ptzGuides') || 'action,title').split(',').filter(Boolean));
+  function syncPicTools() {
+    const v = pvView(); const g = pvGuides();
+    document.querySelectorAll('#ptzPicTools [data-pview]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.pview === v)));
+    document.querySelectorAll('#ptzPicTools [data-pguide]').forEach((b) => b.setAttribute('aria-pressed', String(g.has(b.dataset.pguide))));
+  }
+  const FC = [[-1, 2.5, [140, 0, 204]], [2.5, 4, [13, 89, 255]], [38, 42, [38, 204, 38]], [52, 56, [255, 115, 191]], [97, 99, [255, 235, 0]], [99, 200, [255, 0, 0]]];
+  function paintPreview() {
+    const img = $('#ptzSnapImg'); const cv = $('#ptzSnapCv'); if (!cv || !img.naturalWidth) return;
+    const w = img.naturalWidth; const h = img.naturalHeight;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const ctx = cv.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
+    const view = pvView();
+    if (view === '1' || view === '2') {
+      const im = ctx.getImageData(0, 0, w, h); const d = im.data; const zebra = 95;
+      for (let i = 0; i < d.length; i += 4) {
+        const y = (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255 * 100;
+        if (view === '1') {
+          const b = FC.find((x) => y >= x[0] && y < x[1]);
+          if (b) { d[i] = b[2][0]; d[i + 1] = b[2][1]; d[i + 2] = b[2][2]; }
+        } else if (y >= zebra && ((i / 4) % 8 < 4)) { d[i] = 255; d[i + 1] = 255; d[i + 2] = 255; }
+      }
+      ctx.putImageData(im, 0, 0);
+    }
+    const g = pvGuides(); ctx.save(); ctx.strokeStyle = 'rgba(255,255,255,0.7)'; ctx.lineWidth = Math.max(1, w / 480); ctx.setLineDash([6, 4]); ctx.font = `${Math.max(11, Math.round(w / 80))}px ui-monospace, Menlo, monospace`; ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    const box = (pct, label) => { const ix = w * pct; const iy = h * pct; ctx.strokeRect(ix, iy, w - 2 * ix, h - 2 * iy); ctx.fillText(label, ix + 6, iy + 16); };
+    if (g.has('action')) box(0.05, 'ACTION 90%');
+    if (g.has('title')) box(0.10, 'TITLE 80%');
+    if (g.has('cross')) { ctx.setLineDash([]); const cx = w / 2; const cy = h / 2; const s = Math.max(10, w / 40); ctx.beginPath(); ctx.moveTo(cx - s, cy); ctx.lineTo(cx + s, cy); ctx.moveTo(cx, cy - s); ctx.lineTo(cx, cy + s); ctx.stroke(); }
+    ctx.restore();
+  }
+  syncPicTools();
+  $('#ptzPicTools').addEventListener('click', (ev) => {
+    const v = ev.target.closest('[data-pview]'); const g = ev.target.closest('[data-pguide]');
+    if (v) localStorage.setItem('cc.ptzPic', v.dataset.pview);
+    if (g) { const set = pvGuides(); if (set.has(g.dataset.pguide)) set.delete(g.dataset.pguide); else set.add(g.dataset.pguide); localStorage.setItem('cc.ptzGuides', [...set].join(',')); }
+    syncPicTools(); paintPreview();
+  });
   function renderExtras(c, k) {
     const lb = $('#ptzLock'); lb.classList.toggle('active', !!c.locked); lb.querySelector('b').textContent = c.locked ? 'LOCKED' : 'UNLOCKED'; lb.disabled = false;
     $('#pane-pctl .rcp-paint').classList.toggle('locked', !!c.locked);
@@ -399,7 +438,7 @@
     if (!c || !c.connected || !k || !k.ops.some((o) => o.id === 'snapshot') || snapBusy) return;
     snapBusy = true; const img = $('#ptzSnapImg'); const id = c.id;
     const done = () => { snapBusy = false; img.onload = null; img.onerror = null; };
-    img.onload = () => { done(); $('#ptzSnap').classList.remove('err'); };
+    img.onload = () => { done(); $('#ptzSnap').classList.remove('err'); paintPreview(); };
     img.onerror = () => { done(); if (sel() && sel().id === id) { $('#ptzSnap').classList.add('err'); $('#ptzSnapNa').textContent = 'Preview frame unavailable'; } };
     img.src = `/api/sys/ptz/cameras/${encodeURIComponent(id)}/snapshot?t=${Date.now()}`;
     setTimeout(() => { if (snapBusy) done(); }, 5000);

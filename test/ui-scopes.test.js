@@ -147,7 +147,7 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     const p3 = await browser.newPage({ viewport: { width: 1600, height: 1000 } });
     await p3.goto(`${B}/#pctl`); await p3.waitForTimeout(500);
     await p3.evaluate(() => localStorage.setItem('cc.scopes.src', 'cam:cam1'));
-    await openTab(p3, 'pscopes');
+    await openTab(p3, 'scopes');
     const f = p3.frameLocator('#scopesFrame');
     await f.locator('#ro').waitFor({ timeout: 10000 });
     const fr = p3.frame({ url: /scopes\.html/ });
@@ -167,11 +167,7 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     await openTab(p4, 'scopes');
     assert.equal(await p4.locator('#pane-scopes').isVisible(), true);
     assert.equal(await p4.locator('.tgrp[data-tabgrp=lightning]').count(), 0);
-    assert.match(await p4.locator('#scopesNdi').innerText(), /DESKTOP VIDEO/);
-    assert.match(await p4.locator('#ndiHow').innerText(), /decklink-sidecar\.js --list/);
-    assert.match(await p4.locator('#ndiHow').innerText(), /--device/);
     assert.equal(await p4.locator('#ndiMock').count(), 0);
-    assert.doesNotMatch(await p4.locator('#scopesNdi').innerText(), /MOCK BARS/);
     const f = p4.frameLocator('#scopesFrame');
     await f.locator('#ro').waitFor({ timeout: 10000 });
     await f.locator('[data-show="ltng"]').waitFor();

@@ -16,7 +16,7 @@
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS && SYS.systems[SYS.active] ? SYS.systems[SYS.active].kind : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
-  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams', 'pscopes'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], decks: ['decks'] };
+  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], ptz: ['pctl', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], decks: ['decks'] };
   const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes', looks: 'looks', decks: 'decks' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
@@ -164,7 +164,7 @@
   // Landing: the SYSTEMS page is home. A deep link (/#presets, /#xpresets, /#atem, ...) opens that tab instead.
   (() => {
     let h = decodeURIComponent((location.hash || '').replace(/^#\/?/, '').replace(/^tab=/, ''));
-    if (h === 'lightning') h = 'scopes'; // 0.20.0 called this tab LIGHTNING
+    if (h === 'pscopes' || h === 'lightning') h = 'scopes';
     if (h && document.querySelector(`.tab[data-tab="${h.replace(/[^\w-]/g, '')}"]`)) { window.__ccTabClicked = true; CC.setTab(h); } else CC.setTab('system');
   })();
 

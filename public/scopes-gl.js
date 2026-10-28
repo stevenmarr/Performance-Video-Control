@@ -300,8 +300,11 @@
         ctx.fillStyle = 'rgba(255,210,120,0.8)'; ctx.fillText(String(l), x + f(3), yy - f(2));
         if (l === 0 || l === 100 || l === 50) { const code = full ? Math.round((l / 100) * 255) : Math.round(16 + 2.19 * l); const t = String(code); ctx.fillStyle = 'rgba(255,210,120,0.45)'; ctx.fillText(t, x + w - ctx.measureText(t).width - f(3), yy - f(2)); }
       }
-      ctx.setLineDash([f(4), f(4)]); ctx.strokeStyle = 'rgba(255,90,90,0.5)';
-      for (const l of [109.5, -7.3]) { const yy = Math.round(yOf(l / 100)) + 0.5; ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); ctx.stroke(); }
+      ctx.setLineDash([f(4), f(4)]); ctx.strokeStyle = 'rgba(255,90,90,0.7)';
+      for (const l of [109, -7]) {
+        const yy = Math.round(yOf(l / 100)) + 0.5; ctx.beginPath(); ctx.moveTo(x, yy); ctx.lineTo(x + w, yy); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,120,120,0.85)'; ctx.fillText(String(l), x + f(3), yy - f(2));
+      }
       ctx.setLineDash([]);
       if (kind === 'parade') { ctx.strokeStyle = 'rgba(255,255,255,0.25)'; for (const k of [1, 2]) { const xx = Math.round(x + (w * k) / 3) + 0.5; ctx.beginPath(); ctx.moveTo(xx, y); ctx.lineTo(xx, y + h); ctx.stroke(); }
         ['R', 'G', 'B'].forEach((c, i) => { ctx.fillStyle = ['#f66', '#6f6', '#79f'][i]; ctx.fillText(c, x + (w * (i + 0.5)) / 3, y + f(12)); }); }
@@ -341,9 +344,9 @@
       ctx.fillText('R', pix(S, -S * 0.5)[0] + f(6), pix(S, -S * 0.5)[1] + f(4));
       const left = x + f(8);
       ctx.fillStyle = 'rgba(120, 255, 160, 0.9)';
-      ctx.fillText(gem ? `High: ${gem.high} mV` : 'High: — mV', left, y + f(28));
-      ctx.fillText(gem ? `Low: ${gem.low} mV` : 'Low: — mV', left, y + f(42));
-      ctx.fillText(gem ? `Area: ${gem.area} %` : 'Area: — %', left, y + f(56));
+      ctx.fillText(gem ? `High ${gem.high} mV` : 'High — mV', left, y + f(16));
+      ctx.fillText(gem ? `Low ${gem.low} mV` : 'Low — mV', left, y + f(30));
+      ctx.fillText(gem ? `Outside ${gem.area}%` : 'Outside —', left, y + f(44));
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
       ctx.fillText('DIAMOND', x + f(8), y + h - f(8));
     }

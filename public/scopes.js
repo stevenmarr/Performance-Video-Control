@@ -88,14 +88,14 @@
       ctx.setLineDash([]);
       ctx.fillText(label, x + ix + 4 * dpr, y + iy + 12 * dpr);
     };
-    if (st.guides.has('action')) box(0.05, 'ACTION');
-    if (st.guides.has('title')) box(0.10, 'TITLE');
+    // SMPTE: action safe is the outer box, 90% of the frame (5% margin).
+    // Title safe is the inner box, 80% of the frame (10% margin).
+    if (st.guides.has('action')) box(0.05, 'ACTION 90%');
+    if (st.guides.has('title')) box(0.10, 'TITLE 80%');
     if (st.guides.has('cross')) {
       ctx.setLineDash([]);
       ctx.beginPath();
-      const cx = x + w / 2; const cy = y + h / 2; const s = 10 * dpr;
-      ctx.moveTo(cx, y); ctx.lineTo(cx, y + h);
-      ctx.moveTo(x, cy); ctx.lineTo(x + w, cy);
+      const cx = x + w / 2; const cy = y + h / 2; const s = 14 * dpr;
       ctx.moveTo(cx - s, cy); ctx.lineTo(cx + s, cy);
       ctx.moveTo(cx, cy - s); ctx.lineTo(cx, cy + s);
       ctx.stroke();
@@ -325,6 +325,7 @@
         G.uploadPlanes({ format: fmt === 'NV12' ? 'NV12' : 'I420', width: w, height: h, data: planeBuf, layout });
         p.s.exact = true;
         st.gem = gemOf(fmt === 'NV12' ? 'NV12' : 'I420', w, h, planeBuf, layout, G.effFull);
+        overlayDirty = true;
       } else { G.uploadImage(f, w, h); p.s.exact = false; } // RGB / opaque GPU frames: the browser's conversion
       const t1 = performance.now(); push(stats.uploadMs, t1 - t0);
       G.render(rects, performance.now() / 1000); if (BENCH) G.sync();
