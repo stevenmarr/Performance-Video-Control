@@ -498,13 +498,13 @@
   // Panels move (drag the header; touch: hold, then drag), resize from the edges / bottom corners, collapse, pop out,
   // close into the PANELS tray; snapped to a 24 / 12 / 2-column grid with one layout per breakpoint, saved per install
   // (CCPREFS 'ptz.dock.<bp>'), named layouts and RESET under LAYOUT ▾. Nothing is rearranged while a joystick, rocker
-  // or arrow key is held, and arranging never sends a camera command. Defaults follow the 0.9.8 / 0.11.0 layout.
+  // or arrow key is held, and arranging never sends a camera command. The default (xl and lg) is the console: pan/tilt, zoom, iris and paint across the top; presets, preview and camera along the bottom.
   // Units: x / w in columns, y / h in rows (30 px + 8 px gap). Panels added by other features join at the bottom.
   const rcp = $('#pane-pctl .rcp');
   const P = (id, x, y, w, h) => ({ id, x, y, w, h });
   const DOCK_DEFAULTS = {
     xl: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 4, 17), P('paint', 11, 0, 13, 17), P('presets', 0, 17, 11, 15), P('view', 11, 17, 6, 15), P('sys', 17, 17, 7, 15)],
-    lg: [P('joy', 0, 0, 6, 17), P('lens', 6, 0, 4, 17), P('iris', 10, 0, 5, 17), P('sys', 15, 0, 9, 17), P('paint', 0, 17, 24, 16), P('presets', 0, 33, 15, 15), P('view', 15, 33, 9, 15)],
+    lg: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 4, 17), P('paint', 11, 0, 13, 17), P('presets', 0, 17, 11, 15), P('view', 11, 17, 6, 15), P('sys', 17, 17, 7, 15)],
     md: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 5, 17), P('paint', 0, 17, 12, 17), P('presets', 0, 34, 12, 12), P('view', 0, 46, 5, 16), P('sys', 5, 46, 7, 16)],
     sm: [P('joy', 0, 0, 2, 16), P('lens', 0, 16, 1, 17), P('iris', 1, 16, 1, 17), P('paint', 0, 33, 2, 20), P('presets', 0, 53, 2, 12), P('view', 0, 65, 1, 17), P('sys', 1, 65, 1, 17)],
   };

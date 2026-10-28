@@ -43,6 +43,15 @@
       $('#panels').classList.toggle('solo', !!st.solo && st.show.has(st.solo));
     }
     document.querySelectorAll('.pnl').forEach((p) => p.classList.toggle('max', p.dataset.k === st.solo));
+    // Same column grid as the PTZ dock. The row unit grows so the panels fill this stage instead of scrolling off it.
+    if (scopeDock && scopeDock.layout) {
+      const items = scopeDock.layout().filter((it) => !it.closed && !it.f);
+      const rows = items.reduce((m, it) => Math.max(m, it.y + (it.c ? 1 : it.h)), 1) || 1;
+      const gap = 8;
+      const ph = $('#panels').clientHeight;
+      const row = Math.max(22, Math.floor((ph - gap * Math.max(0, rows - 1)) / rows));
+      $('#panels').style.setProperty('--dk-row', `${row}px`);
+    }
     const sb = stage.getBoundingClientRect(); rects = {};
     for (const p of vis) {
       if (p.offsetParent === null) continue;

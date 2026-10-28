@@ -188,9 +188,9 @@ test('PTZ 0.11.1 dock: move, resize, collapse / tray / float, keyboard, touch, b
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.waitForFunction(() => window.CCPTZ.dock.bp() === 'lg');
   assert.equal(await page.evaluate(() => window.CCPTZ.dock.enc() === window.CCPTZ.dock.defaults()), true, 'lg starts at its default');
-  assert.deepEqual(await box('paint'), [0, 17, 24, 16]);
+  assert.deepEqual(await box('paint'), [11, 0, 13, 17]);
   await page.focus('.rcp-sys > .dk-head'); await page.keyboard.press('Shift+ArrowLeft'); await page.keyboard.press('Shift+ArrowLeft');
-  assert.equal((await box('sys'))[2], 7);
+  assert.equal((await box('sys'))[2], 5);
   p = await prefWait((x) => typeof x['ptz.dock.lg'] === 'string', 'lg saved');
   await page.setViewportSize({ width: 1000, height: 800 }); await page.waitForFunction(() => window.CCPTZ.dock.bp() === 'md');
   assert.equal(await page.$eval('.rcp', (e) => getComputedStyle(e).gridTemplateColumns.split(' ').length), 12);
@@ -198,7 +198,7 @@ test('PTZ 0.11.1 dock: move, resize, collapse / tray / float, keyboard, touch, b
   assert.equal(await page.evaluate(() => window.CCPTZ.dock.enc()), xlEnc, 'xl layout back');
   // a second browser at 1280 gets this install's lg layout
   const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 } }); const p2 = await ctx2.newPage();
-  await p2.goto(`${B}/#pctl`); await p2.waitForFunction(() => window.CCPTZ && window.CCPTZ.dock && window.CCPTZ.dock.layout().find((i) => i.id === 'sys').w === 7, null, { timeout: 8000 });
+  await p2.goto(`${B}/#pctl`); await p2.waitForFunction(() => window.CCPTZ && window.CCPTZ.dock && window.CCPTZ.dock.layout().find((i) => i.id === 'sys').w === 5, null, { timeout: 8000 });
   await ctx2.close();
 
   // ---- narrow screens: two columns under 820 px, one stacked column under 560 px
