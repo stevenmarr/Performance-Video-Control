@@ -30,7 +30,7 @@ test('PTZ 0.11.1 dock: move, resize, collapse / tray / float, keyboard, touch, b
   // every camera command the page sends (POST /api/sys/ptz/cmd/<name>)
   const cmds = []; page.on('request', (r) => { const m = /\/api\/sys\/ptz\/cmd\/(\w+)/.exec(r.url()); if (m && r.method() === 'POST') cmds.push(m[1]); });
   await page.goto(`${B}/#pctl`);
-  await page.locator('.rgbm [data-op=rPed]').waitFor({ timeout: 10000 });
+  await page.locator('.pcard[data-pane=paint] .knob[data-op=rPed]').waitFor({ timeout: 10000 });
   await page.waitForFunction(() => window.CCPTZ && window.CCPTZ.dock);
   const L = () => page.evaluate(() => Object.fromEntries(window.CCPTZ.dock.layout().map((i) => [i.id, i])));
   const box = async (id) => { const i = (await L())[id]; return [i.x, i.y, i.w, i.h]; };
@@ -45,7 +45,7 @@ test('PTZ 0.11.1 dock: move, resize, collapse / tray / float, keyboard, touch, b
   // ---- default layout (xl, 24 columns)
   assert.equal(await page.evaluate(() => window.CCPTZ.dock.bp()), 'xl');
   assert.equal(await page.locator('.rcp > .dk-panel').count(), 7);
-  assert.deepEqual(await box('joy'), [0, 0, 4, 17]); assert.deepEqual(await box('paint'), [11, 0, 13, 17]); assert.deepEqual(await box('view'), [11, 17, 6, 15]);
+  assert.deepEqual(await box('joy'), [0, 0, 4, 17]); assert.deepEqual(await box('paint'), [12, 0, 12, 17]); assert.deepEqual(await box('view'), [12, 17, 5, 15]);
   assert.equal((await page.locator('.rcp-paint').boundingBox()).width > 900, true, 'paint fills the rest of the top row');
   assert.equal(await page.locator('.dk-lay-n').textContent(), 'LAYOUT');
   await noOverlap();
@@ -188,7 +188,7 @@ test('PTZ 0.11.1 dock: move, resize, collapse / tray / float, keyboard, touch, b
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.waitForFunction(() => window.CCPTZ.dock.bp() === 'lg');
   assert.equal(await page.evaluate(() => window.CCPTZ.dock.enc() === window.CCPTZ.dock.defaults()), true, 'lg starts at its default');
-  assert.deepEqual(await box('paint'), [11, 0, 13, 17]);
+  assert.deepEqual(await box('paint'), [12, 0, 12, 17]);
   await page.focus('.rcp-sys > .dk-head'); await page.keyboard.press('Shift+ArrowLeft'); await page.keyboard.press('Shift+ArrowLeft');
   assert.equal((await box('sys'))[2], 5);
   p = await prefWait((x) => typeof x['ptz.dock.lg'] === 'string', 'lg saved');

@@ -21,7 +21,7 @@
     src: Q.get('src') || LS('src') || '', mode: Q.get('mode') || LS('mode') || 'auto', range: LS('range') || 'auto',
     show: new Set((Q.get('show') || LS('show') || 'pic,wfm,parade,vec').split(',').filter(Boolean)),
     view: Number(Q.get('view') || LS('view') || 0), gain: Number(LS('gain') || 1), vgain: Number(LS('vgain') || 1), zebra: Number(LS('zebra') || 95),
-    fc: LS('fc') || 'arri', gem: null,
+    fc: LS('fc') || 'arri', guides: new Set((LS('guides') || 'action,title,cross').split(',').filter(Boolean)), gem: null,
     playing: true, solo: null, cfg: null, active: '', sources: [],
   };
   const stats = { drawn: 0, decoded: 0, skipped: 0, bytes: 0, resets: 0, decodeMs: [], drawMs: [], uploadMs: [], latMs: [], winStart: performance.now(), fps: 0, kbps: 0, offset: 0, rtt: Infinity, lastLat: null };
@@ -70,7 +70,37 @@
     overlayDirty = false; octx.clearRect(0, 0, ov.width, ov.height);
     const dpr = window.devicePixelRatio || 1; const full = G ? G.effFull : false;
     for (const k of ['wfm', 'parade', 'vec', 'ltng']) if (rects[k]) M.drawGraticule(octx, k, rects[k], { full, dpr, vgain: st.vgain, gem: st.gem });
-    if (rects.pic) { octx.font = `${Math.round(10 * dpr)}px ui-monospace, Menlo, monospace`; octx.fillStyle = 'rgba(255,255,255,0.6)'; octx.fillText(['PICTURE', 'FALSE COLOUR', `ZEBRA ≥ ${st.zebra} %`][st.view] || '', rects.pic[0] + 6 * dpr, rects.pic[1] + 14 * dpr); }
+    if (rects.pic && st.view === 1) { /* the key is the HTML strip on the left of the frame */ }
+    if (rects.pic) drawGuides(octx, rects.pic, dpr);
+  }
+  function drawGuides(ctx, r, dpr) {
+    if (!st.guides.size) return;
+    const [x, y, w, h] = r;
+    ctx.save();
+    ctx.lineWidth = Math.max(1, dpr);
+    ctx.font = `${Math.round(9 * dpr)}px ui-monospace, Menlo, monospace`;
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    const box = (pct, label) => {
+      const ix = w * pct; const iy = h * pct;
+      ctx.setLineDash([4 * dpr, 3 * dpr]);
+      ctx.strokeRect(x + ix, y + iy, w - 2 * ix, h - 2 * iy);
+      ctx.setLineDash([]);
+      ctx.fillText(label, x + ix + 4 * dpr, y + iy + 12 * dpr);
+    };
+    if (st.guides.has('action')) box(0.05, 'ACTION');
+    if (st.guides.has('title')) box(0.10, 'TITLE');
+    if (st.guides.has('cross')) {
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      const cx = x + w / 2; const cy = y + h / 2; const s = 10 * dpr;
+      ctx.moveTo(cx, y); ctx.lineTo(cx, y + h);
+      ctx.moveTo(x, cy); ctx.lineTo(x + w, cy);
+      ctx.moveTo(cx - s, cy); ctx.lineTo(cx + s, cy);
+      ctx.moveTo(cx, cy - s); ctx.lineTo(cx, cy + s);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
   new ResizeObserver(layout).observe($('#stage'));
   window.addEventListener('resize', layout);
@@ -92,6 +122,7 @@
     const bands = (M.falseBands ? M.falseBands(st.fc) : M.FALSE_COLOR).filter((b) => b.label);
     lg.innerHTML = bands.map((b) => `<span title="${b.label}"><i style="background:rgb(${b.rgb.map((v) => Math.round(v * 255)).join(',')})"></i>${b.label}</span>`).join('');
     const fc = $('#fcMode'); if (fc) fc.value = st.fc || 'arri';
+    document.querySelectorAll('[data-guide]').forEach((b) => b.setAttribute('aria-pressed', String(st.guides.has(b.dataset.guide))));
   }
   $('#showGrp').addEventListener('click', (e) => {
     const b = e.target.closest('[data-show]'); if (!b) return; const k = b.dataset.show;
@@ -100,6 +131,13 @@
     LS('show', [...st.show].join(',')); syncUi(); layout();
   });
   $('#viewGrp').addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (!b) return; st.view = Number(b.dataset.view); LS('view', st.view); if (st.view && !st.show.has('pic')) { st.show.add('pic'); if (scopeDock) scopeDock.reopen('pic'); layout(); } syncUi(); applyOpts(); });
+  document.querySelector('.pnl[data-k=pic]').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-guide]'); if (!b) return;
+    const k = b.dataset.guide;
+    if (st.guides.has(k)) st.guides.delete(k); else st.guides.add(k);
+    LS('guides', [...st.guides].join(','));
+    syncUi(); overlayDirty = true;
+  });
   const fcSel = $('#fcMode'); if (fcSel) fcSel.addEventListener('change', (e) => { st.fc = e.target.value; LS('fc', st.fc); syncUi(); applyOpts(); });
   $('#range').addEventListener('change', (e) => { st.range = e.target.value; LS('range', st.range); applyOpts(); });
   $('#gain').addEventListener('input', (e) => { st.gain = Number(e.target.value); LS('gain', st.gain); applyOpts(); });

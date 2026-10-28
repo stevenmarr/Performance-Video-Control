@@ -698,7 +698,7 @@ body.tab-atem .main{gap:14px}
 .cc-help{font-size:12px}
 
 /* ---------- 0.9.8 CAMERA CONTROL: full-screen RCP + joystick layout ---------- */
-.rcp-bus .cam-strip{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px}
+.rcp-bus{flex-wrap:nowrap}.rcp-bus .cam-strip{flex:1;display:flex;flex-wrap:nowrap;min-width:0;gap:6px}
 .cam-strip .cam{grid-template-columns:auto 14px 1fr auto;grid-template-rows:auto auto;column-gap:7px;min-width:0;padding:6px 10px}
 .cam-strip .cam .kn{grid-row:1 / span 2;font:900 11px/1 ui-monospace,Menlo,monospace;color:#5d6d82;border:1px solid #2d3743;border-radius:5px;padding:3px 5px}
 .cam-strip .cam.on .kn{color:#dfe3ff;border-color:var(--accent)}
@@ -751,7 +751,7 @@ body.tab-atem .main{gap:14px}
 .pcard.hide{display:none}.pcard.wide{grid-column:span 2}
 .pcard .pc-t{font:900 10px/1 -apple-system,Segoe UI,sans-serif;letter-spacing:.16em;color:#9fb4cf;padding:3px 4px 6px;border-bottom:1px solid #1e252e;margin-bottom:4px}
 .pcard .pc-b{display:flex;flex-wrap:wrap;gap:4px;align-items:flex-start;justify-content:space-around;align-content:space-evenly;flex:1}
-.pcard .knob{width:76px}.pcard .knob svg{width:58px;height:58px}.pcard .knob>b{top:23px;font-size:12px}
+.pcard .knob{width:84px}.pcard .knob svg{width:66px;height:66px}.pcard .knob>b{top:26px;font-size:12px}
 .pcard .ctl-t{min-width:0;flex:1 1 70px;padding:6px 8px}
 .pcard .ctl-seg{flex:1 1 100%}.pcard .ctl-sel{flex:1 1 100%}.pcard .ctl-sel select{max-width:none;width:100%}
 .pcard .ctl-b{flex:1 1 60px}
@@ -807,7 +807,7 @@ body.tab-atem .main{gap:14px}
 .pmem{grid-template-columns:1fr 1fr}
 .pcard .ctl-b{flex:0 1 auto}
 @media (max-width:860px){ .sys-cols{grid-template-columns:1fr} }
-.pcard .knob{width:70px}.pcard .knob svg{width:56px;height:56px}.pcard .knob>b{top:22px;font-size:11px}
+.pcard .knob{width:78px}.pcard .knob svg{width:62px;height:62px}.pcard .knob>b{top:24px;font-size:12px}
 .pcard .pc-b{gap:4px 2px}
 .rcp-iris [data-slot=exposure]{flex:1;align-content:space-evenly}
 .rcp-sys [data-slot=tracking]{flex-direction:row}
@@ -824,7 +824,7 @@ body.tab-atem .main{gap:14px}
 .rcp-sys .sys-row>[data-slot=tracking]{flex:1 1 90px;flex-direction:column}
 .rcp-sys .sys-row>[data-slot=tracking] .ctl-t{flex:0 0 auto;width:100%}
 .pcard[data-pane=matrix] .ctl-t{flex:1 1 100%}
-.rcp-bus .cam-strip{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.rcp-bus .cam-strip .cam{flex:1 1 0;min-width:0}
 
 /* 0.10.0 ATEM: model picker, ROUTER, AUDIO, DVE / SS / KEYS (public/atem-ext.js) */
 .am-list{display:flex;flex-direction:column;gap:10px;max-height:58vh;overflow:auto;margin:8px 0}
@@ -1061,7 +1061,7 @@ details.xp>summary small{color:var(--dim);font-weight:700}
 .dk-head{flex:0 0 30px;display:flex;align-items:center;gap:6px;height:30px;padding:0 3px 0 6px;cursor:grab;user-select:none;-webkit-user-select:none;border-bottom:1px solid #222a34;background:linear-gradient(#1a212a,#161c23);border-radius:12px 12px 0 0;outline:none;-webkit-touch-callout:none}
 .dk-head:focus-visible{box-shadow:inset 0 0 0 2px #ffd35c}
 .dk-head .dk-grip{color:#55657a;font-size:14px;line-height:1;flex:0 0 auto}
-.dk-head .section-title{margin:0!important;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0;border:0}
+.dk-head .section-title{margin:0!important;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0;border:0;letter-spacing:.04em}.dk-head .section-title small{display:none}
 .dk-btns{display:flex;gap:2px;flex:0 0 auto}
 .dk-b{width:26px;height:24px;padding:0;border-radius:6px;background:transparent;border:1px solid transparent;color:#7b8a9c;font-size:13px;line-height:1;cursor:pointer}
 .dk-b:hover,.dk-b:focus-visible{background:#10151b;border-color:var(--line);color:#dfe8f5}.dk-b.on{color:#ffd35c}
@@ -1108,9 +1108,9 @@ body.dk-busy-rz-e *,body.dk-busy-rz-w *{cursor:ew-resize!important}body.dk-busy-
 .dk-m-foot{display:flex;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px solid #222a34}
 /* content adapts to its panel's size (the panel body is a size container) */
 #pane-pctl .rcp-joy .joy{width:min(100%,300px,max(120px,calc(100cqh - 240px)));max-width:none}
-#pane-pctl .rock .rk-track{min-height:min(150px,max(70px,calc(100cqh - 330px)))}
+#pane-pctl .rock .rk-track{width:56px;min-height:min(240px,max(150px,calc(100cqh - 160px)))}
 #pane-pctl .rcp-presets .thumbs{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))}
-@container dk (max-width: 300px){
+@container dk (max-width: 220px){
   .sys-cols{grid-template-columns:1fr}.pmem{grid-template-columns:1fr}
   .joy-foot{grid-template-columns:1fr}.joy-foot .rcp-home{width:100%}
   .knob.big{width:104px}.knob.big svg{width:88px;height:88px}.knob.big>b{top:36px;font-size:17px}

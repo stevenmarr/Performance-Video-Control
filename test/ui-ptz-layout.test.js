@@ -22,20 +22,18 @@ test('PTZ 0.11.0: paint matrix + expanders (Playwright)', { skip: pw ? false : '
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(B + '/#pctl');
-  await page.locator('.rgbm [data-op=rPed]').waitFor({ timeout: 10000 });
-  // 10: one compact matrix: GAIN row R / B, PED row R / G / B / M
-  for (const id of ['rGain', 'bGain', 'rPed', 'gPed', 'bPed', 'masterPed']) assert.equal(await page.locator(`.rgbm .knob.cell[data-op=${id}]`).count(), 1, `${id} in the matrix`);
+  await page.locator('.pcard[data-pane=paint] .knob[data-op=rPed]').waitFor({ timeout: 10000 });
+  // paint ranges are dial encoders again (the console), not the compact +/- matrix
+  for (const id of ['rGain', 'bGain', 'rPed', 'gPed', 'bPed', 'masterPed']) assert.equal(await page.locator(`.pcard .knob:not(.cell)[data-op=${id}]`).count(), 1, `${id} is a dial`);
   assert.equal(await page.locator('[data-op=masterPed]').count(), 1, 'master pedestal only once');
-  const mbox = await page.locator('.rgbm').boundingBox(); assert.ok(mbox.height < 140, `matrix is compact: shorter than one old knob row pair (${mbox.height}px)`);
-  // a matrix cell steps the camera
-  await page.locator('.rgbm [data-op=rPed] [data-step="1"]').click();
+  assert.equal(await page.locator('.pcard .knob:not(.cell)[data-op=matrixRG]').count(), 1, 'linear matrix is a dial');
+  await page.locator('.pcard [data-op=rPed] [data-step="1"]').click();
   const camVal = async (id) => { const v = await (await fetch(`${B}/api/sys/ptz`)).json().catch(() => null); const c = v && (v.cameras || []).find((x) => x.id === 'cam1'); return c && c.values ? c.values[id] : undefined; };
   for (let i = 0; i < 60 && (await camVal('rPed')) !== 1; i++) await new Promise((r) => setTimeout(r, 50));
   assert.equal(await camVal('rPed'), 1, 'R PED + → 1');
   // rarely used controls: closed expanders, still in the DOM; open state remembered
-  for (const x of ['iris', 'exposure', 'matrix', 'detail']) assert.equal(await page.locator(`details.xp[data-xp=${x}]:not([open])`).count(), 1, `${x} expander closed by default`);
+  for (const x of ['iris', 'exposure']) assert.equal(await page.locator(`details.xp[data-xp=${x}]:not([open])`).count(), 1, `${x} expander closed by default`);
   assert.equal(await page.locator('details.xp[data-xp=iris] [data-op=autoIrisSpeed]').count(), 1);
-  assert.equal(await page.locator('details.xp[data-xp=matrix] .knob.cell[data-op=matrixRG]').count(), 1);
   assert.equal(await page.locator('[data-op=autoIrisSpeed]').isVisible(), false);
   await page.click('details.xp[data-xp=iris] > summary');
   await page.locator('[data-op=autoIrisSpeed] [data-v="2"]').click();

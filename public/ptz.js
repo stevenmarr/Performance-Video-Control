@@ -142,11 +142,7 @@
   const ADV = {
     iris: ['autoIrisSpeed', 'autoIrisWindow', 'autoIrisLimit', 'pictureLevel'],
     exposure: ['superGain', 'synchroDown', 'synchro', 'synchroUp', 'elcLimit'],
-    detail: ['skinDetail', 'skinEffect'],
-    knee: ['kneeSlope'],
-    matrix: ['matrixRG', 'matrixRB', 'matrixGR', 'matrixGB', 'matrixBR', 'matrixBG'],
-    chroma: ['chromaPhase'],
-    bars: ['colorBarsSetup', 'colorBarsTitle', 'colorBarsTone', 'colorBarsType'],
+    bars: ['colorBarsSetup', 'colorBarsTitle'],
   };
   const ADV_T = { iris: 'AUTO IRIS SETUP', exposure: 'MORE EXPOSURE', detail: 'SKIN DETAIL', knee: 'SLOPE', matrix: 'LINEAR MATRIX', chroma: 'PHASE', bars: 'BARS SETUP' };
   // 0.11.0 compact R / G / B gain + pedestal matrix (one row each, master pedestal last) instead of five knobs
@@ -154,13 +150,13 @@
   const xpOpen = (n) => localStorage.getItem(`cc.ptzXp.${n}`) === '1';
   const PAINT = [
     ['wb', 'WHITE · BLACK', ['wbMode', 'awb', 'abb', 'colorTemp', 'varTempDown', 'varTemp', 'varTempUp']],
-    ['paint', 'GAIN · PEDESTAL', ['rGain', 'bGain', 'rPed', 'gPed', 'bPed', 'masterPed']],
-    ['detail', 'DETAIL', ['detail', 'masterDetail']],
+    ['paint', 'PAINT', ['rGain', 'bGain', 'rPed', 'gPed', 'bPed', 'masterPed']],
+    ['detail', 'DETAIL', ['detail', 'skinDetail', 'masterDetail', 'skinEffect']],
     ['gamma', 'GAMMA', ['gammaMode', 'gamma']],
-    ['knee', 'KNEE', ['kneeMode', 'kneePoint']],
-    ['matrix', 'MATRIX', ['matrixType', 'adaptiveMatrix']],
-    ['chroma', 'CHROMA', ['chromaLevel']],
-    ['bars', 'BARS', ['colorBars']],
+    ['knee', 'KNEE', ['kneeMode', 'kneePoint', 'kneeSlope']],
+    ['matrix', 'MATRIX', ['matrixType', 'adaptiveMatrix', 'matrixRG', 'matrixRB', 'matrixGR', 'matrixGB', 'matrixBR', 'matrixBG']],
+    ['chroma', 'CHROMA', ['chromaLevel', 'chromaPhase']],
+    ['bars', 'BARS', ['colorBars', 'colorBarsTone', 'colorBarsType']],
   ];
   const NOT_CTL = new Set(['move', 'zoom', 'focus', 'stop', 'recall', 'store', 'presetName', 'thumbnail', 'speeds', 'keepalive', 'home', 'snapshot', 'streamInfo']);
   const SHORT = { focusMode: 'FOCUS', oneTouchAF: 'PUSH AF', irisMode: 'IRIS', iris: 'IRIS', superGain: 'SUPER GAIN', ndFilter: 'ND', shutterMode: 'SHUTTER', shutterStep: 'STEP', shutterStepUp: 'STEP +', shutterStepDown: 'STEP −',
@@ -204,7 +200,6 @@
     return `<table class="rgbm"><thead><tr><th></th>${cols.map((c) => `<th class="c-${c}">${c}</th>`).join('')}</tr></thead><tbody>${RGB.map(([row, ids]) => `<tr><th>${row}</th>${ids.map((id, i) => { const o = has(id); return `<td class="c-${cols[i]}">${o ? ctlHtml(o, true) : '<span class="na">—</span>'}</td>`; }).join('')}</tr>`).join('')}</tbody></table>`;
   }
   function slot(name, ids, k) {
-    if (name === 'paint') return rgbMatrix(k);
     const ops = opsOf(ids.filter((i) => !(ADV[name] || []).includes(i)), k);
     if (name === 'menu') {
       const g = (id) => { const o = ops.find((x) => x.id === id); return o ? ctlHtml(o) : '<span></span>'; };
@@ -503,8 +498,8 @@
   const rcp = $('#pane-pctl .rcp');
   const P = (id, x, y, w, h) => ({ id, x, y, w, h });
   const DOCK_DEFAULTS = {
-    xl: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 4, 17), P('paint', 11, 0, 13, 17), P('presets', 0, 17, 11, 15), P('view', 11, 17, 6, 15), P('sys', 17, 17, 7, 15)],
-    lg: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 4, 17), P('paint', 11, 0, 13, 17), P('presets', 0, 17, 11, 15), P('view', 11, 17, 6, 15), P('sys', 17, 17, 7, 15)],
+    xl: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 4, 17), P('iris', 8, 0, 4, 17), P('paint', 12, 0, 12, 17), P('presets', 0, 17, 12, 15), P('view', 12, 17, 5, 15), P('sys', 17, 17, 7, 15)],
+    lg: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 4, 17), P('iris', 8, 0, 4, 17), P('paint', 12, 0, 12, 17), P('presets', 0, 17, 12, 15), P('view', 12, 17, 5, 15), P('sys', 17, 17, 7, 15)],
     md: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 5, 17), P('paint', 0, 17, 12, 17), P('presets', 0, 34, 12, 12), P('view', 0, 46, 5, 16), P('sys', 5, 46, 7, 16)],
     sm: [P('joy', 0, 0, 2, 16), P('lens', 0, 16, 1, 17), P('iris', 1, 16, 1, 17), P('paint', 0, 33, 2, 20), P('presets', 0, 53, 2, 12), P('view', 0, 65, 1, 17), P('sys', 1, 65, 1, 17)],
   };

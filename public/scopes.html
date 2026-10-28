@@ -76,10 +76,14 @@
   .msg[hidden] { display: none; }
   .note { position: absolute; left: 12px; bottom: 10px; z-index: 2; font-size: 12px; background: rgba(20,22,27,.9); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; color: var(--dim); max-width: 70%; }
   .note[hidden] { display: none; }
-  .legend { display: inline-flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  .legend { position: absolute; left: 8px; top: 62px; bottom: 10px; z-index: 4; display: flex; flex-direction: column; justify-content: stretch; gap: 2px; width: 132px; pointer-events: none; }
   .legend[hidden] { display: none; }
-  .legend span { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: #1c2027; }
-  .legend i { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+  .legend span { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 10px; padding: 0 4px; border-radius: 3px; background: rgba(8,10,14,.72); color: #f5f5f5; min-height: 0; }
+  .legend i { width: 10px; align-self: stretch; border-radius: 2px; display: inline-block; flex: 0 0 10px; }
+  .scope-tools { position: absolute; z-index: 5; left: 8px; top: 34px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; pointer-events: auto; }
+  .scope-tools button, .scope-tools select, .scope-tools input { min-height: 0; padding: 2px 7px; font-size: 11px; }
+  .scope-tools input[type=range] { width: 90px; padding: 0; }
+  .scope-tools .lbl { font-size: 10px; letter-spacing: .08em; }
   dialog { background: var(--panel); color: var(--txt); border: 1px solid var(--line); border-radius: 10px; max-width: min(760px, 96vw); }
   dialog::backdrop { background: rgba(0,0,0,.55); }
   dialog table { border-collapse: collapse; width: 100%; }
@@ -101,17 +105,8 @@
   <span class="grp" id="showGrp">
     <button data-show="pic" title="Picture">PIC</button><button data-show="wfm" title="Luma waveform">WFM</button><button data-show="parade" title="RGB parade">PARADE</button><button data-show="vec" title="Vectorscope (Pb / Pr)">VEC</button><button data-show="ltng" title="Diamond: upper half is G vs B, lower half is G vs R. A legal picture stays inside the dashed diamonds.">DIAMOND</button>
   </span>
-  <span class="lbl">PICTURE</span>
-  <span class="grp" id="viewGrp"><button data-view="0">NORMAL</button><button data-view="1" title="False colour. The key is the legend.">FALSE</button><button data-view="2" title="Zebra stripes at or above the level">ZEBRA</button></span>
-  <select id="fcMode" aria-label="False colour scale"><option value="arri">ARRI</option><option value="ire">IRE</option><option value="st2084">ST 2084</option></select>
-  <input id="zebra" type="number" min="50" max="109" step="1" value="95" style="width:58px" title="Zebra level %" aria-label="Zebra level %">
-  <span class="lbl">RANGE</span>
-  <select id="range" aria-label="Video range"><option value="auto">AUTO</option><option value="legal">LEGAL 16–235</option><option value="full">FULL 0–255</option></select>
-  <span class="lbl">INTENSITY</span><input id="gain" type="range" min="0.2" max="5" step="0.1" value="1" aria-label="Scope intensity">
-  <span class="lbl">VEC</span><select id="vgain" aria-label="Vectorscope and Lightning gain"><option value="1">×1</option><option value="2">×2</option><option value="5">×5</option></select>
   <span class="lbl">DECODE</span>
   <select id="mode" aria-label="Decode path"><option value="auto">AUTO</option><option value="webcodecs">WEBCODECS</option><option value="mse">MSE (RGB)</option><option value="jpeg">JPEG SNAPSHOT</option></select>
-  <span class="legend" id="legend" hidden></span>
   <button id="btnSettings" title="Camera streams, test video, custom input" style="margin-left:auto">⚙ INPUTS</button>
   <a class="pop" href="/scopes.html" target="_blank" rel="noopener" title="Open Scopes in their own window" style="color:var(--dim);text-decoration:none">⤢ WINDOW</a>
   <span id="scopeDock"></span>
@@ -122,10 +117,30 @@
 </aside>
 <div class="stage" id="stage">
   <div class="panels" id="panels">
-    <div class="pnl" data-k="pic" aria-label="Picture"></div>
-    <div class="pnl" data-k="wfm" aria-label="Waveform"></div>
+    <div class="pnl" data-k="pic" aria-label="Picture">
+      <div class="scope-tools" aria-label="Picture">
+        <span class="grp" id="viewGrp"><button data-view="0">NORMAL</button><button data-view="1" title="False colour. The key sits on the left of the frame.">FALSE</button><button data-view="2" title="Zebra stripes at or above the level">ZEBRA</button></span>
+        <select id="fcMode" aria-label="False colour scale"><option value="arri">ARRI</option><option value="ire">IRE</option><option value="st2084">ST 2084</option></select>
+        <input id="zebra" type="number" min="50" max="109" step="1" value="95" style="width:52px" title="Zebra level %" aria-label="Zebra level %">
+        <button type="button" data-guide="action" title="16:9 safe action, 5% inset">ACTION</button>
+        <button type="button" data-guide="title" title="16:9 safe title, 10% inset">TITLE</button>
+        <button type="button" data-guide="cross" title="Center crosshair">CROSS</button>
+      </div>
+      <div class="legend" id="legend" hidden></div>
+    </div>
+    <div class="pnl" data-k="wfm" aria-label="Waveform">
+      <div class="scope-tools" aria-label="Waveform">
+        <span class="lbl">INTENSITY</span><input id="gain" type="range" min="0.2" max="5" step="0.1" value="1" aria-label="Waveform intensity">
+        <span class="lbl">RANGE</span>
+        <select id="range" aria-label="Video range"><option value="auto">AUTO</option><option value="legal">LEGAL</option><option value="full">FULL</option></select>
+      </div>
+    </div>
     <div class="pnl" data-k="parade" aria-label="RGB parade"></div>
-    <div class="pnl" data-k="vec" aria-label="Vectorscope"></div>
+    <div class="pnl" data-k="vec" aria-label="Vectorscope">
+      <div class="scope-tools" aria-label="Vectorscope">
+        <span class="lbl">GAIN</span><select id="vgain" aria-label="Vectorscope and Diamond gain"><option value="1">×1</option><option value="2">×2</option><option value="5">×5</option></select>
+      </div>
+    </div>
     <div class="pnl" data-k="ltng" aria-label="Lightning"></div>
   </div>
   <canvas class="gl" id="gl"></canvas><canvas class="ov" id="ov"></canvas>
