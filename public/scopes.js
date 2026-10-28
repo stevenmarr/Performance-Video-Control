@@ -246,7 +246,7 @@
     if (s.path === 'webcodecs') {
       const d = s.dec; if (!d || d.state !== 'configured') return;
       if (s.waitKey && !key) return; s.waitKey = false;
-      if (d.decodeQueueSize > 2) { stats.skipped++; if (!key) s.waitKey = true; return; }
+      if (d.decodeQueueSize > 6) { stats.skipped++; return; }
       s.meta.set(pts, { serverMs, catchup, replay, t: performance.now() }); if (s.meta.size > 120) s.meta.delete(s.meta.keys().next().value);
       try { d.decode(new EncodedVideoChunk({ type: key ? 'key' : 'delta', timestamp: pts, data })); } catch (e) { s.waitKey = true; }
     } else if (s.path === 'mse' && s.mse) {

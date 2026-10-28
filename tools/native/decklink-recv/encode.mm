@@ -143,7 +143,7 @@ void AnnexBEncoder::stop() {
 bool AnnexBEncoder::encode(const uint8_t* src, int srcStride, int width, int height, bool bgra, int64_t frameIndex) {
     if (!impl_->session || !src) return false;
     if (width != impl_->width || height != impl_->height) return false;
-    if (impl_->inflight.load() >= 2) { drops_.fetch_add(1); return false; }
+    if (impl_->inflight.load() >= 12) { drops_.fetch_add(1); return false; }
     CVPixelBufferRef pb = nullptr;
     CVPixelBufferPoolRef pool = VTCompressionSessionGetPixelBufferPool(impl_->session);
     if (!pool || CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &pb) != kCVReturnSuccess || !pb) {
