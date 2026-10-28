@@ -119,8 +119,9 @@
     $('#range').value = st.range; $('#gain').value = st.gain; $('#vgain').value = String(st.vgain); $('#mode').value = st.mode; $('#zebra').value = st.zebra;
     $('#btnPlay').setAttribute('aria-pressed', String(st.playing)); $('#btnPlay').textContent = st.playing ? 'LIVE' : 'STOPPED';
     const lg = $('#legend'); lg.hidden = st.view !== 1;
-    const bands = (M.falseBands ? M.falseBands(st.fc) : M.FALSE_COLOR).filter((b) => b.label);
-    lg.innerHTML = bands.map((b) => `<span title="${b.label}"><i style="background:rgb(${b.rgb.map((v) => Math.round(v * 255)).join(',')})"></i>${b.label}</span>`).join('');
+    const bands = (M.falseBands ? M.falseBands(st.fc) : M.FALSE_COLOR).filter((b) => b.label).slice().reverse();
+    const mark = (b) => (b.tick !== undefined ? b.tick : Math.round(b.hi > 400 ? b.lo : b.hi));
+    lg.innerHTML = bands.map((b) => `<span title="${b.label}"><b>${mark(b)}</b><i style="background:rgb(${b.rgb.map((v) => Math.round(v * 255)).join(',')})"></i></span>`).join('');
     const fc = $('#fcMode'); if (fc) fc.value = st.fc || 'arri';
     document.querySelectorAll('[data-guide]').forEach((b) => b.setAttribute('aria-pressed', String(st.guides.has(b.dataset.guide))));
   }

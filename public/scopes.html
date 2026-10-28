@@ -76,10 +76,11 @@
   .msg[hidden] { display: none; }
   .note { position: absolute; left: 12px; bottom: 10px; z-index: 2; font-size: 12px; background: rgba(20,22,27,.9); border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; color: var(--dim); max-width: 70%; }
   .note[hidden] { display: none; }
-  .legend { position: absolute; left: 8px; top: 62px; bottom: 10px; z-index: 4; display: flex; flex-direction: column; justify-content: stretch; gap: 2px; width: 132px; pointer-events: none; }
+  .legend { position: absolute; left: 4px; top: 58px; bottom: 8px; z-index: 4; display: flex; flex-direction: column; width: 34px; pointer-events: none; }
   .legend[hidden] { display: none; }
-  .legend span { flex: 1; display: flex; align-items: center; gap: 6px; font-size: 10px; padding: 0 4px; border-radius: 3px; background: rgba(8,10,14,.72); color: #f5f5f5; min-height: 0; }
-  .legend i { width: 10px; align-self: stretch; border-radius: 2px; display: inline-block; flex: 0 0 10px; }
+  .legend span { flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 3px; min-height: 0; background: transparent; padding: 0; }
+  .legend b { font: 700 9px/1 ui-monospace, Menlo, monospace; color: #fff; text-shadow: 0 1px 2px #000, 0 0 3px #000; }
+  .legend i { width: 7px; align-self: stretch; display: block; flex: 0 0 7px; }
   .scope-tools { position: absolute; z-index: 5; left: 8px; top: 34px; right: 8px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; pointer-events: auto; }
   .scope-tools button, .scope-tools select, .scope-tools input { min-height: 0; padding: 2px 7px; font-size: 11px; }
   .scope-tools input[type=range] { width: 90px; padding: 0; }

@@ -12,28 +12,28 @@
   'use strict';
   // ARRI-style false colour (Rec.709 video levels, SmallHD / ARRI "Exposure Assist"); everything else: greyscale
   const FALSE_COLOR = [
-    { lo: -1000, hi: 2.5, rgb: [0.55, 0.0, 0.8], name: 'PURPLE', label: '< 2.5 % crushed' },
-    { lo: 2.5, hi: 4, rgb: [0.05, 0.35, 1.0], name: 'BLUE', label: '2.5–4 % near black' },
-    { lo: 38, hi: 42, rgb: [0.15, 0.8, 0.15], name: 'GREEN', label: '38–42 % 18 % grey' },
-    { lo: 52, hi: 56, rgb: [1.0, 0.45, 0.75], name: 'PINK', label: '52–56 % +1 stop (skin)' },
-    { lo: 97, hi: 99, rgb: [1.0, 0.92, 0.0], name: 'YELLOW', label: '97–99 % near clip' },
-    { lo: 99, hi: 1000, rgb: [1.0, 0.0, 0.0], name: 'RED', label: '≥ 99 % clipped' },
+    { lo: -1000, hi: 2.5, rgb: [0.55, 0.0, 0.8], name: 'PURPLE', label: '< 2.5 % crushed', tick: 0 },
+    { lo: 2.5, hi: 4, rgb: [0.05, 0.35, 1.0], name: 'BLUE', label: '2.5–4 % near black', tick: 4 },
+    { lo: 38, hi: 42, rgb: [0.15, 0.8, 0.15], name: 'GREEN', label: '38–42 % 18 % grey', tick: 42 },
+    { lo: 52, hi: 56, rgb: [1.0, 0.45, 0.75], name: 'PINK', label: '52–56 % +1 stop (skin)', tick: 56 },
+    { lo: 97, hi: 99, rgb: [1.0, 0.92, 0.0], name: 'YELLOW', label: '97–99 % near clip', tick: 99 },
+    { lo: 99, hi: 1000, rgb: [1.0, 0.0, 0.0], name: 'RED', label: '≥ 99 % clipped', tick: 100 },
   ];
   const FALSE_IRE = [
-    { lo: -1000, hi: 0, rgb: [0.55, 0.0, 0.8], name: 'SUB', label: '< 0 % sub-black' },
-    { lo: 0, hi: 5, rgb: [0.05, 0.35, 1.0], name: 'BLACK', label: '0–5 % black' },
-    { lo: 45, hi: 55, rgb: [0.15, 0.8, 0.15], name: 'MID', label: '45–55 % mid grey' },
-    { lo: 90, hi: 100, rgb: [1.0, 0.92, 0.0], name: 'WHITE', label: '90–100 % white' },
-    { lo: 100, hi: 109, rgb: [1.0, 0.45, 0.0], name: 'SUPER', label: '100–109 % super-white' },
-    { lo: 109, hi: 1000, rgb: [1.0, 0.0, 0.0], name: 'CLIP', label: '≥ 109 % clipped' },
+    { lo: -1000, hi: 0, rgb: [0.55, 0.0, 0.8], name: 'SUB', label: '< 0 % sub-black', tick: 0 },
+    { lo: 0, hi: 5, rgb: [0.05, 0.35, 1.0], name: 'BLACK', label: '0–5 % black', tick: 5 },
+    { lo: 45, hi: 55, rgb: [0.15, 0.8, 0.15], name: 'MID', label: '45–55 % mid grey', tick: 55 },
+    { lo: 90, hi: 100, rgb: [1.0, 0.92, 0.0], name: 'WHITE', label: '90–100 % white', tick: 90 },
+    { lo: 100, hi: 109, rgb: [1.0, 0.45, 0.0], name: 'SUPER', label: '100–109 % super-white', tick: 100 },
+    { lo: 109, hi: 1000, rgb: [1.0, 0.0, 0.0], name: 'CLIP', label: '≥ 109 % clipped', tick: 109 },
   ];
   const FALSE_PQ = [
-    { lo: 0, hi: 10, rgb: [0.05, 0.35, 1.0], name: 'SHADOW', label: '0–10 nt' },
-    { lo: 80, hi: 120, rgb: [0.15, 0.8, 0.15], name: 'SDR', label: '100 nt SDR white' },
-    { lo: 180, hi: 240, rgb: [1.0, 0.45, 0.75], name: 'REF', label: '203 nt HDR reference' },
-    { lo: 800, hi: 1200, rgb: [1.0, 0.92, 0.0], name: '1K', label: '1000 nt' },
-    { lo: 3000, hi: 5000, rgb: [1.0, 0.45, 0.0], name: '4K', label: '4000 nt' },
-    { lo: 8000, hi: 100000, rgb: [1.0, 0.0, 0.0], name: 'CLIP', label: '≥ 10000 nt' },
+    { lo: 0, hi: 10, rgb: [0.05, 0.35, 1.0], name: 'SHADOW', label: '0–10 nt', tick: 0 },
+    { lo: 80, hi: 120, rgb: [0.15, 0.8, 0.15], name: 'SDR', label: '100 nt SDR white', tick: 100 },
+    { lo: 180, hi: 240, rgb: [1.0, 0.45, 0.75], name: 'REF', label: '203 nt HDR reference', tick: 203 },
+    { lo: 800, hi: 1200, rgb: [1.0, 0.92, 0.0], name: '1K', label: '1000 nt', tick: '1k' },
+    { lo: 3000, hi: 5000, rgb: [1.0, 0.45, 0.0], name: '4K', label: '4000 nt', tick: '4k' },
+    { lo: 8000, hi: 100000, rgb: [1.0, 0.0, 0.0], name: 'CLIP', label: '≥ 10000 nt', tick: '10k' },
   ];
   const FALSE_MODES = { arri: FALSE_COLOR, ire: FALSE_IRE, st2084: FALSE_PQ };
   function falseBands(mode) { return (FALSE_MODES[mode] || FALSE_COLOR).slice(0, 6); }
