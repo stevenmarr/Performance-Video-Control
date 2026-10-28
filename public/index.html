@@ -43,7 +43,7 @@
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
     <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
-    <button class="tab tab-looks" data-tab="looks" title="One preset page for every hi-res system. Tie it to RS6, E2, or Pixelhue. Recall loads that preset onto preview.">PRESETS</button>
+    <button class="tab tab-looks" data-tab="looks" title="Hi-res cue stack for RS6, E2 and PixelHue. Absolute and relative recalls, lag, bail-to, and operator GO. Not ATEM.">PRESETS</button>
     <button class="tab tab-decks" data-tab="decks" title="Stream Decks connected over USB. Home picks one system. This app draws the keys. The Elgato app is not used.">Control Devices</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
@@ -299,13 +299,19 @@
     <div id="akSs"></div>
   </section>
   <section class="grid-wrap pane" id="pane-amacros" hidden>
-    <div class="board-head"><div class="section-title">ATEM MACROS <small id="atemMacroInfo">tap to run</small></div><span class="spacer"></span>
-      <button class="btn mini" id="atemMacroRecord" type="button" title="Record the next actions into a macro slot">● RECORD</button>
-      <button class="btn mini" id="atemMacroStopRecord" type="button">STOP RECORD</button>
-      <button class="btn mini" id="atemMacroWait" type="button" title="Insert a user wait while recording">USER WAIT</button>
-      <button class="btn mini" id="atemMacroContinue" type="button" title="Continue a macro that is waiting">CONTINUE</button>
-      <button class="btn mini danger" id="atemMacroStop" type="button">■ STOP</button></div>
-    <div id="atemMacros" class="grid"></div>
+    <div class="board-head">
+      <div class="section-title">ATEM MACROS <small id="atemDeskInfo">operator, editor, and absolute memories</small></div>
+      <span class="seg-row" id="atemDeskMode">
+        <button type="button" class="btn mini on" data-admode="op">OPERATOR</button>
+        <button type="button" class="btn mini" data-admode="edit">EDITOR</button>
+        <button type="button" class="btn mini" data-admode="mem">MEMORIES</button>
+      </span>
+      <span class="spacer"></span>
+      <button class="btn mini" id="atemDeskSync" type="button">SYNC</button>
+      <button class="btn mini danger" id="atemMacroStop" type="button">STOP</button>
+      <button class="btn mini" id="atemMacroContinue" type="button">CONTINUE</button>
+    </div>
+    <div id="atemDesk"></div>
   </section>
   <aside class="transport atransport">
     <button id="atemCut" class="btn cut">CUT<small id="atemCutSub"></small></button>
@@ -750,14 +756,20 @@
 <div id="toast" class="toast" hidden></div>
 <div id="undoBar" class="undo-bar" role="status" hidden></div>
 <section id="pane-looks" hidden>
-  <div class="looks-wrap">
+  <div class="looks-wrap cue-home">
     <div class="board-head">
-      <div class="section-title">PRESETS <small>one page for RS6, E2, and Pixelhue</small></div>
+      <div class="section-title">PRESETS <small>RS6, E2 and PixelHue. Not ATEM.</small></div>
       <span class="spacer"></span>
-      <span id="looksSystems" class="seg-row"></span>
+      <button type="button" class="btn mini" id="cueAdd">ADD CUE</button>
+      <button type="button" class="btn" id="cueBack">BACK</button>
+      <button type="button" class="btn primary" id="cueGo">GO</button>
+      <button type="button" class="btn danger" id="cueStop">STOP</button>
     </div>
-    <p class="note small">This page stays up, like Scopes. Tie it to one hi-res system. Recall puts that preset on preview, then sets each key to the stored on or off. Take on that system's page commits preview.</p>
-    <div id="looksGrid" class="looks-grid"></div>
+    <p class="note small" id="cueStatus">Operator GO is the default. A cue can auto-advance after it settles. Lag holds one preset behind another. Bail-to recalls a predetermined preset when the cue is done.</p>
+    <div class="cue-layout">
+      <div id="cueList" class="cue-list"></div>
+      <div id="cueEditor" class="cue-editor"></div>
+    </div>
   </div>
 </section>
 <script src="/looks.js"></script>
@@ -767,6 +779,7 @@
 <script src="/app.js"></script>
 <script src="/sys.js"></script>
 <script src="/atem.js"></script>
+<script src="/atem-macros.js"></script>
 <script src="/atem-ext.js"></script>
 <script src="/ptz.js"></script>
 <script src="/pixera.js"></script>

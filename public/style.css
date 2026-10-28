@@ -1154,7 +1154,19 @@ body.tab-scopes #scopesFrame{flex:1;min-height:calc(100vh - 150px)}
 .tsl-table input { width: 100%; max-width: 160px; background: #1a1a1a; border: 1px solid #333; color: #F5F5F5; border-radius: 4px; padding: 4px 6px; }
 .tsl-log { max-height: 140px; overflow: auto; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 6px; padding: 8px; font: 11px ui-monospace, Menlo, monospace; color: #bdbdbd; }
 .looks-wrap{padding:12px 16px 24px}
-.looks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.cue-layout{display:grid;grid-template-columns:240px 1fr;gap:10px;min-height:0}
+.cue-list,.cue-editor,.ad-col{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;min-height:180px}
+.cue-row{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:transparent;color:var(--txt);border:0;border-bottom:1px solid var(--line);padding:6px 4px;cursor:pointer}
+.cue-row.on,.cue-step.on{background:#1c2430}
+.cue-row small{margin-left:auto;color:var(--dim);font-size:11px}
+.cue-head,.cue-step,.ad-opbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:4px 0}
+.cue-step select,.cue-step input,.cue-head input,.cue-head select,.cue-bail input,.cue-bail select,#adName{background:#14161a;color:var(--txt);border:1px solid var(--line);border-radius:6px;padding:4px 6px}
+.cue-bail{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;color:var(--dim);font-size:12px}
+.ad-edit{display:grid;grid-template-columns:220px 1fr 240px;gap:8px}
+.ad-op{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.ad-sim{margin-top:8px;padding:8px;border:1px dashed var(--line);border-radius:8px;font:12px/1.4 ui-monospace,Menlo,monospace}
+.ad-mem .cue-row button{margin-left:6px}
+@media (max-width:900px){.cue-layout,.ad-edit{grid-template-columns:1fr}}
 .look-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px}
 .look-card header{display:flex;align-items:center;gap:8px}
 .look-card .num{font:800 12px/1 ui-monospace,Menlo,monospace;color:var(--dim);width:18px}

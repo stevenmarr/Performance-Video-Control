@@ -1,113 +1,160 @@
-// LOOKS: the same memory grid on RS6, E2, Pixelhue and ATEM.
-// Recall loads the preset onto preview, then forces each key to the stored on or off.
+// Hi-res cue stack. RS6, E2 and PixelHue only. The PRESETS tab.
 (function () {
   'use strict';
-  const grid = document.getElementById('looksGrid');
-  if (!grid) return;
-  const SLOTS = 16;
-  const KEYS = [
-    { id: '0', label: 'KEY 1' }, { id: '1', label: 'KEY 2' }, { id: '2', label: 'KEY 3' }, { id: '3', label: 'KEY 4' },
-    { id: 'dsk0', label: 'DSK 1' }, { id: 'dsk1', label: 'DSK 2' },
-  ];
+  const list = document.getElementById('cueList');
+  const editor = document.getElementById('cueEditor');
+  if (!list || !editor) return;
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&', '<': '<', '>': '>', '"': '"' }[c]));
-  const HIRES = [
-    { id: 'rs6', label: 'RS6' },
-    { id: 'e2', label: 'E2' },
-    { id: 'pixelhue', label: 'PIXELHUE' },
-  ];
-  let system = localStorage.getItem('cc.looksSystem') || 'rs6';
-  let looks = [];
-  let armed = [];
+  const SYSTEMS = [['rs6', 'RS6'], ['e2', 'E2'], ['pixelhue', 'PIXELHUE']];
+  let book = { cues: [], index: 0, catalog: { rs6: [], e2: [], pixelhue: [] }, firing: null };
+  let selected = 0;
 
-  function card(n) {
-    const id = `${system}-${n}`;
-    const look = looks.find((l) => l.id === id);
-    const keys = KEYS.map((k) => {
-      const saved = look && (look.keys || []).find((x) => x.id === k.id);
-      const on = !!(saved && saved.on);
-      return `<button type="button" class="look-key ${on ? 'on' : ''}" data-key="${k.id}" data-slot="${n}" aria-pressed="${on ? 'true' : 'false'}">${esc(k.label)} ${on ? 'ON' : 'OFF'}</button>`;
-    }).join('');
-    return `<article class="look-card ${look ? 'filled' : ''}" data-slot="${n}">
-      <header><span class="num">${n}</span><input data-name="${n}" value="${esc(look ? look.name : '')}" placeholder="Look ${n}" aria-label="Look ${n} name"></header>
-      <label class="look-preset">PRESET <input data-preset="${n}" value="${esc(look ? look.preset : n)}" inputmode="numeric" aria-label="Preset for look ${n}"></label>
-      <div class="look-keys">${keys}</div>
-      <div class="look-acts">
-        <button type="button" class="btn mini" data-save="${n}">STORE</button>
-        <button type="button" class="btn mini primary" data-recall="${n}" ${look ? '' : 'disabled'}>RECALL</button>
-      </div>
-    </article>`;
+  const cue = () => book.cues[selected] || null;
+
+  async function api(method, path, body) {
+    const r = await fetch(path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || j.message || r.statusText);
+    return j;
   }
 
-  function paint() {
-    grid.innerHTML = Array.from({ length: SLOTS }, (_, i) => card(i + 1)).join('');
+  function options(system, current) {
+    const rows = (book.catalog && book.catalog[system]) || [];
+    const opts = rows.map((p) => `<option value="${esc(p.id)}">${esc(p.name || p.id)}</option>`).join('');
+    const extra = current && !rows.some((p) => String(p.id) === String(current)) ? `<option value="${esc(current)}">${esc(current)}</option>` : '';
+    return extra + opts;
   }
 
-  function paintSystems() {
-    const bar = document.getElementById('looksSystems');
-    if (!bar) return;
-    const onDesk = HIRES.filter((s) => armed.includes(s.id));
-    const list = onDesk.length ? onDesk : HIRES;
-    bar.innerHTML = list.map((s) => `<button type="button" class="btn mini${s.id === system ? ' on' : ''}" data-looksys="${s.id}">${s.label}</button>`).join('');
+  function bailNote(system, preset) {
+    const row = ((book.catalog && book.catalog[system]) || []).find((p) => String(p.id) === String(preset));
+    if (!row || row.bail == null || row.bail === '' || row.bail === 0) return '';
+    return `This preset already bails to ${row.bail} after TAKE on its own page.`;
   }
+
+  function paintList() {
+    list.innerHTML = book.cues.map((c, i) => `<button type="button" class="cue-row ${i === selected ? 'on' : ''}" data-i="${i}">
+      <b>${i + 1}</b><span>${esc(c.name || 'Cue')}</span><small>${c.advance === 'auto' ? 'AUTO' : 'GO'} · ${c.steps.length}</small>
+    </button>`).join('') || '<div class="note">No cues yet.</div>';
+    const st = document.getElementById('cueStatus');
+    if (st) {
+      const firing = book.firing ? ` Firing ${book.firing.cue}, step ${book.firing.step}.` : '';
+      st.textContent = `Cue ${book.cues.length ? selected + 1 : 0} of ${book.cues.length}.${firing} Operator GO is the default. Auto-advance runs the next cue after this one settles.`;
+    }
+  }
+
+  function paintEditor() {
+    const c = cue();
+    if (!c) { editor.innerHTML = '<div class="note">Add a cue. Each step recalls one hi-res preset.</div>'; return; }
+    const steps = c.steps.map((s, i) => `<div class="cue-step" data-step="${i}">
+      <select data-field="system">${SYSTEMS.map(([id, label]) => `<option value="${id}" ${s.system === id ? 'selected' : ''}>${label}</option>`).join('')}</select>
+      <select data-field="mode"><option value="absolute" ${s.mode !== 'relative' ? 'selected' : ''}>ABSOLUTE</option><option value="relative" ${s.mode === 'relative' ? 'selected' : ''}>RELATIVE</option></select>
+      ${s.mode === 'relative' ? `<input data-field="preset" value="${esc(s.preset)}" placeholder="+1" aria-label="Offset">` : `<select data-field="preset">${options(s.system, s.preset)}</select>`}
+      <label>LAG <input data-field="lagMs" type="number" min="0" step="10" value="${s.lagMs || 0}"></label>
+      <label>AT <input data-field="atMs" type="number" min="0" step="10" value="${s.atMs || 0}"></label>
+      <button type="button" class="btn mini ghost" data-delstep="${i}">✕</button>
+    </div>`).join('');
+    const bail = c.bail || { system: 'rs6', preset: '' };
+    editor.innerHTML = `<div class="cue-head">
+      <input id="cueName" value="${esc(c.name)}" aria-label="Cue name">
+      <select id="cueAdvance"><option value="go" ${c.advance !== 'auto' ? 'selected' : ''}>OPERATOR GO</option><option value="auto" ${c.advance === 'auto' ? 'selected' : ''}>AUTO-ADVANCE</option></select>
+      <button type="button" class="btn mini" id="cueSave">SAVE</button>
+      <button type="button" class="btn mini ghost" id="cueDup">DUPLICATE</button>
+      <button type="button" class="btn mini danger" id="cueDel">DELETE</button>
+    </div>
+    <div class="cue-steps">${steps || '<div class="note small">No steps.</div>'}</div>
+    <button type="button" class="btn mini" id="cueAddStep">ADD STEP</button>
+    <div class="cue-bail">
+      <span>BAIL TO</span>
+      <select id="cueBailSys">${SYSTEMS.map(([id, label]) => `<option value="${id}" ${bail.system === id ? 'selected' : ''}>${label}</option>`).join('')}<option value="" ${c.bail ? '' : 'selected'}>NONE</option></select>
+      <input id="cueBailPreset" value="${esc(bail.preset || '')}" placeholder="preset">
+      <small>${esc(bailNote(c.steps[0] && c.steps[0].system, c.steps[0] && c.steps[0].preset))}</small>
+    </div>`;
+  }
+
+  function paint() { paintList(); paintEditor(); }
 
   async function load() {
-    try {
-      const sys = await fetch('/api/sys').then((r) => r.json());
-      armed = sys.armed || [];
-    } catch { armed = []; }
-    const hi = HIRES.map((s) => s.id).filter((id) => armed.includes(id));
-    if (hi.length && !hi.includes(system)) system = hi[0];
-    localStorage.setItem('cc.looksSystem', system);
-    paintSystems();
-    const r = await fetch(`/api/looks?system=${encodeURIComponent(system)}`);
-    const j = await r.json();
-    looks = j.looks || [];
+    book = await api('GET', '/api/cues');
+    if (selected >= book.cues.length) selected = Math.max(0, book.cues.length - 1);
     paint();
   }
 
-  function draft(n) {
-    const name = grid.querySelector(`[data-name="${n}"]`);
-    const preset = grid.querySelector(`[data-preset="${n}"]`);
-    const keys = [...grid.querySelectorAll(`.look-key[data-slot="${n}"]`)].map((b) => ({
-      id: b.dataset.key,
-      label: b.textContent.replace(/\s+(ON|OFF)$/, ''),
-      on: b.classList.contains('on'),
-    }));
-    return { id: `${system}-${n}`, name: name ? name.value.trim() : `Look ${n}`, system, preset: preset ? preset.value.trim() : String(n), keys };
+  function draft() {
+    const c = cue();
+    if (!c) return null;
+    const steps = [...editor.querySelectorAll('.cue-step')].map((row, i) => {
+      const val = (field) => row.querySelector(`[data-field="${field}"]`).value;
+      return { ...c.steps[i], system: val('system'), mode: val('mode'), preset: val('preset'), lagMs: Number(val('lagMs')) || 0, atMs: Number(val('atMs')) || 0 };
+    });
+    const bailSys = document.getElementById('cueBailSys').value;
+    const bailPreset = document.getElementById('cueBailPreset').value.trim();
+    return {
+      ...c,
+      name: document.getElementById('cueName').value.trim() || c.name,
+      advance: document.getElementById('cueAdvance').value,
+      steps,
+      bail: bailSys && bailPreset ? { system: bailSys, preset: bailPreset } : null,
+    };
   }
 
-  grid.addEventListener('click', async (ev) => {
-    const key = ev.target.closest('.look-key');
-    if (key) {
-      key.classList.toggle('on');
-      const on = key.classList.contains('on');
-      key.setAttribute('aria-pressed', on ? 'true' : 'false');
-      key.textContent = `${key.textContent.replace(/\s+(ON|OFF)$/, '')} ${on ? 'ON' : 'OFF'}`;
-      return;
-    }
-    const save = ev.target.closest('[data-save]');
-    const recall = ev.target.closest('[data-recall]');
-    if (!save && !recall) return;
-    const n = Number((save || recall).dataset.save || (save || recall).dataset.recall);
-    const body = draft(n);
-    if (save) {
-      const r = await fetch('/api/looks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (!r.ok) return;
+  async function persist() {
+    const body = draft();
+    if (!body) return;
+    await api('POST', '/api/cues', body);
+    await load();
+  }
+
+  list.addEventListener('click', (ev) => {
+    const row = ev.target.closest('[data-i]');
+    if (!row) return;
+    selected = Number(row.dataset.i);
+    api('POST', '/api/cues/select', { index: selected }).then((j) => { book = { ...book, ...j }; paint(); }).catch(() => paint());
+  });
+
+  editor.addEventListener('click', async (ev) => {
+    const c = cue();
+    if (!c) return;
+    if (ev.target.id === 'cueSave') { await persist(); return; }
+    if (ev.target.id === 'cueAddStep') {
+      c.steps.push({ system: 'rs6', preset: '1', mode: 'absolute', lagMs: 0, atMs: 0 });
+      await api('POST', '/api/cues', { ...c });
       await load();
       return;
     }
-    await fetch('/api/looks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    await fetch(`/api/looks/${encodeURIComponent(body.id)}/recall`, { method: 'POST' });
-    await load();
+    if (ev.target.id === 'cueDel') { await api('DELETE', `/api/cues/${encodeURIComponent(c.id)}`); await load(); return; }
+    if (ev.target.id === 'cueDup') {
+      const copy = { ...c, id: '', name: `${c.name} copy`, steps: c.steps.map((s) => ({ ...s, id: '' })) };
+      await api('POST', '/api/cues', copy);
+      selected = book.cues.length;
+      await load();
+      return;
+    }
+    const del = ev.target.closest('[data-delstep]');
+    if (del) {
+      c.steps.splice(Number(del.dataset.delstep), 1);
+      await api('POST', '/api/cues', c);
+      await load();
+    }
   });
 
-  document.getElementById('looksSystems')?.addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-looksys]');
-    if (!b) return;
-    system = b.dataset.looksys;
-    localStorage.setItem('cc.looksSystem', system);
-    load().catch(() => paint());
+  document.getElementById('cueAdd').addEventListener('click', async () => {
+    await api('POST', '/api/cues', { name: `Cue ${book.cues.length + 1}`, steps: [{ system: 'rs6', preset: '1', mode: 'absolute' }], advance: 'go' });
+    selected = book.cues.length;
+    await load();
   });
-  document.querySelectorAll('[data-tab="looks"]').forEach((b) => b.addEventListener('click', () => setTimeout(load, 30)));
+  document.getElementById('cueGo').addEventListener('click', async () => {
+    await persist().catch(() => {});
+    book = await api('POST', '/api/cues/go');
+    selected = book.index || 0;
+    paint();
+  });
+  document.getElementById('cueStop').addEventListener('click', async () => { book = await api('POST', '/api/cues/stop'); paint(); });
+  document.getElementById('cueBack').addEventListener('click', async () => {
+    if (selected <= 0) return;
+    selected -= 1;
+    book = await api('POST', '/api/cues/select', { index: selected });
+    paint();
+  });
+  document.querySelectorAll('[data-tab="looks"]').forEach((b) => b.addEventListener('click', () => load().catch(() => {})));
   load().catch(() => paint());
 })();

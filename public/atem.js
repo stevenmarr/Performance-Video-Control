@@ -79,6 +79,7 @@
     const r = $('#atemFtbRate'); if (document.activeElement !== r) r.value = f.rate || '';
   }
   function renderMacros() {
+    if (document.getElementById('atemDesk')) return;
     const r = V.macroRun || {};
     const running = r.isRunning ? (V.macros.find((m) => m.index === r.macroIndex) || { name: `Macro ${r.macroIndex + 1}` }) : null;
     $('#atemMacroInfo').textContent = running ? `running: ${running.name}` : 'tap to run';
@@ -120,16 +121,18 @@
   $('#atemAuto').addEventListener('click', () => cmd('auto', meBody()));
   $('#atemFtb').addEventListener('click', () => { const f = meOf().ftb; if (!f || f.black || confirm(`FADE TO BLACK takes ${mes().length > 1 ? `M/E ${curMe() + 1}` : 'the program output'} to black. Continue?`)) cmd('ftb', meBody()); });
   // 0.11.0 SAVE (#atemSave, data-desksave): handled in public/sys.js with the other switcher pages
-  $('#atemMacros').addEventListener('click', (ev) => { const b = ev.target.closest('[data-macro]'); if (b && live()) cmd('macroRun', { macro: Number(b.dataset.macro) }).then(() => toast('Macro started')); });
-  $('#atemMacroStop').addEventListener('click', () => cmd('macroStop'));
-  $('#atemMacroRecord').addEventListener('click', () => {
+  const macroGrid = $('#atemMacros');
+  if (macroGrid) macroGrid.addEventListener('click', (ev) => { const b = ev.target.closest('[data-macro]'); if (b && live()) cmd('macroRun', { macro: Number(b.dataset.macro) }).then(() => toast('Macro started')); });
+  const bind = (sel, fn) => { const el = $(sel); if (el && !document.getElementById('atemDesk')) el.addEventListener('click', fn); };
+  bind('#atemMacroStop', () => cmd('macroStop'));
+  bind('#atemMacroRecord', () => {
     const n = Number(prompt('Record into macro number (1–100)', '1'));
     if (!(n >= 1 && n <= 100)) return;
     cmd('macroRecord', { macro: n - 1 }).then(() => toast(`Recording macro ${n}`));
   });
-  $('#atemMacroStopRecord').addEventListener('click', () => cmd('macroStopRecord').then(() => toast('Recording stopped')));
-  $('#atemMacroWait').addEventListener('click', () => cmd('macroUserWait').then(() => toast('User wait inserted')));
-  $('#atemMacroContinue').addEventListener('click', () => cmd('macroContinue').then(() => toast('Macro continued')));
+  bind('#atemMacroStopRecord', () => cmd('macroStopRecord').then(() => toast('Recording stopped')));
+  bind('#atemMacroWait', () => cmd('macroUserWait').then(() => toast('User wait inserted')));
+  bind('#atemMacroContinue', () => cmd('macroContinue').then(() => toast('Macro continued')));
   document.addEventListener('keydown', (e) => {
     if (window.CC.getTab() !== 'atem' || !live() || document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || e.repeat) return;
     if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); cmd('auto', meBody()); }
