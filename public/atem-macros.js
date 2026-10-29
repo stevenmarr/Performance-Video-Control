@@ -64,14 +64,22 @@
         <button type="button" class="btn mini" id="adStopRec">STOP RECORD</button>
         <button type="button" class="btn mini" id="adWait">USER WAIT</button>
         <button type="button" class="btn mini" id="adSim">${simOpen ? 'HIDE SIM' : 'SIM'}</button>
+        <button type="button" class="btn mini" id="adXmlOut">EXPORT XML</button>
+        <button type="button" class="btn mini" id="adCommit">WRITE</button>
       </div>
+      ${m && m.opaque ? '<p class="note">This slot is used on the switcher. Its steps cannot be read, so they will not be overwritten.</p>' : ''}
+      ${m && m.conflict ? `<p class="note">Switcher says “${esc(m.conflict.switcherName)}”. App says “${esc(m.conflict.appName)}”.</p><div class="ad-opbar"><button type="button" class="btn mini" data-resolve="switcher">KEEP SWITCHER</button><button type="button" class="btn mini" data-resolve="app">KEEP APP</button><button type="button" class="btn mini" data-resolve="merge">MERGE</button></div>` : ''}
+      <p class="note small">${esc(desk.protocol || '')} No show lock. Versions: ${(m && m.versions || []).length}.</p>
+      ${(m && m.versions || []).slice(-5).map((v) => `<button type="button" class="btn mini ghost" data-restore="${esc(v.at)}">${esc(v.at)} ${esc(v.note || '')}</button>`).join(' ')}
+      <textarea id="adXml" class="ad-sim" rows="4" placeholder="Paste a macro XML subset"></textarea>
+      <button type="button" class="btn mini" id="adXmlIn">IMPORT XML</button>
       <div id="adSim" class="ad-sim" ${simOpen ? '' : 'hidden'}></div>
     </div>`;
     const groups = {};
     for (const op of desk.catalog || []) (groups[op.group] = groups[op.group] || []).push(op);
     const inputs = (desk.switcher.inputs || []).map((i) => `<option value="${i.id}">${esc(i.long)}</option>`).join('');
     const inspect = `<div class="ad-col"><div class="section-title">INSPECTOR</div>
-      ${Object.entries(groups).map(([group, ops]) => `<details open><summary>${esc(group)}</summary>${ops.map((op) => `<button type="button" class="btn mini" data-addop="${op.op}">${esc(op.label)}</button>`).join(' ')}</details>`).join('')}
+      ${Object.entries(groups).map(([group, ops]) => `<details open><summary>${esc(group)}</summary>${ops.map((op) => `<button type="button" class="btn mini" data-addop="${op.op}" ${op.disabled ? 'disabled' : ''} title="${esc(op.reason || '')}">${esc(op.label)}</button>`).join(' ')}</details>`).join('')}
       <label class="cue-step">SOURCE <select id="adSource">${inputs || '<option value="1">1</option>'}</select></label>
       <label class="cue-step">M/E <input id="adMe" type="number" min="1" value="1"></label>
     </div>`;
@@ -184,6 +192,27 @@
       return;
     }
     if (ev.target.id === 'adSim') { simOpen = !simOpen; paint(); return; }
+    if (ev.target.id === 'adXmlOut') {
+      const pack = await api('GET', '/api/atem-desk/xml');
+      const box = document.getElementById('adXml');
+      if (box) box.value = pack.xml || '';
+      return;
+    }
+    if (ev.target.id === 'adXmlIn') {
+      const box = document.getElementById('adXml');
+      await api('POST', '/api/atem-desk/xml', { xml: box ? box.value : '' });
+      await load();
+      return;
+    }
+    if (ev.target.id === 'adCommit' && macro()) {
+      try { await api('POST', `/api/atem-desk/macros/${macro().index}/commit`); } catch (e) { const info = document.getElementById('atemDeskInfo'); if (info) info.textContent = e.message; }
+      await load();
+      return;
+    }
+    const resolve = ev.target.closest('[data-resolve]');
+    if (resolve && macro()) { await api('POST', `/api/atem-desk/macros/${macro().index}/resolve`, { choice: resolve.dataset.resolve }); await load(); return; }
+    const restore = ev.target.closest('[data-restore]');
+    if (restore && macro()) { await api('POST', `/api/atem-desk/macros/${macro().index}/restore`, { at: restore.dataset.restore }); await load(); return; }
     if (ev.target.id === 'adPlay' && macro()) { api('POST', `/api/atem-desk/macros/${macro().index}/play`, {}).then(load).catch(() => {}); return; }
     if (ev.target.id === 'adLoop' && macro()) { api('POST', `/api/atem-desk/macros/${macro().index}/play`, { loop: true }).then(load).catch(() => {}); return; }
     if (ev.target.id === 'adCapture') { await api('POST', '/api/atem-desk/memories', { name: `Memory ${desk.memories.length + 1}` }); await load(); return; }

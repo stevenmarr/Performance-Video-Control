@@ -44,7 +44,8 @@
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
     <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
-    <button class="tab tab-looks" data-tab="looks" title="Hi-res cue stack for RS6, E2 and PixelHue. Absolute and relative recalls, lag, bail-to, and operator GO. Not ATEM.">PRESETS</button>
+    <button class="tab tab-cues" data-tab="cues" title="Master cues. One click fires hi-res presets, ATEM macros and PTZ recalls on a timeline.">CUES</button>
+    <button class="tab tab-looks" data-tab="looks" title="Hi-res cue stack for one switcher: RS6, E2 or PixelHue. Absolute and relative recalls. Not ATEM.">PRESETS</button>
     <button class="tab tab-decks" data-tab="decks" title="Stream Decks connected over USB. Home picks one system. This app draws the keys. The Elgato app is not used.">Control Devices</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
@@ -77,7 +78,8 @@
   <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin">COLUMNS</button>
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
   <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. Live video is Desktop Video from a Mac sidecar.</span>
-  <span class="tabs-home-note" id="tabsLooksNote" hidden>One preset page. Tie it to RS6, E2, or Pixelhue. Recall puts that memory on preview. Keys are stored on or off, not toggled.</span>
+  <span class="tabs-home-note" id="tabsLooksNote" hidden>One switcher per stack. Absolute is a full look. Relative changes only that preset's layers. GO loads preview. Bail loads after TAKE.</span>
+  <span class="tabs-home-note" id="tabsCuesNote" hidden>Master cues. Mix hi-res presets, ATEM macros and PTZ recalls. Each action has an offset. STOP cancels what has not fired.</span>
   <span class="tabs-home-note" id="tabsDecksNote" hidden>Stream Decks on USB. Home picks one system. Every page has a Home key. Quit the Elgato Stream Deck app so this app can own the device.</span>
   </div>
 </nav>
@@ -759,21 +761,23 @@
 <section id="pane-looks" hidden>
   <div class="looks-wrap cue-home">
     <div class="board-head">
-      <div class="section-title">PRESETS <small>RS6, E2 and PixelHue. Not ATEM.</small></div>
+      <div class="section-title">PRESETS <small>One of RS6, E2, PixelHue. Not ATEM.</small></div>
       <span class="spacer"></span>
       <button type="button" class="btn mini" id="cueAdd">ADD CUE</button>
       <button type="button" class="btn" id="cueBack">BACK</button>
       <button type="button" class="btn primary" id="cueGo">GO</button>
       <button type="button" class="btn danger" id="cueStop">STOP</button>
     </div>
-    <p class="note small" id="cueStatus">Operator GO is the default. A cue can auto-advance after it settles. Lag holds one preset behind another. Bail-to recalls a predetermined preset when the cue is done.</p>
+    <p class="note small" id="cueStatus">One switcher. GO loads preview and never takes. Relative is layers only, not the next preset number. Bail waits until TAKE.</p>
     <div class="cue-layout">
       <div id="cueList" class="cue-list"></div>
       <div id="cueEditor" class="cue-editor"></div>
     </div>
   </div>
 </section>
+<section id="pane-cues" hidden></section>
 <script src="/looks.js"></script>
+<script src="/cues-tab.js"></script>
 <script src="/prefs.js"></script>
 <script src="/drag.js"></script>
 <script src="/dock.js"></script>
