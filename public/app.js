@@ -875,4 +875,35 @@
   api('GET', '/api/log').then((l) => l.forEach(addLog)).catch(() => {});
   $('#btnReconnect').addEventListener('click', () => { link.attempt = 0; openStream('manual'); refetchState(); });
   connectEvents();
+  appMemory();
 })();
+
+// Top-right of every page: memory this browser tab is using on this computer.
+function appMemory() {
+  const el = document.getElementById('appMem');
+  if (!el) return;
+  const KEY = 'cc.appMemory.v1';
+  let peak = Number(localStorage.getItem(KEY)) || 0;
+  const mb = (n) => (n == null || !Number.isFinite(n)) ? null : (n >= 100 * 1048576 ? `${Math.round(n / 1048576)} MB` : `${(n / 1048576).toFixed(1)} MB`);
+  async function tick() {
+    let used = null; let source = 'none';
+    const mem = performance && performance.memory;
+    if (mem && typeof mem.usedJSHeapSize === 'number') { used = mem.usedJSHeapSize; source = 'heap'; }
+    else if (performance && typeof performance.measureUserAgentSpecificMemory === 'function') {
+      try {
+        const page = await performance.measureUserAgentSpecificMemory();
+        if (page && typeof page.bytes === 'number') { used = page.bytes; source = 'page'; }
+      } catch { /* this browser will not measure the page */ }
+    }
+    const machine = typeof navigator.deviceMemory === 'number' ? navigator.deviceMemory : null;
+    if (used != null && used > peak) { peak = used; try { localStorage.setItem(KEY, String(peak)); } catch { /* private mode */ } }
+    const usedTxt = mb(used); const peakTxt = mb(peak > 0 ? peak : null);
+    const text = [usedTxt ? `MEM ${usedTxt}` : 'MEM —', peakTxt ? `peak ${peakTxt}` : '', machine ? `${machine} GB` : ''].filter(Boolean).join(' · ');
+    if (el.textContent !== text) el.textContent = text;
+    el.title = source === 'heap' ? 'JavaScript heap this page is using on this computer'
+      : source === 'page' ? 'Memory this page is using on this computer'
+        : 'This browser does not report how much memory this page is using';
+  }
+  tick();
+  setInterval(tick, 2000);
+}
