@@ -44,7 +44,7 @@ legacy NDI sidecar (optional)            ─┘                                 
 | Control | What it does |
 |---|---|
 | SOURCE | Grouped menu: Desktop Video, then cameras, test clips, and legacy NDI only when a sidecar is pushing. Empty groups with nothing to say are hidden. You cannot type a new source in. |
-| PIC / WFM / PARADE / VEC / LIGHTNING | Choose which panels to show; they lay out side by side. Double-click a panel to show it alone. Lightning is the component vectorscope (Y / B−Y / R−Y). |
+| PIC / WFM / PARADE / VEC / DIAMOND | The default layout shows all five. Turn one off to close that panel. Double-click a panel to show it alone. Diamond is G vs B on top and G vs R below. |
 | NORMAL / FALSE / ZEBRA | Picture mode. ZEBRA uses the level next to it (%). |
 | RANGE | AUTO uses the stream's VUI `video_full_range_flag`. LEGAL is 16–235 = 0–100 %; FULL is 0–255 = 0–100 %. |
 | INTENSITY | Trace brightness. |

@@ -16,9 +16,12 @@
   const M = window.ScopesMath;
 
   // ---------- state ----------
+  const ALL_SCOPES = 'pic,wfm,parade,vec,ltng';
+  // Older builds saved a four-scope default and left Diamond closed. That saved set is the old default, so open all five once.
+  if (!Q.get('show') && (!LS('show') || LS('show') === 'pic,wfm,parade,vec')) LS('show', ALL_SCOPES);
   const st = {
     src: Q.get('src') || LS('src') || '', mode: Q.get('mode') || LS('mode') || 'auto', range: LS('range') || 'auto',
-    show: new Set((Q.get('show') || LS('show') || 'pic,wfm,parade,vec').split(',').filter(Boolean)),
+    show: new Set((Q.get('show') || LS('show') || ALL_SCOPES).split(',').filter(Boolean)),
     view: Number(Q.get('view') || LS('view') || 0), gain: Number(LS('gain') || 1), vgain: Number(LS('vgain') || 1), zebra: Number(LS('zebra') || 95),
     fc: LS('fc') || 'arri', guides: new Set((LS('guides') || 'action,title,cross').split(',').filter(Boolean)), gem: null,
     playing: true, solo: null, cfg: null, active: '', sources: [],
@@ -510,7 +513,11 @@
       bar: $('#scopeDock'),
       onLayout: () => layout(),
     });
-    for (const id of ['pic', 'wfm', 'parade', 'vec', 'ltng']) if (!st.show.has(id)) scopeDock.close(id);
+    for (const id of ['pic', 'wfm', 'parade', 'vec', 'ltng']) {
+      const open = scopeDock.layout().some((it) => it.id === id && !it.closed);
+      if (st.show.has(id)) { if (!open) scopeDock.reopen(id, false); }
+      else if (open) scopeDock.close(id);
+    }
   }
 
   syncUi(); layout();

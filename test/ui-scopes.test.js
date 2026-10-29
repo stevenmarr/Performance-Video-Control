@@ -96,7 +96,7 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     assert.equal(bandOf(await page.evaluate(([x]) => window.__scopes.pictureAt(x, 0.375), [last / W])), 'GREY', 'full range: 92 %');
     await page.selectOption('#range', 'auto');
     // Lightning is a real component vectorscope: 75 % bars land on B−Y (left) and R−Y (right) at that Y
-    await page.click('[data-show="ltng"]');
+    // Diamond is already in the default layout.
     await page.evaluate(() => window.__scopes.render());
     const ltng = await page.evaluate((want) => {
       const peaks = window.__scopes.lightningPeaks(12);
@@ -118,7 +118,7 @@ test('SCOPES (Playwright): H.264 -> relay -> WebCodecs -> WebGL2 waveform / para
     // toggles: hide PARADE and VEC -> two panels side by side
     await page.click('[data-show="parade"]'); await page.click('[data-show="vec"]');
     const r = await page.evaluate(() => window.__scopes.rects());
-    assert.ok(r.pic && r.wfm && !r.parade && !r.vec); assert.ok(r.wfm[0] > r.pic[0] && Math.abs(r.wfm[1] - r.pic[1]) < r.pic[3], 'side by side');
+    assert.ok(r.pic && r.wfm && !r.parade && !r.vec && !r.ltng); assert.ok(r.wfm[0] > r.pic[0] && Math.abs(r.wfm[1] - r.pic[1]) < r.pic[3], 'side by side');
     await page.click('[data-show="parade"]'); await page.click('[data-show="vec"]');
   });
 
