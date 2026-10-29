@@ -66,6 +66,20 @@ test('UI is served and SSE pushes state', async () => {
   });
 });
 
+test('GET /api/host-memory reports the process and the computer', async () => {
+  await withApp(async (call) => {
+    const r = await call('GET', '/api/host-memory');
+    assert.equal(r.status, 200);
+    assert.ok(r.json.appRss > 0);
+    assert.ok(r.json.appHeap > 0);
+    assert.ok(r.json.sysTotal > 0);
+    assert.ok(r.json.sysUsed >= 0 && r.json.sysUsed <= r.json.sysTotal);
+    assert.ok(r.json.cpus >= 1);
+    assert.equal(typeof r.json.cpuPct, 'number');
+    assert.ok(r.json.cpuPct >= 0);
+  });
+});
+
 test('settings update hides the password and reconnects', async () => {
   await withApp(async (call, { restPort }) => {
     const r = await call('POST', '/api/settings', { host: '127.0.0.1', restPort, password: 'x', maxScreens: 4 });
