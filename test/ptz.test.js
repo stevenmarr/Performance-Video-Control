@@ -213,6 +213,32 @@ test('PTZ in the SystemManager: add / edit / remove cameras, session speeds, pre
   } finally { sm.close(); await stop(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('PTZ: one camera can be a simulator without changing its saved address', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6ptzsim-'));
+  const eng = { settings: { host: '192.0.2.10' }, presets: [], destinations: [], live: { inputs: {} }, log() {}, changed() {} };
+  const sm = new SystemManager({ dataDir: dir, engine: eng, autoStart: false });
+  try {
+    sm.addCamera({ name: 'Wide', host: '127.0.0.1', port: 9 });
+    sm.addCamera({ name: 'Tight', host: '127.0.0.1', port: 9 });
+    const sim = await sm.setCameraSim('cam1', true);
+    assert.equal(sim.host, '127.0.0.1'); assert.equal(sim.port, 9); assert.equal(sim.sim, true);
+    const pub = sm.publicConn('ptz');
+    assert.equal(pub.cameras[0].simulator, true); assert.equal(pub.cameras[0].host, '127.0.0.1'); assert.equal(pub.cameras[0].port, 9);
+    assert.equal(pub.cameras[1].simulator, false);
+    const drv = sm.driverCameras();
+    assert.equal(drv[0].host, '127.0.0.1'); assert.notEqual(drv[0].port, 9);
+    assert.equal(drv[1].host, '127.0.0.1'); assert.equal(drv[1].port, 9);
+    const saved = JSON.parse(fs.readFileSync(path.join(dir, 'systems.json'), 'utf8')).connections.ptz.cameras;
+    assert.equal(saved[0].host, '127.0.0.1'); assert.equal(saved[0].port, 9); assert.equal(saved[0].sim, true);
+    assert.equal(saved[1].sim, undefined);
+    await sm.setCameraSim('cam1', false);
+    assert.equal(sm.conn('ptz').cameras[0].sim, undefined);
+    assert.equal(sm.driverCameras()[0].port, 9);
+    assert.equal(sm.publicConn('ptz').cameras[0].simulator, false);
+    await assert.rejects(sm.setCameraSim('nope', true), (e) => e.status === 404);
+  } finally { await sm.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('/api/sys/ptz: mock mode refuses non-loopback cameras before any contact; cmd routes drive the cameras', async () => {
   const ctx = await setup({});
   const { mocks, list, stop } = await cams(2);

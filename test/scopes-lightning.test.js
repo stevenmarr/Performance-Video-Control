@@ -49,6 +49,8 @@ test('Lightning is an extra mode beside WFM, parade, vectorscope and false colou
   assert.match(page, /data-k="ltng"/);
   assert.match(gl, /u_mode == 3/);
   assert.match(gl, /DIAMOND/);
+  assert.doesNotMatch(gl, /mV/, 'diamond does not print a voltage');
+  assert.doesNotMatch(read('public/scopes.js'), /gemOf/);
   assert.match(read('public/scopes.js'), /lightningPeaks/);
 });
 

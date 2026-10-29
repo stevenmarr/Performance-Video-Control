@@ -342,11 +342,6 @@
       ctx.fillText('B', pix(S, S * 0.5)[0] + f(6), pix(S, S * 0.5)[1] + f(4));
       ctx.fillText('G', pix(-S, -S * 0.5)[0] - f(14), pix(-S, -S * 0.5)[1] + f(4));
       ctx.fillText('R', pix(S, -S * 0.5)[0] + f(6), pix(S, -S * 0.5)[1] + f(4));
-      const left = x + f(8);
-      ctx.fillStyle = 'rgba(120, 255, 160, 0.9)';
-      ctx.fillText(gem ? `High ${gem.high} mV` : 'High — mV', left, y + f(16));
-      ctx.fillText(gem ? `Low ${gem.low} mV` : 'Low — mV', left, y + f(30));
-      ctx.fillText(gem ? `Outside ${gem.area}%` : 'Outside —', left, y + f(44));
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
       ctx.fillText('DIAMOND', x + f(8), y + h - f(8));
     }

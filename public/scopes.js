@@ -23,7 +23,7 @@
     src: Q.get('src') || LS('src') || '', mode: Q.get('mode') || LS('mode') || 'auto', range: LS('range') || 'auto',
     show: new Set((Q.get('show') || LS('show') || ALL_SCOPES).split(',').filter(Boolean)),
     view: Number(Q.get('view') || LS('view') || 0), gain: Number(LS('gain') || 1), vgain: Number(LS('vgain') || 1), zebra: Number(LS('zebra') || 95),
-    fc: LS('fc') || 'arri', guides: new Set((LS('guides') || 'action,title,cross').split(',').filter(Boolean)), gem: null,
+    fc: LS('fc') || 'arri', guides: new Set((LS('guides') || 'action,title,cross').split(',').filter(Boolean)),
     playing: true, solo: null, cfg: null, active: '', sources: [],
   };
   const stats = { drawn: 0, decoded: 0, skipped: 0, bytes: 0, resets: 0, decodeMs: [], drawMs: [], uploadMs: [], latMs: [], winStart: performance.now(), fps: 0, kbps: 0, offset: 0, rtt: Infinity, lastLat: null };
@@ -52,7 +52,7 @@
       const rows = items.reduce((m, it) => Math.max(m, it.y + (it.c ? 1 : it.h)), 1) || 1;
       const gap = 8;
       const ph = $('#panels').clientHeight;
-      const row = Math.max(22, Math.floor((ph - gap * Math.max(0, rows - 1)) / rows));
+      const row = Math.max(12, Math.floor((ph - gap * Math.max(0, rows - 1)) / rows));
       $('#panels').style.setProperty('--dk-row', `${row}px`);
     }
     const sb = stage.getBoundingClientRect(); rects = {};
@@ -72,7 +72,7 @@
   function drawOverlay() {
     overlayDirty = false; octx.clearRect(0, 0, ov.width, ov.height);
     const dpr = window.devicePixelRatio || 1; const full = G ? G.effFull : false;
-    for (const k of ['wfm', 'parade', 'vec', 'ltng']) if (rects[k]) M.drawGraticule(octx, k, rects[k], { full, dpr, vgain: st.vgain, gem: st.gem });
+    for (const k of ['wfm', 'parade', 'vec', 'ltng']) if (rects[k]) M.drawGraticule(octx, k, rects[k], { full, dpr, vgain: st.vgain });
     if (rects.pic && st.view === 1) { /* the key is the HTML strip on the left of the frame */ }
     if (rects.pic) drawGuides(octx, rects.pic, dpr);
   }
@@ -327,7 +327,6 @@
         const layout = await f.copyTo(planeBuf);
         G.uploadPlanes({ format: fmt === 'NV12' ? 'NV12' : 'I420', width: w, height: h, data: planeBuf, layout });
         p.s.exact = true;
-        st.gem = gemOf(fmt === 'NV12' ? 'NV12' : 'I420', w, h, planeBuf, layout, G.effFull);
         overlayDirty = true;
       } else { G.uploadImage(f, w, h); p.s.exact = false; } // RGB / opaque GPU frames: the browser's conversion
       const t1 = performance.now(); push(stats.uploadMs, t1 - t0);
@@ -472,27 +471,6 @@
     start, stop, loadSources,
   };
 
-  function gemOf(fmt, w, h, data, lay, full) {
-    if (!data || !lay || !lay[0]) return null;
-    const yS = lay[0].stride; const yO = lay[0].offset;
-    let hi = -1e9; let lo = 1e9; let n = 0; let bad = 0;
-    const sx = Math.max(1, Math.floor(w / 64)); const sy = Math.max(1, Math.floor(h / 36));
-    for (let y = 0; y < h; y += sy) {
-      for (let x = 0; x < w; x += sx) {
-        const Yc = data[yO + y * yS + x];
-        const cx = x >> 1; const cy = y >> 1; let cb; let cr;
-        if (fmt === 'NV12') { const s = lay[1].stride; const o = lay[1].offset; cb = data[o + cy * s + cx * 2]; cr = data[o + cy * s + cx * 2 + 1]; }
-        else { cb = data[lay[1].offset + cy * lay[1].stride + cx]; cr = data[lay[2].offset + cy * lay[2].stride + cx]; }
-        const Y = full ? Yc / 255 : (Yc - 16) / 219;
-        const Pb = full ? (cb - 128) / 255 : (cb - 128) / 224;
-        const Pr = full ? (cr - 128) / 255 : (cr - 128) / 224;
-        const R = Y + 1.5748 * Pr; const G = Y - 0.1873 * Pb - 0.4681 * Pr; const B = Y + 1.8556 * Pb;
-        const hmv = Math.max(R, G, B) * 700; const lmv = Math.min(R, G, B) * 700;
-        if (hmv > hi) hi = hmv; if (lmv < lo) lo = lmv; if (hmv > 700.5 || lmv < -0.5) bad++; n++;
-      }
-    }
-    return n ? { high: Math.round(hi), low: Math.round(lo), area: Math.max(0, Math.round((bad / n) * 100)) } : null;
-  }
   if (window.CCDOCK && $('#panels') && $('#scopeDock')) {
     const P = (id, x, y, w, h) => ({ id, x, y, w, h });
     scopeDock = window.CCDOCK.create($('#panels'), {

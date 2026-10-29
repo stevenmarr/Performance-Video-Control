@@ -546,7 +546,23 @@
     .map(([id, title, minW, minH]) => ({ id, title, minW, minH, selector: `:scope > .panel.rcp-${id}` }));
   // the 0.11.0 grip-swap order is retired: forget it so it does not linger in the install's preferences
   if (window.CCPREFS) window.CCPREFS.ready.then(() => { if (window.CCPREFS.get('ptz.panelOrder', null)) window.CCPREFS.set('ptz.panelOrder', null); });
-  const dock = window.CCDOCK.create(rcp, { key: 'ptz', panels: DOCK_PANELS, defaults: DOCK_DEFAULTS, bar: $('#ptzDock'), toast: (m, e) => toast(m, e), canArrange: () => !anyHeld() });
+  let dockReady = false;
+  function fitPtz() {
+    if (!dockReady) return;
+    const items = dock.layout().filter((it) => !it.closed && !it.f);
+    const rows = items.reduce((m, it) => Math.max(m, it.y + (it.c ? 1 : it.h)), 1) || 1;
+    const gap = 8;
+    const ph = rcp.clientHeight;
+    if (ph < 40) return;
+    const row = Math.max(10, Math.floor((ph - gap * Math.max(0, rows - 1)) / rows));
+    rcp.style.setProperty('--dk-row', `${row}px`);
+  }
+  const dock = window.CCDOCK.create(rcp, { key: 'ptz', panels: DOCK_PANELS, defaults: DOCK_DEFAULTS, bar: $('#ptzDock'), toast: (m, e) => toast(m, e), canArrange: () => !anyHeld(), onLayout: () => fitPtz() });
+  // The row unit grows or shrinks so the open panels fill a 1920×1080 window at 100% zoom, instead of scrolling off it.
+  dockReady = true;
+  fitPtz();
+  window.addEventListener('resize', fitPtz);
+  if (window.ResizeObserver) new ResizeObserver(() => fitPtz()).observe(rcp);
   window.CCPTZ = { releaseAll, held: () => ({ ...held }) };
   window.CCPTZ.dock = dock;
 })();
