@@ -3,7 +3,7 @@
   'use strict';
   const root = document.getElementById('atemDesk');
   if (!root) return;
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&', '<': '<', '>': '>', '"': '"' }[c]));
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let desk = { macros: [], memories: [], catalog: [], switcher: { inputs: [], macros: [], running: null }, recording: null, play: null };
   let mode = localStorage.getItem('cc.atemDeskMode') || 'op';
   let current = 0;

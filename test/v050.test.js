@@ -118,7 +118,8 @@ test('a new version in a new folder starts with the old presets and settings, an
   let p = await runApp(v5, home, port);
   try {
     const st = await getJson(`http://127.0.0.1:${port}/api/state`);
-    const dataDir = D.defaultDataDir({ home });
+    // runApp strips XDG_CONFIG_HOME. GitHub Actions sets it, so the expected path must ignore it too.
+    const dataDir = D.defaultDataDir({ home, env: {} });
     assert.equal(st.dataDir, dataDir);
     assert.ok(!dataDir.startsWith(v5));
     assert.deepEqual(st.presets.map((x) => [x.number, x.name]), [[3, 'GFX CLN'], [17, 'DEMO2/IMAG']]);
