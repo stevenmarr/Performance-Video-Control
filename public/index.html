@@ -521,6 +521,24 @@
       <span class="lg part">½</span> partial
     </div>
   </aside>
+  <section class="grid-wrap pane" id="pane-looks" hidden>
+    <div class="looks-wrap cue-home">
+      <div class="board-head">
+        <div class="section-title">PRESETS <small>One of RS6, E2, PixelHue. Not ATEM.</small></div>
+        <span class="spacer"></span>
+        <button type="button" class="btn mini" id="cueAdd">ADD CUE</button>
+        <button type="button" class="btn" id="cueBack">BACK</button>
+        <button type="button" class="btn primary" id="cueGo">GO</button>
+        <button type="button" class="btn danger" id="cueStop">STOP</button>
+      </div>
+      <p class="note small" id="cueStatus">One switcher. GO loads preview and never takes. Relative is layers only, not the next preset number. Bail waits until TAKE.</p>
+      <div class="cue-layout">
+        <div id="cueList" class="cue-list"></div>
+        <div id="cueEditor" class="cue-editor"></div>
+      </div>
+    </div>
+  </section>
+  <section class="grid-wrap pane" id="pane-cues" hidden></section>
 </main>
 
 <section class="logwrap collapsed" id="logwrap">
@@ -758,24 +776,6 @@
 <datalist id="memList"></datalist>
 <div id="toast" class="toast" hidden></div>
 <div id="undoBar" class="undo-bar" role="status" hidden></div>
-<section id="pane-looks" hidden>
-  <div class="looks-wrap cue-home">
-    <div class="board-head">
-      <div class="section-title">PRESETS <small>One of RS6, E2, PixelHue. Not ATEM.</small></div>
-      <span class="spacer"></span>
-      <button type="button" class="btn mini" id="cueAdd">ADD CUE</button>
-      <button type="button" class="btn" id="cueBack">BACK</button>
-      <button type="button" class="btn primary" id="cueGo">GO</button>
-      <button type="button" class="btn danger" id="cueStop">STOP</button>
-    </div>
-    <p class="note small" id="cueStatus">One switcher. GO loads preview and never takes. Relative is layers only, not the next preset number. Bail waits until TAKE.</p>
-    <div class="cue-layout">
-      <div id="cueList" class="cue-list"></div>
-      <div id="cueEditor" class="cue-editor"></div>
-    </div>
-  </div>
-</section>
-<section id="pane-cues" hidden></section>
 <script src="/looks.js"></script>
 <script src="/cues-tab.js"></script>
 <script src="/prefs.js"></script>

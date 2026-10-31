@@ -3,10 +3,11 @@
   'use strict';
   const root = document.getElementById('pane-cues');
   if (!root) return;
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&', '<': '<', '>': '>', '"': '"' }[c]));
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   let book = { cues: [], palette: [], running: null };
   let selected = 0;
   let picked = null;
+  let searchCaret = null;
   const SPAN = 10000;
 
   async function api(method, path, body) {
@@ -62,11 +63,20 @@
       </div>
     </div>`;
     bind();
+    if (searchCaret != null) {
+      const again = document.getElementById('mcSearch');
+      if (again) {
+        again.focus();
+        const at = Math.min(searchCaret, again.value.length);
+        try { again.setSelectionRange(at, at); } catch { /* number inputs have no caret */ }
+      }
+      searchCaret = null;
+    }
   }
 
   function bind() {
     const search = document.getElementById('mcSearch');
-    if (search) search.addEventListener('input', () => paint());
+    if (search) search.addEventListener('input', () => { searchCaret = search.selectionStart; paint(); });
     root.querySelectorAll('[data-cue]').forEach((b) => b.addEventListener('click', () => { selected = Number(b.dataset.cue); picked = null; paint(); }));
     const move = async (i, dir) => {
       const ids = book.cues.map((c) => c.id);

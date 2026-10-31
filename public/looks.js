@@ -4,7 +4,7 @@
   const list = document.getElementById('cueList');
   const editor = document.getElementById('cueEditor');
   if (!list || !editor) return;
-  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&', '<': '<', '>': '>', '"': '"' }[c]));
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const SYSTEMS = [['rs6', 'RS6'], ['e2', 'E2'], ['pixelhue', 'PIXELHUE']];
   let book = { cues: [], index: 0, system: 'rs6', catalog: { rs6: [], e2: [], pixelhue: [] }, firing: null, link: { connected: false, state: 'offline' } };
   let selected = 0;
@@ -182,7 +182,7 @@
 
   editor.addEventListener('change', (ev) => {
     if (ev.target.id !== 'cueSystem') return;
-    api('POST', '/api/cues/system', { system: ev.target.value }).then((j) => { book = { ...book, ...j, catalog: book.catalog }; paint(); }).catch((e) => { const st = document.getElementById('cueStatus'); if (st) st.textContent = e.message; });
+    api('POST', '/api/cues/system', { system: ev.target.value }).then(() => load()).catch((e) => { const st = document.getElementById('cueStatus'); if (st) st.textContent = e.message; });
   });
 
   document.getElementById('cueAdd').addEventListener('click', async () => {

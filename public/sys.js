@@ -299,9 +299,10 @@
     set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('online', 'ONLINE', (k) => statusOf(SYS.systems[k]).cls === 'ok') + stChip('issues', 'ISSUES', (k) => ['off', 'warn'].includes(statusOf(SYS.systems[k]).cls)) + stChip('idle', 'NOT SET UP', (k) => statusOf(SYS.systems[k]).cls === 'idle'));
     const offKeys = leftPool.filter((k) => qOk(k) && stOk(k));
     const block = (title, hint, html) => `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div>${html}</section>`;
+    const narrowed = !!(q || dashSt !== 'all');
     const leftHtml = offKeys.length
       ? `<div class="sys-cards cards avail">${offKeys.map((k) => row(SYS.systems[k], true)).join('')}</div>`
-      : '<p class="note small">Nothing matches this filter.</p>';
+      : `<p class="note small">${narrowed || groupSel !== 'all' ? 'Nothing matches this filter.' : 'Every system is already on the desk.'}</p>`;
     const rightHtml = onKeys.length
       ? `<div class="sys-cards cards">${onKeys.map((k) => row(SYS.systems[k], false)).join('')}${armed().includes('ptz') ? camCards(SYS.systems.ptz) : ''}</div>`
       : '<p class="note small">Nothing on the desk.</p>';
