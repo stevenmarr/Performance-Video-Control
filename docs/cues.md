@@ -10,8 +10,8 @@ Edit mode, left to right, then the timeline across the bottom:
 
 - **Systems.** A tree of each system and the presets it already stores (RS6, E2, PixelHue, ATEM macros, PTZ, saved looks). Drag a preset onto a cue button or onto the timeline.
 - **Cue grid.** C1, C2, and the rest of the stack. A cue with presets on its timeline can be loaded. An empty cue is grey. Right-click a cue to edit, rename, clear, or delete it.
-- **Cue stack.** The order, the stacked-cues switch, the selected cue's name and GO point, and RUN CUE.
-- **Timeline.** The dotted GO line splits TAKE (fired when the cue runs) from POST TAKE (fired after GO). Drop a preset to place it. Drag an action to move it.
+- **Cue stack.** The order, the stacked-cues switch, and the selected cue's name. That panel is the right column. RUN CUE sits in the bottom-right corner, under it.
+- **Timeline.** An order of events, not a clock. The orange GO break splits a left TAKE panel from a right POST TAKE panel. Each system instance is one row. Columns are steps. Items in the same column fire together. Two items on the same row cannot share a step. Drag left or right to another step, or into the gap to insert a column. Empty steps close up. Right-click an item to set its offset (a delay after the step starts) or to remove it. The offset shows as a small badge.
 
 ## States
 
@@ -53,7 +53,20 @@ The cue keys still POST `/api/master-cues/mcN/go`. That is RUN CUE for that cue,
 
 ## Saved cues
 
-Old `master-cues.json` files still load. An action that only has `offsetMs` and no section becomes a TAKE action at that time. The GO point is placed half a second after the last of those actions (or at 5 seconds when the cue is empty), so the old list still fires when you run the cue. `stacked` defaults to off. New saves add `atMs`, `section` (`take` or `post`), `goMs`, and `stacked`.
+Old `master-cues.json` files still load. An action that only had `offsetMs` is ordered by that time. Actions on different systems within 50 ms share a step, and the later one's offset is the remainder. Two actions on the same system never share a step. The first action in a step has offset 0. `section` stays `take` or `post`. `stacked` defaults to off. New saves store `step`, `offsetMs`, `section`, and an optional `instance` id. A row is that instance id. When the desk has exactly one instance of the system, the row is that id. Otherwise the row is the system type (`rs6`, `atem`, `ptz`, …).
+
+```mermaid
+flowchart LR
+  subgraph take [TAKE]
+    T1[Step 1]
+    T2[Step 2]
+  end
+  GO((GO))
+  subgraph post [POST TAKE]
+    P1[Step 1]
+  end
+  T1 --> T2 --> GO --> P1
+```
 
 The hi-res stack on the PRESETS tab (`cues.json`) is unchanged in shape. Its GO uses the same machine for the lock. A GO while one is already running is ignored. Starting a GO clears a bail left by the previous cue, and a cancelled GO does not arm one. A bail armed by a GO that finished still waits for the next TAKE.
 

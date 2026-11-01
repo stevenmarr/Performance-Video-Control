@@ -301,6 +301,36 @@ test('preview recall arms the look, program recall puts placed keys and DSKs on 
   assert.equal(program.ops.find((o) => o.id === 'DownstreamKeyOnAir').attrs.onAir, 'True');
 });
 
+test('a new DVE key homes to 0,0 at half size, and the geometry tab order is fixed', () => {
+  const bank = L.normalizeBank({ mes: [{ me: 0, keys: [{ index: 0, type: 'luma', onAir: false, fill: 1 }] }] });
+  const placed = L.placeKey(bank, { me: 0, index: 0 });
+  assert.deepEqual({ positionX: placed.key.dve.positionX, positionY: placed.key.dve.positionY, sizeX: placed.key.dve.sizeX, sizeY: placed.key.dve.sizeY }, L.DVE_HOME);
+  assert.deepEqual(L.DVE_GEOMETRY, ['positionX', 'positionY', 'sizeX', 'sizeY', 'rotation']);
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../public/atem-layout.js'), 'utf8');
+  assert.match(src, /data-dve-taborder="positionX positionY sizeX sizeY rotation"/);
+  assert.match(src, /X position/);
+  assert.match(src, /Y position/);
+  assert.match(src, /X size/);
+  assert.match(src, /Y size/);
+  assert.match(src, /Rotation/);
+  assert.deepEqual(L.SAFE.action, { left: 3.5, top: 3.5, width: 93, height: 93 });
+  assert.deepEqual(L.SAFE.title, { left: 5, top: 5, width: 90, height: 90 });
+});
+
+test('a 16-window multiview can be 16-up, 4-up, or a mix of quadrant splits', () => {
+  const sixteen = L.mvQuadRects([1, 1, 1, 1]);
+  assert.equal(sixteen.filter(Boolean).length, 16);
+  assert.equal(sixteen[1].width, 25);
+  const four = L.mvQuadRects([0, 0, 0, 0]);
+  assert.equal(four.filter(Boolean).length, 4);
+  assert.equal(four[0].width, 50);
+  assert.equal(four[4].left, 50);
+  const mixed = L.mvQuadRects(L.toggleQuad([1, 1, 1, 1], 1));
+  assert.equal(mixed[4].width, 50);
+  assert.equal(mixed[5], null);
+  assert.equal(mixed[0].width, 25);
+});
+
 test('multiview rects follow layout and swap, and a salvo exports a macro', () => {
   const top = L.mvRects(10, 0, false);
   assert.equal(top[0].left, 0);

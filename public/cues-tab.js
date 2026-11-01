@@ -23,11 +23,44 @@
   const machine = () => book.machine || { state: 'idle', phase: null, cueId: null, error: null, locked: false };
   const locked = () => machine().state === 'running';
 
-  function spanOf(c) {
-    const actions = (c && c.actions) || [];
-    const go = (c && c.goMs) || 0;
-    const last = actions.reduce((m, a) => Math.max(m, a.atMs || 0), 0);
-    return Math.max(10000, go + 2000, last + 1500);
+  function rowOf(a) {
+    if (!a) return 'other';
+    if (a.instance) return String(a.instance);
+    if (a.type === 'hires') return a.system || 'rs6';
+    if (a.type === 'atem-macro') return 'atem';
+    if (a.type === 'ptz') return 'ptz';
+    if (a.type === 'look') return a.system || 'look';
+    return a.type || 'other';
+  }
+  function rowName(key) {
+    const known = { rs6: 'RS6', e2: 'E2', pixelhue: 'PIXELHUE', atem: 'ATEM', ptz: 'PTZ', look: 'LOOKS' };
+    return known[key] || String(key).toUpperCase();
+  }
+  function rowsFor(c) {
+    const keys = new Set();
+    for (const g of book.palette || []) if ((g.items || []).length) keys.add(g.device === 'looks' ? 'look' : g.device);
+    for (const a of (c && c.actions) || []) keys.add(rowOf(a));
+    const order = ['rs6', 'e2', 'pixelhue', 'atem', 'ptz', 'look'];
+    return [...keys].sort((a, b) => (order.indexOf(a) < 0 ? 99 : order.indexOf(a)) - (order.indexOf(b) < 0 ? 99 : order.indexOf(b)) || a.localeCompare(b));
+  }
+  function stepCount(c, section) {
+    const list = ((c && c.actions) || []).filter((a) => (a.section || 'take') === section);
+    if (!list.length) return 1;
+    return list.reduce((m, a) => Math.max(m, (a.step || 0) + 1), 1);
+  }
+  function panelHtml(c, section) {
+    const rows = c ? rowsFor(c) : [];
+    const n = c ? stepCount(c, section) : 1;
+    const heads = Array.from({ length: n }, (_, i) => `<span class="cc-step-h">${i + 1}</span>`).join('');
+    const lanes = rows.map((key) => {
+      const cells = Array.from({ length: n }, (_, step) => {
+        const items = ((c && c.actions) || []).filter((a) => rowOf(a) === key && (a.section || 'take') === section && a.step === step);
+        const body = items.map((a) => `<button type="button" class="cc-act ${a.invalid ? 'bad' : ''} ${picked === a.id ? 'on' : ''} ${a.state || ''}" draggable="true" data-act="${esc(a.id)}">${esc(labelOf(a))}${a.offsetMs ? `<i class="cc-off">+${esc(a.offsetMs)}</i>` : ''}</button>`).join('');
+        return `<div class="cc-cell" data-section="${section}" data-step="${step}" data-row="${esc(key)}">${body}</div>`;
+      }).join('');
+      return `<div class="cc-lane" style="--n:${n}"><span class="cc-row-name">${esc(rowName(key))}</span>${cells}</div>`;
+    }).join('');
+    return `<div class="cc-panel" data-panel="${section}" data-steps="${n}"><div class="cc-step-heads" style="--n:${n}"><span></span>${heads}</div>${lanes || '<div class="note small cc-time-empty">Drop a preset here.</div>'}</div>`;
   }
 
   function signature() {
@@ -83,19 +116,12 @@
       return `<button type="button" class="cc-cue ${i === selected ? 'on' : ''} ${empty ? 'empty' : 'armed'} ${state}" data-cue="${i}" data-state="${state}" draggable="false" title="${esc(row.name)}">${esc(`C${i + 1}`)}<b>${esc(row.name || 'Cue')}</b><small>${empty ? 'EMPTY' : `${row.actions.length} · ${state}`}</small></button>`;
     }).join('');
     const stack = (book.cues || []).map((row, i) => `<div class="cc-stack-row ${i === selected ? 'on' : ''}"><button type="button" data-cue="${i}"><b>${i + 1}</b> ${esc(row.name)}</button><button type="button" class="btn mini ghost" data-up="${i}" aria-label="Move up">↑</button><button type="button" class="btn mini ghost" data-down="${i}" aria-label="Move down">↓</button></div>`).join('');
-    const span = spanOf(c);
-    const goPct = c ? Math.min(98, (c.goMs / span) * 100) : 50;
-    const actions = c ? c.actions.map((a) => {
-      const left = Math.min(96, ((a.atMs || 0) / span) * 100);
-      const side = a.section === 'post' ? 'post' : 'take';
-      return `<button type="button" class="cc-act ${side} ${a.invalid ? 'bad' : ''} ${picked === a.id ? 'on' : ''} ${a.state || ''}" draggable="true" data-act="${esc(a.id)}" style="left:${left}%">${esc(labelOf(a))}<small>${esc(a.atMs || 0)} ms</small></button>`;
-    }).join('') : '';
     const act = c && c.actions.find((a) => a.id === picked);
     const runDisabled = m.state !== 'loaded';
     const runLabel = m.state === 'running' ? 'LOCKED' : 'RUN CUE';
     const actEditor = !act ? '' : `<div class="cc-act-edit"><div class="section-title">ACTION</div>
-      <p class="note small">${esc(labelOf(act))} · ${esc(act.section || 'take')}</p>
-      <label>DELAY ms <input id="ccAt" type="number" min="0" step="100" value="${act.atMs || 0}"></label>
+      <p class="note small">${esc(labelOf(act))} · ${esc(act.section || 'take')} · step ${(act.step || 0) + 1}</p>
+      <label>OFFSET ms <input id="ccAt" type="number" min="0" step="10" value="${act.offsetMs || 0}"></label>
       <label>SECTION <select id="ccSection"><option value="take" ${act.section !== 'post' ? 'selected' : ''}>TAKE</option><option value="post" ${act.section === 'post' ? 'selected' : ''}>POST TAKE</option></select></label>
       ${act.type === 'hires' ? `<label>MODE <select id="ccMode"><option value="absolute" ${act.mode !== 'relative' ? 'selected' : ''}>ABSOLUTE</option><option value="relative" ${act.mode === 'relative' ? 'selected' : ''}>RELATIVE</option></select></label>
         <label>FOLLOW-UP <input id="ccFollow" value="${esc(act.followUp ? act.followUp.preset : '')}" placeholder="preset"></label>
@@ -117,14 +143,11 @@
         <aside class="cc-col cc-stack" aria-label="Cue stack">
           <div class="section-title">CUE STACK <span id="ccState" class="cc-state" data-state="${esc(m.state)}">${esc(String(m.state || 'idle').toUpperCase())}</span></div>
           <label class="cc-stack-toggle"><input type="checkbox" id="ccStacked" ${book.stacked ? 'checked' : ''}> Stacked cues</label>
-          <button type="button" class="btn take cc-run" id="ccRun" ${runDisabled ? 'disabled' : ''}>${runLabel}</button>
-          <button type="button" class="btn" id="ccAck" ${m.state === 'failed' ? '' : 'hidden'}>ACKNOWLEDGE</button>
           <p class="note small cc-error" id="ccError">${esc(m.error || '')}</p>
           <div class="cc-stack-list">${stack}</div>
           <div class="cc-props">
             <div class="section-title">PROPERTIES</div>
             ${c ? `<label>NAME <input id="ccName" value="${esc(c.name)}" aria-label="Cue name"></label>
-              <label>GO POINT ms <input id="ccGoMs" type="number" min="0" step="100" value="${c.goMs || 0}" aria-label="GO point"></label>
               <p class="note small" id="ccPhase">${m.phase ? `Phase ${esc(m.phase)}` : (c.actions.length ? `${c.actions.length} on the timeline` : 'Nothing on this timeline')}</p>` : '<p class="note">No cue selected.</p>'}
             <div class="cc-prop-actions">
               <button type="button" class="btn mini" id="ccAdd">ADD CUE</button>
@@ -136,13 +159,14 @@
           </div>
         </aside>
       </div>
-      <div class="cc-time-wrap" id="ccTimeline" data-span="${span}">
-        <div class="cc-time-label"><span>TAKE</span><span>POST TAKE</span></div>
-        <div class="cc-time" id="ccTime">
-          <div class="cc-go" id="ccGo" style="left:${goPct}%" title="GO"></div>
-          <div class="cc-head" id="ccHead" hidden></div>
-          ${actions || '<div class="note cc-time-empty">Drag a preset onto the timeline. Left of the dotted line is TAKE. Right is POST TAKE.</div>'}
-        </div>
+      <div class="cc-time-wrap" id="ccTimeline">
+        <section class="cc-half" aria-label="Take">${panelHtml(c, 'take')}</section>
+        <div class="cc-go-break" id="ccGo" title="GO"><span>GO</span></div>
+        <section class="cc-half" aria-label="Post take">${panelHtml(c, 'post')}</section>
+      </div>
+      <div class="cc-run-corner">
+        <button type="button" class="btn" id="ccAck" ${m.state === 'failed' ? '' : 'hidden'}>ACKNOWLEDGE</button>
+        <button type="button" class="btn take cc-run" id="ccRun" ${runDisabled ? 'disabled' : ''}>${runLabel}</button>
       </div>
     </div>`;
     const tab = document.querySelector('[data-tab="cues"]');
@@ -171,16 +195,7 @@
     tickPlayhead();
   }
 
-  function tickPlayhead() {
-    const el = document.getElementById('ccHead');
-    const time = document.getElementById('ccTimeline');
-    const run = book.running;
-    if (!el || !time || !run || !run.startedAt) { if (el) el.hidden = true; return; }
-    const span = Number(time.dataset.span) || 10000;
-    const ms = Math.max(0, Date.now() - run.startedAt);
-    el.hidden = false;
-    el.style.left = `${Math.min(99, (ms / span) * 100)}%`;
-  }
+  function tickPlayhead() { /* steps are an order, not a clock */ }
 
   function itemAt(key) {
     const [gi, ii] = String(key || '').split(':').map(Number);
@@ -191,9 +206,13 @@
     return items[ii] || null;
   }
 
-  function actionFrom(item, atMs, section) {
+  function actionFrom(item, section, step) {
     if (!item || !item.type) return null;
-    return { type: item.type, atMs, section, system: item.system, preset: item.preset, macro: item.macro, camera: item.camera, look: item.look, mode: 'absolute' };
+    return { type: item.type, section, step, offsetMs: 0, system: item.system, preset: item.preset, macro: item.macro, camera: item.camera, look: item.look, mode: 'absolute', instance: item.instance || '' };
+  }
+  function clash(actions, item, ignoreId) {
+    const key = rowOf(item);
+    return (actions || []).some((a) => a.id !== ignoreId && (a.section || 'take') === item.section && a.step === item.step && rowOf(a) === key);
   }
 
   async function saveCue(c, actions, extra) {
@@ -306,8 +325,6 @@
     if (rename) rename.addEventListener('click', () => saveFields());
     const name = document.getElementById('ccName');
     if (name) name.addEventListener('change', () => saveFields());
-    const goMs = document.getElementById('ccGoMs');
-    if (goMs) goMs.addEventListener('change', () => saveFields());
     const clear = document.getElementById('ccClear');
     if (clear) clear.addEventListener('click', async () => {
       const c = cue(); if (!c) return;
@@ -327,17 +344,18 @@
     });
     root.querySelectorAll('.cc-act').forEach((el) => {
       el.addEventListener('click', () => { picked = el.dataset.act; paint(true); });
+      el.addEventListener('contextmenu', (ev) => { ev.preventDefault(); ev.stopPropagation(); openActMenu(ev.clientX, ev.clientY, el.dataset.act); });
       el.addEventListener('dragstart', (ev) => {
         dragItem = null;
         ev.dataTransfer.setData('text/cc-act', el.dataset.act);
         ev.dataTransfer.effectAllowed = 'move';
       });
     });
-    const time = document.getElementById('ccTime');
-    if (time) {
-      time.addEventListener('dragover', (ev) => ev.preventDefault());
-      time.addEventListener('drop', (ev) => dropOnTime(ev));
-    }
+    root.querySelectorAll('.cc-cell').forEach((cell) => {
+      cell.addEventListener('dragover', (ev) => { ev.preventDefault(); cell.classList.add('hot'); });
+      cell.addEventListener('dragleave', () => cell.classList.remove('hot'));
+      cell.addEventListener('drop', (ev) => { cell.classList.remove('hot'); dropOnCell(ev, cell); });
+    });
     const apply = document.getElementById('ccApply');
     if (apply) apply.addEventListener('click', () => applyAction());
     const remove = document.getElementById('ccRemove');
@@ -362,10 +380,33 @@
   async function saveFields() {
     const c = cue(); if (!c) return;
     const name = document.getElementById('ccName');
-    const go = document.getElementById('ccGoMs');
-    try {
-      await saveCue(c, c.actions, { name: name ? name.value : c.name, goMs: go ? Number(go.value) : c.goMs });
-    } catch (e) { note(e.message); }
+    try { await saveCue(c, c.actions, { name: name ? name.value : c.name }); }
+    catch (e) { note(e.message); }
+  }
+
+  function targetStep(ev, cell) {
+    const section = cell.dataset.section === 'post' ? 'post' : 'take';
+    const step = Number(cell.dataset.step) || 0;
+    const rect = cell.getBoundingClientRect();
+    const frac = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
+    if (frac < 0.22) return { section, step, insert: true };
+    if (frac > 0.78) return { section, step: step + 1, insert: true };
+    return { section, step, insert: false };
+  }
+
+  function applyMove(actions, id, dest) {
+    const list = actions.map((a) => ({ ...a }));
+    const item = list.find((a) => a.id === id);
+    if (!item) return { actions: list, error: 'No such action' };
+    let at = dest.step;
+    if (dest.insert) {
+      for (const a of list) if (a !== item && (a.section || 'take') === dest.section && a.step >= at) a.step += 1;
+    }
+    const trial = { ...item, section: dest.section, step: at };
+    if (clash(list.filter((a) => a !== item), trial, id)) return { actions, error: `${rowName(rowOf(trial))} already fires in this step` };
+    item.section = dest.section;
+    item.step = at;
+    return { actions: list, error: null };
   }
 
   async function dropOnCue(ev, index) {
@@ -377,46 +418,79 @@
     try { item = JSON.parse(ev.dataTransfer.getData('application/json') || '') || item; } catch { /* keep dragItem */ }
     if (!item || !item.type) return;
     const take = row.actions.filter((a) => a.section !== 'post');
-    const last = take.reduce((m, a) => Math.max(m, a.atMs || 0), 0);
-    const ceiling = row.goMs > 0 ? row.goMs - 100 : 0;
-    const atMs = take.length ? Math.max(0, Math.min(ceiling, last + 500)) : 0;
-    const action = actionFrom(item, atMs, 'take');
+    const step = take.reduce((m, a) => Math.max(m, (a.step || 0) + 1), 0);
+    const action = actionFrom(item, 'take', step);
     if (!action) return;
     selected = index;
     try { await saveCue(row, row.actions.concat([action])); }
     catch (e) { note(e.message); }
   }
 
-  async function dropOnTime(ev) {
+  async function dropOnCell(ev, cell) {
     ev.preventDefault();
+    ev.stopPropagation();
     const c = cue(); if (!c) return;
-    const time = document.getElementById('ccTime');
-    const rect = time.getBoundingClientRect();
-    const span = spanOf(c);
-    const atMs = Math.max(0, Math.round((((ev.clientX - rect.left) / Math.max(1, rect.width)) * span) / 100) * 100);
-    const section = atMs >= (c.goMs || 0) ? 'post' : 'take';
+    const dest = targetStep(ev, cell);
     const moving = ev.dataTransfer.getData('text/cc-act');
     try {
       if (moving) {
-        const actions = c.actions.map((a) => a.id === moving ? { ...a, atMs, section } : a);
-        await saveCue(c, actions);
+        const moved = applyMove(c.actions, moving, dest);
+        if (moved.error) { note(moved.error); return; }
+        await saveCue(c, moved.actions);
         return;
       }
       let item = dragItem;
       try { item = JSON.parse(ev.dataTransfer.getData('application/json') || '') || item; } catch { /* keep dragItem */ }
-      const action = actionFrom(item, atMs, section);
+      let actions = c.actions.map((a) => ({ ...a }));
+      let step = dest.step;
+      if (dest.insert) {
+        for (const a of actions) if ((a.section || 'take') === dest.section && a.step >= step) a.step += 1;
+      }
+      const action = actionFrom(item, dest.section, step);
       if (!action) return;
-      await saveCue(c, c.actions.concat([action]));
+      if (clash(actions, action)) { note(`${rowName(rowOf(action))} already fires in this step`); return; }
+      await saveCue(c, actions.concat([action]));
     } catch (e) { note(e.message); }
+  }
+
+  function openActMenu(x, y, id) {
+    closeMenu();
+    const c = cue();
+    const act = c && c.actions.find((a) => a.id === id);
+    if (!act) return;
+    picked = id;
+    menu = document.createElement('div');
+    menu.className = 'cc-menu';
+    menu.innerHTML = `<label class="cc-off-edit">OFFSET ms<input id="ccOffset" type="number" min="0" step="10" value="${act.offsetMs || 0}"></label><button type="button" data-m="offset">Set offset</button><button type="button" data-m="remove">Remove</button>`;
+    menu.style.left = `${Math.max(8, x)}px`;
+    menu.style.top = `${Math.max(8, y)}px`;
+    document.body.appendChild(menu);
+    const input = menu.querySelector('#ccOffset');
+    if (input) { input.focus(); input.select(); }
+    menu.addEventListener('click', async (ev) => {
+      const cmd = ev.target && ev.target.dataset && ev.target.dataset.m;
+      if (!cmd) return;
+      const offset = Number((menu.querySelector('#ccOffset') || {}).value) || 0;
+      closeMenu();
+      try {
+        if (cmd === 'offset') {
+          await saveCue(c, c.actions.map((a) => a.id === id ? { ...a, offsetMs: offset } : a));
+          return;
+        }
+        if (cmd === 'remove') { picked = null; await saveCue(c, c.actions.filter((a) => a.id !== id)); }
+      } catch (e) { note(e.message); }
+    });
   }
 
   async function applyAction() {
     const c = cue(); if (!c) return;
+    let blocked = '';
     const actions = c.actions.map((a) => {
       if (a.id !== picked) return a;
-      const next = { ...a, atMs: Number((document.getElementById('ccAt') || {}).value) || 0 };
+      const next = { ...a, offsetMs: Number((document.getElementById('ccAt') || {}).value) || 0 };
       const section = document.getElementById('ccSection');
       if (section) next.section = section.value === 'post' ? 'post' : 'take';
+      if (clash(c.actions, next, a.id)) { blocked = `${rowName(rowOf(next))} already fires in this step`; return a; }
       if (a.type === 'hires') {
         const mode = document.getElementById('ccMode');
         const follow = (document.getElementById('ccFollow') || {}).value || '';
@@ -427,6 +501,7 @@
       }
       return next;
     });
+    if (blocked) { note(blocked); return; }
     try { await saveCue(c, actions); }
     catch (e) { note(e.message); }
   }

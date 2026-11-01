@@ -5,7 +5,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { CueStack } = require('../lib/cues');
-const { MasterCues } = require('../lib/master-cues');
+const { MasterCues, migrateTimes, clashMessage, moveAction, rowKey } = require('../lib/master-cues');
 const { stampPage } = require('../lib/decks/pages');
 const { AtemDesk } = require('../lib/atem-desk');
 const { Engine } = require('../lib/engine');
@@ -358,8 +358,8 @@ test('an external preset take unloads the cue and cancels the rest of the timeli
   masters.save({
     id: 'mc1', name: 'Open', goMs: 1000,
     actions: [
-      { type: 'atem-macro', macro: 1, offsetMs: 0 },
-      { type: 'ptz', camera: 'cam1', preset: 3, offsetMs: 400 },
+      { type: 'atem-macro', macro: 1, step: 0, section: 'take', offsetMs: 0 },
+      { type: 'ptz', camera: 'cam1', preset: 3, step: 0, section: 'take', offsetMs: 400 },
     ],
   });
   masters.load('mc1');
@@ -409,9 +409,9 @@ test('old master cue files load as TAKE actions and keep their offsets', () => {
   const cue = masters.status().cues[0];
   assert.equal(cue.name, 'Legacy');
   assert.equal(cue.actions[0].section, 'take');
+  assert.equal(cue.actions[0].step, 0);
   assert.equal(cue.actions[0].atMs, 200);
-  assert.equal(cue.actions[0].offsetMs, 200);
-  assert.ok(cue.goMs > 200);
+  assert.equal(cue.actions[0].offsetMs, 0);
   assert.equal(masters.stacked, false);
   fs.rmSync(dir, { recursive: true, force: true });
 });
@@ -431,4 +431,55 @@ test('deck cue keys show the machine state and still GO that cue', () => {
   assert.equal(page.keys[0].action.path, '/api/master-cues/mc1/go');
   assert.equal(page.keys[1].cueState, 'idle');
   assert.equal(page.keys[1].value, 'IDLE');
+});
+
+test('timeline steps stack across rows, reject a same-row clash, and keep an offset', () => {
+  const rows = migrateTimes([
+    { id: 'a', type: 'hires', system: 'rs6', preset: '1', section: 'take', atMs: 0 },
+    { id: 'b', type: 'atem-macro', macro: 1, section: 'take', atMs: 40 },
+    { id: 'c', type: 'hires', system: 'rs6', preset: '2', section: 'take', atMs: 40 },
+    { id: 'd', type: 'ptz', camera: 'cam1', preset: 1, section: 'post', atMs: 0 },
+  ]);
+  assert.equal(rows.find((a) => a.id === 'a').step, 0);
+  assert.equal(rows.find((a) => a.id === 'b').step, 0);
+  assert.equal(rows.find((a) => a.id === 'b').offsetMs, 40);
+  assert.equal(rows.find((a) => a.id === 'c').step, 1);
+  assert.equal(rows.find((a) => a.id === 'd').section, 'post');
+  assert.match(clashMessage([
+    { id: 'a', type: 'hires', system: 'rs6', section: 'take', step: 0 },
+    { id: 'c', type: 'hires', system: 'rs6', section: 'take', step: 0 },
+  ]), /RS6/);
+  assert.equal(clashMessage([
+    { id: 'a', type: 'hires', system: 'rs6', section: 'take', step: 0 },
+    { id: 'b', type: 'atem-macro', section: 'take', step: 0 },
+  ]), '');
+  const moved = moveAction(rows, 'c', { section: 'take', step: 2, insert: true });
+  assert.equal(moved.error, null);
+  assert.ok(moved.actions.every((a, i, list) => list.filter((b) => b.section === a.section).some((b) => b.step === 0)));
+  const blocked = moveAction(rows, 'c', { section: 'take', step: 0 });
+  assert.match(blocked.error, /RS6/);
+  assert.equal(rowKey({ type: 'hires', system: 'rs6' }, { rs6: ['desk-1'] }), 'desk-1');
+  assert.equal(rowKey({ type: 'hires', system: 'rs6', instance: 'desk-2' }, { rs6: ['desk-1', 'desk-2'] }), 'desk-2');
+  assert.equal(rowKey({ type: 'atem-macro' }, {}), 'atem');
+});
+
+test('post-take waits until the take step has fired', async () => {
+  const { calls, masters } = masterFixture();
+  masters.save({
+    id: 'mc1', name: 'Split', goMs: 0,
+    actions: [
+      { type: 'atem-macro', macro: 1, step: 0, section: 'take', offsetMs: 0 },
+      { type: 'ptz', camera: 'cam1', preset: 4, step: 0, section: 'take', offsetMs: 80 },
+      { type: 'atem-macro', macro: 2, step: 0, section: 'post', offsetMs: 0 },
+    ],
+  });
+  masters.go('mc1');
+  await sleep(30);
+  assert.deepEqual(calls.map((c) => c[1]), [1]);
+  await sleep(90);
+  assert.equal(calls[0][1], 1);
+  assert.equal(calls[1][0], 'recall');
+  assert.equal(calls[1][2], 4);
+  assert.equal(calls[2][1], 2);
+  assert.notEqual(masters.machine.state, 'running');
 });
