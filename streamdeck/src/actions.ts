@@ -3,6 +3,7 @@ import streamDeck, {
 	type Action,
 	type DialDownEvent,
 	type DialRotateEvent,
+	type DialUpEvent,
 	type KeyDownEvent,
 	type KeyUpEvent,
 	SingletonAction,
@@ -12,7 +13,7 @@ import streamDeck, {
 } from "@elgato/streamdeck";
 import type { JsonObject, JsonValue } from "@elgato/utils";
 
-import { dialFace, KEY_ROLES } from "../../lib/deck.js";
+import { dialFace, KEY_ROLES, LONG_PRESS_MS } from "../../lib/deck.js";
 import { keySvg, knobSvg, presentKey, svgDataUrl } from "../../lib/deck-image.js";
 import { beginHold, endHold } from "./hold.js";
 import { bridge } from "./bridge.js";
@@ -237,12 +238,16 @@ export class KeyAction extends SingletonAction<Settings> {
 }
 
 /**
- * One encoder on the + XL strip. The touch screen is a circular paint knob (or a pair).
- * Rotate steps the value. Push cycles fine / coarse, and R / B on a paired bias.
- * A tap runs the knob's function (A/M, AWB, ABB, reset, stop, push AF).
+ * One encoder on the + / + XL strip. The touch screen is a circular paint knob (or a pair).
+ * Rotate uses dialRotate ticks and the time since the previous rotate on this dial.
+ * A short press toggles the pair (R gain / B gain, R ped / B ped, iris / gain).
+ * A long press resets the active parameter. A tap runs the knob's own function.
  */
 @action({ UUID: `${UUID}.dial` })
 export class DialAction extends SingletonAction<Settings> {
+	private turned = new Map<string, number>();
+	private held = new Map<string, { timer: ReturnType<typeof setTimeout>; long: boolean }>();
+
 	override async onWillAppear(ev: WillAppearEvent<Settings>): Promise<void> {
 		const column = Number((ev.payload as { coordinates?: { column?: number } }).coordinates?.column) || 0;
 		bridge.noteDial({ id: ev.action.id, deviceId: ev.action.device.id, column, action: ev.action });
@@ -253,10 +258,18 @@ export class DialAction extends SingletonAction<Settings> {
 	}
 
 	override onWillDisappear(ev: WillDisappearEvent<Settings>): void {
+		const held = this.held.get(ev.action.id);
+		if (held) clearTimeout(held.timer);
+		this.held.delete(ev.action.id);
+		this.turned.delete(ev.action.id);
 		bridge.forgetDial(ev.action.id);
 	}
 
 	override async onDialRotate(ev: DialRotateEvent<Settings>): Promise<void> {
+		const now = Date.now();
+		const prev = this.turned.get(ev.action.id);
+		const dtMs = prev == null ? null : now - prev;
+		this.turned.set(ev.action.id, now);
 		const settings = await ev.action.getSettings();
 		const widget = String(settings.widget || ev.payload.settings.widget || "");
 		if (!widget || widget === "off") return;
@@ -265,21 +278,47 @@ export class DialAction extends SingletonAction<Settings> {
 			widget,
 			event: "rotate",
 			ticks: ev.payload.ticks,
+			dtMs,
 			stepIndex: num(settings.stepIndex ?? ev.payload.settings.stepIndex, 0),
 		});
 	}
 
 	override async onDialDown(ev: DialDownEvent<Settings>): Promise<void> {
+		const id = ev.action.id;
+		const prev = this.held.get(id);
+		if (prev) clearTimeout(prev.timer);
+		const entry = { timer: setTimeout(() => undefined, LONG_PRESS_MS), long: false };
+		entry.timer = setTimeout(() => {
+			entry.long = true;
+			void this.finishPress(ev, "reset");
+		}, LONG_PRESS_MS);
+		this.held.set(id, entry);
+	}
+
+	override async onDialUp(ev: DialUpEvent<Settings>): Promise<void> {
+		const held = this.held.get(ev.action.id);
+		if (!held) return;
+		clearTimeout(held.timer);
+		this.held.delete(ev.action.id);
+		if (held.long) return;
+		await this.finishPress(ev, "toggle");
+	}
+
+	private async finishPress(ev: DialDownEvent<Settings> | DialUpEvent<Settings>, event: "toggle" | "reset"): Promise<void> {
+		const settings = await ev.action.getSettings();
 		const planned = await bridge.perform({
 			gesture: "dial",
-			widget: String(ev.payload.settings.widget || "iris"),
-			event: "push",
-			stepIndex: num(ev.payload.settings.stepIndex, 0),
+			widget: String(settings.widget || ev.payload.settings.widget || "iris"),
+			event,
+			stepIndex: num(settings.stepIndex ?? ev.payload.settings.stepIndex, 0),
 		});
-		if (planned.stepIndex == null) return;
-		const settings = { ...ev.payload.settings, stepIndex: planned.stepIndex };
-		await ev.action.setSettings(settings);
-		await paintDial(ev.action, settings);
+		if (planned.stepIndex == null) {
+			await paintDial(ev.action, settings);
+			return;
+		}
+		const next = { ...settings, ...ev.payload.settings, stepIndex: planned.stepIndex };
+		await ev.action.setSettings(next);
+		await paintDial(ev.action, next);
 	}
 
 	override async onTouchTap(ev: TouchTapEvent<Settings>): Promise<void> {

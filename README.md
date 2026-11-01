@@ -191,6 +191,18 @@ The plugin long-polls `GET /api/deck/ptz?since=<rev>`. Page tabs switch profiles
 | FUNC | Tally, power, AF, O.I.S., bars, D.EXT, DRS, night, guard |
 | MOVE | Pan/tilt, zoom, focus, camera home |
 
+Paint dials (iris, gain, R/B gain, R/B pedestal, master pedestal, detail, gamma, chroma, knee) do not have a fine / coarse mode. Turn speed comes from the Stream Deck `dialRotate` tick count and the time since the previous rotate on that dial. A slow detent is exactly one camera step. Faster turns follow a quadratic curve, capped per parameter, in `lib/paint-accel.js` (`baseStep`, `exponent`, `slowMs`, `fastMs`, `windowMs`, `maxMultiplier`, `maxStepsPerEvent`, and the `OVERRIDES` map). Iris is capped lower than R/B gain because its range is 1–99, not ±200. Detail is capped lower still (±31). The first event after a gap longer than `windowMs` is always one step per detent. Zoom and focus use the same curve. Pan/tilt and zoom/focus speed dials stay one unit per detent. The browser paint page still has FINE and COARSE for the pointer and the ± buttons. The deck does not.
+
+A short press swaps the parameter on a paired dial: R gain ↔ B gain, R pedestal ↔ B pedestal, iris ↔ gain. The touch strip labels the active side `ACTIVE R GAIN` (or whichever side is live) and draws a ring on that arc. Hold the dial for `LONG_PRESS_MS` (500 ms, same file) to reset the active parameter to the newest stored paint memory for that camera, or to the catalog centre / list default (0 dB, ATW, OFF) when nothing is stored. Zoom and focus are not reset by a hold. A tap still runs the knob's own function (A/M, AWB, ABB, stop, push AF).
+
+Outgoing paint writes are coalesced (`COALESCE_MS`, 80 ms) so a fast spin does not open one Panasonic HTTP call per detent. The newest absolute value replaces anything not yet sent, and a value that arrives while a call is in flight is sent when that call finishes. The LCD, the touch strip, and the web paint knobs read that same optimistic value.
+
+Function keys (auto iris, detail, DRS, white balance, gain, shutter, and the rest of the toggles and modes) draw their label from the camera's camdata readback, not from the last press. The AWB key shows the live white-balance mode (ATW, AWC A, AWC B, …) from `OAW`. ABB is an execute: the Panasonic camdata page has no ABB latch, so that key is never drawn as on.
+
+When the camera being painted is on program, every camera function on the deck (keys, dial strip, LCD) takes a red frame. Preview is a green frame. Program wins if both are true. The source is the camera's tally lamps, which TSL follow-PTZ writes from the ATEM program / preview bus, plus the TSL address map itself (`busTally`) so the deck still shows tally if the lamp write has not landed. The web paint page uses the same red or green frame.
+
+The Companion page export only places preset references (`ptz_<cam>_enc_*`). Those rotary actions are filled in by the external `rs6-presets` module, which does not forward dial timing, so this curve is not applied there. A client that calls `POST /api/sys/ptz/cmd/step` with an explicit `steps` count still moves that many native steps. The Elgato plugin and the USB Control Devices path both measure time and apply the curve before that call.
+
 HOME on every page opens Control Center. It does not recall a shot. Red is program / live only.
 ALL STOP is the bottom-right key on every page.
 
