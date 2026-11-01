@@ -136,10 +136,6 @@
     const knNow = TAB_KIND[CC.getTab()] || kind();
     for (const k of Object.keys(KIND_TABS)) document.body.classList.toggle(`kind-${k}`, k === knNow);
     document.body.classList.toggle('sys-x', isX());
-    const st = statusOf(sysInfo);
-    const badge = armed().map((k) => SYS.systems[k].short).join(' · ');
-    $('#sysBadgeName').textContent = badge; $('#btnSystem').className = `sys-badge ${st.cls}`;
-    $('#btnSystem').title = `On the desk: ${armed().map((k) => SYS.systems[k].label).join(', ')} · open: ${sysInfo.label} (${st.txt}) · tap for SYSTEMS`;
     document.querySelectorAll('.tab-group').forEach((g) => { g.hidden = !armedOf(g.dataset.grp).length; });
     document.querySelectorAll('.tab-group .grp-btn').forEach((b) => { b.hidden = !on.has(b.dataset.focus); b.classList.toggle('on', b.dataset.focus === a); });
     document.querySelectorAll('.tab[data-sys]').forEach((t) => {
@@ -613,7 +609,6 @@
   window.addEventListener('cc:tab', () => setTimeout(renderAll, 0));
   // ⚙ Settings is the RS6 device dialog; with another system active it opens the SYSTEMS dashboard instead
   $('#btnSettings').addEventListener('click', (e) => { if (isX()) { e.stopImmediatePropagation(); CC.setTab('system'); } }, true);
-  $('#btnSystem').addEventListener('click', () => CC.setTab('system'));
   setInterval(() => { if (CC.getTab() === 'system') { const c = $('#dashClock'); if (c) c.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }); } }, 1000);
   refetch();
 })();
