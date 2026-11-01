@@ -142,6 +142,18 @@ See [docs/tsl-tally.md](docs/tsl-tally.md).
 
 ---
 
+## ATEM layout
+
+**ATEM → LAYOUT** is a 16:9 raster for SuperSource boxes and upstream DVE keys. Drag and resize the boxes, or type position, size, and crop. The page shows the switcher's source names as colored boxes.
+
+**APPLY** and **LIVE** send the picture to the switcher. **READ** loads it back. **SAVE PRESET** keeps a named layout in Control Center. **SAVE MACRO** writes a Macro Desk macro and ATEM Software Control XML.
+
+A macro cuts to the layout. It does not animate. Store key frame A and B, then **RUN A** / **RUN B**, when the move should fly. Models with no SuperSource or no DVE hide the parts they do not have.
+
+Details and the hardware limits: [docs/atem-layout.md](docs/atem-layout.md).
+
+---
+
 ## Stream Deck (older Path C plugin)
 
 Control Devices, above, is how a deck is driven now: this app owns the USB
