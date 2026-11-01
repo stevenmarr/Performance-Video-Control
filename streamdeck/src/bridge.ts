@@ -176,7 +176,8 @@ class Bridge {
 
 	private async paintDials(deviceId: string): Promise<number> {
 		const page = this.showing.get(deviceId) || null;
-		const fromPage = page && Array.isArray((page as { dials?: string[] }).dials) ? (page as { dials: string[] }).dials : null;
+		const dials = (page as { dials?: string[] } | null)?.dials;
+		const fromPage = Array.isArray(dials) ? dials : null;
 		const name = fromPage && !fromPage.length ? "" : this.pageName(page);
 		if (name) this.page = name;
 		const layout = PLUSXL.pages.find((p) => p.id === name) || PLUSXL.pages[0];
@@ -261,32 +262,43 @@ class Bridge {
 		}
 	}
 
+	private async postRequests(requests: DeckPlan["requests"]): Promise<void> {
+		for (const r of requests) {
+			const res = await fetch(`${this.base}${r.path}`, {
+				method: r.method,
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify(r.body ?? {}),
+			});
+			if (!res.ok) {
+				let message = `HTTP ${res.status}`;
+				try {
+					const body = (await res.json()) as { error?: string };
+					if (body.error) message = body.error;
+				} catch { /* the status is enough */ }
+				throw new Error(message);
+			}
+		}
+	}
+
 	/** Send the Control Center calls for one gesture. Failures are logged, not thrown to Stream Deck. */
 	async perform(gesture: Record<string, unknown>): Promise<DeckPlan> {
 		const planned = plan({ ...gesture, snapshot: this.snap });
 		if (planned.page) this.page = planned.page;
-		const job = this.chain.then(async () => {
-			for (const r of planned.requests) {
-				const res = await fetch(`${this.base}${r.path}`, {
-					method: r.method,
-					headers: { "content-type": "application/json" },
-					body: JSON.stringify(r.body ?? {}),
-				});
-				if (!res.ok) {
-					let message = `HTTP ${res.status}`;
-					try {
-						const body = (await res.json()) as { error?: string };
-						if (body.error) message = body.error;
-					} catch { /* the status is enough */ }
-					throw new Error(message);
-				}
+		// A dial spin must not wait on the camera. The server coalesces the writes,
+		// and the next dialRotate has to see the real gap between detents.
+		const rotate = gesture.gesture === "dial" && gesture.event === "rotate";
+		if (rotate) {
+			void this.postRequests(planned.requests).catch((e) => {
+				streamDeck.logger.warn(`${e instanceof Error ? e.message : e}`);
+			});
+		} else {
+			const job = this.chain.then(() => this.postRequests(planned.requests));
+			this.chain = job.then(() => undefined, () => undefined);
+			try {
+				await job;
+			} catch (e) {
+				streamDeck.logger.warn(`${e instanceof Error ? e.message : e}`);
 			}
-		});
-		this.chain = job.then(() => undefined, () => undefined);
-		try {
-			await job;
-		} catch (e) {
-			streamDeck.logger.warn(`${e instanceof Error ? e.message : e}`);
 		}
 		if (planned.open) {
 			try {

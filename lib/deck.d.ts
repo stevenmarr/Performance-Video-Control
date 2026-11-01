@@ -5,6 +5,8 @@ export const LAYOUT_PATH: string;
 export const PROFILES: { live: string; paint: string; func: string; move: string };
 export const KEY_ROLES: Record<string, { type: string; op?: string; label: string; text?: string }>;
 export const WIDGETS: Record<string, { kind: string; label?: string }>;
+export const LONG_PRESS_MS: number;
+export const PLUSXL: { id: string; pages: Array<{ id: string; dials: string[] }> };
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
@@ -27,7 +29,8 @@ export interface DeckSnapshot {
   selected: string | null;
   liveGuard: { mode: string; holdMs: number };
   speeds: { pt: number; zoom: number; focus: number };
-  cameras: Array<{ slot: number; id: string; name: string; connected: boolean; tally: boolean; selected: boolean }>;
+  busTally?: { program?: boolean; preview?: boolean; source?: string } | null;
+  cameras: Array<{ slot: number; id: string; name: string; connected: boolean; tally: boolean; tallyGreen?: boolean; selected: boolean }>;
   presets: Array<{ n: number; name: string }>;
   values: Record<string, Json>;
   readouts: Record<string, { text?: string; value?: Json; fraction?: number; on?: boolean | null }>;
@@ -39,6 +42,7 @@ export interface DialFace {
   parts: Array<{ label: string; text: string; fraction: number; tint: string; active: boolean; muted: boolean }>;
   step: string;
   stepLine: string;
+  tally?: "pgm" | "pvw" | null;
   badge?: string | null;
   caption?: string;
   tap?: string;

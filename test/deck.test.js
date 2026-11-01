@@ -72,21 +72,30 @@ test('Path C layout: + XL strip is the paint knobs, keys are toggles, HOME is th
   assert.equal(deck.PLUGIN_UUID, 'com.performancevideo.control');
 });
 
-test('paired dial push cycles R·FINE → R·COARSE → B·FINE → B·COARSE; rotate steps only the active axis', () => {
+test('paired dial short-press toggles R gain ↔ B gain; a slow rotate is one native step on the active axis', () => {
   const snap = fakeSnap();
   let stepIndex = 0;
   const labels = [];
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 2; i++) {
     const face = deck.dialFace('gainRb', snap, stepIndex);
     labels.push(face.step);
-    const turned = deck.plan({ gesture: 'dial', widget: 'gainRb', event: 'rotate', ticks: 1, stepIndex, snapshot: snap });
+    assert.match(face.stepLine, new RegExp(face.step));
+    assert.equal(face.parts.find((p) => p.active).label, face.step);
+    const turned = deck.plan({ gesture: 'dial', widget: 'gainRb', event: 'rotate', ticks: 1, dtMs: null, stepIndex, snapshot: snap });
     assert.equal(turned.requests[0].path, '/api/sys/ptz/cmd/step');
-    assert.equal(turned.requests[0].body.op, i < 2 ? 'rGain' : 'bGain');
-    assert.equal(turned.requests[0].body.steps, i % 2 === 0 ? 1 : 5);
-    stepIndex = deck.plan({ gesture: 'dial', widget: 'gainRb', event: 'push', stepIndex, snapshot: snap }).stepIndex;
+    assert.equal(turned.requests[0].body.op, i === 0 ? 'rGain' : 'bGain');
+    assert.equal(turned.requests[0].body.steps, 1);
+    stepIndex = deck.plan({ gesture: 'dial', widget: 'gainRb', event: 'toggle', stepIndex, snapshot: snap }).stepIndex;
   }
-  assert.deepEqual(labels, ['R · FINE', 'R · COARSE', 'B · FINE', 'B · COARSE']);
+  assert.deepEqual(labels, ['R GAIN', 'B GAIN']);
   assert.equal(stepIndex, 0);
+  const iris = deck.dialFace('iris', snap, 0);
+  const gain = deck.dialFace('iris', snap, 1);
+  assert.equal(iris.step, 'IRIS');
+  assert.equal(gain.step, 'GAIN');
+  assert.equal(deck.plan({ gesture: 'dial', widget: 'iris', event: 'rotate', ticks: 1, stepIndex: 1, snapshot: snap }).requests[0].body.op, 'gain');
+  const reset = deck.plan({ gesture: 'dial', widget: 'gainRb', event: 'reset', stepIndex: 0, snapshot: snap });
+  assert.deepEqual(reset.requests[0], { method: 'POST', path: '/api/sys/ptz/cmd/reset', body: { cam: 'cam1', op: 'rGain' } });
   const tap = deck.plan({ gesture: 'dial', widget: 'gainRb', event: 'tap', stepIndex: 0, snapshot: snap });
   assert.deepEqual(tap.requests[0], { method: 'POST', path: '/api/sys/ptz/cmd/op', body: { cam: 'cam1', op: 'awb' } });
   const ped = deck.plan({ gesture: 'dial', widget: 'pedRb', event: 'tap', stepIndex: 0, snapshot: snap });
@@ -123,7 +132,11 @@ test('dials, keys, presets and HOME become Control Center HTTP calls and never a
   assert.equal(plans[4].requests[0].path, '/api/sys/ptz/cmd/guard');
   assert.equal(plans[5].requests[0].path, '/api/sys/ptz/cmd/stopAll');
   assert.equal(plans[6].requests[0].body.op, 'gain');
-  assert.equal(plans[7].requests[0].body.steps, -5, 'coarse is 5 codes per detent');
+  assert.equal(plans[7].requests[0].body.op, 'gain', 'iris dial, second axis, is the gain list');
+  assert.equal(plans[7].requests[0].body.steps, -1, 'a rotate with no prior detent is one native step');
+  const fast = deck.plan({ gesture: 'dial', widget: 'iris', event: 'rotate', ticks: 1, dtMs: 28, stepIndex: 0, snapshot: snap });
+  assert.equal(fast.requests[0].body.op, 'iris');
+  assert.ok(fast.requests[0].body.steps > 1, 'a fast detent takes more than one iris step');
   assert.equal(plans[8].requests[0].body.op, 'irisMode');
   assert.deepEqual(plans[9].requests[0].body, { cam: 'cam1', op: 'masterPed', value: 0 });
   assert.deepEqual(plans[10].requests[0].body.axes, ['z']);
@@ -193,6 +206,42 @@ test('readouts match the paint pane, and the strip SVG is a circular knob (dual 
   assert.match(preset, /stroke="#C42020"/);
   assert.match(preset, /HOLD/);
   assert.equal(preset.includes('fill="#C42020"'), false, 'a live preset is outlined, not filled');
+
+  const liveSnap = fakeSnap({
+    cameras: [{ slot: 1, id: 'cam1', name: 'Wide', connected: true, tally: true, tallyGreen: true, selected: true }],
+    readouts: {
+      ...fakeSnap().readouts,
+      wbMode: { id: 'wbMode', text: 'ATW', value: '0', type: 'list' },
+      drs: { id: 'drs', text: 'OFF', value: '0', type: 'list' },
+      detail: { id: 'detail', text: 'ON', value: true, on: true, type: 'toggle' },
+    },
+  });
+  assert.equal(deck.selectedTally(liveSnap), 'pgm');
+  const dial = img.knobSvg(deck.dialFace('masterPed', liveSnap, 0));
+  assert.match(dial, /#C42020/);
+  assert.match(dial, /ACTIVE M\.PED|M\.PED/);
+  assert.match(dial, /PGM/);
+  const detail = img.presentKey({ role: 'detail' }, liveSnap);
+  assert.equal(detail.value, 'ON');
+  assert.match(img.keySvg(detail), /#C42020/);
+  const atw = img.presentKey({ role: 'wbMode' }, liveSnap);
+  assert.equal(atw.value, 'ATW');
+  const awb = img.presentKey({ role: 'awb' }, liveSnap);
+  assert.equal(awb.value, 'ATW');
+  assert.equal(awb.caption, 'ATW');
+  const drsOff = img.presentKey({ role: 'drs' }, liveSnap);
+  assert.equal(drsOff.value, 'OFF');
+  liveSnap.readouts.drs = { text: 'HIGH', value: '3', type: 'list' };
+  assert.equal(img.presentKey({ role: 'drs' }, liveSnap).value, 'HIGH');
+  const preview = fakeSnap();
+  preview.cameras[0].tally = false;
+  preview.cameras[0].tallyGreen = true;
+  preview.busTally = null;
+  assert.equal(deck.selectedTally(preview), 'pvw');
+  assert.match(img.knobSvg(deck.dialFace('iris', preview, 0)), /#3DDC84/);
+  const fromMap = fakeSnap();
+  fromMap.busTally = { program: true, source: 'tsl' };
+  assert.equal(deck.selectedTally(fromMap), 'pgm', 'TSL map tally shows even before the camera lamp updates');
 });
 
 function arcPathFraction(svg) {
@@ -244,7 +293,7 @@ test('GET /api/deck/ptz and POST step: the plugin path, with the camera password
   assert.ok(layout.bannedOnKeys.includes('rGain') && layout.bannedOnKeys.includes('bPed'));
   const ver = await (await fetch(`${B}/api/version`)).json();
   for (const f of ['streamDeck', 'ptzDeck']) assert.ok(ver.features.includes(f), f);
-  assert.equal(ver.appVersion, '0.4');
+  assert.equal(ver.appVersion, '0.22.0');
 
   assert.equal((await post('/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'iris', value: 20 })).status, 200);
   const stepped = await post('/api/sys/ptz/cmd/step', { cam: 'cam1', op: 'iris', steps: 5 });
@@ -262,6 +311,11 @@ test('GET /api/deck/ptz and POST step: the plugin path, with the camera password
   const gain = await post('/api/sys/ptz/cmd/step', { cam: 'cam1', op: 'rGain', steps: 5 });
   assert.equal(gain.status, 200, gain.json.error);
   assert.equal(gain.json.value, -9);
+  assert.equal((await post('/api/sys/ptz/cmd/paintSave', { cam: 'cam1', slot: 1, name: 'Look' })).status, 200);
+  assert.equal((await post('/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'rGain', value: 10 })).status, 200);
+  const reset = await post('/api/sys/ptz/cmd/reset', { cam: 'cam1', op: 'rGain' });
+  assert.equal(reset.status, 200, reset.json.error);
+  assert.equal(reset.json.value, -9, 'reset returns the stored paint value');
 
   const rev = sm.rev;
   const pending = fetch(`${B}/api/deck/ptz?since=${rev}&timeout=2000`);
