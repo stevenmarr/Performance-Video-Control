@@ -35,7 +35,7 @@ Only the pages of the selected group are shown, always in the same order:
 |---|---|
 | RS6 | PRESETS · INPUTS · BACKUP · AUDIO · WEB RCS |
 | E2 / PIXELHUE | (E2 \| PIXELHUE focus) · PRESETS · CUES · SOURCES · STILLS · BACKUP |
-| ATEM | SWITCHER · ROUTER · AUDIO · DVE / SS / KEYS · MACROS |
+| ATEM | SWITCHER · ROUTER · AUDIO · DVE / SS / KEYS · LAYOUT · MACROS |
 | PTZ | CAMERA CONTROL · CAMERAS · SCOPES (shortcut into the top-row SCOPES pane) |
 | PIXERA | TIMELINES · CUES |
 | MILLUMIN | COLUMNS · LAYER |
@@ -43,6 +43,8 @@ Only the pages of the selected group are shown, always in the same order:
 **SCOPES** has no second-row page of its own. The top-row button opens the pane. The second row shows a
 one-line hint (modes, and that live video is Desktop Video from a Mac sidecar). **Control Devices** is the same:
 the top-row button opens the pane, and the second row is a one-line hint.
+
+**LAYOUT** is the 16:9 SuperSource and DVE picture. DVE / SS / KEYS stays the full key and DSK panel. See [atem-layout.md](atem-layout.md).
 
 A page that the connected system does not support is not shown (for example, PixelHue has no CUES).
 On the SYSTEMS page this row shows a short hint instead of tabs.

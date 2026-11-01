@@ -67,6 +67,7 @@
   <button class="tab x-only" data-tab="arouter" data-cap="atemRouter" data-sys="atem">ROUTER</button>
   <button class="tab x-only" data-tab="aaudio" data-cap="atemAudio" data-sys="atem">AUDIO</button>
   <button class="tab x-only" data-tab="akeys" data-cap="atemKeys" data-sys="atem">DVE / SS / KEYS</button>
+  <button class="tab x-only" data-tab="alayout" data-cap="atemKeys" data-sys="atem">LAYOUT</button>
   <button class="tab x-only" data-tab="amacros" data-cap="atemMacros" data-sys="atem">MACROS</button>
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
   <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
@@ -294,6 +295,31 @@
     <div id="auStrips" class="au-strips"></div>
     <div id="auWatch" class="au-watch panel"><div class="section-title">MONITOR <small id="auWatchInfo">drag a channel's name here (or tap its 👁) to watch its level and mute · kept for this install</small><span class="spacer"></span><button type="button" class="btn mini ghost" id="auWatchClear">CLEAR</button></div><div id="auWatchList" class="au-watch-list"></div></div>
     <div id="auRouting"></div>
+  </section>
+  <section class="grid-wrap pane" id="pane-alayout" hidden>
+    <div class="board-head"><div class="section-title">LAYOUT <small id="layInfo">program raster · SuperSource boxes and upstream DVE keys</small></div><span class="spacer"></span>
+      <span id="layMe" class="seg-row"></span><span id="laySs" class="seg-row"></span>
+      <button type="button" class="btn mini" id="layRead" title="Discard unsent edits and show the switcher">READ</button>
+      <button type="button" class="btn mini primary" id="layApply" title="Send this layout to the switcher">APPLY</button></div>
+    <div id="layBody"></div>
+    <div class="lay-save panel" id="laySave">
+      <div class="section-title">PRESET AND MACRO <small>a macro cuts to the layout. It does not fly.</small></div>
+      <div class="lay-save-row">
+        <label class="ak-num">NAME<input id="layName" type="text" maxlength="40" placeholder="Two shot" autocomplete="off"></label>
+        <label class="ak-num">MACRO SLOT<input id="laySlot" type="number" min="1" max="100" value="1" title="1–100, the switcher's macro pool"></label>
+        <label class="ak-sel">FLY KEY FRAMES<select id="layFly" title="Macros cannot animate. Storing a key frame lets RUN A / RUN B fly later.">
+          <option value="">Layout only</option>
+          <option value="a">Also store key frame A</option>
+          <option value="b">Also store key frame B</option>
+          <option value="pair">A from a preset, B is this layout</option>
+        </select></label>
+        <label class="ak-sel">PRESET A<select id="layFlyFrom"></select></label>
+        <button type="button" class="btn mini" id="laySavePreset">SAVE PRESET</button>
+        <button type="button" class="btn mini primary" id="laySaveMacro">SAVE MACRO</button>
+      </div>
+      <p class="note small" id="layMacroNote">SAVE PRESET keeps this layout in Control Center. SAVE MACRO writes the steps the Macro Desk can play, and the Software Control XML below. Macros set the end position. STORE A / STORE B (SFKF) copies that geometry into a fly key frame so RUN A / RUN B can move. A macro cannot animate the move itself.</p>
+      <textarea id="layXml" class="lay-xml" rows="6" readonly placeholder="Macro XML appears here"></textarea>
+    </div>
   </section>
   <section class="grid-wrap pane" id="pane-akeys" hidden>
     <div class="board-head"><div class="section-title">DVE · SUPERSOURCE · KEYS <small id="akInfo"></small></div><span class="spacer"></span><span id="akMe" class="seg-row"></span></div>
@@ -786,6 +812,7 @@
 <script src="/atem.js"></script>
 <script src="/atem-macros.js"></script>
 <script src="/atem-ext.js"></script>
+<script src="/atem-layout.js"></script>
 <script src="/ptz.js"></script>
 <script src="/pixera.js"></script>
 <script src="/millumin.js"></script>

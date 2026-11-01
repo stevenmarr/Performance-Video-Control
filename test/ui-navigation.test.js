@@ -30,7 +30,7 @@ test('navigation 0.11.0: group row, page row, deep link, last page per group, ov
   assert.equal(await page.locator('.tab[data-tab=scopes]').count(), 1, 'SCOPES is a persistent top tab');
   assert.equal(await page.locator('.tgrp[data-tabgrp=lightning]').count(), 0, 'LIGHTNING is not a top tab');
   const sub = await page.$$eval('#tabsSub .tab', (b) => b.filter((x) => x.offsetParent).map((x) => x.dataset.tab));
-  assert.deepEqual(sub, ['atem', 'arouter', 'aaudio', 'akeys', 'amacros'], 'second row = ATEM pages only');
+  assert.deepEqual(sub, ['atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amacros'], 'second row = ATEM pages only');
   await page.locator('.tgrp[data-tabgrp=atem] .led.ok').waitFor();
   // last page per group
   await page.click('.tgrp[data-tabgrp=pixera]'); await page.waitForFunction(() => document.body.classList.contains('tab-pxplay'));
