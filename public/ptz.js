@@ -263,7 +263,15 @@
     for (const el of document.querySelectorAll('#pane-pctl [data-op]')) {
       const id = el.dataset.op; const o = k.ops.find((x) => x.id === id); if (!o) continue;
       const v = valOf(c, id);
-      if (el.dataset.type === 'toggle') { el.classList.toggle('active', v === true); el.querySelector('b').textContent = v === undefined ? '—' : (TG[id] ? TG[id][v ? 0 : 1] : v ? 'ON' : 'OFF'); }
+      if (el.dataset.type === 'button' && id === 'awb') {
+        const mode = k.ops.find((o) => o.id === 'wbMode');
+        const wb = valOf(c, 'wbMode');
+        const hit = mode && mode.options && mode.options.find(([x]) => String(x) === String(wb));
+        const known = wb !== undefined && wb !== null && wb !== '';
+        el.classList.toggle('active', !!known);
+        el.textContent = hit ? String(hit[1]) : 'AWB ▶';
+      }
+      else if (el.dataset.type === 'toggle') { el.classList.toggle('active', v === true); el.querySelector('b').textContent = v === undefined ? '—' : (TG[id] ? TG[id][v ? 0 : 1] : v ? 'ON' : 'OFF'); }
       else if (el.dataset.type === 'list' && el.tagName === 'SELECT') { if (document.activeElement !== el) { el.value = v === undefined ? '' : String(v); if (el.value !== String(v ?? '')) el.value = ''; } }
       else if (el.dataset.type === 'list') el.querySelectorAll('[data-v]').forEach((b) => b.classList.toggle('active', String(v) === b.dataset.v));
       else if (el.dataset.abs) { const n = v === undefined ? null : Number(v); el.querySelector('b').textContent = fmt(o, n); const inp = el.querySelector('input'); if (document.activeElement !== inp && n !== null) inp.value = String(n); }
@@ -335,7 +343,7 @@
   const pct = (v) => (v === null || v === undefined ? '—' : `${Math.round(v)}%`);
   function readout(c) {
     const p = c.pos || {}; const e = c.lastError && Date.now() - c.lastError.at < 60000 ? c.lastError : null;
-    S.set($('#ptzRead'), 'ptzRead', `<span class="rd"><small>MODEL</small><b>${esc(c.model || '—')}</b></span><span class="rd"><small>SERIES</small><b>${esc(c.series || '—')}</b></span>${c.version ? `<span class="rd"><small>FW</small><b>${esc(c.version)}</b></span>` : ''}
+    S.set($('#ptzRead'), 'ptzRead', `${c.tally ? '<span class="rd"><small>TALLY</small><b class="pg">PGM</b></span>' : c.tallyGreen ? '<span class="rd"><small>TALLY</small><b class="pv">PVW</b></span>' : ''}<span class="rd"><small>MODEL</small><b>${esc(c.model || '—')}</b></span><span class="rd"><small>SERIES</small><b>${esc(c.series || '—')}</b></span>${c.version ? `<span class="rd"><small>FW</small><b>${esc(c.version)}</b></span>` : ''}
       <span class="rd"><small>PAN</small><b>${deg(p.pan)}</b></span><span class="rd"><small>TILT</small><b>${deg(p.tilt)}</b></span><span class="rd"><small>ZOOM</small><b>${pct(p.zoom)}</b></span><span class="rd"><small>FOCUS</small><b>${pct(p.focus)}</b></span><span class="rd"><small>IRIS</small><b>${pct(p.iris)}${c.autoIris ? ' A' : ''}</b></span>
       <span class="rd"><small>POWER</small><b class="${c.power === 'on' ? 'okc' : 'warnc'}">${esc((c.power || '—').toUpperCase())}</b></span><span class="rd ${c.error || (c.camError) ? 'err' : ''}"><small>STATUS</small><b>${c.connected ? (c.error ? esc(c.error) : 'OK') : esc(c.error || 'OFFLINE')}</b></span>
       ${e ? `<span class="rd err"><small>LAST REFUSAL</small><b>${esc(e.cmd)} → ${esc(e.reply)}</b></span>` : ''}<span class="spacer"></span><span class="rd dim"><small>HOST</small><b>${esc(c.host)}:${esc(c.port)}</b></span>`);
@@ -365,6 +373,8 @@
     const c = sel();
     for (const [k, id] of [['pt', '#spPt'], ['zoom', '#spZoom'], ['focus', '#spFocus']]) { const el = $(id); if (document.activeElement !== el) el.value = V.speeds[k]; $(`${id}V`).textContent = V.speeds[k]; }
     pane.classList.toggle('cam-off', !c || !c.connected);
+    pane.classList.toggle('tally-pgm', !!(c && c.tally));
+    pane.classList.toggle('tally-pvw', !!(c && c.tallyGreen && !c.tally));
     if (!c) { S.set($('#ptzRead'), 'ptzRead', ''); return; }
     readout(c);
     const k = catOf(c);

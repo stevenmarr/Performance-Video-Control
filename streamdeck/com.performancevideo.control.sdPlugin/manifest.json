@@ -114,8 +114,8 @@
 				"layout": "layouts/knob.json",
 				"StackColor": "#7c8cff",
 				"TriggerDescription": {
-					"Rotate": "Step the value (fine, or coarse)",
-					"Push": "Cycle fine / coarse, or R / B on a paired knob",
+					"Rotate": "Slow is one camera step. A faster spin accelerates.",
+					"Push": "Short press swaps the pair (R/B, iris/gain). Hold resets the active value.",
 					"Touch": "Run the knob (A/M, AWB, ABB, reset, stop, push AF)",
 					"LongTouch": "Same as touch"
 				}
