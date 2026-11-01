@@ -4,11 +4,12 @@
 // DVE / SS / KEYS (upstream keys per M/E, downstream keys, SuperSource boxes with a 16:9 preview and layouts) and the
 // simulator model picker. State comes from public/sys.js (window.CCSYS); actions are POST /api/sys/atem/cmd/<name>.
 (() => {
+  const atemBase = () => `/api/sys/${(window.CCSYS && window.CCSYS.atemTarget && window.CCSYS.atemTarget()) || 'atem'}`;
   const $ = (s) => document.querySelector(s);
   const { api, toast, run, esc } = window.CC;
   const S = window.CCSYS;
   let V = null; let tab = '';
-  const cmd = (name, body = {}) => run(api('POST', `/api/sys/atem/cmd/${name}`, body));
+  const cmd = (name, body = {}) => run(api('POST', `${atemBase()}/cmd/${name}`, body));
   const live = () => V && V.kind === 'atem' && V.status && V.status.connected;
   const src = (id) => (V.sources || []).find((x) => x.id === id);
   const sname = (id) => { const x = src(id); return x ? x.long : id === undefined || id === null ? '—' : String(id); };
@@ -46,7 +47,7 @@
   $('#amList').addEventListener('dblclick', (e) => { if (e.target.closest('[data-model]')) $('#amStart').click(); });
   $('#amStart').addEventListener('click', () => {
     save('cc.atemModel', pick); $('#dlgAtemModel').close();
-    run(api('POST', '/api/sys/atem/simulate', { model: pick }).then(() => { toast(`ATEM simulator: ${(models.models.find((m) => m.key === pick) || {}).name}`); S.refetch(); }).catch((e) => toast(e.message, true)));
+    run(api('POST', `${atemBase()}/simulate`, { model: pick }).then(() => { toast(`ATEM simulator: ${(models.models.find((m) => m.key === pick) || {}).name}`); S.refetch(); }).catch((e) => toast(e.message, true)));
   });
   document.addEventListener('click', (e) => { if (e.target.closest('[data-simmodel]')) pickModel(); });
 
@@ -372,8 +373,8 @@
     if (d.box !== undefined) { boxSel = Number(d.box); save('cc.boxSel', boxSel); return renderKeys(); }
     if (d.sswith !== undefined) { withSrc = d.sswith === '1'; save('cc.ssWithSrc', withSrc); return renderKeys(); }
     if (d.sslayout) return cmd('ssLayoutRecall', { ss: ssSel, layout: d.sslayout, withSources: withSrc }).then(() => toast('SuperSource layout recalled'));
-    if (d.ssdel) { if (!confirm('Delete this SuperSource layout?')) return undefined; return run(api('DELETE', `/api/sys/atem/ss-layouts/${encodeURIComponent(d.ssdel)}`).then(() => { toast('Layout deleted'); S.refetch(); })); }
-    if (d.sssave !== undefined) { const name = prompt('Save the current SuperSource boxes (with their sources) as layout:'); if (!name) return undefined; return run(api('POST', '/api/sys/atem/ss-layouts', { name, ss: ssSel }).then(() => { toast(`Layout "${name}" saved`); S.refetch(); })); }
+    if (d.ssdel) { if (!confirm('Delete this SuperSource layout?')) return undefined; return run(api('DELETE', `${atemBase()}/ss-layouts/${encodeURIComponent(d.ssdel)}`).then(() => { toast('Layout deleted'); S.refetch(); })); }
+    if (d.sssave !== undefined) { const name = prompt('Save the current SuperSource boxes (with their sources) as layout:'); if (!name) return undefined; return run(api('POST', `${atemBase()}/ss-layouts`, { name, ss: ssSel }).then(() => { toast(`Layout "${name}" saved`); S.refetch(); })); }
     return undefined;
   });
 

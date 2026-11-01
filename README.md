@@ -72,13 +72,21 @@ On a show, run `node server.js` and connect each system from **SYSTEMS → CONFI
 
 ## SYSTEMS
 
-**⌂ SYSTEMS** is the home page. Cards are split into **ON THE DESK** and **AVAILABLE**.
+**⌂ SYSTEMS** is the home page. The left column is a palette of every system type the app can drive (RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin). A palette row is a template: dragging it, or ADD, does not use it up.
 
-- **ADD TO DESK** puts that system on the desk. Its tabs appear. The address is unchanged.
-- **OPEN** goes to that system's pages (SWITCHER, PTZ CONTROL, PRESETS, …).
-- **CONFIGURE** is the connection: IP, port, protocol. The summary on the card shows the address.
-- **REMOVE FROM DESK** takes it off. A simulator goes away; a saved address comes back.
-- **ADD TO DESK AS SIMULATOR** runs a built-in fixture on 127.0.0.1. It is not written into the show.
+The right column is the desk. Each card is one instance, with its own name, IP address (and port), type-specific settings, and connection status: CONNECTING, ONLINE, RECONNECTING, or OFFLINE. Drop the same type again to add another — ATEM A, ATEM B, ATEM C — and give each its own IP. A second card with the same IP shows **DUPLICATE IP**.
+
+Right-click a desk card for **Rename**, **Duplicate**, **Disconnect / Connect**, and **Delete** (it asks first). Delete removes that instance. Presets, layout looks, tally rows, and Stream Deck pages store the instance id, not the IP, so changing the address does not retarget them.
+
+An older `systems.json` with one ATEM becomes that one instance, id `atem`. New instances are ids like `atem-k3f2a1`. `/api/sys/atem/...` still means the original one.
+
+- **ADD** or drag puts an instance on the desk. The first of a type keeps the old id (`atem`, `e2`, …).
+- **OPEN** goes to that instance's pages (SWITCHER, LAYOUT, PTZ CONTROL, PRESETS, …).
+- **CONFIGURE** is the name, IP, and port. The summary on the card shows the address.
+- **REMOVE** takes it off the desk. **Delete** (right-click) also clears a primary connection.
+- **ADD AS SIMULATOR** runs a built-in fixture on 127.0.0.1 for that instance. It is not written into the show as the saved address.
+
+ATEM pages (SWITCHER, ROUTER, AUDIO, DVE / SS / KEYS, LAYOUT, MACROS) and the TSL tally map grow an **ATEM** picker when two switchers are on the desk. Stream Deck assign buttons list each instance by name. The cue stack still stores a family (`e2`, `pixelhue`, `rs6`) until the cues tab, which is being redesigned separately, offers the instance id. The systems API already accepts that id on recall, take, and cut.
 
 Group chips (Presentation switchers, Production switchers, Cameras, Media servers) and the search
 box filter the cards. The look matches the rest of Control Center: dark panels, red for the system

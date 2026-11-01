@@ -9,11 +9,12 @@
 // name only replaces it when the bus gets too narrow (CSS, .nm-l / .nm-s). SAVE stores the show and asks the ATEM to
 // save its startup state (SRsv).
 (() => {
+  const atemBase = () => `/api/sys/${(window.CCSYS && window.CCSYS.atemTarget && window.CCSYS.atemTarget()) || 'atem'}`;
   const $ = (s) => document.querySelector(s);
   const { api, toast, run, esc } = window.CC;
   const S = window.CCSYS;
   let V = null;
-  const cmd = (name, body = {}) => run(api('POST', `/api/sys/atem/cmd/${name}`, body));
+  const cmd = (name, body = {}) => run(api('POST', `${atemBase()}/cmd/${name}`, body));
   const live = () => V && V.kind === 'atem' && V.status && V.status.connected;
   // ---- shared M/E selection (0-based index, or 'all' on the SWITCHER) ----
   const ls = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } };

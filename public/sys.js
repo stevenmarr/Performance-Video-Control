@@ -14,7 +14,7 @@
   const set = (el, key, h) => { if (html[key] !== h) { html[key] = h; el.innerHTML = h; } };
   const base = () => `/api/sys/${SYS.active}`;
   const isX = () => SYS && SYS.active !== 'rs6';
-  const kind = () => (SYS && SYS.systems[SYS.active] ? SYS.systems[SYS.active].kind : 'rs6');
+  const kind = () => (SYS ? kindOf(SYS.active) : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
   const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amacros'], ptz: ['pctl', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], cues: ['cues'], decks: ['decks'] };
   const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes', looks: 'looks', cues: 'cues', decks: 'decks' };
@@ -23,19 +23,44 @@
   const RS6TABS = KIND_TABS.rs6;
   const listeners = [];
   const armed = () => (SYS && Array.isArray(SYS.armed) ? SYS.armed : []);
-  const armedOf = (kindName) => armed().filter((k) => SYS.systems[k] && SYS.systems[k].kind === kindName);
+  const armedOf = (kindName) => armed().filter((k) => kindOf(k) === kindName);
   const HINTS = {
     recall: '<b>RECALL → PVW</b> · tap a tile to recall that preset to <b>Preview</b> on the destinations stored in it, then TAKE or CUT the selected destinations.',
     program: '<b>RECALL → PGM</b> · tap a tile to recall straight to <b>Program</b>, without a transition. The app asks first.',
     move: '<b>MOVE</b> · tap a tile, then another tile to <b>swap</b> them or an empty tile to <b>move</b> it. Only the app\'s layout changes.',
   };
 
+  const instances = () => (SYS && Array.isArray(SYS.instances) ? SYS.instances : []);
+  function typeOf(id) {
+    const hit = instances().find((i) => i.id === id);
+    if (hit && hit.type) return hit.type;
+    return id;
+  }
+  function kindOf(id) {
+    const t = typeOf(id);
+    const sys = SYS && SYS.systems && SYS.systems[t];
+    return sys ? sys.kind : (t || id);
+  }
+  function recOf(id) {
+    return instances().find((i) => i.id === id) || (SYS && SYS.systems && SYS.systems[id]) || { key: id, id, label: id, short: id, name: id, kind: kindOf(id), type: typeOf(id) };
+  }
+  function atemTarget() {
+    const list = armed().filter((id) => kindOf(id) === 'atem');
+    if (kindOf(SYS.active) === 'atem' && list.includes(SYS.active)) return SYS.active;
+    let saved = '';
+    try { saved = localStorage.getItem('cc.atemInst') || ''; } catch { saved = ''; }
+    if (saved && list.includes(saved)) return saved;
+    return list[0] || 'atem';
+  }
   function statusOf(s) {
     if (!s) return { cls: 'off', txt: 'UNKNOWN' };
     const st = s.status || {};
-    const conf = s.configured !== undefined ? s.configured : !!(s.connection && s.connection.host);
+    const conf = s.configured !== undefined ? s.configured : !!(s.connection && (s.connection.host || (s.connection.cameras && s.connection.cameras.length)));
+    const ptz = s.key === 'ptz' || s.type === 'ptz';
     if (!conf) return { cls: 'idle', txt: 'NOT CONFIGURED' };
-    if (st.connected && s.key === 'ptz' && st.online < st.total) return { cls: 'warn', txt: `${st.online}/${st.total} ONLINE` };
+    if (st.link === 'connecting') return { cls: 'warn', txt: 'CONNECTING' };
+    if (st.link === 'reconnecting') return { cls: 'warn', txt: 'RECONNECTING' };
+    if (st.connected && ptz && st.online != null && st.total != null && st.online < st.total) return { cls: 'warn', txt: `${st.online}/${st.total} ONLINE` };
     if (st.connected) return { cls: 'ok', txt: 'ONLINE' };
     return { cls: 'off', txt: 'OFFLINE' };
   }
@@ -65,13 +90,13 @@
       const k = b.dataset.tabgrp; const list = armedOf(k);
       b.hidden = !list.length; b.classList.toggle('active', k === g);
       let worst = 'ok';
-      for (const s of list) { const c = statusOf(SYS.systems[s]).cls; if ((RANK[c] ?? 2) > (RANK[worst] ?? 0)) worst = c; }
+      for (const s of list) { const c = statusOf(recOf(s)).cls; if ((RANK[c] ?? 2) > (RANK[worst] ?? 0)) worst = c; }
       b.querySelector('.led').className = `led ${worst}`;
       if (k === 'preset') {
-        const nm = list.map((s) => SYS.systems[s].short).join(' / ') || 'E2 / PIXELHUE';
+        const nm = list.map((s) => recOf(s).name || recOf(s).short).join(' / ') || 'E2 / PIXELHUE';
         b.querySelector('.tgrp-nm').textContent = nm;
       }
-      b.title = list.length ? `${list.map((s) => `${SYS.systems[s].label}: ${statusOf(SYS.systems[s]).txt}`).join(' · ')}` : '';
+      b.title = list.length ? `${list.map((s) => { const r = recOf(s); return `${r.name || r.label}: ${statusOf(r).txt}`; }).join(' · ')}` : '';
     }
     const act = document.querySelector('#tabsSub .tab.active:not(.grp-off)') ; const top = document.querySelector('#tabsTop .active');
     for (const el of [act, top]) if (el && el.scrollIntoView && el.parentElement.scrollWidth > el.parentElement.clientWidth) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -121,34 +146,39 @@
     const kn = TAB_KIND[tabName];
     const list = armedOf(kn);
     if (!list.length) return null;
+    if (kn === 'atem') { const t = atemTarget(); return list.includes(t) ? t : list[0]; }
     if (kn !== 'preset') return list[0];
-    const focused = SYS.systems[SYS.active] && SYS.systems[SYS.active].kind === 'preset' ? SYS.active : list[0];
-    const has = (k) => { const c = (SYS.views && SYS.views[k] && SYS.views[k].capabilities) || (SYS.systems[k] && SYS.systems[k].capabilities) || {}; return !cap || c[cap]; };
+    const focused = kindOf(SYS.active) === 'preset' ? SYS.active : list[0];
+    const has = (k) => {
+      const inst = instances().find((i) => i.id === k);
+      const c = (inst && inst.capabilities) || (SYS.views && SYS.views[k] && SYS.views[k].capabilities) || (SYS.systems[typeOf(k)] && SYS.systems[typeOf(k)].capabilities) || {};
+      return !cap || c[cap];
+    };
     if (has(focused)) return focused;
     return list.find((k) => has(k)) || null;
   }
   function applyChrome() {
-    const a = SYS.active; const sysInfo = SYS.systems[a]; const on = new Set(armed());
+    const a = SYS.active; const sysInfo = recOf(a); const onTypes = new Set(armed().map(typeOf));
     for (const k of Object.keys(SYS.systems)) {
-      document.body.classList.toggle(`sys-${k}`, k === a);
-      document.body.classList.toggle(`arm-${k}`, on.has(k));
+      document.body.classList.toggle(`sys-${k}`, typeOf(a) === k);
+      document.body.classList.toggle(`arm-${k}`, onTypes.has(k));
     }
     const knNow = TAB_KIND[CC.getTab()] || kind();
     for (const k of Object.keys(KIND_TABS)) document.body.classList.toggle(`kind-${k}`, k === knNow);
     document.body.classList.toggle('sys-x', isX());
     const st = statusOf(sysInfo);
-    const badge = armed().map((k) => SYS.systems[k].short).join(' · ');
+    const badge = armed().map((k) => { const r = recOf(k); return r.name || r.short; }).join(' · ');
     $('#sysBadgeName').textContent = badge; $('#btnSystem').className = `sys-badge ${st.cls}`;
-    $('#btnSystem').title = `On the desk: ${armed().map((k) => SYS.systems[k].label).join(', ')} · open: ${sysInfo.label} (${st.txt}) · tap for SYSTEMS`;
+    $('#btnSystem').title = `On the desk: ${armed().map((k) => { const r = recOf(k); return r.name || r.label; }).join(', ')} · open: ${sysInfo.name || sysInfo.label} (${st.txt}) · tap for SYSTEMS`;
     document.querySelectorAll('.tab-group').forEach((g) => { g.hidden = !armedOf(g.dataset.grp).length; });
-    document.querySelectorAll('.tab-group .grp-btn').forEach((b) => { b.hidden = !on.has(b.dataset.focus); b.classList.toggle('on', b.dataset.focus === a); });
+    document.querySelectorAll('.tab-group .grp-btn').forEach((b) => { b.hidden = !onTypes.has(b.dataset.focus); b.classList.toggle('on', b.dataset.focus === typeOf(a)); });
     document.querySelectorAll('.tab[data-sys]').forEach((t) => {
       const owner = ownerOf(t.dataset.tab, t.dataset.cap);
       t.hidden = !owner;
       if (owner) t.dataset.owner = owner;
     });
     applyTabRows();
-    document.querySelectorAll('.xsys').forEach((e) => { e.textContent = sysInfo.short; });
+    document.querySelectorAll('.xsys').forEach((e) => { e.textContent = sysInfo.name || sysInfo.short; });
     const pillFor = () => {
       const tab = CC.getTab();
       if (tab === 'system' || !TAB_KIND[tab] || TAB_KIND[tab] === 'rs6') return null;
@@ -157,13 +187,14 @@
     };
     const pillSys = pillFor();
     const pillView = pillSys && pillSys !== 'rs6' ? ((SYS.views && SYS.views[pillSys]) || (pillSys === a ? V : null)) : null;
-    const pillInfo = pillSys ? SYS.systems[pillSys] : sysInfo;
+    const pillInfo = pillSys ? recOf(pillSys) : sysInfo;
     if (pillView && pillInfo) {
       const c = $('#xconn'); const s = pillView.status || {};
       c.className = `pill x-only ${s.connected ? 'ok' : 'off'}`;
-      const where = pillView.system === 'ptz' ? `${s.online || 0}/${s.total || 0} cameras` : esc(pillView.connection.host || '');
-      const model = (s.info && s.info.model) || ''; const short = model.toUpperCase().startsWith(String(pillInfo.short).toUpperCase()) ? '' : pillInfo.short;
-      c.innerHTML = (s.connected ? `${esc(short)} ${pillView.system === 'ptz' ? '' : `${esc(model)} ${esc(ver(s.info && s.info.version))} · `}${where}` : `${esc(pillInfo.short)} not connected${s.error ? ' · ' + esc(s.error).slice(0, 50) : ''}`) + (pillView.connection.mock ? '<span class="mock">MOCK</span>' : '');
+      const where = pillView.kind === 'ptz' ? `${s.online || 0}/${s.total || 0} cameras` : esc((pillView.connection && pillView.connection.host) || '');
+      const model = (s.info && s.info.model) || ''; const who = pillInfo.name || pillInfo.short;
+      const short = model.toUpperCase().startsWith(String(who).toUpperCase()) ? '' : who;
+      c.innerHTML = (s.connected ? `${esc(short)} ${pillView.kind === 'ptz' ? '' : `${esc(model)} ${esc(ver(s.info && s.info.version))} · `}${where}` : `${esc(who)} not connected${s.error ? ' · ' + esc(s.error).slice(0, 50) : ''}`) + (pillView.connection && pillView.connection.mock ? '<span class="mock">MOCK</span>' : '');
       let last = '';
       if (pillView.kind === 'preset') last = pillView.lastRecalled ? `PVW: ${pillView.lastRecalled.number} · ${pillView.lastRecalled.name}` : 'PVW: —';
       else if (pillView.kind === 'atem' && pillView.inputs && pillView.inputs.length) { const nm = (id) => { const i = pillView.inputs.find((x) => x.id === id); return i ? i.long || i.short : '—'; }; last = `PGM ${nm(pillView.program)} · PVW ${nm(pillView.preview)}`; }
@@ -187,6 +218,7 @@
   }
   function armForTab(tab) {
     const kn = TAB_KIND[tab];
+    if (armedOf(kn).length) { landed = true; return; }
     const sys = kn === 'preset' ? 'e2' : Object.keys(SYS.systems).find((k) => SYS.systems[k].kind === kn);
     if (!sys || armed().includes(sys)) { landed = true; return; }
     run(api('POST', '/api/sys/active', { system: sys }).then((st) => { landed = true; onSys(st); }));
@@ -203,12 +235,14 @@
   if (dashSt === 'desk') dashSt = 'all';
   let groupSel = localStorage.getItem('cc.group') || 'all';
   const f = (name, label, type, val, ph, dis, extra = '') => `<label>${label}<input name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${esc(ph)}" ${dis} ${extra}></label>`;
-  function connForm(s) {
-    const c = s.connection || {}; const dis = c.mock ? 'disabled' : '';
+  function connForm(s, inst) {
+    const id = inst || s.key;
+    const c = s.connection || {}; const dis = c.mock || c.simulator ? 'disabled' : '';
     const foot = (k) => `<div class="actions left">${c.simulator ? '<span class="note small">Simulator on 127.0.0.1. It is not saved. REMOVE FROM DESK to use a real address.</span>' : c.mock ? '<span class="note small">Mock mode: connected to the built-in mock, fixed.</span>' : '<button class="btn mini primary" value="save">SAVE &amp; CONNECT</button>'}
       <button type="button" class="btn mini" data-reconnect="${k}" ${s.configured ? '' : 'disabled'}>⟳ RECONNECT</button></div>`;
     if (s.key === 'rs6') {
-      return `<form class="form conn-form" data-sys="rs6">
+      return `<form class="form conn-form" data-sys="${esc(id)}">
+        ${f('name', 'Name', 'text', (instances().find((i) => i.id === id) || {}).name || s.short || 'RS6', 'Name', '', 'maxlength="40"')}
         <div class="row2">${f('host', 'RS6 IP address', 'text', c.host, 'RS6 IP', dis, 'autocomplete="off" spellcheck="false"')}<label>Control protocol<select name="protocol" ${dis}><option value="rest" ${c.protocol !== 'awj' ? 'selected' : ''}>REST</option><option value="awj" ${c.protocol === 'awj' ? 'selected' : ''}>AWJ</option></select></label></div>
         <div class="row2">${f('restPort', 'REST port', 'number', c.restPort, '80', dis, 'min="1" max="65535"')}${f('awjPort', 'AWJ port', 'number', c.awjPort, '10606', dis, 'min="1" max="65535"')}</div>
         <div class="actions left">${c.mock ? '<span class="note small">Mock mode: connected to the built-in mock RS6, fixed.</span>' : '<button class="btn mini primary" value="save">SAVE &amp; CONNECT</button>'}
@@ -225,11 +259,12 @@
     const defPort = { e2: 9999, pixelhue: 8088, atem: 9910, pixera: 1400, millumin: 5000 }[s.key];
     const hostPh = { e2: 'E2 host unit IP', atem: 'ATEM IP', pixera: 'Pixera IP', millumin: 'Millumin Mac IP' }[s.key] || 'switcher IP';
     const portLbl = s.key === 'atem' ? 'UDP port' : s.key === 'millumin' ? 'OSC port' : s.key === 'pixera' ? 'API port' : 'Port';
-    return `<form class="form conn-form" data-sys="${s.key}">
+    return `<form class="form conn-form" data-sys="${esc(id)}">
+      ${f('name', 'Name on the desk', 'text', (instances().find((i) => i.id === id) || {}).name || s.short || '', 'Name', '', 'maxlength="40"')}
       <div class="row2">${f('host', 'IP address', 'text', c.host, hostPh, dis, 'autocomplete="off" spellcheck="false"')}${f('port', portLbl, 'number', c.port, String(defPort), dis, 'min="1" max="65535"')}</div>
       ${s.key === 'atem' ? `<div class="row2">${extra}</div>` : s.key === 'pixera' || s.key === 'millumin' ? '' : `<div class="row2">${extra}</div>`}
       ${s.key === 'pixelhue' ? `<label class="chk"><input type="checkbox" name="swap" ${c.swap ? 'checked' : ''} ${dis}> Swap on TAKE / CUT (Program goes back to Preview)</label>` : ''}
-      ${foot(s.key)}
+      ${foot(id)}
     </form>`;
   }
   function statsOf(s) {
@@ -252,45 +287,45 @@
   const openDet = new Set(JSON.parse(localStorage.getItem('cc.conn') || '[]'));
   function renderDash() {
     const clock = $('#dashClock'); if (clock) clock.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const all = Object.values(SYS.systems); const sts = all.map(statusOf);
-    $('#dashSummary').innerHTML = `<b>${all.length}</b> systems · <span class="ok">${sts.filter((x) => x.cls === 'ok').length} online</span> · <span class="off">${sts.filter((x) => x.cls === 'off' || x.cls === 'warn').length} offline / degraded</span> · <span class="idle">${sts.filter((x) => x.cls === 'idle').length} not configured</span>`;
-    const row = (s, collapsed) => {
-      const st = statusOf(s); const active = SYS.active === s.key; const on = armed().includes(s.key); const info = (s.status && s.status.info) || {};
+    const desk = instances().filter((i) => i.armed);
+    const sts = desk.map(statusOf);
+    $('#dashSummary').innerHTML = `<b>${Object.keys(SYS.systems).length}</b> types · <b>${desk.length}</b> on the desk · <span class="ok">${sts.filter((x) => x.cls === 'ok').length} online</span> · <span class="off">${sts.filter((x) => x.cls === 'off' || x.cls === 'warn').length} offline / degraded</span>`;
+    const palRow = (s) => {
+      const st = statusOf(s);
+      return `<article class="sys-card avail ${st.cls}" data-card="${s.key}" data-pal="${s.key}" draggable="true" title="Drag onto the desk. This stays here — it is a template, not a used-up device.">
+        <div class="mono">${MONO[s.key] || '?'}</div>
+        <div class="nm">${esc(s.short || s.label)}</div>
+        <div class="st"><span class="led ${st.cls}"></span>${st.txt}</div>
+        <div class="sys-acts"><button type="button" class="btn mini primary" data-use="${s.key}">ADD</button></div>
+      </article>`;
+    };
+    const instRow = (s) => {
+      const st = statusOf(s); const active = SYS.active === s.id; const info = (s.status && s.status.info) || {};
+      const type = s.type || s.key;
       const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : 'PRESETS';
       const addr = (s.connection && (s.connection.host || s.connection.mock))
         ? (s.connection.mock ? 'simulator' : `${s.connection.host || ''}${s.connection.port ? `:${s.connection.port}` : ''}`)
-        : 'no address';
-      const add = on ? '' : `<button type="button" class="btn mini primary" data-use="${s.key}">ADD TO DESK</button>`;
-      const sim = !on && s.key !== 'rs6' && !(s.connection && s.connection.mock)
-        ? `<button type="button" class="btn mini" data-sim="${s.key}">ADD AS SIMULATOR</button>` : '';
-      const openBtn = on
-        ? `<button type="button" class="btn mini" data-use="${s.key}" data-open="${s.key}">OPEN ${open}</button>`
-        : '';
-      const remove = on ? `<button type="button" class="btn mini danger" data-armoff="${s.key}">REMOVE FROM DESK</button>` : '';
-      if (collapsed) {
-        return `<article class="sys-card avail ${st.cls}" data-card="${s.key}">
-          <div class="mono">${MONO[s.key] || '?'}</div>
-          <div class="nm">${esc(s.label)}</div>
-          <div class="st"><span class="led ${st.cls}"></span>${st.txt}</div>
-          <div class="sys-acts">${add}${sim}</div>
-        </article>`;
-      }
-      return `<article class="sys-card ${active ? 'active' : ''} on-desk ${st.cls}" data-card="${s.key}">
-        <header><div class="mono">${MONO[s.key] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.label)}</div>
-          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}</div></div></header>
+        : (s.kind === 'ptz' ? `${((s.connection && s.connection.cameras) || []).length} cameras` : 'no address');
+      const form = { ...s, key: type };
+      const sim = type !== 'rs6' && !(s.connection && (s.connection.mock || s.connection.simulator))
+        ? `<button type="button" class="btn mini" data-sim="${esc(s.id)}">ADD AS SIMULATOR</button>` : '';
+      const linkBtn = s.configured ? `<button type="button" class="btn mini" data-link="${esc(s.id)}" data-hold="${s.held ? '1' : '0'}">${s.held ? 'CONNECT' : 'DISCONNECT'}</button>` : '';
+      return `<article class="sys-card ${active ? 'active' : ''} on-desk ${st.cls}${s.duplicateIp ? ' dup' : ''}" data-instance="${esc(s.id)}">
+        <header><div class="mono">${MONO[type] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.name || s.short)}</div>
+          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${s.duplicateIp ? ' <span class="dup-flag">DUPLICATE IP</span>' : ''}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}${s.connection && s.connection.simulator ? ' <span class="mock">SIM</span>' : ''}</div></div></header>
         ${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<div class="err small">${esc(s.status.error).slice(0, 140)}</div>` : ''}
-        <div class="sys-acts">${openBtn}${remove}</div>
-        <div class="stats">${statsOf(s)}</div>${liveLine(s)}
-        <details data-det="${s.key}" ${openDet.has(s.key) ? 'open' : ''}><summary>CONFIGURE <span class="cfg-sum">${esc(addr)}</span></summary>${connForm(s)}</details>
+        <div class="sys-acts"><button type="button" class="btn mini" data-open="${esc(s.id)}">OPEN ${open}</button>${sim}${linkBtn}<button type="button" class="btn mini danger" data-armoff="${esc(s.id)}">REMOVE FROM DESK</button></div>
+        <div class="stats">${statsOf(form)}</div>${liveLine(form)}
+        <details data-det="${esc(s.id)}" ${openDet.has(s.id) ? 'open' : ''}><summary>CONFIGURE <span class="cfg-sum">${esc(addr)}</span></summary>${connForm(form, s.id)}</details>
       </article>`;
     };
     const groups = SYS.groups || [{ name: 'Systems', systems: Object.keys(SYS.systems) }];
     if (groupSel !== 'all' && !groups.some((g) => g.name === groupSel)) groupSel = 'all';
     const chip = (key, label, n) => `<button class="mode ${groupSel === key ? 'active' : ''}" data-group="${esc(key)}" type="button">${esc(label)} <small>${n}</small></button>`;
-    set($('#dashGroups'), 'groups', chip('all', 'ALL', all.length) + groups.map((g) => chip(g.name, g.name.toUpperCase(), g.systems.length)).join(''));
+    const allTypes = Object.keys(SYS.systems);
+    set($('#dashGroups'), 'groups', chip('all', 'ALL', allTypes.length) + groups.map((g) => chip(g.name, g.name.toUpperCase(), g.systems.length)).join(''));
     const order = groups.flatMap((g) => g.systems);
-    const onKeys = order.filter((k) => SYS.systems[k] && armed().includes(k));
-    const leftPool = (groupSel === 'all' ? order : groups.find((g) => g.name === groupSel).systems).filter((k) => SYS.systems[k] && !armed().includes(k));
+    const leftPool = (groupSel === 'all' ? order : groups.find((g) => g.name === groupSel).systems).filter((k) => SYS.systems[k]);
     const q = dashQ.trim().toLowerCase();
     const stOk = (k) => { const x = SYS.systems[k]; const c = statusOf(x).cls; return dashSt === 'all' || (dashSt === 'online' && c === 'ok') || (dashSt === 'issues' && (c === 'off' || c === 'warn')) || (dashSt === 'idle' && c === 'idle'); };
     const qOk = (k) => { const x = SYS.systems[k]; return !q || `${x.key} ${x.short} ${x.label} ${x.group || ''} ${x.kind} ${statusOf(x).txt} ${(x.connection && x.connection.host) || ''}`.toLowerCase().includes(q); };
@@ -300,14 +335,15 @@
     const offKeys = leftPool.filter((k) => qOk(k) && stOk(k));
     const block = (title, hint, html) => `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div>${html}</section>`;
     const leftHtml = offKeys.length
-      ? `<div class="sys-cards cards avail">${offKeys.map((k) => row(SYS.systems[k], true)).join('')}</div>`
-      : '<p class="note small">Nothing matches this filter.</p>';
-    const rightHtml = onKeys.length
-      ? `<div class="sys-cards cards">${onKeys.map((k) => row(SYS.systems[k], false)).join('')}${armed().includes('ptz') ? camCards(SYS.systems.ptz) : ''}</div>`
-      : '<p class="note small">Nothing on the desk.</p>';
-    const cards = `<div class="sys-cols">${block('AVAILABLE', 'Filtered. Add it, then set the address on the desk.', leftHtml)}${block('ON THE DESK', 'Every system on the desk, including while the list is filtered.', rightHtml)}</div>`;
+      ? `<div class="sys-cards cards avail">${offKeys.map((k) => palRow(SYS.systems[k])).join('')}</div>`
+      : '<p class="note small">Nothing matches this filter. The list is every system type — dragging one does not remove it.</p>';
+    const rightHtml = desk.length
+      ? `<div class="sys-cards cards" data-desk="1">${desk.map(instRow).join('')}${desk.filter((i) => i.type === 'ptz').map((i) => camCards(i)).join('')}</div>`
+      : '<div class="sys-cards cards" data-desk="1"><p class="note small">Nothing on the desk. Drag a system from the left, or ADD it. You can add the same type more than once.</p></div>';
+    const cards = `<div class="sys-cols">${block('AVAILABLE', 'Every type stays here. Drag one onto the desk to add another instance.', leftHtml)}${block('ON THE DESK', 'Each card is its own device: name, address, and connection.', `<div class="sys-desk" data-desk="1">${rightHtml}</div>`)}</div>`;
     // keep a focused connection form from being replaced while typing
-    if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#sysCards')) set($('#sysCards'), 'cards', cards);
+    const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && document.activeElement.closest && document.activeElement.closest('#sysCards');
+    if (!typing) set($('#sysCards'), 'cards', cards);
     $('#sysPlannedWrap').hidden = !(SYS.planned || []).length;
     set($('#sysPlanned'), 'planned', (SYS.planned || []).map((p) => `<article class="sys-card planned"><header><div class="mono">${MONO[p.key] || '?'}</div><div class="ttl"><div class="nm">${esc(p.label)}</div><div class="st"><span class="led idle"></span>${esc(p.kind)} · NOT BUILT</div></div><span class="badge-stub">STUB</span></header><div class="note small">${esc(p.note)}</div></article>`).join(''));
   }
@@ -340,11 +376,24 @@
   const camRow = (el) => ({ name: el.querySelector('[name=name]').value.trim(), host: el.querySelector('[name=host]').value.trim(), port: Number(el.querySelector('[name=port]').value) || 80 });
   $('#sysCards').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return;
-    if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); toast(`${st.systems[b.dataset.armoff].short} left the desk`); }).catch((e) => toast(e.message, true)));
-    if (b.dataset.sim === 'atem' && window.CCATEM) return window.CCATEM.pickModel(); // 0.10.0: choose the simulated model first
-    if (b.dataset.sim) return run(api('POST', `/api/sys/${b.dataset.sim}/simulate`).then((st) => { onSys(st); toast(`${st.systems[b.dataset.sim].short} simulator is on the desk`); }).catch((e) => toast(e.message, true)));
-    if (b.dataset.use) return run(api('POST', '/api/sys/active', { system: b.dataset.use }).then((st) => { onSys(st); if (b.dataset.open) CC.setTab(HOME_TAB[st.systems[b.dataset.use].kind]); else toast(`${st.systems[b.dataset.use].short} is on the desk`); }));
-    if (b.dataset.open) { const k = SYS.systems[b.dataset.open].kind; return CC.setTab(HOME_TAB[k]); }
+    if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); const r = (st.instances || []).find((i) => i.id === b.dataset.armoff); toast(`${(r && r.name) || b.dataset.armoff} left the desk`); }).catch((e) => toast(e.message, true)));
+    if (b.dataset.link) {
+      const hold = b.dataset.hold === '1';
+      const path = hold ? 'connect' : 'disconnect';
+      return run(api('POST', `/api/sys/instances/${b.dataset.link}/${path}`).then(() => refetch()).then(() => toast(hold ? 'Connecting' : 'Disconnected')));
+    }
+    if (b.dataset.sim === 'atem' && window.CCATEM && !String(b.dataset.sim).includes('-')) return window.CCATEM.pickModel();
+    if (b.dataset.sim) return run(api('POST', `/api/sys/instances/${b.dataset.sim}/simulate`).then((st) => { onSys(st); toast('Simulator is on the desk'); }).catch((e) => toast(e.message, true)));
+    if (b.dataset.use) {
+      const type = b.dataset.use;
+      const on = armed().some((id) => typeOf(id) === type);
+      const req = on ? api('POST', '/api/sys/instances', { type, forceNew: true }) : api('POST', '/api/sys/active', { system: type });
+      return run(req.then((st) => { onSys(st); const id = st.created || type; toast(`${(recOf(id).name) || type} is on the desk`); }));
+    }
+    if (b.dataset.open) {
+      const id = b.dataset.open;
+      return run(api('POST', '/api/sys/active', { system: id }).then((st) => { onSys(st); CC.setTab(HOME_TAB[kindOf(id)] || 'system'); }));
+    }
     if (b.dataset.rs6set) return $('#btnSettings').click();
     if (b.dataset.reconnect) return run(api('POST', `/api/sys/${b.dataset.reconnect}/connect`).then(() => toast('Connected')));
     if (b.dataset.camsave) { b.blur(); return run(api('POST', `/api/sys/ptz/cameras/${b.dataset.camsave}`, camRow(b.closest('.cam-row'))).then(() => toast('Camera saved')).finally(refetch)); }
@@ -362,13 +411,105 @@
     if (k === 'rs6') {
       b.host = fm.elements.host.value.trim(); b.protocol = fm.elements.protocol.value;
       for (const n of ['restPort', 'awjPort']) { const v = Number(fm.elements[n].value); if (v) b[n] = v; }
-      return run(api('POST', '/api/settings', b).then(() => toast('RS6 connection saved')).finally(refetch));
+      const named = fm.elements.name && fm.elements.name.value.trim() ? api('POST', `/api/sys/instances/${k}/rename`, { name: fm.elements.name.value.trim() }) : Promise.resolve();
+      return run(named.then(() => api('POST', '/api/settings', b)).then(() => toast('RS6 connection saved')).finally(refetch));
     }
     for (const n of ['host', 'operatorId', 'transTime', 'prefix', 'time']) if (fm.elements[n]) b[n] = fm.elements[n].value.trim();
     if (fm.elements.port) b.port = Number(fm.elements.port.value) || undefined;
     if (fm.elements.me) b.me = Number(fm.elements.me.value) || 1;
     if (fm.elements.swap) b.swap = fm.elements.swap.checked;
-    run(api('POST', `/api/sys/${k}/connection`, b).then(() => (b.host ? api('POST', `/api/sys/${k}/connect`) : null)).then((r) => toast(r ? 'Saved and connected' : 'Saved')).finally(refetch));
+    const named = fm.elements.name && fm.elements.name.value.trim() ? api('POST', `/api/sys/instances/${k}/rename`, { name: fm.elements.name.value.trim() }) : Promise.resolve();
+    run(named.then(() => api('POST', `/api/sys/${k}/connection`, b)).then(() => (b.host ? api('POST', `/api/sys/${k}/connect`) : null)).then((r) => toast(r ? 'Saved and connected' : 'Saved')).finally(refetch));
+  });
+  $('#sysCards').addEventListener('dragstart', (ev) => {
+    const card = ev.target.closest('[data-pal]');
+    if (!card || !ev.dataTransfer) return;
+    ev.dataTransfer.setData('text/plain', card.dataset.pal);
+    ev.dataTransfer.effectAllowed = 'copy';
+    card.classList.add('dragsrc');
+  });
+  $('#sysCards').addEventListener('dragend', (ev) => { const card = ev.target.closest('[data-pal]'); if (card) card.classList.remove('dragsrc'); document.querySelectorAll('[data-desk].drop').forEach((el) => el.classList.remove('drop')); });
+  $('#sysCards').addEventListener('dragover', (ev) => {
+    const desk = ev.target.closest('[data-desk]');
+    if (!desk) return;
+    ev.preventDefault();
+    desk.classList.add('drop');
+  });
+  $('#sysCards').addEventListener('dragleave', (ev) => {
+    const desk = ev.target.closest('[data-desk]');
+    if (desk && ev.relatedTarget && !desk.contains(ev.relatedTarget)) desk.classList.remove('drop');
+  });
+  $('#sysCards').addEventListener('drop', (ev) => {
+    const desk = ev.target.closest('[data-desk]');
+    if (!desk) return;
+    ev.preventDefault();
+    desk.classList.remove('drop');
+    const type = ev.dataTransfer ? ev.dataTransfer.getData('text/plain') : '';
+    if (!type || !SYS.systems[type]) return;
+    run(api('POST', '/api/sys/instances', { type }).then((st) => {
+      onSys(st);
+      const made = (st.instances || []).find((i) => i.id === st.created);
+      toast(`${(made && made.name) || type} added`);
+    }));
+  });
+  $('#sysCards').addEventListener('contextmenu', (ev) => {
+    const card = ev.target.closest('[data-instance]');
+    if (!card) return;
+    ev.preventDefault();
+    openSysMenu(card.dataset.instance, ev.clientX, ev.clientY);
+  });
+  function openSysMenu(id, x, y) {
+    const rec = recOf(id);
+    const menu = $('#sysMenu');
+    if (!menu) return;
+    const hold = !!(rec.held);
+    menu.innerHTML = `<button type="button" data-menu="rename">Rename</button><button type="button" data-menu="duplicate">Duplicate</button><button type="button" data-menu="link">${hold ? 'Connect' : 'Disconnect'}</button><button type="button" data-menu="delete" class="danger">Delete</button>`;
+    menu.hidden = false;
+    menu.style.left = `${Math.max(8, Math.min(x, window.innerWidth - 200))}px`;
+    menu.style.top = `${Math.max(8, Math.min(y, window.innerHeight - 180))}px`;
+    menu.dataset.id = id;
+  }
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { const menu = $('#sysMenu'); if (menu) menu.hidden = true; } });
+  document.addEventListener('click', (ev) => {
+    const menu = $('#sysMenu');
+    if (!menu || menu.hidden) return;
+    const hit = ev.target.closest('#sysMenu button');
+    const id = menu.dataset.id;
+    if (!hit) { menu.hidden = true; return; }
+    menu.hidden = true;
+    const rec = recOf(id);
+    if (hit.dataset.menu === 'rename') {
+      const name = prompt('Name', rec.name || rec.short || '');
+      if (!name || !name.trim()) return;
+      return run(api('POST', `/api/sys/instances/${id}/rename`, { name: name.trim() }).then(() => refetch()).then(() => toast('Renamed')));
+    }
+    if (hit.dataset.menu === 'duplicate') return run(api('POST', `/api/sys/instances/${id}/duplicate`).then((st) => { onSys(st); toast('Duplicated — give the copy its own IP'); }));
+    if (hit.dataset.menu === 'link') {
+      const path = rec.held ? 'connect' : 'disconnect';
+      return run(api('POST', `/api/sys/instances/${id}/${path}`).then(() => refetch()).then(() => toast(rec.held ? 'Connecting' : 'Disconnected')));
+    }
+    if (hit.dataset.menu === 'delete') {
+      if (!confirm(`Delete "${rec.name || id}"? Cues, layouts and deck pages keep this id (${id}). Changing an IP does not. Deleting does.`)) return;
+      return run(api('DELETE', `/api/sys/instances/${id}`).then((st) => { onSys(st); toast('Deleted'); }));
+    }
+    return undefined;
+  });
+  function paintAtemTarget() {
+    const list = armed().filter((id) => kindOf(id) === 'atem').map(recOf);
+    const cur = atemTarget();
+    for (const head of document.querySelectorAll('#pane-atem .board-head, #pane-arouter .board-head, #pane-aaudio .board-head, #pane-akeys .board-head, #pane-alayout .board-head, #pane-amacros .board-head')) {
+      let slot = head.querySelector('.atem-target');
+      if (list.length < 2) { if (slot) slot.remove(); continue; }
+      if (!slot) { slot = document.createElement('span'); slot.className = 'seg-row atem-target'; const sp = head.querySelector('.spacer'); if (sp) sp.before(slot); else head.append(slot); }
+      const html = `<span class="modes-lbl">ATEM</span>${list.map((i) => `<button type="button" class="mode ${i.id === cur ? 'active' : ''}" data-atem-target="${esc(i.id)}">${esc(i.name || i.short)}</button>`).join('')}`;
+      if (slot.dataset.h !== html) { slot.dataset.h = html; slot.innerHTML = html; }
+    }
+  }
+  document.addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-atem-target]');
+    if (!b) return;
+    try { localStorage.setItem('cc.atemInst', b.dataset.atemTarget); } catch { /* private mode */ }
+    run(api('POST', '/api/sys/active', { system: b.dataset.atemTarget }).then((st) => onSys(st)));
   });
 
   // ---------- presets ----------
@@ -503,6 +644,7 @@
     applyChrome();
     const t = CC.getTab();
     if (t === 'system') renderDash();
+    paintAtemTarget();
     if (isX() && V && V.kind === 'preset') {
       if (t === 'xpresets') renderPresets(); else if (t === 'xsources') renderSources(); else if (t === 'xcues') renderCues(); else if (t === 'xstills') renderStills(); else if (t === 'xbackup') renderBackups();
     }
@@ -599,17 +741,17 @@
     const b = e.target.closest('[data-desksave]'); if (!b) return;
     saveSys = b.dataset.desksave === 'x' ? (V && V.system) || SYS.active : b.dataset.desksave;
     const st = window.CC.state && window.CC.state(); $('#dsName').textContent = `"${(st && st.show && st.show.name) || $('#showName').textContent}"`;
-    const atem = saveSys === 'atem'; $('#dsStartupRow').hidden = !atem; $('#dsStartupNote').hidden = !atem; $('#dsStartup').checked = true;
+    const atem = kindOf(saveSys) === 'atem'; $('#dsStartupRow').hidden = !atem; $('#dsStartupNote').hidden = !atem; $('#dsStartup').checked = true;
     $('#dlgDeskSave').returnValue = ''; $('#dlgDeskSave').showModal();
   });
   $('#dlgDeskSave').addEventListener('close', () => {
     if ($('#dlgDeskSave').returnValue !== 'save' || !saveSys) return;
-    const startup = saveSys === 'atem' && $('#dsStartup').checked;
+    const startup = kindOf(saveSys) === 'atem' && $('#dsStartup').checked;
     CC.run(CC.api('POST', `/api/sys/${saveSys}/save`, { startup }).then((r) => {
       CC.toast(`Saved show "${r.show.name}"${r.startup ? ' · ATEM startup state saved' : ''}${r.startupError ? ` · ${r.startupError}` : ''}`, !!r.startupError);
     }));
   });
-  window.CCSYS = { onRender: (fn) => listeners.push(fn), view: () => V, state: () => SYS, refetch, set };
+  window.CCSYS = { onRender: (fn) => listeners.push(fn), view: () => V, state: () => SYS, refetch, set, atemTarget, typeOf, instances };
   window.addEventListener('cc:tab', () => setTimeout(renderAll, 0));
   // ⚙ Settings is the RS6 device dialog; with another system active it opens the SYSTEMS dashboard instead
   $('#btnSettings').addEventListener('click', (e) => { if (isX()) { e.stopImmediatePropagation(); CC.setTab('system'); } }, true);

@@ -8,12 +8,21 @@
   let cfg = null;
   const api = (method, path, body) => CC.api(method, path, body);
 
+  function atemOptions(selected) {
+    const st = window.CCSYS && window.CCSYS.state && window.CCSYS.state();
+    const list = ((st && st.instances) || []).filter((i) => i.type === 'atem' && i.armed);
+    const rows = list.length ? list : [{ id: 'atem', name: 'ATEM' }];
+    const cur = selected || 'atem';
+    return rows.map((i) => `<option value="${i.id}" ${i.id === cur ? 'selected' : ''}>${i.name || i.id}</option>`).join('');
+  }
   function rowHtml(a, i) {
     const atem = (a.sources || []).find((s) => s.system === 'atem');
     const ptz = (a.sources || []).find((s) => s.system === 'ptz');
+    const esc = CC.esc || ((s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
     return `<tr data-i="${i}">
       <td><input class="tsl-idx" type="number" min="0" max="65534" value="${a.index}"></td>
-      <td><input class="tsl-lab" maxlength="16" value="${(CC.esc || ((s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))))(a.label || '')}"></td>
+      <td><input class="tsl-lab" maxlength="16" value="${esc(a.label || '')}"></td>
+      <td><select class="tsl-inst">${atemOptions(atem && atem.instance)}</select></td>
       <td><input class="tsl-atem" type="number" min="0" max="65535" placeholder="—" value="${atem ? atem.input : ''}"></td>
       <td><input class="tsl-ptz" placeholder="cam1" value="${ptz ? ptz.cameraId : ''}"></td>
       <td><button type="button" class="btn mini danger tsl-del" title="Remove">✕</button></td>
@@ -26,7 +35,8 @@
       const label = tr.querySelector('.tsl-lab').value;
       const sources = [];
       const ai = tr.querySelector('.tsl-atem').value;
-      if (ai !== '') sources.push({ system: 'atem', input: Number(ai) });
+      const inst = tr.querySelector('.tsl-inst') && tr.querySelector('.tsl-inst').value;
+      if (ai !== '') sources.push({ system: 'atem', input: Number(ai), ...(inst && inst !== 'atem' ? { instance: inst } : {}) });
       const cam = tr.querySelector('.tsl-ptz').value.trim();
       if (cam) sources.push({ system: 'ptz', cameraId: cam });
       return { index, label, sources };

@@ -7,10 +7,11 @@
 // on the canvas; it goes on air only while LIVE is on. LIVE also sends position and
 // size as the drag ends. Geometry matches lib/atem-layout.js.
 (() => {
+  const atemBase = () => `/api/sys/${(window.CCSYS && window.CCSYS.atemTarget && window.CCSYS.atemTarget()) || 'atem'}`;
   const $ = (s) => document.querySelector(s);
   const { api, toast, run, esc } = window.CC;
   const S = window.CCSYS;
-  const cmd = (name, body = {}) => run(api('POST', `/api/sys/atem/cmd/${name}`, body));
+  const cmd = (name, body = {}) => run(api('POST', `${atemBase()}/cmd/${name}`, body));
   let V = null; let tab = '';
   let doc = null; let mvDoc = null; let dirty = false; let holding = false; let drag = null; let pin = 0;
   const ls = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } };
@@ -587,7 +588,7 @@
     }
     if (b.dataset.layfly) {
       const me = Number(b.dataset.me); const key = Number(b.dataset.key); const frame = b.dataset.frame;
-      if (b.dataset.layfly === 'store') return run(api('POST', '/api/sys/atem/cmd/layoutApply', { layout: doc, store: frame })).then((r) => toast(`Key frame ${frame.toUpperCase()} stored${r && r.skipped && r.skipped.length ? ` · ${r.skipped[0].reason}` : ''}`));
+      if (b.dataset.layfly === 'store') return run(api('POST', `${atemBase()}/cmd/layoutApply`, { layout: doc, store: frame })).then((r) => toast(`Key frame ${frame.toUpperCase()} stored${r && r.skipped && r.skipped.length ? ` · ${r.skipped[0].reason}` : ''}`));
       return cmd('uskFlyRun', { me: me + 1, key, frame }).then(() => toast(`Run to ${frame.toUpperCase()}`));
     }
   });
@@ -757,11 +758,11 @@
     if (!connected()) return;
     if (layTab === 'mv') {
       if (!mvDoc) return;
-      run(api('POST', '/api/sys/atem/cmd/mvApply', { multiviews: mvDoc })).then(() => { dirty = false; toast('Multiview applied'); });
+      run(api('POST', `${atemBase()}/cmd/mvApply`, { multiviews: mvDoc })).then(() => { dirty = false; toast('Multiview applied'); });
       return;
     }
     if (!doc) return;
-    run(api('POST', '/api/sys/atem/cmd/layoutApply', { layout: doc })).then((r) => {
+    run(api('POST', `${atemBase()}/cmd/layoutApply`, { layout: doc })).then((r) => {
       dirty = false;
       const skip = r && r.skipped && r.skipped.length ? ` · ${r.skipped.map((s) => s.reason).join('; ')}` : '';
       toast(`Layout applied${skip}`, !!(r && r.skipped && r.skipped.length));
@@ -771,12 +772,12 @@
     if (!doc) return;
     const name = $('#layName').value.trim(); if (!name) return toast('Type a name', true);
     const target = $('#layTarget').value === 'program' ? 'program' : 'preview';
-    run(api('POST', '/api/sys/atem/layout-presets', { name, layout: doc, target })).then(() => { toast(`Look “${name}” saved for ${target}`); S.refetch(); });
+    run(api('POST', `${atemBase()}/layout-presets`, { name, layout: doc, target })).then(() => { toast(`Look “${name}” saved for ${target}`); S.refetch(); });
   });
   $('#laySaveSalvo').addEventListener('click', () => {
     if (!mvDoc) return;
     const name = $('#layName').value.trim(); if (!name) return toast('Type a name', true);
-    run(api('POST', '/api/sys/atem/mv-salvos', { name, multiviews: mvDoc })).then(() => { toast(`Salvo “${name}” saved`); S.refetch(); });
+    run(api('POST', `${atemBase()}/mv-salvos`, { name, multiviews: mvDoc })).then(() => { toast(`Salvo “${name}” saved`); S.refetch(); });
   });
   $('#laySaveMacro').addEventListener('click', () => {
     const name = $('#layName').value.trim() || (layTab === 'mv' ? 'Multiview' : 'Layout');
@@ -784,7 +785,7 @@
     if (!(slot >= 1 && slot <= 100)) return toast('Macro slot is 1–100', true);
     if (layTab === 'mv') {
       if (!mvDoc) return;
-      run(api('POST', '/api/sys/atem/mv-salvo-macro', { name, index: slot - 1, multiviews: mvDoc })).then((r) => { $('#layXml').value = r.xml || ''; toast(`Macro ${slot} “${name}” saved`); });
+      run(api('POST', `${atemBase()}/mv-salvo-macro`, { name, index: slot - 1, multiviews: mvDoc })).then((r) => { $('#layXml').value = r.xml || ''; toast(`Macro ${slot} “${name}” saved`); });
       return;
     }
     if (!doc) return;
@@ -792,7 +793,7 @@
     if (mode === 'pair' && !flyFrom) return toast('Pick the preset that should become key frame A', true);
     const body = { name, index: slot - 1, layout: doc, store: mode || null };
     if (mode === 'pair') body.flyFromPreset = flyFrom;
-    run(api('POST', '/api/sys/atem/layout-macro', body)).then((r) => {
+    run(api('POST', `${atemBase()}/layout-macro`, body)).then((r) => {
       $('#layXml').value = r.xml || '';
       const skip = r.skipped && r.skipped.length ? ` · ${r.skipped[0].reason}` : '';
       toast(`Macro ${slot} “${name}” saved${skip}`);
@@ -800,9 +801,9 @@
   });
   $('#layRecall').addEventListener('click', (e) => {
     const b = e.target.closest('[data-recall], [data-mvrecall]'); if (!b) return;
-    if (b.dataset.mvrecall) return run(api('POST', '/api/sys/atem/cmd/mvSalvoRecall', { salvo: b.dataset.mvrecall })).then(() => { dirty = false; toast('Salvo recalled'); });
+    if (b.dataset.mvrecall) return run(api('POST', `${atemBase()}/cmd/mvSalvoRecall`, { salvo: b.dataset.mvrecall })).then(() => { dirty = false; toast('Salvo recalled'); });
     const target = b.dataset.target === 'program' ? 'program' : 'preview';
-    return run(api('POST', '/api/sys/atem/cmd/layoutRecall', { preset: b.dataset.recall, target })).then((r) => {
+    return run(api('POST', `${atemBase()}/cmd/layoutRecall`, { preset: b.dataset.recall, target })).then((r) => {
       dirty = false;
       const skip = r && r.skipped && r.skipped.length ? ` · ${r.skipped[0].reason}` : '';
       toast(target === 'program' ? `On air${skip}` : `On preview${skip}`);

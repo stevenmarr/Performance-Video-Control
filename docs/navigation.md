@@ -8,11 +8,13 @@ The app has two rows of tabs under the header.
 [⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [SCOPES] [Control Devices]
 ```
 
-* **⌂ SYSTEMS** is always first. It is the home page: what is on the desk, connection settings, and status.
+* **⌂ SYSTEMS** is always first. It is the home page: a palette of every system type on the left, and one card per instance on the desk.
   The app opens here unless the URL has a deep link (`/#arouter`, `/#xpresets`, `/#scopes`, ...).
+  Drag a type onto the desk to add an instance. The palette row stays. Two ATEMs are two cards, two IPs, one ATEM group.
 * After it comes **one button per system group on the desk**. The order is always the same, no matter
   what order the systems were added in: RS6, E2 / PIXELHUE, ATEM, PTZ, PIXERA, MILLUMIN. A group that is
-  not on the desk has no button. Use ADD TO DESK / REMOVE FROM DESK on the SYSTEMS page to change that.
+  not on the desk has no button. ADD or drag a type on the SYSTEMS page; REMOVE or Delete takes an instance off.
+  When a group has more than one instance (two ATEMs), the ATEM pages show a picker. The choice is the instance id, not the IP.
 * The led on each button shows the worst status in that group: green means online, amber means degraded
   (for example 2/3 PTZ cameras online), red means offline, and grey means not set up. Hover the button to
   see each system's status.

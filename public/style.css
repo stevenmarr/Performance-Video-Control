@@ -470,6 +470,17 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .sys-cards.avail .sys-card.avail .nm{flex:1;min-width:0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sys-cards.avail .sys-card.avail .st{margin:0;flex-shrink:0}
 .sys-cards.avail .sys-card.avail .sys-acts{margin-left:auto;flex-shrink:0}
+.sys-card.avail{cursor:grab}
+.sys-card.avail.dragsrc{opacity:.45}
+.sys-desk.drop,.sys-cards.drop{outline:2px dashed #e5262e;outline-offset:6px;border-radius:12px}
+.sys-card.dup{box-shadow:inset 0 0 0 1px #e6a23c}
+.dup-flag{background:#4b3a00;color:#ffd35c;padding:1px 6px;border-radius:6px;letter-spacing:.06em}
+.sys-menu{position:fixed;z-index:80;min-width:180px;background:#171c23;border:1px solid #3a2426;border-radius:10px;padding:6px;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.sys-menu[hidden]{display:none}
+.sys-menu button{text-align:left;background:transparent;color:inherit;border:0;padding:8px 10px;font:700 13px/1.2 inherit;border-radius:7px;cursor:pointer}
+.sys-menu button:hover{background:#2a1214}
+.sys-menu button.danger{color:#ff8d93}
+.atem-target{margin-right:8px}
 .sys-cards.avail .sys-card.avail .stats,
 .sys-cards.avail .sys-card.avail details,
 .sys-cards.avail .sys-card.avail .live-line,

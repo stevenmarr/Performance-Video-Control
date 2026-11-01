@@ -162,8 +162,8 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
   const ui = fs.readFileSync(path.join(__dirname, '..', 'public', 'sys.js'), 'utf8');
   assert.match(ui, /ADD AS SIMULATOR/);
   assert.match(ui, /REMOVE FROM DESK/);
-  assert.match(ui, /data-use="\$\{s\.key\}" data-open="\$\{s\.key\}">OPEN /);
-  assert.doesNotMatch(ui, /data-open="\$\{s\.key\}">OPEN</);
+  assert.match(ui, /data-pal="\$\{s\.key\}"/, 'palette rows stay on the left');
+  assert.match(ui, /data-open="\$\{esc\(s\.id\)\}">OPEN /);
   const ctx = await setup({});
   const systems = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, autoStart: false });
   const server = createServer(ctx.engine, systems);

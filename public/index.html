@@ -171,7 +171,7 @@
   <!-- 0.6.0 SYSTEMS dashboard: one card per system, live status, connection, and the switch between them -->
   <section class="grid-wrap pane dash" id="pane-system" hidden>
     <div class="dash-head">
-      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Left: systems you can add. Right: each system on the desk, with its own connection. A PTZ camera is its own card — name, address, port — and its own tab. ASSIGN AS SIM runs that camera on a local simulator and keeps the saved address.</div></div>
+      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Left: every system type, and it stays there. Drag one onto the desk to add an instance — ATEM A, ATEM B, another PTZ — each with its own name and IP. Right-click an instance to rename, duplicate, disconnect, or delete. A PTZ camera is still its own card under that PTZ.</div></div>
       <span class="spacer"></span>
       <div class="dash-tools"><div id="dashSummary" class="dash-summary"></div>
         <input type="search" id="dashSearch" class="dash-search" placeholder="Filter systems… (name, group, status, address)" autocomplete="off"></div>
@@ -179,6 +179,7 @@
     </div>
     <div class="dash-filters"><div id="dashGroups" class="seg-row dash-groups" role="group" aria-label="Show systems of"></div><span class="spacer"></span><div id="dashStatus" class="seg-row" role="group" aria-label="Show systems that are"></div></div>
     <div id="sysCards"></div>
+    <div id="sysMenu" class="sys-menu" hidden></div>
     <div id="sysPlannedWrap" hidden><div class="section-title">MORE SYSTEMS <small>driver interface ready, drivers not built yet</small></div>
     <div id="sysPlanned" class="sys-cards planned"></div></div>
     <!-- Companion page download stays available, but it is not the system cards and it is not Path C. -->
@@ -269,7 +270,7 @@
         <button type="button" class="btn mini" id="tslTick">SEND NOW</button>
       </div>
       <div class="note small">Each row is an ATEM input that triggers a TSL address. UDP sends to the host and port above (default port <b>8900</b>). A simulator session keeps UDP on loopback. The map is saved with the show. Scopes do not use this map.</div>
-      <table class="tsl-table" id="tslTable"><thead><tr><th>#</th><th>LABEL</th><th>ATEM IN</th><th>PTZ CAM</th><th></th></tr></thead><tbody></tbody></table>
+      <table class="tsl-table" id="tslTable"><thead><tr><th>#</th><th>LABEL</th><th>ATEM</th><th>ATEM IN</th><th>PTZ CAM</th><th></th></tr></thead><tbody></tbody></table>
       <div class="tsl-row"><button type="button" class="btn mini" id="tslAdd">＋ ADDRESS</button><span id="tslMsg" class="cc-msg"></span></div>
       <div class="section-title" style="margin-top:10px">LAST PACKETS <small>sender log</small></div>
       <pre id="tslLog" class="tsl-log"></pre>

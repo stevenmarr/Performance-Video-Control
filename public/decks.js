@@ -28,7 +28,8 @@
     const ids = [''].concat(armed);
     return `<div class="deck-pick">${ids.map((id) => {
       const on = (id || null) === (current || null);
-      const label = id ? id.toUpperCase() : 'HOME';
+      const info = view && view.desk && view.desk.byKey && view.desk.byKey[id];
+      const label = id ? ((info && (info.short || info.label)) || id.toUpperCase()) : 'HOME';
       return `<button type="button" class="btn mini${on ? ' on' : ''}" data-assign="${esc(device.id)}" data-system="${esc(id)}">${label}</button>`;
     }).join('')}</div>`;
   }
