@@ -144,9 +144,9 @@ See [docs/tsl-tally.md](docs/tsl-tally.md).
 
 ## ATEM layout
 
-**ATEM → LAYOUT** is a 16:9 raster for SuperSource boxes and upstream DVE keys. Drag and resize the boxes, or type position, size, and crop. The page shows the switcher's source names as colored boxes.
+**ATEM → LAYOUT** has three tabs. **M/Es** shows every mix effect at once (four in quadrants, two side by side, one filling the frame) and lists upstream keys and downstream keys on the right. **SUPERSOURCE** does the same for each SuperSource's boxes. **MULTIVIEW** assigns layout, program/preview swap, window sources, safe area, and VU. Drag a resource onto its own canvas to place it; it goes on air only while **LIVE** is on. Properties for the selection are on the left. Right-click to delete.
 
-**APPLY** and **LIVE** send the picture to the switcher. **READ** loads it back. **SAVE PRESET** keeps a named layout in Control Center. **SAVE MACRO** writes a Macro Desk macro and ATEM Software Control XML.
+**APPLY** and **LIVE** send the picture. **READ** loads it back. **SAVE PRESET** keeps a look and recalls it to preview (take it) or program (on air). **SAVE SALVO** keeps a multiview. **SAVE MACRO** writes a Macro Desk macro and ATEM Software Control XML.
 
 A macro cuts to the layout. It does not animate. Store key frame A and B, then **RUN A** / **RUN B**, when the move should fly. Models with no SuperSource or no DVE hide the parts they do not have.
 
