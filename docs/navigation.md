@@ -44,7 +44,7 @@ Only the pages of the selected group are shown, always in the same order:
 one-line hint (modes, and that live video is Desktop Video from a Mac sidecar). **Control Devices** is the same:
 the top-row button opens the pane, and the second row is a one-line hint.
 
-**LAYOUT** is the 16:9 SuperSource and DVE picture. DVE / SS / KEYS stays the full key and DSK panel. See [atem-layout.md](atem-layout.md).
+**LAYOUT** is the M/E, SuperSource, and multiview picture: properties on the left, every canvas in the middle, resources on the right. DVE / SS / KEYS stays the full key and DSK panel. See [atem-layout.md](atem-layout.md).
 
 A page that the connected system does not support is not shown (for example, PixelHue has no CUES).
 On the SYSTEMS page this row shows a short hint instead of tabs.

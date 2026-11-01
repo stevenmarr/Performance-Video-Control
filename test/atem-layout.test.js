@@ -226,3 +226,124 @@ test('layout presets and the macro route stay on this install and apply through 
     again.close();
   } finally { server.close(); systems.close(); await ctx.teardown(); }
 });
+
+test('a dropped key is used without going on air, and delete puts it back', () => {
+  const bank = L.normalizeBank({
+    mes: [
+      { me: 0, program: 1, keys: [{ index: 0, type: 'luma', onAir: false, fill: 3 }, { index: 1, type: 'luma', onAir: false, fill: 4 }] },
+      { me: 1, program: 2, keys: [{ index: 0, type: 'luma', onAir: false, fill: 5 }] },
+    ],
+    dsks: [{ index: 0, onAir: false, tie: false, fill: 1, cut: 0, rate: 25 }],
+    superSources: [{ ss: 0, boxes: [{ index: 0, enabled: true, source: 1, x: 0, y: 0, size: 400 }, { index: 1, enabled: false, source: 2, x: 100, y: 0, size: 400 }] }],
+  });
+  const before = JSON.stringify(bank);
+  const res = L.resources(bank);
+  assert.equal(res.keys.every((k) => k.used === false), true);
+  assert.equal(res.dsks[0].used, false);
+  assert.equal(res.boxes[0].used, true);
+  assert.equal(res.boxes[1].used, false);
+  assert.equal(L.canDrop({ kind: 'key', me: 0, index: 0, used: false }, { kind: 'me', index: 1 }), false);
+  assert.equal(L.canDrop({ kind: 'key', me: 1, index: 0, used: false }, { kind: 'me', index: 1 }), true);
+  assert.equal(L.canDrop({ kind: 'dsk', index: 0, used: false }, { kind: 'me', index: 1 }), false);
+  assert.equal(L.canDrop({ kind: 'dsk', index: 0, used: false }, { kind: 'me', index: 0 }), true);
+  assert.equal(L.canDrop({ kind: 'key', me: 0, index: 0, used: true }, { kind: 'me', index: 0 }), false);
+  const held = L.placeKey(bank, { me: 0, index: 0, positionX: 2000, positionY: -500, onAir: false });
+  assert.equal(JSON.stringify(bank), before, 'place does not mutate the caller');
+  assert.equal(held.placed, true);
+  assert.equal(held.key.onAir, false);
+  assert.equal(held.key.type, 'dve');
+  assert.equal(held.key.dve.positionX, 2000);
+  assert.equal(L.resources(held.bank).keys.find((k) => k.me === 0 && k.index === 0).used, true);
+  assert.equal(L.resources(held.bank).keys.find((k) => k.me === 0 && k.index === 1).used, false);
+  assert.equal(L.placeKey(held.bank, { me: 0, index: 0, positionX: 0, positionY: 0 }).placed, false);
+  const live = L.placeKey(bank, { me: 1, index: 0, positionX: -1000, positionY: 0, onAir: true });
+  assert.equal(live.key.onAir, true);
+  const freed = L.releaseKey(held.bank, { me: 0, index: 0 });
+  assert.equal(freed.released, true);
+  assert.equal(freed.key.type, 'luma');
+  assert.equal(freed.key.onAir, false);
+  assert.equal(freed.key.fill, 3);
+  assert.equal(L.keyPlaced(freed.key), false);
+  const dsk = L.placeDsk(bank, { index: 0, onAir: false });
+  assert.equal(dsk.dsk.onAir, false);
+  assert.equal(dsk.dsk.tie, true);
+  assert.equal(L.dskPlaced(dsk.dsk), true);
+  const dskOff = L.releaseDsk(dsk.bank, { index: 0 });
+  assert.equal(dskOff.dsk.tie, false);
+  assert.equal(L.dskPlaced(dskOff.dsk), false);
+  const box = L.releaseBox(bank, { ss: 0, index: 0 });
+  assert.equal(box.box.enabled, false);
+  assert.equal(box.box.x, 0, 'delete keeps the box position');
+  assert.equal(L.boxPlaced(box.box), false);
+  const again = L.placeBox(box.bank, { ss: 0, index: 0, x: 300, y: -200 });
+  assert.equal(again.box.enabled, true);
+  assert.equal(again.box.x, 300);
+});
+
+test('preview recall arms the look, program recall puts placed keys and DSKs on air', () => {
+  const bank = L.normalizeBank({
+    mes: [{ me: 0, program: 4, keys: [{ index: 0, type: 'dve', placed: true, onAir: false, fill: 3, dve: { positionX: 1000, positionY: 0, sizeX: 500, sizeY: 500 } }, { index: 1, type: 'luma', onAir: false, fill: 5 }] }],
+    dsks: [{ index: 0, placed: true, onAir: false, tie: true, fill: 1, cut: 0, rate: 30, preMultiply: false, clip: 200, gain: 700, invert: false }],
+    superSources: [],
+  });
+  const caps = { superSources: 0, boxCounts: [], mes: 1, keyersByMe: [2], dve: 1, dsk: 1, dveOnMe: () => 0 };
+  const preview = L.build(bank, caps, { target: 'preview' });
+  assert.equal(preview.ops.find((o) => o.id === 'PreviewInput').attrs.input, 'Camera4');
+  assert.equal(preview.ops.some((o) => o.id === 'ProgramInput'), false);
+  assert.equal(preview.ops.find((o) => o.id === 'KeyOnAir' && o.attrs.keyIndex === '0').attrs.onAir, 'False');
+  assert.equal(preview.ops.find((o) => o.id === 'DownstreamKeyOnAir').attrs.onAir, 'False');
+  assert.equal(preview.ops.find((o) => o.id === 'DownstreamKeyTie').attrs.tie, 'True');
+  assert.ok(preview.steps.some((s) => s.op === 'nextSelection' && (s.args.selection & 2) === 2));
+  const program = L.build(bank, caps, { target: 'program' });
+  assert.equal(program.ops.find((o) => o.id === 'ProgramInput').attrs.input, 'Camera4');
+  assert.equal(program.ops.find((o) => o.id === 'KeyOnAir' && o.attrs.keyIndex === '0').attrs.onAir, 'True');
+  assert.equal(program.ops.find((o) => o.id === 'KeyOnAir' && o.attrs.keyIndex === '1').attrs.onAir, 'False');
+  assert.equal(program.ops.find((o) => o.id === 'DownstreamKeyOnAir').attrs.onAir, 'True');
+});
+
+test('multiview rects follow layout and swap, and a salvo exports a macro', () => {
+  const top = L.mvRects(10, 0, false);
+  assert.equal(top[0].left, 0);
+  assert.equal(top[1].left, 50);
+  assert.ok(top[2].top >= 50, 'small windows sit under the large pair');
+  const swapped = L.mvRects(10, 0, true);
+  assert.equal(swapped[0].left, 50);
+  assert.equal(swapped[1].left, 0);
+  const bottom = L.mvRects(10, 1, false);
+  assert.ok(bottom[0].top >= 50);
+  const left = L.mvRects(16, 2, false);
+  assert.equal(left[0].left, 0);
+  assert.ok(left[2].left >= 50);
+  const built = L.buildMultiview([{ index: 0, layout: 2, swapped: true, windows: [{ index: 2, source: 8, routable: true, supportsVu: true, supportsSafe: true, vu: true, safeArea: false }] }]);
+  assert.equal(built.ops.find((o) => o.id === 'MultiViewerLayout').attrs.layout, 'ProgramLeft');
+  assert.equal(built.ops.find((o) => o.id === 'MultiViewerProgramPreviewSwapped').attrs.swapped, 'True');
+  assert.equal(built.ops.find((o) => o.id === 'MultiViewerWindowInput').attrs.input, 'Camera8');
+  assert.equal(built.ops.find((o) => o.id === 'MultiViewerWindowVu').attrs.enabled, 'True');
+  assert.equal(built.ops.find((o) => o.id === 'MultiViewerWindowSafeArea').attrs.enabled, 'False');
+  assert.match(built.xml, /MultiViewerWindowInput/);
+});
+
+test('read from a 2 M/E switcher marks enabled boxes used and idle keys available', async () => {
+  const m = new MockAtem({ model: 'chd2me' });
+  const port = await m.start(0);
+  const d = new AtemDriver({ host: '127.0.0.1', port });
+  await d.connect();
+  try {
+    const bank = L.fromSwitcher(d.view());
+    const res = L.resources(bank);
+    assert.equal(bank.mes.length, 2);
+    assert.equal(res.keys.length, 8);
+    assert.equal(res.keys.every((k) => k.used === false), true);
+    assert.equal(res.dsks.length, 2);
+    assert.equal(res.dsks.every((k) => k.used === false), true);
+    assert.equal(res.boxes.length, 4);
+    assert.equal(res.boxes.every((b) => b.used), true);
+    const mv = d.view().multiviewers;
+    assert.equal(mv.length, 2);
+    assert.equal(mv[0].windows[0].supportsVu, true);
+    assert.equal(mv[0].windows[0].vu, true);
+    await d.mvProps(0, { layout: 2, swapped: true });
+    await d.mvSafe(0, 3, true);
+    await until(() => d.view().multiviewers[0].layout === 2 && d.view().multiviewers[0].swapped === true && d.view().multiviewers[0].windows[3].safeArea === true, 2000, 'multiview layout');
+  } finally { d.close(); await m.stop(); }
+});
