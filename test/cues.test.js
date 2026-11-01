@@ -6,6 +6,7 @@ const os = require('os');
 const path = require('path');
 const { CueStack } = require('../lib/cues');
 const { MasterCues } = require('../lib/master-cues');
+const { stampPage } = require('../lib/decks/pages');
 const { AtemDesk } = require('../lib/atem-desk');
 const { Engine } = require('../lib/engine');
 const { libraryFor } = require('../lib/decks/pages');
@@ -258,4 +259,176 @@ test('a master cue mixes hi-res, ATEM and PTZ, and STOP cancels what is still wa
   const cues = pages.find((p) => p.id === 'master-cues');
   assert.ok(cues);
   assert.ok(cues.keys.some((k) => k.action && k.action.path === '/api/master-cues/mc1/go'));
+});
+
+test('a second GO while a hi-res cue is running is locked and does not double-fire', async () => {
+  const calls = [];
+  const engine = { recall: async (n) => { calls.push(n); await sleep(40); } };
+  const stack = new CueStack({ engine });
+  stack.save({ name: 'A', steps: [{ system: 'rs6', preset: '4', mode: 'absolute' }], followUp: { preset: '5', delayMs: 0 } });
+  const first = stack.go();
+  const second = await stack.go();
+  assert.equal(second.ignored, true);
+  assert.equal(second.locked, true);
+  assert.equal(second.runState, 'running');
+  await first;
+  assert.deepEqual(calls, [4, 5]);
+  assert.equal(stack.machine.state, 'idle');
+});
+
+test('a new hi-res GO drops a bail the previous cue left behind', async () => {
+  const engine = { recall: async () => {} };
+  const stack = new CueStack({ engine });
+  stack.save({ name: 'A', steps: [{ system: 'rs6', preset: '1', mode: 'absolute' }], bail: { preset: '9' } });
+  stack.save({ name: 'B', steps: [{ system: 'rs6', preset: '2', mode: 'absolute' }] });
+  await stack.go();
+  assert.equal(stack.pendingBail.preset, '9');
+  stack.select(1);
+  await stack.go();
+  assert.equal(stack.pendingBail, null);
+  assert.equal(stack.lastPreset.rs6, '2');
+});
+
+test('an external take cancels a hi-res timeline that is still running', async () => {
+  const calls = [];
+  const engine = { recall: async (n) => { calls.push(n); } };
+  const stack = new CueStack({ engine });
+  stack.save({ name: 'A', steps: [{ system: 'rs6', preset: '4', mode: 'absolute' }], followUp: { preset: '7', delayMs: 200 }, bail: { preset: '9' } });
+  const running = stack.go();
+  await sleep(20);
+  stack.externalTake('rs6');
+  await running;
+  assert.deepEqual(calls, [4]);
+  assert.equal(stack.machine.state, 'idle');
+  assert.equal(stack.pendingBail, null);
+});
+
+function masterFixture() {
+  const calls = [];
+  const engine = { recall: async (n) => calls.push(['abs', n]), recallLayers: async (n) => calls.push(['rel', n]) };
+  const systems = {
+    atem: async (name, body) => { calls.push([name, body.macro]); },
+    ptz: async (name, body) => { calls.push([name, body.cam, body.preset]); },
+    view() { return { cameras: [{ id: 'cam1', name: 'Center' }] }; },
+  };
+  const stack = new CueStack({ engine, systems });
+  const masters = new MasterCues({ cues: stack, systems });
+  return { calls, masters, stack };
+}
+
+test('RUN CUE locks, does not double-fire, and leaves running when the timeline ends', async () => {
+  const { calls, masters } = masterFixture();
+  masters.save({ id: 'mc1', name: 'Open', goMs: 0, actions: [{ type: 'atem-macro', macro: 2, offsetMs: 0 }] });
+  masters.load('mc1');
+  const first = masters.run();
+  const second = masters.go('mc1');
+  assert.equal(first.machine.state, 'running');
+  assert.equal(first.machine.locked, true);
+  assert.equal(second.ignored, true);
+  assert.equal(second.locked, true);
+  assert.equal(second.machine.generation, first.machine.generation);
+  await sleep(40);
+  assert.deepEqual(calls, [['macroRun', 2]]);
+  assert.equal(masters.machine.state, 'idle');
+  assert.equal(masters.status().running, null);
+  assert.equal(masters.machine.cueId, null);
+});
+
+test('stacked cues load the next assigned cue, and off leaves nothing loaded', async () => {
+  const { calls, masters } = masterFixture();
+  masters.save({ id: 'mc1', name: 'A', goMs: 0, actions: [{ type: 'atem-macro', macro: 1, offsetMs: 0 }] });
+  masters.save({ id: 'mc3', name: 'C', goMs: 0, actions: [{ type: 'atem-macro', macro: 3, offsetMs: 0 }] });
+  masters.setStacked({ on: true });
+  masters.go('mc1');
+  await sleep(40);
+  assert.deepEqual(calls, [['macroRun', 1]]);
+  assert.equal(masters.machine.state, 'loaded');
+  assert.equal(masters.machine.cueId, 'mc3');
+  assert.equal(masters.machine.locked, false);
+  masters.setStacked({ on: false });
+  masters.run();
+  await sleep(40);
+  assert.deepEqual(calls, [['macroRun', 1], ['macroRun', 3]]);
+  assert.equal(masters.machine.state, 'idle');
+  assert.equal(masters.machine.cueId, null);
+});
+
+test('an external preset take unloads the cue and cancels the rest of the timeline', async () => {
+  const { calls, masters } = masterFixture();
+  masters.save({
+    id: 'mc1', name: 'Open', goMs: 1000,
+    actions: [
+      { type: 'atem-macro', macro: 1, offsetMs: 0 },
+      { type: 'ptz', camera: 'cam1', preset: 3, offsetMs: 400 },
+    ],
+  });
+  masters.load('mc1');
+  masters.go('mc1');
+  await sleep(30);
+  masters.externalTake('rs6');
+  await sleep(50);
+  assert.equal(masters.machine.state, 'idle');
+  assert.equal(masters.machine.cueId, null);
+  assert.equal(masters.status().running, null);
+  assert.ok(calls.some((c) => c[0] === 'macroRun'));
+  assert.ok(!calls.some((c) => c[0] === 'recall'));
+  assert.equal(masters.cues.pendingBail, null);
+});
+
+test('a failed action fails the cue, skips the rest, and ack returns to loaded', async () => {
+  const { calls, masters } = masterFixture();
+  masters.systems.atem = async () => { throw new Error('macro missing'); };
+  masters.save({
+    id: 'mc1', name: 'Bad', goMs: 0,
+    actions: [
+      { type: 'atem-macro', macro: 1, offsetMs: 0 },
+      { type: 'ptz', camera: 'cam1', preset: 2, offsetMs: 200 },
+    ],
+  });
+  masters.go('mc1');
+  await sleep(40);
+  assert.equal(masters.machine.state, 'failed');
+  assert.match(masters.machine.error, /macro missing/);
+  assert.equal(masters.status().running, null);
+  assert.ok(!calls.some((c) => c[0] === 'recall'));
+  const again = masters.go('mc1');
+  assert.equal(again.ignored, true);
+  assert.equal(masters.machine.state, 'failed');
+  const acked = masters.ack();
+  assert.equal(acked.machine.state, 'loaded');
+  assert.equal(acked.machine.cueId, 'mc1');
+  assert.equal(acked.machine.error, null);
+});
+
+test('old master cue files load as TAKE actions and keep their offsets', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mc-old-'));
+  fs.writeFileSync(path.join(dir, 'master-cues.json'), JSON.stringify({
+    cues: [{ id: 'mc1', name: 'Legacy', actions: [{ id: 'a1', type: 'atem-macro', macro: 4, offsetMs: 200 }] }],
+  }));
+  const masters = new MasterCues({ dataDir: dir });
+  const cue = masters.status().cues[0];
+  assert.equal(cue.name, 'Legacy');
+  assert.equal(cue.actions[0].section, 'take');
+  assert.equal(cue.actions[0].atMs, 200);
+  assert.equal(cue.actions[0].offsetMs, 200);
+  assert.ok(cue.goMs > 200);
+  assert.equal(masters.stacked, false);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
+test('deck cue keys show the machine state and still GO that cue', () => {
+  const { masters } = masterFixture();
+  masters.save({ id: 'mc1', goMs: 0, actions: [{ type: 'atem-macro', macro: 1, offsetMs: 0 }] });
+  masters.load('mc1');
+  const page = stampPage({
+    id: 'master-cues', system: 'cues', title: 'CUES', keys: [
+      { label: 'C1', value: 'GO', action: { method: 'POST', path: '/api/master-cues/mc1/go', body: {} } },
+      { label: 'C2', value: 'GO', action: { method: 'POST', path: '/api/master-cues/mc2/go', body: {} } },
+    ],
+  }, { cues: masters.feedback() });
+  assert.equal(page.keys[0].cueState, 'loaded');
+  assert.equal(page.keys[0].value, 'LOADED');
+  assert.equal(page.keys[0].action.path, '/api/master-cues/mc1/go');
+  assert.equal(page.keys[1].cueState, 'idle');
+  assert.equal(page.keys[1].value, 'IDLE');
 });
