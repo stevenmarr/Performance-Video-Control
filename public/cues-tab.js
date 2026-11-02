@@ -24,7 +24,7 @@
   const locked = () => machine().state === 'running';
 
   function familyOf(id) {
-    const m = String(id || '').match(/^(rs6|e2|pixelhue|atem|ptz|pixera|millumin)(?:-[a-z0-9]{4,12})?$/);
+    const m = String(id || '').match(/^(rs6|e2|pixelhue|atem|ptz|pixera|millumin|videohub|hyperdeck|mitti)(?:-[a-z0-9]{4,12})?$/);
     return m ? m[1] : '';
   }
   function rowOf(a) {

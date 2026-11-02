@@ -156,9 +156,11 @@ Phase 2 is a satellite: Companion sends pictures for the reserved keys, and pres
 
 ## Phase 2
 
-1. Move E2, PixelHue, RS6 (the extra instances), Pixera, and Millumin actions onto dispatch the way PTZ and ATEM are.
-2. Drivers for Videohub, HyperDeck, and Mitti against the manifests that are already registered. HyperDeck uses the transport machine. Videohub crosspoints stay plain.
-3. Companion satellite for shared decks: images in, presses out, on the keys marked `companion`.
-4. Store the active console profile id inside the show file so it travels with the show. Phase 1 keeps it in `console.json` so existing show hashes do not change.
-5. A real speaker-timer output process and an SMB unit, behind the service status that is already on the console.
-6. Drive the original RS6 Engine with the same connection machine, once its reconnect behavior is checked against a live Aquilon.
+Landed on top of v0.24.0:
+
+1. E2, PixelHue, an extra RS6, Pixera, and Millumin actions go through the same dispatch path as PTZ and ATEM. Recall, take, cut, cues, and the media-server commands are included. The original RS6 Engine is still its own path.
+2. Videohub (TCP 9990, crosspoints stay plain values), HyperDeck (TCP 9993, record / play / stop use the transport machine), and Mitti (OSC port 51000) are real drivers. They show on the SYSTEMS palette. Each has a simulator.
+3. A console profile with bindings, a custom name, or a focus map is saved inside the show file. An older show has no `console` field, so its hash does not change, and opening it leaves the profile already on this machine. The next save copies that profile into the show.
+4. Companion satellite: `POST /api/core/companion/satellite` sets the URL that receives presses on reserved keys. `POST /api/core/companion/satellite/keys` sets the label on those keys. A whole deck that is Companion's is still released so Companion can open USB.
+
+Still later: a real speaker-timer process and SMB unit behind the status lamps, and the original RS6 Engine on the connection machine after a check on a live Aquilon.
