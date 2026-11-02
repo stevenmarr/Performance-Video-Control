@@ -266,9 +266,21 @@ look onto preview. It does not toggle a key the way a macro does. Take commits
 the preview. That is the Ross memory model: the recall is the absolute state
 that was stored, including whether a key was on air or off air.
 
-The USB library is `@elgato-stream-deck/node` at version **7.8.0** (it uses `node-hid` 3.4.0). On Linux that
-opens `/dev/hidraw*`. Both are normal dependencies. 7.8.0 needs **Node >=18.18**. Node 18.20.4 is enough. The
-service scans at startup, watches `/dev` for a new hidraw node, and scans again
+The USB library is `@elgato-stream-deck/node` at version **7.8.0** (it uses `node-hid` **3.4.0**). On Linux that
+opens `/dev/hidraw*`. Button pictures use `@resvg/resvg-js` **2.6.2**. Both native builds publish a
+linux-arm64 binary that loads on Node 18 (node-hid is N-API 4 and includes `HID_hidraw-linux-arm64`;
+resvg's Pi 5 package is `@resvg/resvg-js-linux-arm64-gnu`, glibc, not musl). 7.8.0 needs **Node >=18.18**.
+Node 18.20.4 is enough.
+
+`@julusian/jpeg-turbo` stays an optional package and wants Node >=22. On Node 18 Control Center
+does not load it. The first deck paint uses `jpeg-js` instead. Loading jpeg-turbo 3 on Node 18
+can kill the process with SIGSEGV a few milliseconds after `opened serial`.
+
+HID, resvg, and JPEG run in a deck worker process. If that process dies, the log says
+`USB deck worker died` and `Control Center stays up`, and the worker is started again.
+The web server does not exit. `CC_DECK_USB=0` does not start the worker at all.
+
+The service scans at startup, watches `/dev` for a new hidraw node, and scans again
 every few seconds. The log lines are `found N decks`, `opened serial …`, and
 `cannot open …: EACCES` or `cannot open …: busy`.
 
@@ -397,7 +409,13 @@ Environment=CC_SERVICE_CONTROL=1
 
 `CC_HOST_POWER=1` lets the console's two-press shutdown and reboot call `systemctl`.
 `CC_SERVICE_CONTROL=1` lets the console start and stop the speaker-timer, SMB, and Companion units.
-Leave both unset until you want that.
+`CC_DECK_USB=0` does not open Stream Decks. Use it if the deck worker keeps dying and the show
+has to stay up without the keys. Leave the power and service lines unset until you want them.
+
+```ini
+[Service]
+Environment=CC_DECK_USB=0
+```
 
 The watchdog is off. Node cannot open systemd's notify socket (`dgram` is UDP only, and
 `unix_dgram` throws). A `Type=notify` unit waits for `READY=1` and then fails the start with
