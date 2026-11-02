@@ -273,6 +273,8 @@ and Scan explains that the driver is missing.
 
 The older plugin on port 9721 is documented in [docs/decks.md](docs/decks.md). It is not required.
 
+Companion also opens Stream Decks over USB when **Settings → Surfaces → Enable direct connection to Stream Decks** is on (Companion's setting `elgato_plugin_enable`). Turn that off, or disable each deck on Companion's Surfaces page, then unplug the deck and Scan here. Control Center has to own the USB device. Keys you mark for Companion are handed back over the satellite URL. If another program still holds the deck, Scan logs: `Stream Deck … is held by another program` and names that Companion setting.
+
 ---
 
 ## Install on a Mac
@@ -291,6 +293,70 @@ address and **SAVE & CONNECT**.
 For the Stream Deck plugin, use the steps above (Node.js 24, inside `streamdeck/`). For live
 scopes, build `tools/native/decklink-recv` on the Mac that has Desktop Video, then run
 `tools/decklink-sidecar.js`.
+
+`node server.js` on a Mac listens on **8080**. The Pi service listens on **8088**.
+
+---
+
+## Install / update on the Pi
+
+Raspberry Pi OS, Node 18 or later. The service file is `Type=simple` and listens on **8088**.
+8080 is left for the UniFi Network controller. 8081 is File Browser, 8000 is Companion, and 8090
+is the speaker timer. Do not point this service at those.
+
+The app's own default stays 8080, so `node server.js` on a Mac is unchanged. The unit passes
+`--port 8088`.
+
+Per-Pi settings do not belong in the unit file. Copying the unit overwrites local edits. Put
+them in a drop-in: `sudo systemctl edit control-center`.
+
+```bash
+sudo git clone https://github.com/stevenmarr/Performance-Video-Control.git /opt/control-center
+sudo mkdir -p /var/lib/control-center
+sudo chown -R pi:pi /opt/control-center /var/lib/control-center
+sudo cp /opt/control-center/tools/systemd/control-center.service /etc/systemd/system/control-center.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now control-center
+```
+
+Open **http://<the-pi>:8088**.
+
+Update:
+
+```bash
+cd /opt/control-center && git pull && sudo cp tools/systemd/control-center.service /etc/systemd/system/control-center.service && sudo systemctl daemon-reload && sudo systemctl restart control-center
+```
+
+That `cp` replaces the unit. Anything you changed in the unit file is gone. The drop-in is kept.
+
+```bash
+sudo systemctl edit control-center
+```
+
+```ini
+[Service]
+Environment=CC_HOST_POWER=1
+Environment=CC_SERVICE_CONTROL=1
+```
+
+`CC_HOST_POWER=1` lets the console's two-press shutdown and reboot call `systemctl`.
+`CC_SERVICE_CONTROL=1` lets the console start and stop the speaker-timer, SMB, and Companion units.
+Leave both unset until you want that.
+
+The watchdog is off. Node cannot open systemd's notify socket (`dgram` is UDP only, and
+`unix_dgram` throws). A `Type=notify` unit waits for `READY=1` and then fails the start with
+"a timeout was exceeded" when that datagram never arrives. The process sends `READY=1` and
+`WATCHDOG=1` through `systemd-notify`, which is a child, so it only counts if you opt in:
+
+```ini
+[Service]
+Type=notify
+NotifyAccess=all
+WatchdogSec=30
+```
+
+`NotifyAccess=main` ignores the child. Leave the watchdog out unless you have checked
+`systemctl status control-center` and seen the service reach `active (running)`.
 
 ---
 

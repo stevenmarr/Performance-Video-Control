@@ -80,7 +80,7 @@ async function main() {
   // A Mac sidecar pushes H.264 to /api/scopes/ndi/ingest. Live video is Desktop Video.
   // --mock does not add NDI fixture sources.
   const scopes = require('./lib/scopes/service').attachScopes(server, { systems, dataDir, mock, log: (lv, m) => engine.log(lv, m) });
-  server.listen(port, bind, async () => {
+  require('./lib/listen').listen(server, port, bind, async () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
     console.log(`Control Center: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
     console.log(`Data dir: ${dataDir}`);
