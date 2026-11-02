@@ -137,7 +137,12 @@ test('every family can be added twice; same host and port is the only duplicate'
     const added = await sm.addCamera({ name: 'Side', host: '127.0.0.1', port: 1 }, ptzB.id);
     assert.equal(sm.conn(ptzB.id).cameras.some((c) => c.id === added.id), true);
     assert.equal(sm.conn('ptz').cameras.some((c) => c.port === 1), false);
-    await assert.rejects(() => sm.simulate('rs6'), /Add another RS6/);
+    const rs6Before = sm.engine.settings.host;
+    await sm.simulate('rs6');
+    assert.equal(sm.engine.settings.host, rs6Before, 'the original RS6 address is not replaced by the fixture');
+    assert.equal(sm.instancePublic('rs6').connection.simulator, true);
+    await sm.simulate('rs6', { on: false });
+    assert.equal(sm.instancePublic('rs6').connection.simulator, false);
     const rs6b = sm.getState().instances.find((i) => i.type === 'rs6' && !i.primary);
     const sim = await sm.simulate(rs6b.id);
     assert.equal(sim.created, rs6b.id);

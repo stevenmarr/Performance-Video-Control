@@ -158,9 +158,11 @@ test('Pixera and Millumin connections are saved per install and stay out of a sh
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops it, RS6 is refused', async () => {
+test('REAL / SIM switches a desk card without writing the fixture address', async () => {
   const ui = fs.readFileSync(path.join(__dirname, '..', 'public', 'sys.js'), 'utf8');
-  assert.match(ui, /ADD AS SIMULATOR/);
+  assert.match(ui, />REAL</);
+  assert.match(ui, />SIM</);
+  assert.match(ui, /class="mock">SIM/);
   assert.match(ui, /REMOVE FROM DESK/);
   assert.match(ui, /data-pal="\$\{s\.key\}"/, 'palette rows stay on the left');
   assert.match(ui, /data-open="\$\{esc\(s\.id\)\}">OPEN /);
@@ -174,10 +176,16 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
   const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6simfix-'));
   const fixed = new SystemManager({ dataDir: dir2, overrides: { pixera: { host: '127.0.0.1', port: 9 } }, autoStart: false });
   try {
-    await assert.rejects(() => systems.simulate('rs6'), /Add another RS6/);
-    const refused = await call('POST', '/api/sys/rs6/simulate');
-    assert.equal(refused.status, 409);
-    assert.match(refused.json.error, /Add another RS6/);
+    const rs6Host = systems.engine.settings.host;
+    const rs6Port = systems.engine.settings.restPort;
+    let rs6 = await systems.simulate('rs6');
+    assert.equal(systems.engine.settings.host, rs6Host, 'the RS6 settings file is not the fixture');
+    assert.equal(systems.engine.settings.restPort, rs6Port);
+    assert.equal(rs6.systems.rs6.connection.simulator, true);
+    assert.equal(rs6.systems.rs6.connection.saved.host, rs6Host);
+    rs6 = await systems.simulate('rs6', { on: false });
+    assert.equal(rs6.systems.rs6.connection.simulator, false);
+    assert.equal(systems.engine.settings.host, rs6Host);
     await assert.rejects(() => fixed.simulate('pixera'), (e) => e.status === 409 && /already the built-in mock/.test(e.message));
     let st = (await call('POST', '/api/sys/pixera/simulate')).json;
     assert.equal(st.systems.pixera.status.connected, true);
@@ -187,8 +195,8 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
     assert.equal(st.systems.pixera.connection.host, '127.0.0.1');
     assert.ok(st.armed.includes('pixera'));
     const port = st.systems.pixera.connection.port;
-    st = (await call('POST', '/api/sys/pixera/simulate')).json;
-    assert.equal(st.systems.pixera.connection.port, port, 'a second simulate does not start another fixture');
+    st = (await call('POST', '/api/sys/pixera/simulate', { on: true })).json;
+    assert.equal(st.systems.pixera.connection.port, port, 'turning the simulator on again does not start another fixture');
     let saved = file();
     assert.ok(!saved.armed.includes('pixera'));
     assert.equal(saved.active, 'rs6');
@@ -205,8 +213,19 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
     assert.ok(!systems.cfg.armed.includes('pixera'));
     systems.updateConnection('millumin', { host: '192.0.2.41', port: 5000 });
     assert.ok(systems.cfg.armed.includes('millumin'));
-    assert.equal((await call('POST', '/api/sys/millumin/simulate')).status, 409, 'a system already on the desk is not replaced');
+    const switched = await call('POST', '/api/sys/millumin/simulate', { on: true });
+    assert.equal(switched.status, 200);
+    assert.equal(switched.json.systems.millumin.connection.host, '127.0.0.1');
+    assert.equal(switched.json.systems.millumin.connection.simulator, true);
+    assert.equal(switched.json.systems.millumin.connection.saved.host, '192.0.2.41');
     assert.equal(systems.cfg.connections.millumin.host, '192.0.2.41');
+    assert.equal(file().connections.millumin.host, '192.0.2.41');
+    assert.ok(file().armed.includes('millumin'), 'a system already on the desk stays in the file');
+    assert.ok(systems.cfg.armed.includes('millumin'));
+    const restored = await call('POST', '/api/sys/millumin/simulate', { on: false });
+    assert.equal(restored.json.systems.millumin.connection.host, '192.0.2.41');
+    assert.equal(restored.json.systems.millumin.connection.simulator, false);
+    assert.ok(systems.cfg.armed.includes('millumin'));
     await systems.setArmed('millumin', false);
     st = await systems.simulate('millumin');
     assert.equal(st.systems.millumin.connection.host, '127.0.0.1');

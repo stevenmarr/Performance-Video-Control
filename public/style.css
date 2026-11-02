@@ -491,6 +491,11 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .sys-card .ttl{flex:1;min-width:0}.sys-card .nm{font-weight:800;font-size:16px;overflow-wrap:anywhere}
 .sys-card .st{font-size:11px;font-weight:800;letter-spacing:.08em;color:var(--dim);margin-top:3px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .sys-card .st .mock{background:#4b3a00;color:#ffd35c;padding:1px 6px;border-radius:6px;letter-spacing:.04em}
+.sys-acts .mode-tog{display:inline-flex}
+.sys-acts .mode-tog .btn{border-radius:0}
+.sys-acts .mode-tog .btn:first-child{border-radius:6px 0 0 6px}
+.sys-acts .mode-tog .btn:last-child{border-radius:0 6px 6px 0}
+.sys-acts .btn.mock,.cue-link .btn.mock{background:#4b3a00;color:#ffd35c;border-color:#8a6a12}
 .led{width:9px;height:9px;border-radius:50%;display:inline-block;background:#5b6573}
 .led.ok{background:#2bd46b;box-shadow:0 0 8px #2bd46b}.led.off{background:#ff4d55;box-shadow:0 0 8px #ff4d55}.led.idle{background:#5b6573}
 .badge-active{font-size:11px;font-weight:900;letter-spacing:.12em;color:#fff;background:var(--pgm);padding:5px 10px;border-radius:7px}
