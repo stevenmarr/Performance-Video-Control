@@ -147,7 +147,7 @@ test('console actions: focus, profile, show guard, health ack, services, lock, s
     assert.ok(Array.isArray(health.json.instances));
     const mods = await call('GET', '/api/core/modules');
     assert.ok(mods.json.modules.some((m) => m.id === 'atem' && m.status === 'ready'));
-    assert.ok(mods.json.modules.some((m) => m.id === 'hyperdeck' && m.status === 'planned'));
+    assert.ok(mods.json.modules.some((m) => m.id === 'hyperdeck' && m.status === 'ready'));
     assert.ok(mods.json.modules.some((m) => m.id === 'console'));
     const actions = await call('GET', '/api/core/actions');
     assert.ok(actions.json.actions.some((a) => a.id === 'host.shutdown'));
