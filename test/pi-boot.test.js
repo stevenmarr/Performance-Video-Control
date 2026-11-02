@@ -80,6 +80,10 @@ test('the shipped unit is Type=simple on port 8088 and does not arm the watchdog
   assert.match(rules, /GROUP="plugdev"/);
   assert.match(rules, /TAG\+="uaccess"/);
   const pkg = require('../package.json');
-  assert.equal(pkg.dependencies['@elgato-stream-deck/node'], '^7.3.0');
+  assert.equal(pkg.dependencies['@elgato-stream-deck/node'], '7.8.0');
+  assert.equal(pkg.dependencies['node-hid'], '3.4.0');
   assert.equal(pkg.optionalDependencies['@elgato-stream-deck/node'], undefined);
+  assert.match(readme, /EACCES/);
+  assert.match(readme, /git checkout -- package.json package-lock.json/);
+  assert.match(readme, /Node >=18\.18/);
 });
