@@ -61,6 +61,11 @@
     const conf = s.configured !== undefined ? s.configured : !!(s.connection && (s.connection.host || (s.connection.cameras && s.connection.cameras.length)));
     const ptz = s.key === 'ptz' || s.type === 'ptz';
     if (!conf) return { cls: 'idle', txt: 'NOT CONFIGURED' };
+    if (st.fsm === 'failed') return { cls: 'off', txt: 'FAILED' };
+    if (st.fsm === 'degraded') {
+      const extra = ptz && st.online != null && st.total != null ? ` ${st.online}/${st.total}` : '';
+      return { cls: 'warn', txt: `DEGRADED${extra}` };
+    }
     if (st.link === 'connecting') return { cls: 'warn', txt: 'CONNECTING' };
     if (st.link === 'reconnecting') return { cls: 'warn', txt: 'RECONNECTING' };
     if (st.connected && ptz && st.online != null && st.total != null && st.online < st.total) return { cls: 'warn', txt: `${st.online}/${st.total} ONLINE` };

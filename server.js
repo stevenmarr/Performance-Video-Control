@@ -84,6 +84,7 @@ async function main() {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
     console.log(`Control Center: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
     console.log(`Data dir: ${dataDir}`);
+    if (systems.os) systems.os.ready();
     await engine.connect();
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);
   });
