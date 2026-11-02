@@ -1,0 +1,31 @@
+[Unit]
+Description=Performance Video Control Center
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+NotifyAccess=main
+WatchdogSec=30
+Restart=on-failure
+RestartSec=2
+# The Pi user that should own the show files. Change this if the account is not pi.
+User=pi
+WorkingDirectory=/opt/control-center
+Environment=RS6_DATA_DIR=/var/lib/control-center
+Environment=HOST=0.0.0.0
+Environment=PORT=8080
+# Uncomment on the show Pi when the console SHUT DOWN / REBOOT keys may power the machine.
+# The keys still take two presses, and safe mode blocks them.
+# Environment=CC_HOST_POWER=1
+# Uncomment to let the console start and stop speaker-timer, smbd, and companion units.
+# Environment=CC_SERVICE_CONTROL=1
+# Environment=CC_SPEAKER_TIMER_URL=http://127.0.0.1:8090/status
+# Environment=CC_SMB_PATH=/srv/show
+# Environment=CC_COMPANION_URL=http://127.0.0.1:8000
+# One JSON line per core event, as well as the normal text log.
+# Environment=CC_LOG_JSON=1
+ExecStart=/usr/bin/node server.js --host 0.0.0.0 --port 8080
+
+[Install]
+WantedBy=multi-user.target
