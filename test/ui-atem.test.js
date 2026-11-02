@@ -1,6 +1,6 @@
 'use strict';
-// 0.10.0 ATEM UI (Playwright, against server.js --mock on 127.0.0.1 only): the simulator model picker, ROUTER with the
-// source-assign dialog (type filter, search, current source highlighted, a tap routes it), AUDIO strips (Fairlight
+// ATEM UI (Playwright, against server.js --mock on 127.0.0.1 only): the simulator model picker, ROUTER
+// (destination row, source popover, search, ADVANCED tab, current source highlighted), AUDIO strips (Fairlight
 // and classic) and DVE / SS / KEYS (USK type, SuperSource box source, layout recall).
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -25,35 +25,29 @@ test('ATEM 0.10.0 UI: model picker, ROUTER dialog assignment, AUDIO, DVE / SS / 
   const errors = []; page.on('pageerror', (e) => errors.push(e.message));
   await page.goto(B + '/');
   await page.waitForFunction(() => document.body.classList.contains('kind-atem'), null, { timeout: 8000 });
-  // ROUTER: every output, then the dialog
+  // ROUTER: outputs only (no multiview windows), then the source popover
   await openTab(page, 'arouter');
   await page.locator('.ar-out[data-out="aux:11"]').waitFor();
   assert.equal(await page.locator('.ar-out.aux').count(), 12, '2 M/E Constellation: 12 outputs');
-  assert.equal(await page.locator('.ar-out.me').count(), 0, '0.11.0: no M/E program / preview outputs');
-  assert.equal(await page.locator('[data-argroup="me"]').count(), 0);
-  assert.equal(await page.locator('.ar-out.mv').count(), 32, '2 multiviews x 16 windows');
+  assert.equal(await page.locator('.ar-out.me').count(), 0, 'no M/E program / preview outputs');
+  assert.equal(await page.locator('#pane-arouter [data-argroup], #pane-arouter [data-kind], #pane-arouter [data-palkind], #arPop [data-kind]').count(), 0, 'no source or output filter groups');
+  assert.equal(await page.locator('.ar-out.mv').count(), 0, 'multiview windows are not on the router');
+  assert.equal(await page.locator('#btnSystem').count(), 0, 'the header does not repeat the system name');
   await page.click('.ar-out[data-out="aux:2"]');
-  const dlg = page.locator('#dlgAtemRoute[open]'); await dlg.waitFor();
+  const pop = page.locator('#arPop:not([hidden])'); await pop.waitFor();
   const cur = (await api('/api/sys/atem')).outputs.find((o) => o.key === 'aux:2').source;
-  assert.equal(await dlg.locator(`[data-routesrc="${cur}"].current`).count(), 1, 'current source highlighted');
-  await dlg.locator('[data-kind="media"]').click();
-  assert.ok(await dlg.locator('[data-routesrc]').count() >= 2); assert.equal(await dlg.locator('[data-routesrc="1"]').count(), 0, 'filtered to media');
-  // 0.11.0: media player key and key mask sources only under ADVANCED
-  await dlg.locator('[data-kind="all"]').click();
-  assert.equal(await dlg.locator('#arSources [data-routesrc="3011"]').count(), 0, 'MP1 key hidden');
-  assert.equal(await dlg.locator('#arAdv').isVisible(), true);
-  assert.equal(await dlg.locator('#arAdvList [data-routesrc="3011"]').isVisible(), false, 'collapsed');
-  await dlg.locator('#arAdvSum').click(); await dlg.locator('#arAdvList [data-routesrc="3011"]').waitFor();
-  await dlg.locator('#arAdvSum').click();
+  assert.equal(await pop.locator(`[data-routesrc="${cur}"].current`).count(), 1, 'current source highlighted');
+  assert.equal(await pop.locator('#arSources [data-routesrc="3011"]').count(), 0, 'MP1 key hidden on SOURCES');
+  assert.equal(await pop.locator('#arAdv').isVisible(), true);
+  await pop.locator('#arAdv').click();
+  await pop.locator('#arSources [data-routesrc="3011"]').waitFor();
+  await pop.locator('[data-artab="src"]').click();
   await page.fill('#arSearch', 'graphics');
-  assert.equal(await dlg.locator('[data-routesrc]').count(), 1);
-  await dlg.locator('[data-routesrc="7"]').click();
-  await page.locator('#dlgAtemRoute:not([open])').waitFor({ state: 'attached' });
+  assert.equal(await pop.locator('[data-routesrc]').count(), 1);
+  await pop.locator('[data-routesrc="7"]').click();
+  await page.locator('#arPop[hidden]').waitFor({ state: 'attached' });
   await page.locator('.ar-out[data-out="aux:2"] b .nm-l', { hasText: 'Graphics' }).waitFor();
   assert.equal((await api('/api/sys/atem')).aux[2].source, 7);
-  // a multiviewer window through the same dialog
-  await page.click('.ar-out[data-out="mv:1:4"]'); await dlg.waitFor(); await dlg.locator('[data-routesrc="3010"]').click();
-  await page.locator('.ar-out[data-out="mv:1:4"] b .nm-l', { hasText: 'Media Player 1' }).waitFor();
   // AUDIO (Fairlight): mute toggles from the strip
   await openTab(page, 'aaudio'); await page.locator('.au-type.fairlight').waitFor();
   await page.locator('.au-strip[data-in="5"] [data-au="mute"]').click();

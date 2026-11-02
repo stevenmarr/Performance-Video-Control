@@ -15,7 +15,6 @@
 <header class="top">
   <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
   <div class="brand">CONTROL <span>CENTER</span></div>
-  <button id="btnSystem" class="sys-badge" type="button" title="Systems on the desk. Tap for the SYSTEMS dashboard."><span class="sys-dot"></span><span id="sysBadgeName">RS6</span></button>
   <button id="btnShow" class="btn ghost show-btn" title="Show file: save, save as, open, download, upload"><span class="show-k">SHOW</span> <span id="showName">Untitled show</span><span id="showDirty" class="dirty" title="Unsaved changes" hidden>●</span></button>
   <div id="conn" class="pill off rs6-only">Not connected</div>
   <div id="xconn" class="pill off x-only">Not connected</div>
@@ -276,18 +275,26 @@
       <pre id="tslLog" class="tsl-log"></pre>
     </div>
   </section>
-  <!-- 0.10.0 ATEM ROUTER / AUDIO / DVE-SS-KEYS (public/atem-ext.js) -->
+  <!-- ATEM ROUTER: Videohub-style destinations. Source bank is the popover (public/atem-ext.js). -->
   <section class="grid-wrap pane" id="pane-arouter" hidden>
-    <div class="board-head"><div class="section-title">ATEM ROUTER <small id="arInfo">every routable output and its current source · tap an output to change it</small></div><span class="spacer"></span>
-      <span id="arFilter" class="seg-row"></span><button class="btn mini atem-simmodel" type="button" data-simmodel>SIMULATED MODEL…</button></div>
-    <div class="ar-layout">
-      <aside class="ar-pal panel" id="arPalette"><div class="section-title">SOURCES <small>drag onto an output · or tap one, then tap outputs</small></div>
-        <input type="search" id="arPalSearch" placeholder="Filter sources…" autocomplete="off">
-        <div id="arPalKinds" class="seg-row ar-pal-kinds"></div>
-        <div id="arPalList" class="ar-pal-list"></div>
-        <label class="ar-pal-adv"><input type="checkbox" id="arPalAdv"> ADVANCED <small>media player key signals and key masks</small></label>
-        <div id="arArmed" class="note small" hidden></div></aside>
-      <div id="arGroups"></div>
+    <div class="board-head"><div class="section-title">ATEM ROUTER <small id="arInfo">pick an output, then a source</small></div><span class="spacer"></span>
+      <button class="btn mini atem-simmodel" type="button" data-simmodel>SIMULATED MODEL…</button></div>
+    <div id="arDest" class="vh-dests"></div>
+    <div id="arPop" class="vh-pop" hidden>
+      <div class="vh-poph">
+        <div><b id="arPopTitle">Output</b><div id="arPopNow" class="vh-now"></div></div>
+        <button type="button" class="btn mini ghost" data-arclose aria-label="Close">✕</button>
+      </div>
+      <input id="arSearch" type="search" placeholder="Search sources" autocomplete="off">
+      <div class="vh-tabs" role="tablist">
+        <button type="button" data-artab="src" class="on">SOURCES</button>
+        <button type="button" id="arAdv" data-artab="adv">ADVANCED</button>
+      </div>
+      <div id="arSources" class="vh-bank"></div>
+      <div class="vh-shiftrow">
+        <button type="button" id="arShift">SHIFT</button>
+        <span id="arPage"></span>
+      </div>
     </div>
   </section>
   <section class="grid-wrap pane" id="pane-aaudio" hidden>
@@ -714,17 +721,6 @@
     <div class="actions"><button value="cancel" class="btn ghost">Cancel</button><button value="ok" id="amStart" class="btn primary" type="button">START SIMULATOR</button></div>
   </form>
 </dialog>
-<dialog id="dlgAtemRoute" class="wide">
-  <form method="dialog" class="form">
-    <h2 id="arTitle">Route</h2>
-    <div class="note small" id="arNote"></div>
-    <div class="ar-tools"><span id="arKinds" class="seg-row"></span><input id="arSearch" type="search" placeholder="Search sources" autocomplete="off"></div>
-    <div id="arSources" class="bus wide ar-sources"></div>
-    <details id="arAdv" class="ar-adv" hidden><summary id="arAdvSum">ADVANCED</summary><div class="note small">Media player key signals and key masks: the key (alpha) halves of fill + key pairs.</div><div id="arAdvList" class="bus wide ar-sources"></div></details>
-    <div class="actions"><button value="cancel" class="btn ghost">Close</button></div>
-  </form>
-</dialog>
-
 <dialog id="dlgFollowUp" class="wide">
   <form method="dialog" class="form">
     <h2>↪ AUTO RECALL · BAIL TO <small id="fuSys"></small></h2>
