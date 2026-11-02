@@ -117,7 +117,7 @@ test('Control Center 0.7.0: SYSTEMS home, group filter, ATEM bus + CUT, PTZ hold
   for (let i = 0; i < 40 && (await moving()); i++) await new Promise((r) => setTimeout(r, 50));
   assert.equal(await moving(), false, 'blur: stopped');
   await page.mouse.up();
-  await page.click('.tab[data-tab=system]'); await page.click('[data-use=rs6]');
+  await page.click('.tab[data-tab=system]'); await page.click('[data-open=rs6]');
   await page.waitForFunction(() => document.body.classList.contains('kind-rs6') && document.body.classList.contains('arm-atem') && document.body.classList.contains('arm-ptz'));
   assert.equal(await page.locator('.tgrp[data-tabgrp=atem]').isVisible(), true, 'ATEM group stays on the desk while RS6 is open');
   assert.equal(await page.locator('.tgrp[data-tabgrp=ptz]').isVisible(), true, 'PTZ group stays on the desk while RS6 is open');

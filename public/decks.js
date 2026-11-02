@@ -28,7 +28,8 @@
     const ids = [''].concat(armed);
     return `<div class="deck-pick">${ids.map((id) => {
       const on = (id || null) === (current || null);
-      const label = id ? id.toUpperCase() : 'HOME';
+      const info = view && view.desk && view.desk.byKey && view.desk.byKey[id];
+      const label = id ? ((info && (info.short || info.label)) || id.toUpperCase()) : 'HOME';
       return `<button type="button" class="btn mini${on ? ' on' : ''}" data-assign="${esc(device.id)}" data-system="${esc(id)}">${label}</button>`;
     }).join('')}</div>`;
   }
@@ -51,7 +52,7 @@
       const face = d.face;
       const title = face ? face.title : 'HOME';
       return `<article class="deck-one">
-        <div class="section-title">${esc(d.name || d.model || 'Stream Deck')} <small>${esc(d.model || '')} · ${title}${face && face.pages > 1 ? ` · ${face.page + 1}/${face.pages}` : ''}${d.paintError ? ` · ${esc(d.paintError)}` : ''}</small></div>
+        <div class="section-title">${esc(d.name || d.model || 'Stream Deck')} <small>${esc(d.serial || d.id || '')} · ${esc(d.model || '')} · ${title}${face && face.pages > 1 ? ` · ${face.page + 1}/${face.pages}` : ''}${d.paintError ? ` · ${esc(d.paintError)}` : ''}</small></div>
         ${picks(d)}
         ${face ? grid(d, face, cols, rows) : '<p class="note small">Scan USB after the Elgato app is quit.</p>'}
       </article>`;

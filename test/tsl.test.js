@@ -77,6 +77,28 @@ test('a live desk may store a TSL UDP address; a simulator session stays on loop
   fs.rmSync(dir2, { recursive: true, force: true });
 });
 
+test('two TSL receivers: the original stays id tsl, same host and port is a duplicate', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tsl-rx-'));
+  const tsl = new TslService({ dataDir: dir, forceMock: true });
+  const cfg = tsl.setConfig({
+    enabled: false,
+    receivers: [
+      { id: 'tsl', name: 'Front', host: '127.0.0.1', port: 8900 },
+      { id: 'tsl-ab12', name: 'Rear', host: '127.0.0.1', port: 8901 },
+    ],
+  });
+  assert.equal(cfg.host, '127.0.0.1');
+  assert.equal(cfg.port, 8900);
+  assert.equal(cfg.receivers[1].id, 'tsl-ab12');
+  assert.equal(tsl.status().receivers.some((r) => r.duplicate), false);
+  tsl.setConfig({ receivers: [
+    { id: 'tsl', name: 'Front', host: '127.0.0.1', port: 8900 },
+    { id: 'tsl-ab12', name: 'Rear', host: '127.0.0.1', port: 8900 },
+  ] });
+  assert.deepEqual(tsl.status().receivers.map((r) => r.duplicate), [true, true]);
+  fs.rmSync(dir, { recursive: true, force: true });
+});
+
 test('cleanConfig defaults', () => {
   const c = cleanConfig({});
   assert.equal(c.version, '5.0');

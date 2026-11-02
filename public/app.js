@@ -1,6 +1,15 @@
 'use strict';
 (() => {
   const $ = (s) => document.querySelector(s);
+  function rs6Post(path, body) {
+    const id = window.CCSYS && window.CCSYS.familyTarget && window.CCSYS.familyTarget('rs6');
+    const api = window.CC.api;
+    if (!id || id === 'rs6') return api('POST', path, body);
+    const preset = /^\/api\/presets\/(\d+)\/recall$/.exec(path);
+    if (preset) return api('POST', `/api/sys/${id}/presets/${preset[1]}/recall`, body || {});
+    if (path === '/api/take' || path === '/api/cut') return api('POST', `/api/sys/${id}${path.slice(4)}`, body || {});
+    return api('POST', path, body);
+  }
   let S = null; let gridHtml = ''; let destHtml = ''; let mode = 'recall'; let editing = null; let tab = 'presets';
   // 0.4.0: one line that says exactly what a tap on a tile does in each mode
   const HINTS = {
@@ -29,6 +38,14 @@
   function render() {
     if (!S) return;
     try { rsBadge(); } catch { /* the badge is best effort */ }
+    const peer = $('#rs6PeerNote');
+    if (peer && window.CCSYS && window.CCSYS.familyTarget) {
+      const id = window.CCSYS.familyTarget('rs6');
+      const rec = window.CCSYS.instances && (window.CCSYS.instances().find((i) => i.id === id) || {});
+      const extra = id && id !== 'rs6';
+      peer.hidden = !extra;
+      peer.textContent = extra ? `${rec.name || id}: recall, take and cut go to this processor. Inputs, backups, audio and Web RCS stay on the original RS6.` : '';
+    }
     const av = $('#appVer');
     if (av && S.appVersion && av.textContent !== `v${S.appVersion}`) { av.textContent = `v${S.appVersion}`; av.title = `Control Center ${S.appVersion}`; }
     const c = $('#conn');
@@ -572,7 +589,7 @@
       if (from !== n) swapTiles(from, n);
       return;
     }
-    if (mode === 'recall') { if (b.dataset.preset) run(api('POST', `/api/presets/${n}/recall`)); return; }
+    if (mode === 'recall') { if (b.dataset.preset) run(rs6Post(`/api/presets/${n}/recall`)); return; }
     if (mode === 'save') return openSave(n, !!b.dataset.preset);
     if (mode === 'edit' && b.dataset.preset) return openEdit(n);
   });
@@ -667,8 +684,8 @@
     if (b.dataset.bkmode) return run(api('POST', base[b.dataset.bkmode](b.dataset.id) + '/mode', { auto: b.dataset.auto === '1' }));
   });
 
-  $('#btnTake').addEventListener('click', () => run(api('POST', '/api/take')));
-  $('#btnCut').addEventListener('click', () => run(api('POST', '/api/cut')));
+  $('#btnTake').addEventListener('click', () => run(rs6Post('/api/take')));
+  $('#btnCut').addEventListener('click', () => run(rs6Post('/api/cut')));
   $('#btnAuto').addEventListener('click', () => run(api('POST', '/api/autotake', {})));
   const setLog = (open) => { $('#logwrap').classList.toggle('collapsed', !open); localStorage.setItem('rs6.logOpen', open ? '1' : ''); const box = $('#log'); if (open) box.scrollTop = box.scrollHeight; };
   $('#logToggle').addEventListener('click', (e) => { if (e.target.id !== 'logClear') setLog($('#logwrap').classList.contains('collapsed')); });
@@ -680,8 +697,8 @@
     if (document.querySelector('dialog[open]') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
     if (tab !== 'presets') return; // 0.4.0: TAKE / CUT keys only where TAKE / CUT is shown (sys.js: xpresets)
     if (e.key === 'Escape' && moveSrc != null) { moveSrc = null; render(); return; }
-    if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); run(api('POST', '/api/take')); }
-    if (e.key === 'c' || e.key === 'C') run(api('POST', '/api/cut'));
+    if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); run(rs6Post('/api/take')); }
+    if (e.key === 'c' || e.key === 'C') run(rs6Post('/api/cut'));
   });
 
   // ---------- save ----------

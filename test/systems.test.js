@@ -266,7 +266,10 @@ test('/api/sys routes drive E2 and PixelHue; show format 2 records the system an
     assert.equal((await call('POST', '/api/sys/e2/connection', { host: '192.0.2.51' })).status, 409, 'mock connection is fixed');
     assert.equal((await call('POST', '/api/sys/pixelhue/presets/ph%3Apreset-1-guid/recall', {})).json.ok, true);
     assert.equal((await call('POST', '/api/sys/pixelhue/cues/0/play')).status, 409, 'PixelHue API has no cues');
-    assert.equal((await call('GET', '/api/sys/rs6')).status, 400, 'RS6 keeps its own routes');
+    const rs6 = await call('GET', '/api/sys/rs6');
+    assert.equal(rs6.status, 200, 'the family path is the original RS6');
+    assert.equal(rs6.json.instance, 'rs6');
+    assert.equal(rs6.json.kind, 'rs6');
     // show file: v2 with system + sessions
     const saved = (await call('POST', '/api/shows/save', { name: 'E2 Gala' })).json;
     const j = JSON.parse(fs.readFileSync(path.join(ctx.dataDir, 'shows', `${saved.id}.rs6show`), 'utf8'));

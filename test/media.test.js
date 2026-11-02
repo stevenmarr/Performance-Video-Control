@@ -162,8 +162,8 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
   const ui = fs.readFileSync(path.join(__dirname, '..', 'public', 'sys.js'), 'utf8');
   assert.match(ui, /ADD AS SIMULATOR/);
   assert.match(ui, /REMOVE FROM DESK/);
-  assert.match(ui, /data-use="\$\{s\.key\}" data-open="\$\{s\.key\}">OPEN /);
-  assert.doesNotMatch(ui, /data-open="\$\{s\.key\}">OPEN</);
+  assert.match(ui, /data-pal="\$\{s\.key\}"/, 'palette rows stay on the left');
+  assert.match(ui, /data-open="\$\{esc\(s\.id\)\}">OPEN /);
   const ctx = await setup({});
   const systems = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, autoStart: false });
   const server = createServer(ctx.engine, systems);
@@ -174,8 +174,10 @@ test('ADD TO DESK AS SIMULATOR: fixture stays off disk, REMOVE FROM DESK stops i
   const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6simfix-'));
   const fixed = new SystemManager({ dataDir: dir2, overrides: { pixera: { host: '127.0.0.1', port: 9 } }, autoStart: false });
   try {
-    await assert.rejects(() => systems.simulate('rs6'), /RS6/);
-    assert.equal((await call('POST', '/api/sys/rs6/simulate')).status, 400);
+    await assert.rejects(() => systems.simulate('rs6'), /Add another RS6/);
+    const refused = await call('POST', '/api/sys/rs6/simulate');
+    assert.equal(refused.status, 409);
+    assert.match(refused.json.error, /Add another RS6/);
     await assert.rejects(() => fixed.simulate('pixera'), (e) => e.status === 409 && /already the built-in mock/.test(e.message));
     let st = (await call('POST', '/api/sys/pixera/simulate')).json;
     assert.equal(st.systems.pixera.status.connected, true);

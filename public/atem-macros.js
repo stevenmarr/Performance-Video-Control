@@ -121,12 +121,12 @@
   document.getElementById('atemDeskSync').addEventListener('click', () => api('POST', '/api/atem-desk/sync').then((j) => { desk = j; paint(); }).catch(() => {}));
   document.getElementById('atemMacroStop').addEventListener('click', async () => {
     await api('POST', '/api/atem-desk/play/stop').catch(() => {});
-    await fetch('/api/sys/atem/cmd/macroStop', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+    await fetch(`${atemBase()}/cmd/macroStop`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
     await load();
   });
   document.getElementById('atemMacroContinue').addEventListener('click', async () => {
     await api('POST', '/api/atem-desk/play/continue').catch(() => {});
-    await fetch('/api/sys/atem/cmd/macroContinue', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+    await fetch(`${atemBase()}/cmd/macroContinue`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
     await load();
   });
 
@@ -134,7 +134,7 @@
     const run = ev.target.closest('[data-run]');
     if (run) {
       current = desk.macros.findIndex((m) => m.index === Number(run.dataset.run));
-      await fetch('/api/sys/atem/cmd/macroRun', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ macro: Number(run.dataset.run) }) });
+      await fetch(`${atemBase()}/cmd/macroRun`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ macro: Number(run.dataset.run) }) });
       await load();
       return;
     }
@@ -174,12 +174,12 @@
       return;
     }
     if (ev.target.id === 'adRecord' && macro()) {
-      await fetch('/api/sys/atem/cmd/macroRecord', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ macro: macro().index }) });
+      await fetch(`${atemBase()}/cmd/macroRecord`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ macro: macro().index }) });
       await load();
       return;
     }
     if (ev.target.id === 'adStopRec') {
-      await fetch('/api/sys/atem/cmd/macroStopRecord', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      await fetch(`${atemBase()}/cmd/macroStopRecord`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
       await load();
       return;
     }
@@ -187,7 +187,7 @@
       const m = macro();
       m.steps.push({ op: 'userWait', args: {}, userWait: true, waitFrames: 0 });
       await api('POST', '/api/atem-desk/macros', m);
-      await fetch('/api/sys/atem/cmd/macroUserWait', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
+      await fetch(`${atemBase()}/cmd/macroUserWait`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }).catch(() => {});
       await load();
       return;
     }

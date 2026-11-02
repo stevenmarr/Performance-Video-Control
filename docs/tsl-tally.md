@@ -13,7 +13,7 @@ while you edit.
 |---|---|
 | Protocol | **TSL 5.0** (not 3.1) |
 | Where | **ATEM → TSL TALLY**, under the switcher buses |
-| Transport | **`mock`** (packet log) or **`udp`** to the host and port on that page |
+| Transport | **`mock`** (packet log) or **`udp`** to one or more receivers. The original receiver id is `tsl` (the host and port fields). **＋ TSL DESTINATION** adds `tsl-……` with its own name, host, and port. Same host and port is flagged. |
 | Default port | **8900** (configurable 1–65535) |
 | Colour | LH = PGM red (`1`), RH = PVW green (`2`), brightness 3, ASCII labels |
 | Source of truth | **ATEM** M/E 1 program / preview input ids |

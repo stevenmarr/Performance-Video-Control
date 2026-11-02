@@ -1,6 +1,6 @@
 # ATEM layout editor
 
-ATEM → **LAYOUT** has three sub-tabs: **M/Es**, **SUPERSOURCE**, and **MULTIVIEW**. Properties for the selected key, box, or window are on the left. The resources for the tab are on the right. The canvases are 16:9. The page reads the switcher's source names and draws each box in a stable color. It does not pull input thumbnails; the switcher protocol this app speaks has no per-input thumbnail.
+ATEM → **LAYOUT** is the M/E and SuperSource picture. Resources are on the left. Properties are on the right. The canvases are 16:9. **MULTIVIEW** is its own page. The page reads the switcher's source names and draws each box in a stable color. It does not pull input thumbnails; the switcher protocol this app speaks has no per-input thumbnail.
 
 **APPLY** sends the active tab to the switcher (the look, or the multiview). **READ** loads that tab back from the switcher and drops anything not yet sent. **LIVE** sends each drag and each number as you finish it, and a drop also puts that resource on air. **HOLD** keeps the drop on the page only: the resource is placed, and it stays off air until LIVE, the on-air button, or a program recall.
 

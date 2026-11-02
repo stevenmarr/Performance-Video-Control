@@ -14,6 +14,6 @@ Tap the row. A popover opens on that output:
 
 There are no ALL / INPUTS / MEDIA (or other) filter chips. Search and the ADVANCED tab cover that.
 
-Multiview windows are not on this page. Both multiviewers used to be listed here as window grids. Route those from the LAYOUT page's MULTIVIEW tab instead. The switcher still accepts a multiview route on the API; the panel just does not offer it.
+Multiview windows are not on this page. Both multiviewers used to be listed here as window grids. Route those on the MULTIVIEW page. The switcher still accepts a multiview route on the API; the panel just does not offer it.
 
 Esc, the ✕, or a click outside the popover closes it without routing. Enter in the search box takes the first source that matches.
