@@ -15,6 +15,15 @@ Restart=always
 RestartSec=2
 # The account that owns the show files. A drop-in can change this.
 User=pi
+# plugdev is the group on the Stream Deck hidraw nodes after the udev rule in
+# tools/udev/50-control-center-streamdeck.rules is installed. systemd reads
+# groups when the process starts. usermod does nothing to a process that is
+# already running; restart the service after a group change.
+# If `ls -l /dev/hidraw*` still shows group companion (Companion's rule locked
+# the group), add companion in a drop-in and restart:
+#   SupplementaryGroups=plugdev companion
+# The companion group has to exist or systemd refuses to start (status 217/USER).
+SupplementaryGroups=plugdev
 WorkingDirectory=/opt/control-center
 Environment=RS6_DATA_DIR=/var/lib/control-center
 Environment=HOST=0.0.0.0

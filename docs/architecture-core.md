@@ -116,7 +116,8 @@ First press arms the key for 8 seconds and does nothing to the machine. Second p
 
 - `GET /api/health` is 200 while the process is serving. 503 only if the core tick has not run for 20 seconds. Devices being down does not fail this check. systemd should restart a dead process, not a camera that is off.
 - The structured ring is `GET /api/core/transitions`. Set `CC_LOG_JSON=1` to also print one JSON line per core event. The old text log is unchanged.
-- `tools/systemd/control-center.service` is `Type=simple` and listens on port **8088**. Node cannot open systemd's notify socket, so `Type=notify` never received `READY=1` and the start timed out. The process still calls `systemd-notify` when `NOTIFY_SOCKET` is set. A drop-in can turn on `Type=notify`, `NotifyAccess=all`, and `WatchdogSec=30`. See the README, "Install / update on the Pi".
+- `tools/systemd/control-center.service` is `Type=simple` and listens on port **8088**. Node cannot open systemd's notify socket, so `Type=notify` never received `READY=1` and the start timed out. The process still calls `systemd-notify` when `NOTIFY_SOCKET` is set. A drop-in can turn on `Type=notify`, `NotifyAccess=all`, and `WatchdogSec=30`. The unit sets `SupplementaryGroups=plugdev` so it can open Stream Deck hidraw nodes. See the README, "Install / update on the Pi".
+- USB Stream Decks are opened at process start with `@elgato-stream-deck/node` (node-hid on `/dev/hidraw`). The service scans again on hidraw hotplug and every few seconds. `GET /api/surfaces/diag` and `node tools/deck-diag.js` print the library, the nodes, their permissions, and who holds them.
 
 ## Companion, next to the native deck
 

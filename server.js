@@ -84,12 +84,19 @@ async function main() {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
     console.log(`Control Center: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
     console.log(`Data dir: ${dataDir}`);
+    if (server.decks) server.decks.startUsb();
     if (systems.os) systems.os.ready();
     await engine.connect();
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);
   });
 
-  const shutdown = async () => { await scopes.close(); server.closeClients(); server.close(); await systems.close(); for (const m of sysMocks) await m.stop(); engine.close(); if (device) await device.stop(); process.exit(0); };
+  const shutdown = async () => {
+    if (server.decks) {
+      server.decks.stopUsb();
+      try { await server.decks.usb.close(); } catch { /* already closed */ }
+    }
+    await scopes.close(); server.closeClients(); server.close(); await systems.close(); for (const m of sysMocks) await m.stop(); engine.close(); if (device) await device.stop(); process.exit(0);
+  };
   process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 }
 

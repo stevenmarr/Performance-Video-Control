@@ -46,12 +46,16 @@ test('sdNotify does nothing without NOTIFY_SOCKET and does not throw when system
   assert.match(logs[0], /systemd notify did not go out/);
 });
 
-test('a deck held by another program names the Companion setting', () => {
-  const line = deckOpenMessage('/dev/hidraw0', new Error('cannot open device: LIBUSB_ERROR_BUSY'));
-  assert.match(line, /held by another program/);
-  assert.match(line, /Enable direct connection to Stream Decks/);
+test('a deck that will not open names EACCES or busy and the fix', () => {
+  const busy = deckOpenMessage('/dev/hidraw0', new Error('cannot open device: LIBUSB_ERROR_BUSY'));
+  assert.match(busy, /cannot open \/dev\/hidraw0: busy/);
+  assert.match(busy, /Enable direct connection to Stream Decks/);
+  const denied = deckOpenMessage('/dev/hidraw1', Object.assign(new Error('Permission denied'), { code: 'EACCES' }));
+  assert.match(denied, /cannot open \/dev\/hidraw1: EACCES/);
+  assert.match(denied, /plugdev/);
+  assert.match(denied, /99-control-center-streamdeck/);
   const other = deckOpenMessage('serial', new Error('short read'));
-  assert.match(other, /did not open/);
+  assert.match(other, /^cannot open serial: short read$/);
   assert.doesNotMatch(other, /Enable direct connection/);
 });
 
@@ -60,6 +64,7 @@ test('the shipped unit is Type=simple on port 8088 and does not arm the watchdog
   assert.match(unit, /^Type=simple$/m);
   assert.match(unit, /--port 8088/);
   assert.match(unit, /Environment=PORT=8088/);
+  assert.match(unit, /^SupplementaryGroups=plugdev$/m);
   assert.doesNotMatch(unit, /^Type=notify$/m);
   assert.doesNotMatch(unit, /^WatchdogSec=/m);
   const readme = fs.readFileSync(path.join(__dirname, '../README.md'), 'utf8');
@@ -67,5 +72,14 @@ test('the shipped unit is Type=simple on port 8088 and does not arm the watchdog
   assert.match(readme, /systemctl edit control-center/);
   assert.match(readme, /CC_HOST_POWER=1/);
   assert.match(readme, /CC_SERVICE_CONTROL=1/);
-  assert.match(readme, /git pull && sudo cp/);
+  assert.match(readme, /npm ci --omit=dev/);
+  assert.match(readme, /99-control-center-streamdeck\.rules/);
+  const rules = fs.readFileSync(path.join(__dirname, '../tools/udev/50-control-center-streamdeck.rules'), 'utf8');
+  assert.match(rules, /idVendor\}=="0fd9"/);
+  assert.match(rules, /MODE="0660"/);
+  assert.match(rules, /GROUP="plugdev"/);
+  assert.match(rules, /TAG\+="uaccess"/);
+  const pkg = require('../package.json');
+  assert.equal(pkg.dependencies['@elgato-stream-deck/node'], '^7.3.0');
+  assert.equal(pkg.optionalDependencies['@elgato-stream-deck/node'], undefined);
 });

@@ -19,7 +19,9 @@ gets its own pages: presets, switcher, cameras, media. Program is red. Preview i
 The npm package name is still `rs6-presets`. The on-disk data folder still uses that older name.
 The product in the browser is Control Center.
 
-No dependencies and no build step for the app. Node.js 16 or later. The Stream Deck plugin is a
+No build step for the desk. Node.js 16 or later. USB Stream Decks need one native
+library (`@elgato-stream-deck/node`, Node 18 or later). The Pi install below runs
+`npm ci --omit=dev` so that library is present. The Stream Deck plugin is a
 separate package and needs Node.js 24.
 
 ---
@@ -40,7 +42,9 @@ iPad or phone, open `http://<this-machine>:8080`.
 | `--host 0.0.0.0` | Listen address (the default, so the LAN can open the UI) |
 | `--data <dir>` | Where shows and settings live. `RS6_DATA_DIR` does the same |
 
-You do not need `npm install` for the app.
+The desk UI starts with `node server.js` and no build. USB Stream Decks do not.
+On a Mac that should open decks, run `npm ci --omit=dev` in this folder once.
+Without that library the server still starts and logs `USB Stream Deck library is missing`.
 
 The first time it runs, macOS may ask whether `node` may accept incoming connections. Allow it, or
 phones on the LAN cannot open the UI. `localhost` works either way. If you denied it: System
@@ -261,19 +265,17 @@ look onto preview. It does not toggle a key the way a macro does. Take commits
 the preview. That is the Ross memory model: the recall is the absolute state
 that was stored, including whether a key was on air or off air.
 
-On a Pi, copy `tools/udev/50-elgato-stream-deck.rules` to `/etc/udev/rules.d/`,
-reload udev, and replug the deck. The USB driver needs Node 18 or newer:
-
-```bash
-npm install
-```
-
-`@elgato-stream-deck/node` is optional. Without it, Control Devices still opens
-and Scan explains that the driver is missing.
+The USB library is `@elgato-stream-deck/node` (it uses `node-hid`). On Linux that
+opens `/dev/hidraw*`. It is a normal dependency, not an optional one. The
+service scans at startup, watches `/dev` for a new hidraw node, and scans again
+every few seconds. The log lines are `found N decks`, `opened serial …`, and
+`cannot open …: EACCES` or `cannot open …: busy`.
 
 The older plugin on port 9721 is documented in [docs/decks.md](docs/decks.md). It is not required.
 
-Companion also opens Stream Decks over USB when **Settings → Surfaces → Enable direct connection to Stream Decks** is on (Companion's setting `elgato_plugin_enable`). Turn that off, or disable each deck on Companion's Surfaces page, then unplug the deck and Scan here. Control Center has to own the USB device. Keys you mark for Companion are handed back over the satellite URL. If another program still holds the deck, Scan logs: `Stream Deck … is held by another program` and names that Companion setting.
+Companion also opens Stream Decks over USB when **Settings → Surfaces → Enable direct connection to Stream Decks** is on (Companion's setting `elgato_plugin_enable`). Turn that off, or disable each deck on Companion's Surfaces page, then unplug the deck. Control Center opens the USB device itself. You do not have to click Scan. Keys you mark for Companion are handed back over the satellite URL. If another program still holds the deck, the log says `cannot open …: busy` and names that Companion setting.
+
+A Stream Deck keeps the last picture on its keys until some other program paints. `sudo lsof /dev/hidraw*` showing nobody, while the keys still show Companion's pages, means nothing has the device open. Companion is not drawing. The old bitmap is still in the deck. Companion can also talk to a deck through its satellite connection or, on a Mac, the Elgato app. Those paths do not hold `/dev/hidraw*`. On the Pi, an empty `lsof` plus frozen Companion art means Control Center has not opened the node yet.
 
 ---
 
@@ -286,6 +288,9 @@ Companion also opens Stream Decks over USB when **Settings → Surfaces → Enab
 ```bash
 node server.js
 ```
+
+USB decks on this Mac also need Node 18 or later and `npm ci --omit=dev` in this folder.
+The server still starts without it and logs that the USB library is missing.
 
 Open **http://localhost:8080**. Put the systems you need on the desk, then **CONFIGURE** each
 address and **SAVE & CONNECT**.
@@ -310,24 +315,66 @@ The app's own default stays 8080, so `node server.js` on a Mac is unchanged. The
 Per-Pi settings do not belong in the unit file. Copying the unit overwrites local edits. Put
 them in a drop-in: `sudo systemctl edit control-center`.
 
+`npm ci` compiles the Stream Deck library. If it cannot download a prebuild, install the compiler first: `sudo apt-get install -y build-essential libudev-dev`.
+
 ```bash
 sudo git clone https://github.com/stevenmarr/Performance-Video-Control.git /opt/control-center
 sudo mkdir -p /var/lib/control-center
 sudo chown -R pi:pi /opt/control-center /var/lib/control-center
+sudo -u pi npm ci --omit=dev --prefix /opt/control-center
+sudo cp /opt/control-center/tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
 sudo cp /opt/control-center/tools/systemd/control-center.service /etc/systemd/system/control-center.service
 sudo systemctl daemon-reload
 sudo systemctl enable --now control-center
 ```
 
-Open **http://<the-pi>:8088**.
+Unplug the Stream Decks and plug them back in after the udev rule is installed. Open **http://<the-pi>:8088**.
+
+The rule matches Elgato vendor `0fd9`, mode `0660`, group `plugdev`, plus `uaccess`. It is installed as `99-` so it runs after Companion's `50-` rule. Companion's rule sets group `companion`. That is why `ls -l /dev/hidraw*` shows `crw-rw----+ root companion`. The `+` is an ACL for the person logged in on the console. A systemd service does not get that ACL. After this rule and a replug, the group should be `plugdev`. The unit has `SupplementaryGroups=plugdev`, so user `pi` can open the node without being added to the group by hand.
+
+`usermod -aG` only affects processes started afterwards. A service that is already running keeps its old groups until `sudo systemctl restart control-center`.
+
+If `ls` still shows group `companion`, Companion's rule locked the group (`GROUP:=`). Add the group for this service and restart:
+
+```bash
+sudo systemctl edit control-center
+```
+
+```ini
+[Service]
+SupplementaryGroups=plugdev companion
+```
+
+The `companion` group has to exist. If it does not, systemd fails the start with status 217/USER. Do not list a group that `getent group` cannot find.
 
 Update:
 
 ```bash
-cd /opt/control-center && git pull && sudo cp tools/systemd/control-center.service /etc/systemd/system/control-center.service && sudo systemctl daemon-reload && sudo systemctl restart control-center
+cd /opt/control-center
+git pull
+sudo -u pi npm ci --omit=dev --prefix /opt/control-center
+sudo cp tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+sudo cp tools/systemd/control-center.service /etc/systemd/system/control-center.service
+sudo systemctl daemon-reload
+sudo systemctl restart control-center
 ```
 
 That `cp` replaces the unit. Anything you changed in the unit file is gone. The drop-in is kept.
+
+Then unplug and replug the decks. Check the log and the one-shot diagnostic:
+
+```bash
+journalctl -u control-center -n 80 --no-pager
+node /opt/control-center/tools/deck-diag.js
+sudo node /opt/control-center/tools/deck-diag.js
+curl -s http://127.0.0.1:8088/api/surfaces/diag
+```
+
+`found N decks` and `opened serial …` mean Control Center has the device. `cannot open …: EACCES` is permissions (the udev rule and a service restart). `cannot open …: busy` is another program still holding it. `sudo` on the diagnostic sees holders that user `pi` is not allowed to see. `HID library: MISSING` means `npm ci --omit=dev` did not run in `/opt/control-center`.
 
 ```bash
 sudo systemctl edit control-center
