@@ -116,7 +116,7 @@ First press arms the key for 8 seconds and does nothing to the machine. Second p
 
 - `GET /api/health` is 200 while the process is serving. 503 only if the core tick has not run for 20 seconds. Devices being down does not fail this check. systemd should restart a dead process, not a camera that is off.
 - The structured ring is `GET /api/core/transitions`. Set `CC_LOG_JSON=1` to also print one JSON line per core event. The old text log is unchanged.
-- `tools/systemd/control-center.service` is `Type=notify` with `WatchdogSec=30`. The process sends `READY=1` after it listens, and `WATCHDOG=1` every 5 seconds. Copy it to `/etc/systemd/system/`, set `WorkingDirectory` and `User`, then `systemctl enable --now control-center`.
+- `tools/systemd/control-center.service` is `Type=simple` and listens on port **8088**. Node cannot open systemd's notify socket, so `Type=notify` never received `READY=1` and the start timed out. The process still calls `systemd-notify` when `NOTIFY_SOCKET` is set. A drop-in can turn on `Type=notify`, `NotifyAccess=all`, and `WatchdogSec=30`. See the README, "Install / update on the Pi".
 
 ## Companion, next to the native deck
 
