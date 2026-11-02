@@ -16,7 +16,7 @@
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS ? kindOf(SYS.active) : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
-  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amacros'], ptz: ['pctl', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], cues: ['cues'], decks: ['decks'] };
+  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amv', 'amacros'], ptz: ['pctl', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], cues: ['cues'], decks: ['decks'] };
   const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes', looks: 'looks', cues: 'cues', decks: 'decks' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
@@ -170,10 +170,8 @@
     const knNow = TAB_KIND[CC.getTab()] || kind();
     for (const k of Object.keys(KIND_TABS)) document.body.classList.toggle(`kind-${k}`, k === knNow);
     document.body.classList.toggle('sys-x', isX());
-    const st = statusOf(sysInfo);
-    const badge = armed().map((k) => { const r = recOf(k); return r.name || r.short; }).join(' · ');
-    $('#sysBadgeName').textContent = badge; $('#btnSystem').className = `sys-badge ${st.cls}`;
-    $('#btnSystem').title = `On the desk: ${armed().map((k) => { const r = recOf(k); return r.name || r.label; }).join(', ')} · open: ${sysInfo.name || sysInfo.label} (${st.txt}) · tap for SYSTEMS`;
+    // The header chip that repeated the system name was removed (compact shell).
+    // Instance names stay on the connection pill and the SYSTEMS cards.
     document.querySelectorAll('.tab-group').forEach((g) => { g.hidden = !armedOf(g.dataset.grp).length; });
     document.querySelectorAll('.tab-group .grp-btn').forEach((b) => { b.hidden = !onTypes.has(b.dataset.focus); b.classList.toggle('on', b.dataset.focus === typeOf(a)); });
     document.querySelectorAll('.tab[data-sys]').forEach((t) => {
@@ -777,7 +775,6 @@
   window.addEventListener('cc:tab', () => setTimeout(renderAll, 0));
   // ⚙ Settings is the RS6 device dialog; with another system active it opens the SYSTEMS dashboard instead
   $('#btnSettings').addEventListener('click', (e) => { if (isX()) { e.stopImmediatePropagation(); CC.setTab('system'); } }, true);
-  $('#btnSystem').addEventListener('click', () => CC.setTab('system'));
   setInterval(() => { if (CC.getTab() === 'system') { const c = $('#dashClock'); if (c) c.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }); } }, 1000);
   refetch();
 })();

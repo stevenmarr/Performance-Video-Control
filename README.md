@@ -12,7 +12,7 @@ gets its own pages: presets, switcher, cameras, media. Program is red. Preview i
 |---|---|
 | RS6 | Analog Way Aquilon RS6 presets, inputs, backup, audio, Web RCS |
 | E2 / PixelHue | Barco Event Master and PixelHue presets, cues, sources, stills |
-| ATEM | Blackmagic switcher, router, audio, keys, macros, and **TSL tally** |
+| ATEM | Blackmagic switcher, router (output, then source), audio, keys, macros, and **TSL tally** |
 | PTZ | Panasonic AW-UE / AW-HE camera control, plus the Path C Stream Deck pages |
 | Pixera / Millumin | Timelines, cues, columns, layers |
 
@@ -168,7 +168,7 @@ See [docs/tsl-tally.md](docs/tsl-tally.md).
 
 ## ATEM layout
 
-**ATEM → LAYOUT** has three tabs. **M/Es** shows every mix effect at once (four in quadrants, two side by side, one filling the frame) and lists upstream keys and downstream keys on the right. **SUPERSOURCE** does the same for each SuperSource's boxes. **MULTIVIEW** assigns layout, program/preview swap, window sources, safe area, and VU. Drag a resource onto its own canvas to place it; it goes on air only while **LIVE** is on. Properties for the selection are on the left. Right-click to delete.
+**ATEM → LAYOUT** is the M/E and SuperSource picture. Resources are on the left, canvases in the middle, properties on the right. M/E buttons sit at the top. Each M/E has its own THIRDS, CENTER, and SAFE. A new DVE key starts at 0, 0 and size 0.5 by 0.5. **HOLD** keeps an edit off air until APPLY. **ASPECT** locks a DVE key's shape while you drag. **ATEM → MULTIVIEW** is its own page: a 16-window multiview can be 16-up, 4-up, or a mix (right-click a quadrant). **ATEM → ROUTER** is a Videohub-style destination list. See [docs/atem-layout.md](docs/atem-layout.md) and [docs/router.md](docs/router.md).
 
 **APPLY** and **LIVE** send the picture. **READ** loads it back. **SAVE PRESET** keeps a look and recalls it to preview (take it) or program (on air). **SAVE SALVO** keeps a multiview. **SAVE MACRO** writes a Macro Desk macro and ATEM Software Control XML.
 

@@ -1,6 +1,6 @@
 # ATEM layout editor
 
-ATEM → **LAYOUT** has three sub-tabs: **M/Es**, **SUPERSOURCE**, and **MULTIVIEW**. Properties for the selected key, box, or window are on the left. The resources for the tab are on the right. The canvases are 16:9. The page reads the switcher's source names and draws each box in a stable color. It does not pull input thumbnails; the switcher protocol this app speaks has no per-input thumbnail.
+ATEM → **LAYOUT** is the M/E and SuperSource picture. Resources are on the left. Properties are on the right. The canvases are 16:9. **MULTIVIEW** is its own page. The page reads the switcher's source names and draws each box in a stable color. It does not pull input thumbnails; the switcher protocol this app speaks has no per-input thumbnail.
 
 **APPLY** sends the active tab to the switcher (the look, or the multiview). **READ** loads that tab back from the switcher and drops anything not yet sent. **LIVE** sends each drag and each number as you finish it, and a drop also puts that resource on air. **HOLD** keeps the drop on the page only: the resource is placed, and it stays off air until LIVE, the on-air button, or a program recall.
 
@@ -17,11 +17,13 @@ Every M/E on the connected switcher is a 16:9 canvas at the same time. On a wide
 
 The right-hand list is that M/E's upstream keyers (as many as the model has, four on a Constellation) plus a **DOWNSTREAM** group for the DSKs. Drag a key onto its own M/E. A key will not drop on a different M/E. Drag a DSK onto M/E 1; downstream keys composite after that M/E. Once a resource is on a canvas it is checked and greyed in the list and will not drag again.
 
-A drop places the resource. It does not cut it on air unless **LIVE** is on. With a free DVE, the key becomes a DVE window at the drop point (half frame). With no DVE left, it fills the frame. A DSK that is placed and not yet on air is tied, so the next transition can take it. Right-click the canvas item or its row for **Properties**, **Bring to front** (drawing order on this page; the switcher still stacks key 1 over key 2), and **Delete**. Delete takes it off air, clears a DSK tie, and turns a DVE key back to luma so it returns to the list. Fill, mask, and the other type's numbers stay.
+A drop places the resource. It does not cut it on air unless **LIVE** is on. With a free DVE, the key becomes a DVE window at the home size: position 0,0 and size 0.5 by 0.5 (half the frame, centered). **DEFAULT** in the left properties panel puts a DVE key back to that home size. Tab through the geometry in this order: X position, Y position, X size, Y size, then rotation. With no DVE left, the key fills the frame. A DSK that is placed and not yet on air is tied, so the next transition can take it. Right-click the canvas item or its row for **Properties**, **Bring to front** (drawing order on this page; the switcher still stacks key 1 over key 2), and **Delete**. Delete takes it off air, clears a DSK tie, and turns a DVE key back to luma so it returns to the list. Fill, mask, and the other type's numbers stay.
 
 **READ** marks a key used when it is on air, a DVE, or flying, and a DSK used when it is on air or tied.
 
-**THIRDS**, **CENTER**, and **SAFE** are guides (thirds, the center cross, action safe at 90%, title safe at 80%). Dragging snaps to those lines and to the other windows on the same canvas. **ASPECT** keeps a DVE key's shape while you drag. Arrow keys nudge the selected window by 0.1 frame unit, or by 1 with Shift.
+**THIRDS**, **CENTER**, and **SAFE** are per M/E. Each canvas has its own three toggles. Safe action is 93% of the frame (3.5% each side) and safe title is 90% (5% each side), SMPTE ST 2046-1. Dragging snaps to those lines and to the other windows on the same canvas. **ASPECT** keeps a DVE key's shape while you drag: width and height stay in the ratio they had when the drag started. SuperSource boxes ignore it, because a box has one size. **HOLD** is the other side of **LIVE**. LIVE sends each finished edit to the switcher, and a drop puts the key on air. HOLD keeps the edit on the page until **APPLY**, and a drop stays off air. Arrow keys nudge the selected window by 0.1 frame unit, or by 1 with Shift.
+
+The left column is the resources (keys, downstream keys, SuperSource boxes), grouped under headings. Drag onto the canvas. Properties are on the right. M/E 1, M/E 2, and the rest are buttons at the top of the page. **MULTIVIEW** is its own page, not a third mode of this one.
 
 ## SUPERSOURCE
 
@@ -33,7 +35,13 @@ Each SuperSource is its own 16:9 canvas. Boxes are the resources: four per Super
 
 ## MULTIVIEW
 
-One canvas per multiviewer. The four layout positions are Program top, Program bottom, Program left, and Program right. Windows 0 and 1 are the large preview and program cells; **SWAP** exchanges them. The other windows fill the remaining area. Click a window and pick a source the multiview can take. Windows the model fixes (the large pair on a classic 10-view) stay fixed. Safe area and VU are toggles on windows whose state says they support them; the switcher reports that support on `MvIn`. **APPLY** sends layout, swap, sources, and those toggles. **SAVE SALVO** keeps the multiview on this install. **SAVE MACRO** writes the same steps the Macro Desk can play, and Software Control XML.
+**MULTIVIEW** is its own ATEM page. READ, APPLY, SAVE SALVO, and SAVE MACRO are the same actions as before.
+
+One canvas per multiviewer. The orientation picker is Program top, Program bottom, Program left, and Program right. Windows 0 and 1 are the large preview and program cells; **SWAP** exchanges them. The other windows fill the remaining area.
+
+A 16-window multiview also has **16-UP** and **4-UP**. 16-up splits every quadrant into four windows. 4-up is one window per quadrant. Right-click a quadrant and choose **Single window** or **Split into four**. A 10-window multiview stays on the classic orientation. The switcher protocol this app speaks stores one layout byte (those four orientations) plus each window's source. The quadrant mix is how this page arranges those windows. APPLY still sends the layout byte and the sources.
+
+Click a window and pick a source the multiview can take. Windows the model fixes (the large pair on a classic 10-view) stay fixed. Safe area and VU are toggles on windows whose state says they support them; the switcher reports that support on `MvIn`. **APPLY** sends layout, swap, sources, and those toggles. **SAVE SALVO** keeps the multiview on this install. **SAVE MACRO** writes the same steps the Macro Desk can play, and Software Control XML.
 
 ## Per layer
 
@@ -44,7 +52,7 @@ One canvas per multiviewer. The four layout positions are Program top, Program b
 | SuperSource border | on, outer/inner width, softness, hue, saturation, luma, bevel, light direction and altitude | One border for every box on that SuperSource, not a border per box. |
 | Upstream key | type (luma, chroma, pattern, DVE), fill, key (luma only), the type's settings, mask, on air | A drop places it. On air is separate unless LIVE is on. DVE, or a key with Fly on, is a sized window. |
 | Downstream key | fill, key, clip, gain, invert, mask, rate, tie, on air | No picture position. It keys over the program output. Drop it on M/E 1. |
-| DVE / fly key | x, y, size x, size y, rotation, border, shadow, light, DVE mask, rate | Uses one of the model's DVEs. |
+| DVE / fly key | x, y, size x, size y, rotation, border, shadow, light, DVE mask, rate | Uses one of the model's DVEs. A new key starts at 0,0 and 0.5×0.5. Tab order is X, Y, X size, Y size, rotation. |
 
 Luma, chroma, and pattern keys stay in the layer list with their settings. They fill the frame, so they are not draggable boxes. Pattern position is the pattern generator, not a picture-in-picture.
 

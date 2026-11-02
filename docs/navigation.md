@@ -1,11 +1,17 @@
-# Navigation (0.20.1)
+# Navigation
 
-The app has two rows of tabs under the header.
+The app has two rows of tabs under the header. They are short on purpose: one system row, then at most one page row. Nothing else stacks under them.
+
+## Header
+
+Next to the Performance Video mark and **CONTROL CENTER** is the connection pill for the system you have open: model, software version, address, and **MOCK** when that system is the simulator. It does not repeat the tab name. The old chip that only said **ATEM** (or RS6, PTZ, …) is gone. The tab you are on already says which system that is, and the light on that tab is online / offline / degraded.
+
+**SHOW** is the show file. **APP LINK** is this browser's connection to the app, which is separate from the switcher.
 
 ## Row 1: home, system groups, and Scopes
 
 ```
-[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [SCOPES] [Control Devices]
+[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [SCOPES] [CUES] [PRESETS] [Control Devices]
 ```
 
 * **⌂ SYSTEMS** is always first. It is the home page: a palette of every system type on the left, and one card per instance on the desk.
@@ -37,7 +43,7 @@ Only the pages of the selected group are shown, always in the same order:
 |---|---|
 | RS6 | PRESETS · INPUTS · BACKUP · AUDIO · WEB RCS |
 | E2 / PIXELHUE | (E2 \| PIXELHUE focus) · PRESETS · CUES · SOURCES · STILLS · BACKUP |
-| ATEM | SWITCHER · ROUTER · AUDIO · DVE / SS / KEYS · LAYOUT · MACROS |
+| ATEM | SWITCHER · ROUTER · AUDIO · DVE / SS / KEYS · LAYOUT · MULTIVIEW · MACROS |
 | PTZ | CAMERA CONTROL · CAMERAS · SCOPES (shortcut into the top-row SCOPES pane) |
 | PIXERA | TIMELINES · CUES |
 | MILLUMIN | COLUMNS · LAYER |
@@ -46,7 +52,9 @@ Only the pages of the selected group are shown, always in the same order:
 one-line hint (modes, and that live video is Desktop Video from a Mac sidecar). **Control Devices** is the same:
 the top-row button opens the pane, and the second row is a one-line hint.
 
-**LAYOUT** is the M/E, SuperSource, and multiview picture: properties on the left, every canvas in the middle, resources on the right. DVE / SS / KEYS stays the full key and DSK panel. See [atem-layout.md](atem-layout.md).
+**LAYOUT** is the M/E and SuperSource picture: resources on the left, canvases in the middle, properties on the right. **MULTIVIEW** is its own page. DVE / SS / KEYS stays the full key and DSK panel. See [atem-layout.md](atem-layout.md).
+
+**ROUTER** is a destination list, like Videohub Control. Each output shows the source on it now. Tap the output and pick a source. Multiview windows are not on this list. See [router.md](router.md).
 
 A page that the connected system does not support is not shown (for example, PixelHue has no CUES).
 On the SYSTEMS page this row shows a short hint instead of tabs.

@@ -1,8 +1,9 @@
 'use strict';
-// 0.10.0 Blackmagic ATEM: ROUTER (every routable output with its live source; tap one for a dialog of the sources it
-// takes), AUDIO (classic and Fairlight mixer strips, master, monitor / headphones, Fairlight audio routing incl. MADI),
+// Blackmagic ATEM: ROUTER (Videohub-style: pick an output, a popover lists sources, SHIFT pages the bank),
+// AUDIO (classic and Fairlight mixer strips, master, monitor / headphones, Fairlight audio routing incl. MADI),
 // DVE / SS / KEYS (upstream keys per M/E, downstream keys, SuperSource boxes with a 16:9 preview and layouts) and the
 // simulator model picker. State comes from public/sys.js (window.CCSYS); actions are POST /api/sys/atem/cmd/<name>.
+// Multiview windows are not on this panel. Route those on the MULTIVIEW page.
 (() => {
   const atemBase = () => `/api/sys/${(window.CCSYS && window.CCSYS.atemTarget && window.CCSYS.atemTarget()) || 'atem'}`;
   const $ = (s) => document.querySelector(s);
@@ -18,7 +19,6 @@
   const nmH = (long, short) => `<span class="nm-l">${esc(long || short || '—')}</span><span class="nm-s">${esc(short || long || '—')}</span>`;
   const ls = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } };
   const save = (k, v) => localStorage.setItem(k, JSON.stringify(v));
-  const KIND_LABEL = { input: 'INPUTS', direct: 'DIRECT', internal: 'BLACK / BARS / COLOR', media: 'MEDIA', supersource: 'SUPERSOURCE', cleanfeed: 'CLEAN FEED', me: 'M/E OUT', aux: 'AUX', mv: 'MULTIVIEW', mask: 'KEY MASKS', other: 'OTHER' };
   const off = (msg) => `<div class="note">${msg || 'Not connected · put an ATEM (or its simulator) on the desk on ⌂ SYSTEMS.'}</div>`;
   // re-render a pane only when no control in it is being used (a slider being dragged, a number being typed)
   let holding = false;
@@ -51,117 +51,127 @@
   });
   document.addEventListener('click', (e) => { if (e.target.closest('[data-simmodel]')) pickModel(); });
 
-  // ---------- ROUTER ----------
-  let arGroup = ls('cc.arGroup', 'all'); let dlgOut = null; let arKind = 'all'; let arQ = '';
+  // ---------- ROUTER (Videohub Control) ----------
+  // One row per output: the name, and the source it has now. Tap the row and a popover lists sources.
+  // Sixteen source buttons show at a time. SHIFT pages the rest, the way a hardware panel does.
+  // Multiview windows are left off this panel (LAYOUT owns them). No ALL / INPUTS / MEDIA filters.
+  const SRC_PAGE = 16;
+  let popOut = null; let arQ = ''; let arPage = 0; let arTab = 'src';
   const accepts = (o) => (x) => (o.accepts === 'aux' ? x.sa & 1 : o.accepts === 'mv' ? x.sa & 2 : o.accepts.startsWith('me:') ? x.ma & (1 << Number(o.accepts.slice(3))) : false);
+  const routableOuts = () => (V.outputs || []).filter((o) => o.group !== 'mv');
+  const closePop = () => { popOut = null; const p = $('#arPop'); if (p) p.hidden = true; };
   function renderRouter() {
-    const el = $('#arGroups');
+    const el = $('#arDest');
     $('.atem-simmodel').hidden = !(V.connection && (V.connection.simulator || V.connection.mock));
-    $('#arPalette').hidden = !live();
-    if (!live()) { S.set(el, 'ar', off()); S.set($('#arFilter'), 'arf', ''); return; }
-    const outs = V.outputs || [];
-    $('#arInfo').textContent = `${V.profile ? V.profile.name : V.product} · ${outs.filter((o) => o.group === 'aux').length} aux / SDI · ${(V.multiviewers || []).length} multiview · drag a source onto an output, or tap an output to pick its source`;
-    const groups = [['all', 'ALL'], ['aux', 'AUX / SDI'], ['mv', 'MULTIVIEW']].filter(([g]) => g === 'all' || outs.some((o) => o.group === g));
-    if (!groups.some(([g]) => g === arGroup)) arGroup = 'all';
-    S.set($('#arFilter'), 'arf', groups.map(([g, l]) => `<button type="button" class="mode ${arGroup === g ? 'active' : ''}" data-argroup="${g}">${l}</button>`).join(''));
-    const sec = (title, list) => (list.length ? `<div class="section-title">${title}</div><div class="ar-grid">${list.map((o) => `
-      <button type="button" class="ar-out ${o.group} ${o.routable === false ? 'fixed' : ''}" data-out="${esc(o.key)}" title="${esc(o.label)}: ${esc(o.sourceName || '—')}">
-        <span class="ar-lbl">${esc(o.label)}</span><b>${nmH(o.sourceName, o.sourceShort)}</b>${o.routable === false ? '<span class="chip">FIXED</span>' : ''}</button>`).join('')}</div>` : '');
-    const want = (g) => arGroup === 'all' || arGroup === g;
-    let h = '';
-    if (want('aux')) h += sec('AUX / SDI OUTPUTS', outs.filter((o) => o.group === 'aux'));
-    if (want('mv')) for (const mv of V.multiviewers || []) h += sec(`MULTIVIEW ${(V.multiviewers || []).length > 1 ? mv.index + 1 : ''} <small>${mv.windows.length} windows</small>`, outs.filter((o) => o.group === 'mv' && o.mv === mv.index));
-    S.set(el, 'ar', h || off('This ATEM reports no routable outputs.'));
-    renderPalette(); markTargets();
-    if (dlgOut && $('#dlgAtemRoute').open) renderRouteDialog();
+    if (!live()) { closePop(); S.set(el, 'ar', off()); $('#arInfo').textContent = ''; return; }
+    const outs = routableOuts();
+    $('#arInfo').textContent = `${V.profile ? V.profile.name : V.product} · ${outs.length} outputs · pick an output, then a source`;
+    S.set(el, 'ar', outs.map((o) => `
+      <button type="button" class="ar-out vh-pick ${o.group} ${o.routable === false ? 'fixed' : ''} ${popOut === o.key ? 'open' : ''}" data-out="${esc(o.key)}" title="${esc(o.label)}: ${esc(o.sourceName || '—')}">
+        <span class="ar-lbl">${esc(o.label)}</span><b>${nmH(o.sourceName, o.sourceShort)}</b><i class="vh-caret" aria-hidden="true">▾</i>
+      </button>`).join('') || off('This ATEM reports no routable outputs.'));
+    if (popOut && !outs.some((o) => o.key === popOut)) closePop();
+    if (popOut) renderPop();
   }
-  function renderRouteDialog() {
-    const o = (V.outputs || []).find((x) => x.key === dlgOut); if (!o) { $('#dlgAtemRoute').close(); return; }
-    $('#arTitle').textContent = `Route to ${o.label}`;
-    $('#arNote').innerHTML = `Now: <b>${esc(o.sourceName || '—')}</b>${o.routable === false ? ' · this window is fixed on this model' : ''} · tap a source to route it`;
-    const valid0 = (V.sources || []).filter(accepts(o));
-    // 0.11.0: media player key signals and key masks only under ADVANCED
-    const advList = valid0.filter((x) => x.adv); const valid = valid0.filter((x) => !x.adv);
-    const kinds = [...new Set(valid.map((x) => x.kind))];
-    if (arKind !== 'all' && !kinds.includes(arKind)) arKind = 'all';
-    S.set($('#arKinds'), 'ark', [['all', `ALL ${valid.length}`], ...kinds.map((k) => [k, `${KIND_LABEL[k] || k.toUpperCase()} ${valid.filter((x) => x.kind === k).length}`])]
-      .map(([k, l]) => `<button type="button" class="mode ${arKind === k ? 'active' : ''}" data-kind="${k}">${esc(l)}</button>`).join(''));
+  function sourceBank(o) {
+    const pool = (V.sources || []).filter((x) => accepts(o)(x) && (arTab === 'adv' ? x.adv : !x.adv));
     const q = arQ.trim().toLowerCase();
-    const list = valid.filter((x) => (arKind === 'all' || x.kind === arKind) && (!q || `${x.long} ${x.short} ${x.id}`.toLowerCase().includes(q)));
-    const srcBtn = (x) => `<button type="button" class="src ${x.id === o.source ? 'on-aux current' : ''}" data-routesrc="${x.id}" draggable="false" title="${esc(x.long)} · ${esc(x.short)} (${x.id})"><b>${nmH(x.long, x.short)}</b></button>`;
-    S.set($('#arSources'), 'ars', list.map(srcBtn).join('') || '<div class="note">No matching source.</div>');
-    const advQ = advList.filter((x) => !q || `${x.long} ${x.short} ${x.id}`.toLowerCase().includes(q));
-    const ad = $('#arAdv'); ad.hidden = !advList.length; if (ad.open !== arAdvOpen) ad.open = arAdvOpen;
-    $('#arAdvSum').textContent = `ADVANCED · ${advList.length} key / mask sources${advList.some((x) => x.id === o.source) ? ' · current source is here' : ''}`;
-    S.set($('#arAdvList'), 'arad', advQ.map(srcBtn).join('') || '<div class="note small">No matching source.</div>');
+    return pool.filter((x) => !q || `${x.long} ${x.short} ${x.id}`.toLowerCase().includes(q));
   }
-  $('#arFilter').addEventListener('click', (e) => { const b = e.target.closest('[data-argroup]'); if (!b) return; arGroup = b.dataset.argroup; save('cc.arGroup', arGroup); renderRouter(); });
-  // 0.11.0 source palette: drag a source (or an output tile, to copy its source) onto an output; or tap a source to arm
-  // it and tap outputs to route it (Esc / tap it again to disarm). The click → dialog flow on an output still works.
-  let palKind = ls('cc.arPalKind', 'all'); let palAdv = !!ls('cc.arPalAdv', false); let armed = null; let dragSrc = null;
-  $('#arPalAdv').checked = palAdv;
-  const canRoute = (o, id) => { const x = src(id); return !!(o && x && o.routable !== false && accepts(o)(x)); };
-  function renderPalette() {
-    const all = (V.sources || []).filter((x) => (x.sa & 3) && (palAdv || !x.adv));
-    const kinds = [...new Set(all.map((x) => x.kind))]; if (palKind !== 'all' && !kinds.includes(palKind)) palKind = 'all';
-    S.set($('#arPalKinds'), 'arpk', [['all', 'ALL'], ...kinds.map((k) => [k, KIND_LABEL[k] || k.toUpperCase()])].map(([k, l]) => `<button type="button" class="mode mini ${palKind === k ? 'active' : ''}" data-palkind="${k}">${esc(l)}</button>`).join(''));
-    const q = ($('#arPalSearch').value || '').trim().toLowerCase();
-    const list = all.filter((x) => (palKind === 'all' || x.kind === palKind) && (!q || `${x.long} ${x.short} ${x.id}`.toLowerCase().includes(q)));
-    S.set($('#arPalList'), 'arpl', list.map((x) => `<button type="button" class="ar-chip ${x.adv ? 'adv' : ''} ${armed === x.id ? 'armed' : ''}" data-dragsrc="${x.id}" title="${esc(x.long)} · ${esc(x.short)} (${x.id}) · drag onto an output">${nmH(x.long, x.short)}</button>`).join('') || '<div class="note small">No matching source.</div>');
-    const ar = $('#arArmed'); ar.hidden = armed === null; if (armed !== null) ar.innerHTML = `<b>${esc(sname(armed))}</b> armed · tap outputs to route it · <button type="button" class="btn mini" data-disarm>DONE</button>`;
+  function renderPop() {
+    const o = routableOuts().find((x) => x.key === popOut);
+    const pop = $('#arPop');
+    if (!o) { closePop(); return; }
+    pop.hidden = false;
+    $('#arPopTitle').textContent = o.label;
+    $('#arPopNow').innerHTML = `Now <b>${esc(o.sourceName || '—')}</b>`;
+    const search = $('#arSearch');
+    if (document.activeElement !== search && search.value !== arQ) search.value = arQ;
+    pop.querySelectorAll('[data-artab]').forEach((b) => b.classList.toggle('on', b.dataset.artab === arTab));
+    const list = sourceBank(o);
+    const pages = Math.max(1, Math.ceil(list.length / SRC_PAGE));
+    if (arPage >= pages) arPage = pages - 1;
+    if (arPage < 0) arPage = 0;
+    const slice = list.slice(arPage * SRC_PAGE, arPage * SRC_PAGE + SRC_PAGE);
+    const srcBtn = (x) => `<button type="button" class="src ${x.id === o.source ? 'current' : ''}" data-routesrc="${x.id}" title="${esc(x.long)} · ${esc(x.short)} (${x.id})"><b>${nmH(x.long, x.short)}</b></button>`;
+    S.set($('#arSources'), 'ars', slice.map(srcBtn).join('') || '<div class="note">No matching source.</div>');
+    const shift = $('#arShift');
+    shift.disabled = pages < 2;
+    shift.classList.toggle('on', pages > 1 && arPage > 0);
+    $('#arPage').textContent = pages < 2 ? `${list.length} source${list.length === 1 ? '' : 's'}` : `PAGE ${arPage + 1} / ${pages}`;
+    placePop();
   }
-  function markTargets() {
-    const id = dragSrc !== null ? dragSrc : armed;
-    document.querySelectorAll('#arGroups .ar-out[data-out]').forEach((b) => {
-      const o = id === null ? null : V.outputs.find((x) => x.key === b.dataset.out);
-      b.classList.toggle('drop-ok', id !== null && canRoute(o, id)); b.classList.toggle('drop-no', id !== null && !canRoute(o, id));
-    });
+  function placePop() {
+    const pop = $('#arPop');
+    const btn = popOut ? document.querySelector(`#arDest .ar-out[data-out="${CSS.escape(popOut)}"]`) : null;
+    if (!btn || pop.hidden) return;
+    const r = btn.getBoundingClientRect();
+    const margin = 8;
+    const w = pop.offsetWidth || 520;
+    const h = pop.offsetHeight || 420;
+    let left = Math.min(Math.max(margin, r.left), window.innerWidth - w - margin);
+    let top = r.bottom + 4;
+    if (top + h > window.innerHeight - margin) top = Math.max(margin, r.top - h - 4);
+    pop.style.left = `${Math.round(left)}px`;
+    pop.style.top = `${Math.round(top)}px`;
   }
-  const routeTo = (key, id) => {
-    const o = V.outputs.find((x) => x.key === key); if (!canRoute(o, id)) { toast(`${o ? o.label : 'That output'} can't take ${sname(id)}`, true); return; }
-    if (o.source === id) return;
-    cmd('route', { output: key, source: id }).then(() => toast(`${o.label} ← ${sname(id)}`));
-  };
-  $('#arPalSearch').addEventListener('input', () => renderPalette());
-  $('#arPalAdv').addEventListener('change', () => { palAdv = $('#arPalAdv').checked; save('cc.arPalAdv', palAdv); renderPalette(); });
-  $('#arPalette').addEventListener('click', (e) => {
-    const k = e.target.closest('[data-palkind]'); if (k) { palKind = k.dataset.palkind; save('cc.arPalKind', palKind); return renderPalette(); }
-    if (e.target.closest('[data-disarm]')) { armed = null; renderPalette(); return markTargets(); }
-    const c = e.target.closest('[data-dragsrc]'); if (!c) return undefined;
-    const id = Number(c.dataset.dragsrc); armed = armed === id ? null : id; renderPalette(); return markTargets();
-  });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && armed !== null && tab === 'arouter' && !document.querySelector('dialog[open]')) { armed = null; renderPalette(); markTargets(); } });
-  const dragOpts = {
-    start: (el) => {
-      if (!live()) return null;
-      if (el.dataset.dragsrc) return Number(el.dataset.dragsrc);
-      const o = V.outputs.find((x) => x.key === el.dataset.out); return o && Number.isFinite(o.source) ? o.source : null;
-    },
-    target: (under) => { const b = under.closest('#arGroups .ar-out[data-out]'); return b && b.classList.contains('drop-ok') ? b : null; },
-    drop: (b, id) => routeTo(b.dataset.out, id),
-    begin: (id) => { dragSrc = id; markTargets(); },
-    end: () => { dragSrc = null; markTargets(); },
-    ghost: (el, id) => `→ ${esc(sname(id))}`,
-  };
-  window.CCDRAG.attach($('#arPalette'), { ...dragOpts, handle: '[data-dragsrc]' });
-  window.CCDRAG.attach($('#arGroups'), { ...dragOpts, handle: '.ar-out[data-out]' });
-  $('#arGroups').addEventListener('click', (e) => {
+  function openPop(key) {
+    const o = routableOuts().find((x) => x.key === key);
+    if (!o) return;
+    if (o.routable === false) return toast(`${o.label} is fixed on this model`, true);
+    if (popOut === key && !$('#arPop').hidden) { closePop(); renderRouter(); return; }
+    popOut = key; arQ = ''; arPage = 0; arTab = 'src';
+    const normal = (V.sources || []).filter((x) => accepts(o)(x) && !x.adv);
+    const idx = normal.findIndex((x) => x.id === o.source);
+    if (idx >= 0) arPage = Math.floor(idx / SRC_PAGE);
+    else {
+      const adv = (V.sources || []).filter((x) => accepts(o)(x) && x.adv);
+      const i2 = adv.findIndex((x) => x.id === o.source);
+      if (i2 >= 0) { arTab = 'adv'; arPage = Math.floor(i2 / SRC_PAGE); }
+    }
+    renderRouter();
+    const search = $('#arSearch'); if (search) search.focus();
+  }
+  $('#arDest').addEventListener('click', (e) => {
     const b = e.target.closest('[data-out]'); if (!b || !live()) return;
-    const o = V.outputs.find((x) => x.key === b.dataset.out); if (o && o.routable === false) return toast(`${o.label} is fixed on this model`, true);
-    if (armed !== null) return routeTo(o.key, armed);
-    dlgOut = b.dataset.out; arKind = 'all'; arQ = ''; $('#arSearch').value = ''; renderRouteDialog(); $('#dlgAtemRoute').showModal(); $('#arSearch').focus();
+    openPop(b.dataset.out);
   });
-  $('#arKinds').addEventListener('click', (e) => { const b = e.target.closest('[data-kind]'); if (!b) return; arKind = b.dataset.kind; renderRouteDialog(); });
-  $('#arSearch').addEventListener('input', () => { arQ = $('#arSearch').value; renderRouteDialog(); });
-  $('#arSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const f = $('#arSources [data-routesrc]'); if (f) f.click(); } });
-  let arAdvOpen = !!ls('cc.arAdv', false);
-  $('#arAdv').addEventListener('toggle', () => { arAdvOpen = $('#arAdv').open; save('cc.arAdv', arAdvOpen); });
-  const pickSrc = (e) => {
+  $('#arPop').addEventListener('click', (e) => {
+    if (e.target.closest('[data-arclose]')) { closePop(); renderRouter(); return; }
+    const tabBtn = e.target.closest('[data-artab]');
+    if (tabBtn) { arTab = tabBtn.dataset.artab; arPage = 0; renderPop(); return; }
+    if (e.target.closest('#arShift')) {
+      const o = routableOuts().find((x) => x.key === popOut); if (!o) return;
+      const pages = Math.max(1, Math.ceil(sourceBank(o).length / SRC_PAGE));
+      if (pages < 2) return;
+      arPage = (arPage + 1) % pages;
+      renderPop();
+      return;
+    }
     const b = e.target.closest('[data-routesrc]'); if (!b || !live()) return;
-    const o = V.outputs.find((x) => x.key === dlgOut);
-    cmd('route', { output: dlgOut, source: Number(b.dataset.routesrc) }).then(() => { $('#dlgAtemRoute').close(); toast(`${o ? o.label : 'Output'} ← ${sname(Number(b.dataset.routesrc))}`); });
-  };
-  $('#arSources').addEventListener('click', pickSrc); $('#arAdvList').addEventListener('click', pickSrc);
+    const id = Number(b.dataset.routesrc);
+    const o = routableOuts().find((x) => x.key === popOut); if (!o) return;
+    const label = o.label;
+    if (o.source === id) { closePop(); renderRouter(); return; }
+    api('POST', '/api/sys/atem/cmd/route', { output: popOut, source: id }).then(() => {
+      closePop(); toast(`${label} ← ${sname(id)}`);
+    }).catch((err) => toast(err.message, true));
+  });
+  $('#arSearch').addEventListener('input', () => { arQ = $('#arSearch').value; arPage = 0; if (popOut) renderPop(); });
+  $('#arSearch').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); const f = $('#arSources [data-routesrc]'); if (f) f.click(); }
+    if (e.key === 'Escape') { closePop(); renderRouter(); }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && popOut && tab === 'arouter' && document.activeElement !== $('#arSearch')) { closePop(); renderRouter(); }
+  });
+  document.addEventListener('pointerdown', (e) => {
+    if (!popOut || tab !== 'arouter') return;
+    if (e.target.closest('#arPop') || e.target.closest('#arDest [data-out]')) return;
+    closePop(); renderRouter();
+  }, true);
+  window.addEventListener('resize', () => { if (popOut) placePop(); });
+  document.addEventListener('scroll', () => { if (popOut) placePop(); }, true);
 
   // ---------- AUDIO ----------
   let auKind = ls('cc.auKind', 'all');

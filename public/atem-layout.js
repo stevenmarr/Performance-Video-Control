@@ -18,7 +18,9 @@
   const saveLs = (k, v) => localStorage.setItem(k, JSON.stringify(v));
   let layTab = ls('cc.layTab', 'me'); if (!['me', 'ss', 'mv'].includes(layTab)) layTab = 'me';
   let meVis = ls('cc.layMeVis', {}); if (!meVis || typeof meVis !== 'object') meVis = {};
-  let grids = ls('cc.layGrid', { thirds: true, center: true, safe: true });
+  let meGuides = ls('cc.layMeGuides', {});
+  const quadMode = {};
+  const quadSplit = {};
   let aspect = ls('cc.layAspect', true) !== false;
   let liveSend = ls('cc.layLive', true) !== false;
   let sel = ls('cc.laySel', '');
@@ -107,6 +109,25 @@
     smallIdx.forEach((idx, i) => { rects[idx] = cells[i]; });
     return rects;
   }
+  function mvQuadRects(quads) {
+    const flags = [0, 1, 2, 3].map((i) => (quads && quads[i]) ? 1 : 0);
+    const rects = Array.from({ length: 16 }, () => null);
+    const origin = [{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 0, y: 50 }, { x: 50, y: 50 }];
+    flags.forEach((split, qi) => {
+      const box = origin[qi]; const base = qi * 4;
+      if (!split) rects[base] = { left: box.x, top: box.y, width: 50, height: 50, quadrant: qi };
+      else for (let k = 0; k < 4; k++) {
+        const c = k % 2; const r = Math.floor(k / 2);
+        rects[base + k] = { left: box.x + c * 25, top: box.y + r * 25, width: 25, height: 25, quadrant: qi };
+      }
+    });
+    return rects;
+  }
+  function guidesFor(key) {
+    const g = meGuides[String(key)];
+    if (g) return { thirds: !!g.thirds, center: !!g.center, safe: !!g.safe };
+    return { thirds: true, center: true, safe: true };
+  }
 
   const busy = () => { const a = document.activeElement; const pane = $('#pane-alayout'); return !!(a && pane && pane.contains(a) && /INPUT|SELECT|TEXTAREA/.test(a.tagName) && a.type !== 'checkbox' && !['layName', 'laySlot', 'layFly', 'layFlyFrom', 'layTarget'].includes(a.id)); };
   function num(label, value, scale, step, min, max, k, part, extra) {
@@ -153,16 +174,22 @@
   function styleOf(r) { return `left:${r.left}%;top:${r.top}%;width:${Math.max(r.width, 0)}%;height:${Math.max(r.height, 0)}%`; }
   function zStyle(id, base) { return base + (zTop[id] || 0) * 30 + (sel === id ? 8 : 0); }
   function handles() { return ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'].map((h) => `<i data-h="${h}" class="${h}"></i>`).join(''); }
-  function gridHtml() {
-    const g = grids;
+  function gridHtml(key) {
+    const g = guidesFor(key);
     const thirds = g.thirds ? '<div class="lay-grid thirds"><i class="v" style="left:33.333%"></i><i class="v" style="left:66.666%"></i><i class="h" style="top:33.333%"></i><i class="h" style="top:66.666%"></i></div>' : '';
     const center = g.center ? '<div class="lay-grid center"><i class="v"></i><i class="h"></i></div>' : '';
-    const safe = g.safe ? '<div class="lay-safe" style="left:5%;top:5%;width:90%;height:90%"><span>ACTION</span></div><div class="lay-safe title" style="left:10%;top:10%;width:80%;height:80%"><span>TITLE</span></div>' : '';
+    const safe = g.safe ? '<div class="lay-safe" style="left:3.5%;top:3.5%;width:93%;height:93%"><span>ACTION 93%</span></div><div class="lay-safe title" style="left:5%;top:5%;width:90%;height:90%"><span>TITLE 90%</span></div>' : '';
     return thirds + center + safe;
+  }
+  function guideButtons(key) {
+    const g = guidesFor(key);
+    return `<span class="lay-guides">${[['thirds', 'THIRDS'], ['center', 'CENTER'], ['safe', 'SAFE']].map(([name, label]) => `<button type="button" class="mode mini ${g[name] ? 'active' : ''}" data-guide="${name}" data-guidekey="${key}" title="${name === 'safe' ? 'Safe action 93% and safe title 90% (SMPTE ST 2046-1)' : name === 'thirds' ? 'Rule-of-thirds grid' : 'Center cross'}">${label}</button>`).join('')}</span>`;
   }
 
   function render() {
-    const pane = $('#pane-alayout'); if (!pane || tab !== 'alayout') return;
+    const pane = $('#pane-alayout'); if (!pane || (tab !== 'alayout' && tab !== 'amv')) return;
+    if (tab === 'amv') layTab = 'mv';
+    else if (layTab === 'mv') layTab = 'me';
     if (busy() || holding || drag || (window.CCDRAG && window.CCDRAG.active())) return;
     document.querySelectorAll('#layTabs [data-laytab]').forEach((b) => b.classList.toggle('active', b.dataset.laytab === layTab));
     const info = $('#layInfo');
@@ -184,17 +211,16 @@
   }
   function shell() {
     const tools = `<div class="lay-tools">
-      ${layTab === 'me' ? visHtml() : ''}
-      ${layTab !== 'mv' ? `<button type="button" class="mode mini ${grids.thirds ? 'active' : ''}" data-laygrid="thirds">THIRDS</button>
-      <button type="button" class="mode mini ${grids.center ? 'active' : ''}" data-laygrid="center">CENTER</button>
-      <button type="button" class="mode mini ${grids.safe ? 'active' : ''}" data-laygrid="safe">SAFE</button>` : ''}
-      ${layTab === 'me' ? `<button type="button" class="mode mini ${aspect ? 'active' : ''}" data-layaspect="${aspect ? 0 : 1}">ASPECT</button>` : ''}
-      <button type="button" class="mode mini ${liveSend ? 'active' : ''}" data-laylive="${liveSend ? 0 : 1}">${liveSend ? 'LIVE' : 'HOLD'}</button>
+      ${layTab === 'me' ? `<button type="button" class="mode mini ${aspect ? 'active' : ''}" data-layaspect="${aspect ? 0 : 1}" title="ASPECT locks a DVE key's width and height together while you drag, so the picture keeps its shape. SuperSource boxes always use one size. Turn this off to stretch a DVE key.">ASPECT</button>` : ''}
+      <button type="button" class="mode mini ${liveSend ? 'active' : ''}" data-laylive="${liveSend ? 0 : 1}" title="HOLD keeps each drop and each number on this page until APPLY. Nothing is sent, and a drop stays off air. LIVE sends the change as you finish it, and a drop also puts that key on air.">${liveSend ? 'LIVE' : 'HOLD'}</button>
       ${dirty ? '<span class="chip">UNSENT</span>' : ''}
     </div>`;
-    return `<div class="lay"><aside class="lay-props panel"><div class="section-title">PROPERTIES</div>${propsHtml()}</aside>
+    const vis = $('#layVis');
+    if (vis) { vis.hidden = layTab !== 'me'; vis.innerHTML = layTab === 'me' ? visHtml() : ''; }
+    const tabs = $('#layTabs'); if (tabs) tabs.hidden = tab === 'amv';
+    return `<div class="lay"><aside class="lay-res panel">${resHtml()}</aside>
       <div class="lay-stage">${tools}<div class="lay-canvases ${gridClass()}">${canvases()}</div>${noteHtml()}</div>
-      <aside class="lay-res panel">${resHtml()}</aside></div>`;
+      <aside class="lay-props panel"><div class="section-title">PROPERTIES</div>${propsHtml()}</aside></div>`;
   }
   function gridClass() {
     if (layTab === 'mv') { const n = (mvDoc || []).length; return `n${Math.min(4, Math.max(1, n))}`; }
@@ -207,8 +233,8 @@
   }
   function noteHtml() {
     if (layTab === 'mv') return '<p class="note small">Click a window, then pick its source. Layout and program/preview swap are per multiviewer. Safe area and VU appear on windows that support them. APPLY sends this multiview. SAVE SALVO keeps it here; SAVE MACRO writes a macro.</p>';
-    if (layTab === 'ss') return '<p class="note small">Drag a box onto its SuperSource. Size stays 16:9. The border is one border for every box on that SuperSource. A placed box is checked on the right; right-click it to delete.</p>';
-    return `<p class="note small">Drag a key onto its own M/E, or a DSK onto M/E 1. A drop places it. It goes on air only while LIVE is on. LIVE also sends position and size. ${hasDve() ? 'DVE keys snap to the guides. ASPECT keeps the shape.' : 'This model has no DVE, so a placed key fills the frame.'} Hide an M/E with its button; the rest reflow.</p>`;
+    if (layTab === 'ss') return '<p class="note small">Drag a box from the left onto its SuperSource. Size stays 16:9. The border is one border for every box on that SuperSource. A placed box is checked in the list; right-click it to delete.</p>';
+    return `<p class="note small">Drag a key from the left onto its own M/E, or a DSK onto M/E 1. A new DVE key starts at position 0, 0 and size 0.5 by 0.5. It goes on air only while LIVE is on. ${hasDve() ? 'ASPECT keeps a DVE key\'s shape while you drag. HOLD waits for APPLY.' : 'This model has no DVE, so a placed key fills the frame.'} Show or hide each M/E with the buttons at the top.</p>`;
   }
   function canvases() {
     if (layTab === 'mv') return mvCanvases();
@@ -227,9 +253,9 @@
         const id = `dsk:${d.index}`; const color = DSK_COLORS[d.index % DSK_COLORS.length];
         return `<div class="lay-dsk ${sel === id ? 'sel' : ''}" data-layer="${id}" style="bottom:${8 + i * 26}px;border-color:${color};color:${color}"><b>DSK ${d.index + 1}</b><span>${esc(sname(d.fill))}${d.onAir ? ' · ON AIR' : ''}</span></div>`;
       }).join('') : '';
-      const empty = !keys && !dsks ? '<div class="lay-empty">Drag a key from the right onto this M/E</div>' : '';
+      const empty = !keys && !dsks ? '<div class="lay-empty">Drag a key from the left onto this M/E</div>' : '';
       const used = (m.keys || []).filter(keyPlaced).length;
-      return `<div class="lay-card"><div class="lay-cap"><b>M/E ${m.me + 1}</b><span>${used} of ${(m.keys || []).length} keys</span></div><div class="lay-raster" data-layraster="me:${m.me}">${gridHtml()}${keys}${dsks}${empty}</div></div>`;
+      return `<div class="lay-card"><div class="lay-cap"><b>M/E ${m.me + 1}</b>${guideButtons(m.me)}<span>${used} of ${(m.keys || []).length} keys</span></div><div class="lay-raster" data-layraster="me:${m.me}">${gridHtml(m.me)}${keys}${dsks}${empty}</div></div>`;
     }).join('');
   }
   function ssCanvases() {
@@ -245,22 +271,32 @@
       }).join('');
       const empty = !boxes ? '<div class="lay-empty">Drag a box from the right onto this SuperSource</div>' : '';
       const used = (s.boxes || []).filter(boxPlaced).length;
-      return `<div class="lay-card"><div class="lay-cap"><b>SUPERSOURCE ${s.ss + 1}</b><span>${used} of ${(s.boxes || []).length} boxes</span></div><div class="lay-raster ${art && art.artOption === 1 ? 'art-fg' : ''}" data-layraster="ss:${s.ss}">${gridHtml()}${artEl}${boxes}${empty}</div></div>`;
+      return `<div class="lay-card"><div class="lay-cap"><b>SUPERSOURCE ${s.ss + 1}</b><span>${used} of ${(s.boxes || []).length} boxes</span></div><div class="lay-raster ${art && art.artOption === 1 ? 'art-fg' : ''}" data-layraster="ss:${s.ss}">${gridHtml('ss-' + s.ss)}${artEl}${boxes}${empty}</div></div>`;
     }).join('');
   }
   function mvCanvases() {
     const list = mvDoc || [];
     if (!list.length) return '<div class="note">This model has no multiview.</div>';
     return list.map((mv) => {
-      const rects = mvRects((mv.windows || []).length, mv.layout, mv.swapped);
+      const count = (mv.windows || []).length;
+      const quad = !!(quadMode[mv.index] && count >= 16);
+      const splits = quadSplit[mv.index] || [1, 1, 1, 1];
+      const rects = quad ? mvQuadRects(splits) : mvRects(count, mv.layout, mv.swapped);
       const wins = (mv.windows || []).map((w) => {
         const r = rects[w.index]; if (!r) return '';
         const id = `mv:${mv.index}:${w.index}`;
         const badges = `${w.vu ? '<i>VU</i>' : ''}${w.safeArea ? '<i>SAFE</i>' : ''}`;
-        return `<div class="mv-win ${w.routable ? '' : 'fixed'} ${sel === id ? 'sel' : ''}" data-layer="${id}" style="${styleOf(r)}"><span class="badges">${badges}</span><b>${w.index + 1}${w.index < 2 ? (mv.swapped ? (w.index === 0 ? ' PGM' : ' PVW') : (w.index === 0 ? ' PVW' : ' PGM')) : ''}</b><span>${esc(sname(w.source))}</span>${w.safeArea ? '<i class="mv-safe"></i>' : ''}</div>`;
+        const quadAttr = r.quadrant == null ? '' : ` data-quad="${r.quadrant}" data-mv="${mv.index}"`;
+        return `<div class="mv-win ${w.routable ? '' : 'fixed'} ${sel === id ? 'sel' : ''}" data-layer="${id}"${quadAttr} style="${styleOf(r)}"><span class="badges">${badges}</span><b>${w.index + 1}${w.index < 2 && !quad ? (mv.swapped ? (w.index === 0 ? ' PGM' : ' PVW') : (w.index === 0 ? ' PVW' : ' PGM')) : ''}</b><span>${esc(sname(w.source))}</span>${w.safeArea ? '<i class="mv-safe"></i>' : ''}</div>`;
       }).join('');
-      const layName = MV_NAMES[mv.layout] || `Layout ${mv.layout}`;
-      return `<div class="lay-card"><div class="lay-cap"><b>MULTIVIEW ${mv.index + 1}</b><span>${esc(layName)}${mv.swapped ? ' · swapped' : ''}</span></div><div class="lay-raster" data-layraster="mv:${mv.index}">${wins}</div></div>`;
+      const zones = quad ? [0, 1, 2, 3].map((i) => {
+        const origin = [{ x: 0, y: 0 }, { x: 50, y: 0 }, { x: 0, y: 50 }, { x: 50, y: 50 }][i];
+        return `<div class="mv-quad" data-quad="${i}" data-mv="${mv.index}" style="left:${origin.x}%;top:${origin.y}%;width:50%;height:50%"></div>`;
+      }).join('') : '';
+      const layName = quad ? (splits.every((n) => n) ? '16-up' : splits.every((n) => !n) ? '4-up' : 'Quadrant mix') : (MV_NAMES[mv.layout] || `Layout ${mv.layout}`);
+      const orient = MV_NAMES.map((n, i) => `<button type="button" class="mode mini ${!quad && mv.layout === i ? 'active' : ''}" data-mvlay="${i}" data-mv="${mv.index}">${n.toUpperCase()}</button>`).join('');
+      const quads = count >= 16 ? `<span class="lay-res-h">QUADRANT SPLIT</span><button type="button" class="mode mini ${quad && splits.every((n) => n) ? 'active' : ''}" data-mvpreset="16" data-mv="${mv.index}">16-UP</button><button type="button" class="mode mini ${quad && splits.every((n) => !n) ? 'active' : ''}" data-mvpreset="4" data-mv="${mv.index}">4-UP</button><p class="note small">Right-click a quadrant to switch that corner between one window and four.</p>` : '<p class="note small">This multiview uses the classic program and preview layout. A 16-window multiview can split each quadrant.</p>';
+      return `<div class="lay-card"><div class="mv-pick"><span class="lay-res-h">ORIENTATION</span><span class="seg-row">${orient}</span>${quads}</div><div class="lay-cap"><b>MULTIVIEW ${mv.index + 1}</b><span>${esc(layName)}${!quad && mv.swapped ? ' · swapped' : ''}</span></div><div class="lay-raster" data-layraster="mv:${mv.index}">${zones}${wins}</div></div>`;
     }).join('');
   }
 
@@ -272,22 +308,22 @@
     if (layTab === 'ss') {
       const list = doc.superSources || [];
       if (!list.length) return '<div class="section-title">BOXES</div><p class="note small">This model has no SuperSource.</p>';
-      return `<div class="section-title">BOXES <small>drag onto that SuperSource</small></div>` + list.map((s) => `<div class="lay-res-h">SUPERSOURCE ${s.ss + 1}</div>` + (s.boxes || []).map((b) => resItem({
+      return `<div class="lay-group"><div class="section-title">SUPERSOURCE BOXES <small>drag onto that SuperSource</small></div>` + list.map((s) => `<div class="lay-res-h">SUPERSOURCE ${s.ss + 1}</div>` + (s.boxes || []).map((b) => resItem({
         id: `box:${s.ss}:${b.index}`, kind: 'box', ss: s.ss, index: b.index, title: `BOX ${b.index + 1}`,
         sub: boxPlaced(b) ? sname(b.source) : 'available', used: boxPlaced(b), color: BOX_COLORS[b.index % BOX_COLORS.length], label: `SS ${s.ss + 1} box ${b.index + 1}`,
-      })).join('')).join('');
+      })).join('')).join('') + '</div>';
     }
     const mes = doc.mes || [];
     const dsks = doc.dsks || [];
-    return `<div class="section-title">KEYS <small>drag onto that M/E</small></div>` + mes.map((m) => `<div class="lay-res-h">M/E ${m.me + 1}</div>` + (m.keys || []).map((k) => resItem({
+    return `<div class="lay-group"><div class="section-title">KEYS <small>drag onto that M/E</small></div>` + mes.map((m) => `<div class="lay-res-h">M/E ${m.me + 1}</div>` + (m.keys || []).map((k) => resItem({
       id: `key:${m.me}:${k.index}`, kind: 'key', me: m.me, index: k.index, title: `KEY ${k.index + 1}`,
       sub: keyPlaced(k) ? `${k.type.toUpperCase()}${k.onAir ? ' · ON AIR' : ''} · ${sname(k.fill)}` : 'available',
       used: keyPlaced(k), color: KEY_COLORS[k.index % KEY_COLORS.length], label: `M/E ${m.me + 1} key ${k.index + 1}`,
-    })).join('')).join('') + (dsks.length ? `<div class="lay-res-h">DOWNSTREAM</div>` + dsks.map((d) => resItem({
+    })).join('')).join('') + `</div>` + (dsks.length ? `<div class="lay-group"><div class="section-title">DOWNSTREAM KEYS <small>drop on M/E 1</small></div><div class="lay-res-h">DSK</div>` + dsks.map((d) => resItem({
       id: `dsk:${d.index}`, kind: 'dsk', index: d.index, title: `DSK ${d.index + 1}`,
       sub: dskPlaced(d) ? `${sname(d.fill)}${d.onAir ? ' · ON AIR' : ''}${d.tie ? ' · TIE' : ''}` : 'available',
       used: dskPlaced(d), color: DSK_COLORS[d.index % DSK_COLORS.length], label: `DSK ${d.index + 1}`,
-    })).join('') : '');
+    })).join('') + '</div>' : '');
   }
   function resItem(o) {
     const attrs = `data-laysel="${o.id}" data-kind="${o.kind}" data-index="${o.index}" ${o.me !== undefined ? `data-me="${o.me}"` : ''} ${o.ss !== undefined ? `data-ss="${o.ss}"` : ''} data-label="${esc(o.label)}"`;
@@ -348,7 +384,8 @@
     if (k.type === 'luma' && k.luma) body = `${tog('PRE-MULT', k.luma.preMultiplied, 'preMultiplied', 'luma', ids)}${num('CLIP %', k.luma.clip, 10, 1, 0, 100, 'clip', 'luma', ids)}${num('GAIN %', k.luma.gain, 10, 1, 0, 100, 'gain', 'luma', ids)}${tog('INVERT', k.luma.invert, 'invert', 'luma', ids)}`;
     if (k.type === 'chroma' && k.chroma) body = `${num('HUE °', k.chroma.hue, 10, 1, 0, 359.9, 'hue', 'chroma', ids)}${num('GAIN %', k.chroma.gain, 10, 1, 0, 100, 'gain', 'chroma', ids)}${num('Y SUPP %', k.chroma.ySuppress, 10, 1, 0, 100, 'ySuppress', 'chroma', ids)}${num('LIFT %', k.chroma.lift, 10, 1, 0, 100, 'lift', 'chroma', ids)}${tog('NARROW', k.chroma.narrow, 'narrow', 'chroma', ids)}`;
     if (k.type === 'pattern' && k.pattern) body = `<label class="ak-sel">PATTERN<select data-k="style" data-part="pattern" ${ids}>${PATTERNS.map((n, i) => `<option value="${i}" ${i === k.pattern.style ? 'selected' : ''}>${n}</option>`).join('')}</select></label>${num('SIZE %', k.pattern.size, 100, 1, 0, 100, 'size', 'pattern', ids)}${num('SYMM %', k.pattern.symmetry, 100, 1, 0, 100, 'symmetry', 'pattern', ids)}${num('SOFT %', k.pattern.softness, 100, 1, 0, 100, 'softness', 'pattern', ids)}${num('X', k.pattern.positionX, 10000, 0.01, 0, 1, 'positionX', 'pattern', ids)}${num('Y', k.pattern.positionY, 10000, 0.01, 0, 1, 'positionY', 'pattern', ids)}${tog('INVERT', k.pattern.invert, 'invert', 'pattern', ids)}`;
-    const dve = (k.type === 'dve' || k.flyEnabled) && k.dve ? `<div class="ak-row">${num('X', d.positionX, 1000, 0.1, -32, 32, 'positionX', 'dve', ids)}${num('Y', d.positionY, 1000, 0.1, -18, 18, 'positionY', 'dve', ids)}${num('SIZE X', d.sizeX, 1000, 0.01, 0, 99, 'sizeX', 'dve', ids)}${num('SIZE Y', d.sizeY, 1000, 0.01, 0, 99, 'sizeY', 'dve', ids)}${num('ROT °', d.rotation, 10, 1, -360, 360, 'rotation', 'dve', ids)}</div>
+    const dveFields = [['X position', 'positionX', 1000, 0.1, -32, 32], ['Y position', 'positionY', 1000, 0.1, -18, 18], ['X size', 'sizeX', 1000, 0.01, 0, 99], ['Y size', 'sizeY', 1000, 0.01, 0, 99], ['Rotation', 'rotation', 10, 1, -360, 360]];
+    const dve = (k.type === 'dve' || k.flyEnabled) && k.dve ? `<div class="ak-row dve-geom" data-dve-taborder="positionX positionY sizeX sizeY rotation">${dveFields.map(([label, key, scale, step, min, max], i) => num(label, d[key], scale, step, min, max, key, 'dve', `${ids} data-dve-tab="${i + 1}"`)).join('')}<button type="button" class="btn mini" data-dve-default="1" data-me="${me}" data-key="${k.index}" title="Position 0,0 and size 0.5 by 0.5">DEFAULT</button></div>
       ${borderHtml('dve', d, 'Border and light on this DVE key', ids)}
       <div class="ak-row"><span class="modes-lbl">DVE MASK</span>${tog(d.maskEnabled ? 'ON' : 'OFF', d.maskEnabled, 'maskEnabled', 'dve', ids)}${num('T', d.maskTop, 1000, 0.1, 0, 18, 'maskTop', 'dve', ids)}${num('B', d.maskBottom, 1000, 0.1, 0, 18, 'maskBottom', 'dve', ids)}${num('L', d.maskLeft, 1000, 0.1, 0, 32, 'maskLeft', 'dve', ids)}${num('R', d.maskRight, 1000, 0.1, 0, 32, 'maskRight', 'dve', ids)}</div>
       <div class="ak-fly"><span class="modes-lbl">FLY</span><button type="button" class="mode mini" data-layfly="store" data-frame="a" data-me="${me}" data-key="${k.index}">STORE A</button><button type="button" class="mode mini" data-layfly="store" data-frame="b" data-me="${me}" data-key="${k.index}">STORE B</button><button type="button" class="mode mini" data-layfly="run" data-frame="a" data-me="${me}" data-key="${k.index}">RUN A</button><button type="button" class="mode mini" data-layfly="run" data-frame="b" data-me="${me}" data-key="${k.index}">RUN B</button></div>` : '';
@@ -436,15 +473,14 @@
   function placeKeyAt(me, index, xUnit, yUnit) {
     const k = keyOf(me, index); if (!k || keyPlaced(k)) return;
     const makeDve = dveCount() > 0 && dveFree() > 0;
-    const posX = Math.round(Math.max(-32, Math.min(32, xUnit)) * 1000);
-    const posY = Math.round(Math.max(-18, Math.min(18, yUnit)) * 1000);
+    const home = { positionX: 0, positionY: 0, sizeX: 500, sizeY: 500 };
     k.placed = true;
     if (liveSend) k.onAir = true;
-    if (makeDve) { k.type = 'dve'; k.flyEnabled = false; k.dve = { ...(k.dve || {}), positionX: posX, positionY: posY, sizeX: 500, sizeY: 500 }; }
+    if (makeDve) { k.type = 'dve'; k.flyEnabled = false; k.dve = { ...(k.dve || {}), ...home }; }
     sel = `key:${me}:${index}`; saveLs('cc.laySel', sel);
     if (!liveSend) { dirty = true; render(); if (!makeDve && dveCount() > 0) toast('No DVE left, so this key fills the frame'); return; }
     let p = Promise.resolve();
-    if (makeDve) p = cmd('uskType', { me: me + 1, key: index, type: 'dve', flyEnabled: false }).then(() => cmd('uskDve', { me: me + 1, key: index, positionX: posX, positionY: posY, sizeX: 500, sizeY: 500 }));
+    if (makeDve) p = cmd('uskType', { me: me + 1, key: index, type: 'dve', flyEnabled: false }).then(() => cmd('uskDve', { me: me + 1, key: index, ...home }));
     p = p.then(() => cmd('uskOnAir', { me: me + 1, key: index, on: true }));
     if (!makeDve && dveCount() > 0) p = p.then(() => { toast('No DVE left, so this key fills the frame'); });
     commit(p);
@@ -525,6 +561,8 @@
   document.body.appendChild(menu);
   function closeMenu() { menu.hidden = true; }
   function openMenu(x, y, id, placed, front) {
+    menu.dataset.kind = '';
+    menu.innerHTML = '<button type="button" data-act="props">Properties</button><button type="button" data-act="front">Bring to front</button><button type="button" data-act="delete" class="danger">Delete</button>';
     menu.hidden = false; menu.dataset.id = id;
     menu.querySelector('[data-act=delete]').hidden = !placed;
     menu.querySelector('[data-act=front]').hidden = !front;
@@ -550,11 +588,23 @@
       meVis[String(i)] = meShown(i) ? false : true; saveLs('cc.layMeVis', meVis); render(); return;
     }
     if (b.dataset.laysel) { select(b.dataset.laysel); return; }
-    if (b.dataset.laygrid) { grids[b.dataset.laygrid] = !grids[b.dataset.laygrid]; saveLs('cc.layGrid', grids); render(); return; }
+    if (b.dataset.guide) {
+      const key = String(b.dataset.guidekey);
+      const cur = guidesFor(key);
+      cur[b.dataset.guide] = !cur[b.dataset.guide];
+      meGuides[key] = cur; saveLs('cc.layMeGuides', meGuides); render(); return;
+    }
+    if (b.dataset.mvpreset) {
+      const i = Number(b.dataset.mv);
+      quadMode[i] = true;
+      quadSplit[i] = b.dataset.mvpreset === '4' ? [0, 0, 0, 0] : [1, 1, 1, 1];
+      render(); return;
+    }
     if (b.dataset.layaspect !== undefined) { aspect = b.dataset.layaspect === '1'; saveLs('cc.layAspect', aspect); render(); return; }
     if (b.dataset.laylive !== undefined) { liveSend = b.dataset.laylive === '1'; saveLs('cc.layLive', liveSend); render(); return; }
     if (b.dataset.mvlay !== undefined) {
       const mv = mvOf(Number(b.dataset.mv)); if (!mv) return;
+      quadMode[mv.index] = false;
       mv.layout = Number(b.dataset.mvlay); if (!liveSend) dirty = true;
       if (!liveSend) { render(); return; }
       commit(cmd('mvProps', { mv: mv.index, layout: mv.layout })); return;
@@ -564,6 +614,15 @@
       let value = b.dataset.bool === '1';
       if (k === 'artOption') { const s = ssOf(loc.ss); value = !(s && s.art && s.art.artOption === 1); }
       patch(part, loc, k, value); sendPart(part, loc, k, value); return;
+    }
+    if (b.dataset.dveDefault !== undefined) {
+      const key = keyOf(Number(b.dataset.me), Number(b.dataset.key)); if (!key) return;
+      const home = { positionX: 0, positionY: 0, sizeX: 500, sizeY: 500 };
+      key.dve = { ...(key.dve || {}), ...home };
+      key.type = key.type === 'dve' || key.flyEnabled ? key.type : 'dve';
+      if (!liveSend) { dirty = true; render(); return; }
+      commit(cmd('uskDve', { me: Number(b.dataset.me) + 1, key: key.index, ...home }));
+      return;
     }
     if (b.dataset.laytype) {
       const key = keyOf(Number(b.dataset.me), Number(b.dataset.key)); if (!key) return;
@@ -602,6 +661,17 @@
     if (t.tagName === 'SELECT') t.blur();
   });
   $('#layBody').addEventListener('contextmenu', (e) => {
+    const quad = e.target.closest('[data-quad]');
+    if (quad && layTab === 'mv' && quadMode[Number(quad.dataset.mv)]) {
+      e.preventDefault();
+      menu.dataset.kind = 'quad';
+      menu.dataset.mv = quad.dataset.mv;
+      menu.dataset.quad = quad.dataset.quad;
+      menu.innerHTML = '<button type="button" data-act="single">Single window</button><button type="button" data-act="split">Split into four</button>';
+      menu.hidden = false;
+      menu.style.left = `${e.clientX}px`; menu.style.top = `${e.clientY}px`;
+      return;
+    }
     const el = e.target.closest('[data-layer], .lay-res-item'); if (!el || !doc) return;
     e.preventDefault();
     const id = el.dataset.layer || el.dataset.laysel;
@@ -613,7 +683,16 @@
   });
   menu.addEventListener('click', (e) => {
     const b = e.target.closest('[data-act]'); if (!b) return;
-    const id = menu.dataset.id; const act = b.dataset.act; const p = parseId(id); closeMenu();
+    const act = b.dataset.act;
+    if (menu.dataset.kind === 'quad') {
+      const mv = Number(menu.dataset.mv); const q = Number(menu.dataset.quad);
+      const cur = quadSplit[mv] || [1, 1, 1, 1];
+      cur[q] = act === 'split' ? 1 : 0;
+      quadSplit[mv] = cur.slice();
+      quadMode[mv] = true;
+      closeMenu(); render(); return;
+    }
+    const id = menu.dataset.id; const p = parseId(id); closeMenu();
     if (act === 'props') {
       sel = id; if (p && (p.kind === 'key' || p.kind === 'dsk')) layTab = 'me'; if (p && p.kind === 'box') layTab = 'ss';
       saveLs('cc.layTab', layTab); saveLs('cc.laySel', sel); render();
@@ -826,5 +905,13 @@
     commit(q);
   });
 
-  S.onRender((v, t) => { V = v; tab = t; if (tab === 'alayout') render(); });
+  S.onRender((v, t) => { V = v; tab = t; if (tab === 'alayout' || tab === 'amv') render(); });
+  const visBar = $('#layVis');
+  if (visBar) visBar.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-layvis]'); if (!b || !connected()) return;
+    const i = Number(b.dataset.layvis);
+    const shown = (doc.mes || []).filter((m) => meShown(m.me));
+    if (meShown(i) && shown.length <= 1) { toast('Keep at least one M/E on the page'); return; }
+    meVis[String(i)] = meShown(i) ? false : true; saveLs('cc.layMeVis', meVis); render();
+  });
 })();

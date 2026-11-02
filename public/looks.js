@@ -41,12 +41,13 @@
     const st = document.getElementById('cueStatus');
     if (st) {
       const link = book.link || {};
+      const locked = !!(book.locked || book.runState === 'running' || book.firing);
       const firing = book.firing ? ` Firing ${book.firing.cue}, step ${book.firing.step}.` : '';
       const state = link.state || (link.connected ? 'connected' : 'offline');
-      st.textContent = `${(sys() || '').toUpperCase()} ${state}${link.simulator ? ' · simulator' : ''}.${firing} GO loads preview. TAKE is yours. Relative changes only the layers stored in that preset.`;
+      st.textContent = `${(sys() || '').toUpperCase()} ${state}${link.simulator ? ' · simulator' : ''}.${firing}${locked ? ' GO is locked.' : ''} GO loads preview. TAKE is yours. Relative changes only the layers stored in that preset.`;
     }
     const go = document.getElementById('cueGo');
-    if (go) go.disabled = !!(cue() && cue().invalid);
+    if (go) go.disabled = !!(book.locked || book.runState === 'running') || !!(cue() && cue().invalid);
   }
 
   function paintEditor() {
@@ -197,6 +198,10 @@
       book = await api('POST', '/api/cues/go');
       selected = book.index || 0;
       paint();
+      if (book.ignored) {
+        const st = document.getElementById('cueStatus');
+        if (st) st.textContent = 'GO is locked while this cue is running.';
+      }
     } catch (e) { const st = document.getElementById('cueStatus'); if (st) st.textContent = e.message; }
   });
   document.getElementById('cueStop').addEventListener('click', async () => { book = await api('POST', '/api/cues/stop'); paint(); });
