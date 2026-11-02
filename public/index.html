@@ -43,7 +43,7 @@
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
     <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
-    <button class="tab tab-cues" data-tab="cues" title="Master cues. One click fires hi-res presets, ATEM macros and PTZ recalls on a timeline.">CUES</button>
+    <button class="tab tab-cues" data-tab="cues" title="Cues. RUN CUE plays the loaded cue. The button locks while that timeline is running.">CUES</button>
     <button class="tab tab-looks" data-tab="looks" title="Hi-res cue stack for one switcher: RS6, E2 or PixelHue. Absolute and relative recalls. Not ATEM.">PRESETS</button>
     <button class="tab tab-decks" data-tab="decks" title="Stream Decks connected over USB. Home picks one system. This app draws the keys. The Elgato app is not used.">Control Devices</button>
   </div>
@@ -67,6 +67,7 @@
   <button class="tab x-only" data-tab="aaudio" data-cap="atemAudio" data-sys="atem">AUDIO</button>
   <button class="tab x-only" data-tab="akeys" data-cap="atemKeys" data-sys="atem">DVE / SS / KEYS</button>
   <button class="tab x-only" data-tab="alayout" data-cap="atemKeys" data-sys="atem">LAYOUT</button>
+  <button class="tab x-only" data-tab="amv" data-cap="atemKeys" data-sys="atem">MULTIVIEW</button>
   <button class="tab x-only" data-tab="amacros" data-cap="atemMacros" data-sys="atem">MACROS</button>
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
   <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
@@ -79,7 +80,7 @@
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
   <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. Live video is Desktop Video from a Mac sidecar.</span>
   <span class="tabs-home-note" id="tabsLooksNote" hidden>One switcher per stack. Absolute is a full look. Relative changes only that preset's layers. GO loads preview. Bail loads after TAKE.</span>
-  <span class="tabs-home-note" id="tabsCuesNote" hidden>Master cues. Mix hi-res presets, ATEM macros and PTZ recalls. Each action has an offset. STOP cancels what has not fired.</span>
+  <span class="tabs-home-note" id="tabsCuesNote" hidden>Drag a preset onto a cue or its timeline. RUN CUE plays that cue and locks until the timeline finishes.</span>
   <span class="tabs-home-note" id="tabsDecksNote" hidden>Stream Decks on USB. Home picks one system. Every page has a Home key. Quit the Elgato Stream Deck app so this app can own the device.</span>
   </div>
 </nav>
@@ -304,8 +305,9 @@
     <div id="auRouting"></div>
   </section>
   <section class="grid-wrap pane" id="pane-alayout" hidden>
-    <div class="board-head"><div class="section-title">LAYOUT <small id="layInfo">M/Es and SuperSource · drag a key or a box onto its canvas</small></div><span class="spacer"></span>
-      <span id="layTabs" class="seg-row"><button type="button" class="mode mini active" data-laytab="me">M/Es</button><button type="button" class="mode mini" data-laytab="ss">SUPERSOURCE</button><button type="button" class="mode mini" data-laytab="mv">MULTIVIEW</button></span>
+    <div class="board-head"><div class="section-title">LAYOUT <small id="layInfo">M/Es and SuperSource · drag a key or a box from the left onto its canvas</small></div><span class="spacer"></span>
+      <span id="layVis" class="lay-vis" hidden></span>
+      <span id="layTabs" class="seg-row"><button type="button" class="mode mini active" data-laytab="me">M/Es</button><button type="button" class="mode mini" data-laytab="ss">SUPERSOURCE</button></span>
       <button type="button" class="btn mini" id="layRead" title="Discard unsent edits and show the switcher">READ</button>
       <button type="button" class="btn mini primary" id="layApply" title="Send this layout to the switcher">APPLY</button></div>
     <div id="layBody"></div>
@@ -560,6 +562,7 @@
       <span class="lg part">½</span> partial
     </div>
   </aside>
+  <section id="pane-cues" hidden></section>
 </main>
 
 <section class="logwrap collapsed" id="logwrap">
@@ -803,7 +806,6 @@
     </div>
   </div>
 </section>
-<section id="pane-cues" hidden></section>
 <script src="/looks.js"></script>
 <script src="/cues-tab.js"></script>
 <script src="/prefs.js"></script>
