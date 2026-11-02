@@ -244,15 +244,17 @@
   const f = (name, label, type, val, ph, dis, extra = '') => `<label>${label}<input name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${esc(ph)}" ${dis} ${extra}></label>`;
   function connForm(s, inst) {
     const id = inst || s.key;
-    const c = s.connection || {}; const dis = c.mock || c.simulator ? 'disabled' : '';
-    const foot = (k) => `<div class="actions left">${c.simulator ? '<span class="note small">Simulator on 127.0.0.1. It is not saved. REMOVE FROM DESK to use a real address.</span>' : c.mock ? '<span class="note small">Mock mode: connected to the built-in mock, fixed.</span>' : '<button class="btn mini primary" value="save">SAVE &amp; CONNECT</button>'}
+    const c = s.connection || {};
+    const shown = (c.simulator && c.saved) ? { ...c, ...c.saved } : c;
+    const dis = c.mock || c.simulator ? 'disabled' : '';
+    const foot = (k) => `<div class="actions left">${c.simulator ? '<span class="note small">SIMULATED on 127.0.0.1. The address above is the saved one. Choose REAL to use it. It is not written into the show.</span>' : c.mock ? '<span class="note small">Mock mode: connected to the built-in mock, fixed.</span>' : '<button class="btn mini primary" value="save">SAVE &amp; CONNECT</button>'}
       <button type="button" class="btn mini" data-reconnect="${k}" ${s.configured ? '' : 'disabled'}>⟳ RECONNECT</button></div>`;
     if (s.key === 'rs6') {
       return `<form class="form conn-form" data-sys="${esc(id)}">
         ${f('name', 'Name', 'text', (instances().find((i) => i.id === id) || {}).name || s.short || 'RS6', 'Name', '', 'maxlength="40"')}
-        <div class="row2">${f('host', 'RS6 IP address', 'text', c.host, 'RS6 IP', dis, 'autocomplete="off" spellcheck="false"')}<label>Control protocol<select name="protocol" ${dis}><option value="rest" ${c.protocol !== 'awj' ? 'selected' : ''}>REST</option><option value="awj" ${c.protocol === 'awj' ? 'selected' : ''}>AWJ</option></select></label></div>
-        <div class="row2">${f('restPort', 'REST port', 'number', c.restPort, '80', dis, 'min="1" max="65535"')}${f('awjPort', 'AWJ port', 'number', c.awjPort, '10606', dis, 'min="1" max="65535"')}</div>
-        <div class="actions left">${c.mock ? '<span class="note small">Mock mode: connected to the built-in mock RS6, fixed.</span>' : '<button class="btn mini primary" value="save">SAVE &amp; CONNECT</button>'}
+        <div class="row2">${f('host', 'RS6 IP address', 'text', shown.host, 'RS6 IP', dis, 'autocomplete="off" spellcheck="false"')}<label>Control protocol<select name="protocol" ${dis}><option value="rest" ${shown.protocol !== 'awj' ? 'selected' : ''}>REST</option><option value="awj" ${shown.protocol === 'awj' ? 'selected' : ''}>AWJ</option></select></label></div>
+        <div class="row2">${f('restPort', 'REST port', 'number', shown.restPort, '80', dis, 'min="1" max="65535"')}${f('awjPort', 'AWJ port', 'number', shown.awjPort, '10606', dis, 'min="1" max="65535"')}</div>
+        <div class="actions left">${c.simulator ? '<span class="note small">SIMULATED on 127.0.0.1. The address above is the saved one. Choose REAL to use it.</span>' : c.mock ? '<span class="note small">Mock mode: connected to the built-in mock RS6, fixed.</span>' : '<button class="btn mini primary" value="save">SAVE &amp; CONNECT</button>'}
         <button type="button" class="btn mini" data-rs6set="1">ALL RS6 SETTINGS…</button></div></form>`;
     }
     if (s.key === 'ptz') {
@@ -260,17 +262,17 @@
         <form class="cam-row add" data-camadd="1"><span class="led idle"></span><input name="name" placeholder="Name" maxlength="40"><input name="host" placeholder="IP address" spellcheck="false" autocomplete="off"><input name="port" type="number" placeholder="80" class="slot-in"><button class="btn mini primary">ADD</button></form></div>`;
     }
     const extra = s.key === 'e2'
-      ? f('operatorId', 'Operator (multi-op)', 'text', c.operatorId, 'none', dis, 'inputmode="numeric"') + f('transTime', 'TAKE time (frames)', 'text', c.transTime, 'device default', dis, 'inputmode="numeric"')
-      : s.key === 'pixelhue' ? f('prefix', 'API path prefix', 'text', c.prefix, '/pixelhue', dis) + f('time', 'TAKE time (ms)', 'text', c.time, 'device default', dis, 'inputmode="numeric"')
-        : f('me', 'M/E driven', 'number', c.me, '1', dis, 'min="1" max="4"') + '<span></span>';
+      ? f('operatorId', 'Operator (multi-op)', 'text', shown.operatorId, 'none', dis, 'inputmode="numeric"') + f('transTime', 'TAKE time (frames)', 'text', shown.transTime, 'device default', dis, 'inputmode="numeric"')
+      : s.key === 'pixelhue' ? f('prefix', 'API path prefix', 'text', shown.prefix, '/pixelhue', dis) + f('time', 'TAKE time (ms)', 'text', shown.time, 'device default', dis, 'inputmode="numeric"')
+        : f('me', 'M/E driven', 'number', shown.me, '1', dis, 'min="1" max="4"') + '<span></span>';
     const defPort = { e2: 9999, pixelhue: 8088, atem: 9910, pixera: 1400, millumin: 5000, videohub: 9990, hyperdeck: 9993, mitti: 51000 }[s.key];
     const hostPh = { e2: 'E2 host unit IP', atem: 'ATEM IP', pixera: 'Pixera IP', millumin: 'Millumin Mac IP', videohub: 'Videohub IP', hyperdeck: 'HyperDeck IP', mitti: 'Mitti Mac IP' }[s.key] || 'switcher IP';
     const portLbl = s.key === 'atem' ? 'UDP port' : (s.key === 'millumin' || s.key === 'mitti') ? 'OSC port' : s.key === 'pixera' ? 'API port' : 'Port';
     return `<form class="form conn-form" data-sys="${esc(id)}">
       ${f('name', 'Name on the desk', 'text', (instances().find((i) => i.id === id) || {}).name || s.short || '', 'Name', '', 'maxlength="40"')}
-      <div class="row2">${f('host', 'IP address', 'text', c.host, hostPh, dis, 'autocomplete="off" spellcheck="false"')}${f('port', portLbl, 'number', c.port, String(defPort), dis, 'min="1" max="65535"')}</div>
+      <div class="row2">${f('host', 'IP address', 'text', shown.host, hostPh, dis, 'autocomplete="off" spellcheck="false"')}${f('port', portLbl, 'number', shown.port, String(defPort), dis, 'min="1" max="65535"')}</div>
       ${s.key === 'atem' ? `<div class="row2">${extra}</div>` : (s.key === 'pixera' || s.key === 'millumin' || s.key === 'videohub' || s.key === 'hyperdeck' || s.key === 'mitti') ? '' : `<div class="row2">${extra}</div>`}
-      ${s.key === 'pixelhue' ? `<label class="chk"><input type="checkbox" name="swap" ${c.swap ? 'checked' : ''} ${dis}> Swap on TAKE / CUT (Program goes back to Preview)</label>` : ''}
+      ${s.key === 'pixelhue' ? `<label class="chk"><input type="checkbox" name="swap" ${shown.swap ? 'checked' : ''} ${dis}> Swap on TAKE / CUT (Program goes back to Preview)</label>` : ''}
       ${foot(id)}
     </form>`;
   }
@@ -317,14 +319,15 @@
         ? (s.connection.mock ? 'simulator' : `${s.connection.host || ''}${s.connection.port ? `:${s.connection.port}` : ''}`)
         : (s.kind === 'ptz' ? `${((s.connection && s.connection.cameras) || []).length} cameras` : 'no address');
       const form = { ...s, key: type };
-      const sim = !(s.connection && (s.connection.mock || s.connection.simulator))
-        ? `<button type="button" class="btn mini" data-sim="${esc(s.id)}">ADD AS SIMULATOR</button>` : '';
+      const sessionSim = !!(s.connection && s.connection.simulator);
+      const appMock = !!(s.connection && s.connection.mock && !sessionSim);
+      const tog = appMock ? '' : `<span class="mode-tog" role="group" aria-label="Real or simulated"><button type="button" class="btn mini ${sessionSim ? '' : 'on'}" data-sim="${esc(s.id)}" data-on="0">REAL</button><button type="button" class="btn mini ${sessionSim ? 'mock' : ''}" data-sim="${esc(s.id)}" data-on="1">SIM</button></span>`;
       const linkBtn = s.configured ? `<button type="button" class="btn mini" data-link="${esc(s.id)}" data-hold="${s.held ? '1' : '0'}">${s.held ? 'CONNECT' : 'DISCONNECT'}</button>` : '';
       return `<article class="sys-card ${active ? 'active' : ''} on-desk ${st.cls}${s.duplicateIp ? ' dup' : ''}" data-instance="${esc(s.id)}">
         <header><div class="mono">${MONO[type] || '?'}</div><div class="ttl"><div class="sys-grp">${esc(s.group || '')}</div><div class="nm">${esc(s.name || s.short)}</div>
-          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${s.duplicateIp ? ' <span class="dup-flag">DUPLICATE IP</span>' : ''}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${s.connection && s.connection.mock ? ' <span class="mock">MOCK</span>' : ''}${s.connection && s.connection.simulator ? ' <span class="mock">SIM</span>' : ''}</div></div></header>
+          <div class="st"><span class="led ${st.cls}"></span>${st.txt}${s.duplicateIp ? ' <span class="dup-flag">DUPLICATE IP</span>' : ''}${info.model ? ` · ${esc(info.model)} ${esc(ver(info.version))}` : ''}${appMock ? ' <span class="mock">MOCK</span>' : ''}${sessionSim ? ' <span class="mock">SIM</span>' : ''}</div></div></header>
         ${s.status && s.status.error && (st.cls === 'off' || st.cls === 'warn') ? `<div class="err small">${esc(s.status.error).slice(0, 140)}</div>` : ''}
-        <div class="sys-acts"><button type="button" class="btn mini" data-open="${esc(s.id)}">OPEN ${open}</button>${sim}${linkBtn}<button type="button" class="btn mini danger" data-armoff="${esc(s.id)}">REMOVE FROM DESK</button></div>
+        <div class="sys-acts"><button type="button" class="btn mini" data-open="${esc(s.id)}">OPEN ${open}</button>${tog}${linkBtn}<button type="button" class="btn mini danger" data-armoff="${esc(s.id)}">REMOVE FROM DESK</button></div>
         <div class="stats">${statsOf(form)}</div>${liveLine(form)}
         <details data-det="${esc(s.id)}" ${openDet.has(s.id) ? 'open' : ''}><summary>CONFIGURE <span class="cfg-sum">${esc(addr)}</span></summary>${connForm(form, s.id)}</details>
       </article>`;
@@ -392,8 +395,11 @@
       const path = hold ? 'connect' : 'disconnect';
       return run(api('POST', `/api/sys/instances/${b.dataset.link}/${path}`).then(() => refetch()).then(() => toast(hold ? 'Connecting' : 'Disconnected')));
     }
-    if (b.dataset.sim === 'atem' && window.CCATEM && !String(b.dataset.sim).includes('-')) return window.CCATEM.pickModel();
-    if (b.dataset.sim) return run(api('POST', `/api/sys/instances/${b.dataset.sim}/simulate`).then((st) => { onSys(st); toast('Simulator is on the desk'); }).catch((e) => toast(e.message, true)));
+    if (b.dataset.sim) {
+      const on = b.dataset.on !== '0';
+      if (on && b.dataset.sim === 'atem' && window.CCATEM) return window.CCATEM.pickModel();
+      return run(api('POST', `/api/sys/instances/${b.dataset.sim}/simulate`, { on }).then((st) => { onSys(st); toast(on ? 'Simulated. The saved address is kept.' : 'Real address restored.'); }).catch((e) => toast(e.message, true)));
+    }
     if (b.dataset.use) {
       const type = b.dataset.use;
       const on = armed().some((id) => typeOf(id) === type);

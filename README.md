@@ -22,7 +22,7 @@ The product in the browser is Control Center.
 No build step for the desk. Node.js 16 or later. USB Stream Decks need
 `@elgato-stream-deck/node` **7.8.0** and `node-hid` **3.4.0**. That package needs
 **Node >=18.18**. The Pi's Node 18.20.4 is new enough. Do not upgrade Node for
-this. The Pi install below runs `npm ci --omit=dev` so both packages are present.
+this. The Pi install below runs `npm install --omit=dev` so both packages are present.
 The Stream Deck plugin is a separate package and needs Node.js 24.
 
 ---
@@ -91,7 +91,7 @@ An older `systems.json` with one configured device becomes that one instance. Th
 - **OPEN** goes to that instance's pages. When two or more of a family are on the desk, those pages show the same instance picker the ATEM pages use (RS6, E2 / PixelHue, PTZ, Pixera, Millumin).
 - **CONFIGURE** is the name, IP, and port. The summary on the card shows the address.
 - **REMOVE** takes it off the desk. **Delete** (right-click) also clears a primary connection.
-- **ADD AS SIMULATOR** runs a built-in fixture on 127.0.0.1 for that instance, including a second RS6. In `--mock` the first of each family is already the built-in mock; add another, then ADD AS SIMULATOR. The fixture address is not written into the show.
+- A card already on the desk has **REAL / SIM**. SIM runs that instance on the built-in fixture at 127.0.0.1 and leaves its id, name, layouts, deck pages, cues, and tally map in place. REAL puts the saved IP and port back. The fixture address is not written into the show. This includes the original `rs6`, `atem`, `ptz`, and `e2` cards. In `--mock` the first of each family is already the built-in mock.
 
 Recall, take, and cut on an added RS6 go to that processor. The show book still lives on the original RS6, and the inputs, backup, audio, and Web RCS pages still read that original processor.
 
@@ -328,16 +328,18 @@ The app's own default stays 8080, so `node server.js` on a Mac is unchanged. The
 Per-Pi settings do not belong in the unit file. Copying the unit overwrites local edits. Put
 them in a drop-in: `sudo systemctl edit control-center`.
 
-`npm ci` reads `package-lock.json` and installs `@elgato-stream-deck/node` and `node-hid`. It deletes `node_modules` first. If that folder is owned by root, npm warns `EACCES` `rmdir` `/opt/control-center/...` and the Stream Deck package never appears (`added 2 packages` is that failure). The warning is the install not finishing. Give the folder to `pi` and delete `node_modules` before `npm ci`.
+On this repo, `npm ci --omit=dev` from a clean checkout installs `@elgato-stream-deck/node` and `node-hid` (17 packages). The Pi's npm still reports `added 2 packages, and audited 3 packages` and leaves that folder out. Use `npm install --omit=dev` there. It installs the dependencies named in `package.json`.
 
-If `npm ci` cannot download a node-hid prebuild, install the compiler first: `sudo apt-get install -y build-essential libudev-dev`. A warning about `@julusian/jpeg-turbo` wanting Node 22 is optional. Ignore it.
+`npm install` still needs to delete `node_modules` first. If that folder is owned by root, npm warns `EACCES` `rmdir` `/opt/control-center/...` and the Stream Deck package never appears. Give the folder to `pi` and delete `node_modules` before `npm install`.
+
+If `npm install` cannot download a node-hid prebuild, install the compiler first: `sudo apt-get install -y build-essential libudev-dev`. A warning about `@julusian/jpeg-turbo` wanting Node 22 is optional. Ignore it.
 
 ```bash
 sudo git clone https://github.com/stevenmarr/Performance-Video-Control.git /opt/control-center
 sudo mkdir -p /var/lib/control-center
 sudo chown -R pi:pi /opt/control-center /var/lib/control-center
 sudo rm -rf /opt/control-center/node_modules
-sudo -u pi npm ci --omit=dev --prefix /opt/control-center
+sudo -u pi npm install --omit=dev --prefix /opt/control-center
 sudo -u pi node -e "require('@elgato-stream-deck/node')"
 sudo cp /opt/control-center/tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
 sudo udevadm control --reload-rules
@@ -366,7 +368,7 @@ SupplementaryGroups=plugdev companion
 
 The `companion` group has to exist. If it does not, systemd fails the start with status 217/USER. Do not list a group that `getent group` cannot find.
 
-Update. `git checkout` throws away a local `npm install` that changed `package.json` or `package-lock.json`. `npm ci` installs from the lock, so those two files have to be the ones from git.
+Update. `git checkout` throws away a local `npm install` that changed `package.json` or `package-lock.json`. Then `npm install --omit=dev` installs `@elgato-stream-deck/node` from `package.json`.
 
 ```bash
 cd /opt/control-center
@@ -374,7 +376,7 @@ git checkout -- package.json package-lock.json
 git pull
 sudo rm -rf /opt/control-center/node_modules
 sudo chown -R pi:pi /opt/control-center
-sudo -u pi npm ci --omit=dev --prefix /opt/control-center
+sudo -u pi npm install --omit=dev --prefix /opt/control-center
 sudo -u pi node -e "require('@elgato-stream-deck/node')"
 sudo cp tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
 sudo udevadm control --reload-rules

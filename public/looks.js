@@ -59,7 +59,7 @@
       <label>SWITCHER <select id="cueSystem">${switchers().map(([id, label]) => `<option value="${id}" ${sys() === id ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></label>
       <span class="pill ${link.connected ? 'ok' : 'off'}">${esc(link.state || 'offline')}</span>
       <button type="button" class="btn mini" id="cueConnect">${link.connected ? 'RECONNECT' : 'CONNECT'}</button>
-      ${sys() === 'rs6' ? '<span class="note">RS6 has no simulator.</span>' : `<button type="button" class="btn mini" id="cueSim">${link.simulator ? 'SIMULATOR ON' : 'USE SIMULATOR'}</button>`}
+      <button type="button" class="btn mini ${link.simulator ? 'mock' : ''}" id="cueSim">${link.simulator ? 'SIMULATOR ON' : 'USE SIMULATOR'}</button>
     </div>`;
     if (!c) { editor.innerHTML = head + '<div class="note">Add a cue. Presets come from this switcher only. ATEM is not on this page.</div>'; return; }
     const steps = c.steps.map((s, i) => `<div class="cue-step ${s.invalid ? 'bad' : ''}" data-step="${i}">
@@ -150,9 +150,9 @@
         return;
       }
       if (ev.target.id === 'cueSim') {
-        if (sys() === 'rs6') return;
-        await api('POST', `/api/sys/${sys()}/simulate`);
-        await api('POST', `/api/sys/${sys()}/connect`).catch(() => {});
+        await api('POST', `/api/sys/${sys()}/simulate`, { on: !link.simulator });
+        if (sys() === 'rs6') await api('POST', '/api/connect').catch(() => {});
+        else await api('POST', `/api/sys/${sys()}/connect`).catch(() => {});
         await load();
         return;
       }
