@@ -19,10 +19,11 @@ gets its own pages: presets, switcher, cameras, media. Program is red. Preview i
 The npm package name is still `rs6-presets`. The on-disk data folder still uses that older name.
 The product in the browser is Control Center.
 
-No build step for the desk. Node.js 16 or later. USB Stream Decks need one native
-library (`@elgato-stream-deck/node`, Node 18 or later). The Pi install below runs
-`npm ci --omit=dev` so that library is present. The Stream Deck plugin is a
-separate package and needs Node.js 24.
+No build step for the desk. Node.js 16 or later. USB Stream Decks need
+`@elgato-stream-deck/node` **7.8.0** and `node-hid` **3.4.0**. That package needs
+**Node >=18.18**. The Pi's Node 18.20.4 is new enough. Do not upgrade Node for
+this. The Pi install below runs `npm ci --omit=dev` so both packages are present.
+The Stream Deck plugin is a separate package and needs Node.js 24.
 
 ---
 
@@ -265,8 +266,8 @@ look onto preview. It does not toggle a key the way a macro does. Take commits
 the preview. That is the Ross memory model: the recall is the absolute state
 that was stored, including whether a key was on air or off air.
 
-The USB library is `@elgato-stream-deck/node` (it uses `node-hid`). On Linux that
-opens `/dev/hidraw*`. It is a normal dependency, not an optional one. The
+The USB library is `@elgato-stream-deck/node` at version **7.8.0** (it uses `node-hid` 3.4.0). On Linux that
+opens `/dev/hidraw*`. Both are normal dependencies. 7.8.0 needs **Node >=18.18**. Node 18.20.4 is enough. The
 service scans at startup, watches `/dev` for a new hidraw node, and scans again
 every few seconds. The log lines are `found N decks`, `opened serial …`, and
 `cannot open …: EACCES` or `cannot open …: busy`.
@@ -305,7 +306,7 @@ scopes, build `tools/native/decklink-recv` on the Mac that has Desktop Video, th
 
 ## Install / update on the Pi
 
-Raspberry Pi OS, Node 18 or later. The service file is `Type=simple` and listens on **8088**.
+Raspberry Pi OS, Node >=18.18 (18.20.4 is fine). The service file is `Type=simple` and listens on **8088**.
 8080 is left for the UniFi Network controller. 8081 is File Browser, 8000 is Companion, and 8090
 is the speaker timer. Do not point this service at those.
 
@@ -315,13 +316,17 @@ The app's own default stays 8080, so `node server.js` on a Mac is unchanged. The
 Per-Pi settings do not belong in the unit file. Copying the unit overwrites local edits. Put
 them in a drop-in: `sudo systemctl edit control-center`.
 
-`npm ci` compiles the Stream Deck library. If it cannot download a prebuild, install the compiler first: `sudo apt-get install -y build-essential libudev-dev`.
+`npm ci` reads `package-lock.json` and installs `@elgato-stream-deck/node` and `node-hid`. It deletes `node_modules` first. If that folder is owned by root, npm warns `EACCES` `rmdir` `/opt/control-center/...` and the Stream Deck package never appears (`added 2 packages` is that failure). The warning is the install not finishing. Give the folder to `pi` and delete `node_modules` before `npm ci`.
+
+If `npm ci` cannot download a node-hid prebuild, install the compiler first: `sudo apt-get install -y build-essential libudev-dev`. A warning about `@julusian/jpeg-turbo` wanting Node 22 is optional. Ignore it.
 
 ```bash
 sudo git clone https://github.com/stevenmarr/Performance-Video-Control.git /opt/control-center
 sudo mkdir -p /var/lib/control-center
 sudo chown -R pi:pi /opt/control-center /var/lib/control-center
+sudo rm -rf /opt/control-center/node_modules
 sudo -u pi npm ci --omit=dev --prefix /opt/control-center
+sudo -u pi node -e "require('@elgato-stream-deck/node')"
 sudo cp /opt/control-center/tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger
@@ -349,12 +354,16 @@ SupplementaryGroups=plugdev companion
 
 The `companion` group has to exist. If it does not, systemd fails the start with status 217/USER. Do not list a group that `getent group` cannot find.
 
-Update:
+Update. `git checkout` throws away a local `npm install` that changed `package.json` or `package-lock.json`. `npm ci` installs from the lock, so those two files have to be the ones from git.
 
 ```bash
 cd /opt/control-center
+git checkout -- package.json package-lock.json
 git pull
+sudo rm -rf /opt/control-center/node_modules
+sudo chown -R pi:pi /opt/control-center
 sudo -u pi npm ci --omit=dev --prefix /opt/control-center
+sudo -u pi node -e "require('@elgato-stream-deck/node')"
 sudo cp tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger
@@ -374,7 +383,7 @@ sudo node /opt/control-center/tools/deck-diag.js
 curl -s http://127.0.0.1:8088/api/surfaces/diag
 ```
 
-`found N decks` and `opened serial …` mean Control Center has the device. `cannot open …: EACCES` is permissions (the udev rule and a service restart). `cannot open …: busy` is another program still holding it. `sudo` on the diagnostic sees holders that user `pi` is not allowed to see. `HID library: MISSING` means `npm ci --omit=dev` did not run in `/opt/control-center`.
+`require('@elgato-stream-deck/node')` with no output means the library loaded. `found N decks` and `opened serial …` mean Control Center has the device. `cannot open …: EACCES` is permissions (the udev rule and a service restart). `cannot open …: busy` is another program still holding it. `sudo` on the diagnostic sees holders that user `pi` is not allowed to see. `HID library: MISSING` is followed by the real `require()` error (`MODULE_NOT_FOUND` means `node_modules/@elgato-stream-deck/node` is not there).
 
 ```bash
 sudo systemctl edit control-center
