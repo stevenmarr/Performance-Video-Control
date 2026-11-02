@@ -1,0 +1,21 @@
+# Control Center opens Elgato Stream Decks (USB vendor 0fd9) through /dev/hidraw.
+# Companion ships its own rule that sets GROUP=companion and TAG+=uaccess.
+# uaccess only grants the person logged in at the seat. It does not grant a
+# systemd service, which is why the node shows crw-rw----+ and the service
+# still cannot open it.
+#
+# Install this file as /etc/udev/rules.d/99-control-center-streamdeck.rules
+# so it is applied after Companion's 50- (and 60-) rules and GROUP=plugdev wins.
+# Then:
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+# Unplug and replug the deck. Restart control-center after that.
+# The shipped unit lists SupplementaryGroups=plugdev, so the service can open
+# a plugdev node without a separate usermod.
+#
+# One vendor match, not a product list, so a new Stream Deck still matches.
+# 1b1c:2b18 is the Corsair-branded Stream Deck Neo.
+
+SUBSYSTEM=="input", GROUP="input", MODE="0660"
+
+KERNEL=="hidraw*", ATTRS{idVendor}=="0fd9", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+KERNEL=="hidraw*", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="2b18", MODE="0660", GROUP="plugdev", TAG+="uaccess"
