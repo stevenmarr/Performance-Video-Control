@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 'use strict';
+require('./lib/decks/jpeg-guard').installJpegGuard();
 // Performance Video Control Center. One desk for the show systems (RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin).
 // Usage: node server.js [--port 8080] [--host 0.0.0.0] [--data <dir>]
 // --mock starts built-in simulators for tests. It is not the desk path, and it does not add NDI fixture sources.

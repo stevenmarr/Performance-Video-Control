@@ -28,6 +28,9 @@ WorkingDirectory=/opt/control-center
 Environment=RS6_DATA_DIR=/var/lib/control-center
 Environment=HOST=0.0.0.0
 Environment=PORT=8088
+# USB Stream Decks run in a child process. Set CC_DECK_USB=0 in a drop-in to leave
+# them closed. A native crash then cannot take the service down, because the
+# child is not started. See the README.
 # 8088, not 8080. On pvllc-pi2, 8080 is the UniFi Network controller,
 # 8081 is File Browser, 8000 is Companion, and 8090 is the speaker timer.
 ExecStart=/usr/bin/node server.js --host 0.0.0.0 --port 8088
