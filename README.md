@@ -94,15 +94,7 @@ A Stream Deck is keyed by its USB serial when the device reports one (`serial:�
 
 TSL tally can send to more than one receiver. The original receiver keeps id `tsl` and the host and port already on the ATEM page. **＋ TSL DESTINATION** adds another (`tsl-……`) with its own name, host, and port. The same host and port on two receivers is flagged.
 
-### What the cues tab still needs
-
-Cues files are unchanged in this change (they are owned by the cues redesign). After that merges, wire instance ids like this:
-
-- `lib/cues.js` `HIRES`, `cleanStep`, `inferSystem`, and `setSystem` must accept an instance id whose family is `rs6`, `e2`, or `pixelhue`: `^(rs6|e2|pixelhue)(-[a-z0-9]{4,12})?$`. Any other string is dropped today.
-- `CueStack.recall`: `system === 'rs6'` calls `engine.recall`, which is only the original processor. An RS6 instance id must call `systems.recall` (and take / cut the same way) so it hits that instance's driver. `e2` and `pixelhue` already call `systems.recall(system, preset)`, which works once the stored value is the instance id.
-- The cues catalog and the cues UI must list `systems.listInstances()` for those families. The stored value is the instance id. The label is the instance name.
-- Master cues: `macroRun` calls `systems.atem('macroRun', { macro })` with no instance. Pass the ATEM instance id. A PTZ step should pass `instance` when the camera is on an added PTZ.
-- Looks: the `system` field should be the instance id, and recall should target that id.
+Cues, looks, and the CUES timeline store the instance id. A family name with no suffix (`rs6`, `e2`, `pixelhue`, `atem`, `ptz`) still means the original. An added RS6 (`rs6-……`) recalls, takes, and cuts on that processor. The original RS6 still uses the Engine. The systems tree shows each instance by name. An ATEM macro step names its ATEM. A PTZ step names the added PTZ when the camera is not on the original. The timeline is one row per instance: two RS6s are two rows, and the same row cannot share a step.
 
 Group chips (Presentation switchers, Production switchers, Cameras, Media servers) and the search
 box filter the cards. The look matches the rest of Control Center: dark panels, red for the system

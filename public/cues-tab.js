@@ -23,25 +23,44 @@
   const machine = () => book.machine || { state: 'idle', phase: null, cueId: null, error: null, locked: false };
   const locked = () => machine().state === 'running';
 
+  function familyOf(id) {
+    const m = String(id || '').match(/^(rs6|e2|pixelhue|atem|ptz|pixera|millumin)(?:-[a-z0-9]{4,12})?$/);
+    return m ? m[1] : '';
+  }
   function rowOf(a) {
     if (!a) return 'other';
-    if (a.instance) return String(a.instance);
-    if (a.type === 'hires') return a.system || 'rs6';
+    if (a.instance && familyOf(a.instance)) return String(a.instance);
+    if ((a.type === 'hires' || a.type === 'look') && familyOf(a.system)) return String(a.system);
     if (a.type === 'atem-macro') return 'atem';
     if (a.type === 'ptz') return 'ptz';
-    if (a.type === 'look') return a.system || 'look';
+    if (a.type === 'look') return 'look';
     return a.type || 'other';
   }
   function rowName(key) {
-    const known = { rs6: 'RS6', e2: 'E2', pixelhue: 'PIXELHUE', atem: 'ATEM', ptz: 'PTZ', look: 'LOOKS' };
-    return known[key] || String(key).toUpperCase();
+    const g = (book.palette || []).find((x) => x && (x.id === key || x.device === key));
+    if (g && g.label && g.type !== 'look') return g.label;
+    const known = { rs6: 'RS6', e2: 'E2', pixelhue: 'PIXELHUE', atem: 'ATEM', ptz: 'PTZ', pixera: 'PIXERA', millumin: 'MILLUMIN', look: 'LOOKS' };
+    if (known[key]) return known[key];
+    const fam = familyOf(key);
+    if (fam && known[fam] && key !== fam) return `${known[fam]} ${key}`;
+    return String(key).toUpperCase();
   }
   function rowsFor(c) {
     const keys = new Set();
-    for (const g of book.palette || []) if ((g.items || []).length) keys.add(g.device === 'looks' ? 'look' : g.device);
+    const cueTypes = new Set(['rs6', 'e2', 'pixelhue', 'atem', 'ptz']);
+    for (const g of book.palette || []) {
+      const id = g && (g.id || g.device);
+      const type = (g && g.type) || familyOf(id);
+      if (cueTypes.has(type)) keys.add(id);
+    }
     for (const a of (c && c.actions) || []) keys.add(rowOf(a));
-    const order = ['rs6', 'e2', 'pixelhue', 'atem', 'ptz', 'look'];
-    return [...keys].sort((a, b) => (order.indexOf(a) < 0 ? 99 : order.indexOf(a)) - (order.indexOf(b) < 0 ? 99 : order.indexOf(b)) || a.localeCompare(b));
+    const order = ['rs6', 'e2', 'pixelhue', 'atem', 'ptz', 'pixera', 'millumin', 'look'];
+    const rank = (key) => {
+      const fam = familyOf(key);
+      const i = order.indexOf(fam || key);
+      return i < 0 ? 99 : i;
+    };
+    return [...keys].sort((a, b) => rank(a) - rank(b) || String(a).localeCompare(String(b)));
   }
   function stepCount(c, section) {
     const list = ((c && c.actions) || []).filter((a) => (a.section || 'take') === section);
@@ -85,7 +104,7 @@
 
   function labelOf(a) {
     if (!a) return '';
-    if (a.type === 'hires') return `${String(a.system || '').toUpperCase()} ${a.preset}`;
+    if (a.type === 'hires') return familyOf(a.system) && a.system !== familyOf(a.system) ? String(a.preset) : `${String(familyOf(a.system) || a.system || '').toUpperCase()} ${a.preset}`;
     if (a.type === 'ptz') return `${a.camera} ${a.preset}`;
     if (a.type === 'atem-macro') return `M${Number(a.macro) + 1}`;
     if (a.type === 'look') return `LOOK ${a.look}`;
@@ -107,8 +126,8 @@
     const q = filterText.trim().toLowerCase();
     const tree = (book.palette || []).map((g, gi) => {
       const items = (g.items || []).filter((it) => !q || String(it.label || '').toLowerCase().includes(q));
-      const shut = closed.has(g.label);
-      return `<section class="cc-sys"><button type="button" class="cc-sys-h" data-sys="${esc(g.label)}" aria-expanded="${shut ? 'false' : 'true'}">${shut ? '▸' : '▾'} ${esc(g.label)} <small>${items.length}</small></button>${shut ? '' : `<div class="cc-sys-items">${items.map((it, ii) => `<button type="button" class="cc-preset" draggable="true" data-pi="${gi}:${ii}">${esc(it.label)}</button>`).join('') || '<div class="note small">No presets</div>'}</div>`}</section>`;
+      const shut = closed.has(g.id || g.label);
+      return `<section class="cc-sys"><button type="button" class="cc-sys-h" data-sys="${esc(g.id || g.label)}" aria-expanded="${shut ? 'false' : 'true'}">${shut ? '▸' : '▾'} ${esc(g.label)} <small>${items.length}</small></button>${shut ? '' : `<div class="cc-sys-items">${items.map((it, ii) => `<button type="button" class="cc-preset" draggable="true" data-pi="${gi}:${ii}">${esc(it.label)}</button>`).join('') || '<div class="note small">No presets</div>'}</div>`}</section>`;
     }).join('');
     const grid = (book.cues || []).map((row, i) => {
       const empty = !row.actions.length;
