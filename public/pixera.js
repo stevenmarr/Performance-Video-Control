@@ -6,7 +6,8 @@
   const { api, toast, run, esc } = window.CC;
   const S = window.CCSYS;
   let V = null;
-  const cmd = (name, body = {}) => run(api('POST', `/api/sys/pixera/cmd/${name}`, body));
+  const pixId = () => (window.CCSYS && window.CCSYS.familyTarget && window.CCSYS.familyTarget('pixera')) || 'pixera';
+  const cmd = (name, body = {}) => run(api('POST', `/api/sys/${pixId()}/cmd/${name}`, body));
   const live = () => V && V.kind === 'pixera' && V.status && V.status.connected;
   const selected = () => (V && V.timelines || []).find((t) => t.selected) || (V && V.timelines || [])[0] || null;
 

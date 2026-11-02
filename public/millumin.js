@@ -8,7 +8,8 @@
   const { api, toast, run, esc } = window.CC;
   const S = window.CCSYS;
   let V = null;
-  const cmd = (name, body = {}) => run(api('POST', `/api/sys/millumin/cmd/${name}`, body));
+  const milId = () => (window.CCSYS && window.CCSYS.familyTarget && window.CCSYS.familyTarget('millumin')) || 'millumin';
+  const cmd = (name, body = {}) => run(api('POST', `/api/sys/${milId()}/cmd/${name}`, body));
   const live = () => V && V.kind === 'millumin' && V.status && V.status.connected;
   const arg = (v) => (/^\d+$/.test(v) ? Number(v) : v);
 

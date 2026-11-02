@@ -52,7 +52,7 @@
       const face = d.face;
       const title = face ? face.title : 'HOME';
       return `<article class="deck-one">
-        <div class="section-title">${esc(d.name || d.model || 'Stream Deck')} <small>${esc(d.model || '')} · ${title}${face && face.pages > 1 ? ` · ${face.page + 1}/${face.pages}` : ''}${d.paintError ? ` · ${esc(d.paintError)}` : ''}</small></div>
+        <div class="section-title">${esc(d.name || d.model || 'Stream Deck')} <small>${esc(d.serial || d.id || '')} · ${esc(d.model || '')} · ${title}${face && face.pages > 1 ? ` · ${face.page + 1}/${face.pages}` : ''}${d.paintError ? ` · ${esc(d.paintError)}` : ''}</small></div>
         ${picks(d)}
         ${face ? grid(d, face, cols, rows) : '<p class="note small">Scan USB after the Elgato app is quit.</p>'}
       </article>`;

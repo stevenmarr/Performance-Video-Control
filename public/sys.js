@@ -12,7 +12,7 @@
   let SYS = null; let V = null; let mode = 'recall'; let moveSrc = null; let page = Number(localStorage.getItem('cc.xpage') || 0) || 0;
   let landed = false; const html = {};
   const set = (el, key, h) => { if (html[key] !== h) { html[key] = h; el.innerHTML = h; } };
-  const base = () => `/api/sys/${SYS.active}`;
+  const base = () => `/api/sys/${familyTarget('preset')}`;
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS ? kindOf(SYS.active) : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML' };
@@ -44,14 +44,17 @@
   function recOf(id) {
     return instances().find((i) => i.id === id) || (SYS && SYS.systems && SYS.systems[id]) || { key: id, id, label: id, short: id, name: id, kind: kindOf(id), type: typeOf(id) };
   }
-  function atemTarget() {
-    const list = armed().filter((id) => kindOf(id) === 'atem');
-    if (kindOf(SYS.active) === 'atem' && list.includes(SYS.active)) return SYS.active;
+  function familyTarget(kindName) {
+    const list = armedOf(kindName);
+    const fallback = kindName === 'preset' ? 'e2' : kindName;
+    if (!list.length) return fallback;
+    if (kindOf(SYS.active) === kindName && list.includes(SYS.active)) return SYS.active;
     let saved = '';
-    try { saved = localStorage.getItem('cc.atemInst') || ''; } catch { saved = ''; }
+    try { saved = localStorage.getItem(`cc.inst.${kindName}`) || localStorage.getItem(kindName === 'atem' ? 'cc.atemInst' : '') || ''; } catch { saved = ''; }
     if (saved && list.includes(saved)) return saved;
-    return list[0] || 'atem';
+    return list[0];
   }
+  const atemTarget = () => familyTarget('atem');
   function statusOf(s) {
     if (!s) return { cls: 'off', txt: 'UNKNOWN' };
     const st = s.status || {};
@@ -107,11 +110,11 @@
     if (!host) return;
     let box = document.getElementById('ptzCamTabs');
     if (!box) { box = document.createElement('span'); box.id = 'ptzCamTabs'; host.after(box); }
-    const on = armed().includes('ptz');
-    const sys = SYS.systems && SYS.systems.ptz;
-    const saved = (sys && sys.connection && sys.connection.cameras) || [];
-    const live = (sys && sys.cameras) || [];
-    const view = V && V.system === 'ptz' ? V : ((SYS.views && SYS.views.ptz) || null);
+    const on = armedOf('ptz').length > 0;
+    const rec = recOf(familyTarget('ptz'));
+    const saved = (rec.connection && rec.connection.cameras) || [];
+    const live = rec.cameras || [];
+    const view = V && kindOf(V.system) === 'ptz' ? V : null;
     const sel = view ? view.selected : null;
     box.hidden = !on || !saved.length;
     const html = on ? saved.map((c) => {
@@ -122,8 +125,9 @@
     if (box.dataset.h !== html) { box.dataset.h = html; box.innerHTML = html; }
   }
   function openCamera(id) {
-    const focus = SYS.active === 'ptz' ? Promise.resolve(SYS) : api('POST', '/api/sys/active', { system: 'ptz' }).then((st) => { onSys(st); return st; });
-    return focus.then(() => api('POST', '/api/sys/ptz/cmd/select', { cam: id })).then(() => CC.setTab('pctl'));
+    const pid = familyTarget('ptz');
+    const focus = SYS.active === pid ? Promise.resolve(SYS) : api('POST', '/api/sys/active', { system: pid }).then((st) => { onSys(st); return st; });
+    return focus.then(() => api('POST', `/api/sys/${pid}/cmd/select`, { cam: id })).then(() => CC.setTab('pctl'));
   }
   $('#tabsTop').addEventListener('click', (ev) => {
     const cam = ev.target.closest('[data-camtab]');
@@ -146,9 +150,9 @@
     const kn = TAB_KIND[tabName];
     const list = armedOf(kn);
     if (!list.length) return null;
-    if (kn === 'atem') { const t = atemTarget(); return list.includes(t) ? t : list[0]; }
-    if (kn !== 'preset') return list[0];
-    const focused = kindOf(SYS.active) === 'preset' ? SYS.active : list[0];
+    const picked = familyTarget(kn);
+    if (kn !== 'preset') return list.includes(picked) ? picked : list[0];
+    const focused = list.includes(picked) ? picked : list[0];
     const has = (k) => {
       const inst = instances().find((i) => i.id === k);
       const c = (inst && inst.capabilities) || (SYS.views && SYS.views[k] && SYS.views[k].capabilities) || (SYS.systems[typeOf(k)] && SYS.systems[typeOf(k)].capabilities) || {};
@@ -307,7 +311,7 @@
         ? (s.connection.mock ? 'simulator' : `${s.connection.host || ''}${s.connection.port ? `:${s.connection.port}` : ''}`)
         : (s.kind === 'ptz' ? `${((s.connection && s.connection.cameras) || []).length} cameras` : 'no address');
       const form = { ...s, key: type };
-      const sim = type !== 'rs6' && !(s.connection && (s.connection.mock || s.connection.simulator))
+      const sim = !(s.connection && (s.connection.mock || s.connection.simulator))
         ? `<button type="button" class="btn mini" data-sim="${esc(s.id)}">ADD AS SIMULATOR</button>` : '';
       const linkBtn = s.configured ? `<button type="button" class="btn mini" data-link="${esc(s.id)}" data-hold="${s.held ? '1' : '0'}">${s.held ? 'CONNECT' : 'DISCONNECT'}</button>` : '';
       return `<article class="sys-card ${active ? 'active' : ''} on-desk ${st.cls}${s.duplicateIp ? ' dup' : ''}" data-instance="${esc(s.id)}">
@@ -396,23 +400,26 @@
     }
     if (b.dataset.rs6set) return $('#btnSettings').click();
     if (b.dataset.reconnect) return run(api('POST', `/api/sys/${b.dataset.reconnect}/connect`).then(() => toast('Connected')));
-    if (b.dataset.camsave) { b.blur(); return run(api('POST', `/api/sys/ptz/cameras/${b.dataset.camsave}`, camRow(b.closest('.cam-row'))).then(() => toast('Camera saved')).finally(refetch)); }
-    if (b.dataset.camdel) { const fm = b.closest('form') || b.closest('.cam-row'); const name = fm && fm.querySelector('[name=name]') ? fm.querySelector('[name=name]').value : 'this camera'; if (!confirm(`Remove camera "${name}"?`)) return; return run(api('DELETE', `/api/sys/ptz/cameras/${b.dataset.camdel}`).then(() => toast('Camera removed')).finally(refetch)); }
-    if (b.dataset.camsim) { const on = b.dataset.on !== '0'; return run(api('POST', `/api/sys/ptz/cameras/${b.dataset.camsim}/sim`, { on }).then(() => toast(on ? 'Camera assigned as a simulator' : 'Camera using its saved address')).finally(refetch)); }
+    const ptzCard = (el) => { const card = el && el.closest && el.closest('[data-instance]'); return (card && typeOf(card.dataset.instance) === 'ptz' && card.dataset.instance) || familyTarget('ptz'); };
+    if (b.dataset.camsave) { b.blur(); return run(api('POST', `/api/sys/${ptzCard(b)}/cameras/${b.dataset.camsave}`, camRow(b.closest('.cam-row'))).then(() => toast('Camera saved')).finally(refetch)); }
+    if (b.dataset.camdel) { const fm = b.closest('form') || b.closest('.cam-row'); const name = fm && fm.querySelector('[name=name]') ? fm.querySelector('[name=name]').value : 'this camera'; if (!confirm(`Remove camera "${name}"?`)) return; return run(api('DELETE', `/api/sys/${ptzCard(b)}/cameras/${b.dataset.camdel}`).then(() => toast('Camera removed')).finally(refetch)); }
+    if (b.dataset.camsim) { const on = b.dataset.on !== '0'; return run(api('POST', `/api/sys/${ptzCard(b)}/cameras/${b.dataset.camsim}/sim`, { on }).then(() => toast(on ? 'Camera assigned as a simulator' : 'Camera using its saved address')).finally(refetch)); }
     if (b.dataset.camopen) return run(openCamera(b.dataset.camopen));
   });
   $('#sysCards').addEventListener('submit', (ev) => {
     ev.preventDefault();
     const fm = ev.target;
-    if (fm.dataset.camadd) { const c = camRow(fm); if (document.activeElement) document.activeElement.blur(); return run(api('POST', '/api/sys/ptz/cameras', c).then(() => { fm.reset(); toast(`Added ${c.name || 'camera'}`); }).finally(refetch)); }
-    if (fm.dataset.camform) { const c = camRow(fm); if (document.activeElement) document.activeElement.blur(); return run(api('POST', `/api/sys/ptz/cameras/${fm.dataset.camform}`, c).then(() => toast('Camera saved')).finally(refetch)); }
+    const ptzCard = (el) => { const card = el && el.closest && el.closest('[data-instance]'); return (card && typeOf(card.dataset.instance) === 'ptz' && card.dataset.instance) || familyTarget('ptz'); };
+    if (fm.dataset.camadd) { const c = camRow(fm); if (document.activeElement) document.activeElement.blur(); return run(api('POST', `/api/sys/${ptzCard(fm)}/cameras`, c).then(() => { fm.reset(); toast(`Added ${c.name || 'camera'}`); }).finally(refetch)); }
+    if (fm.dataset.camform) { const c = camRow(fm); if (document.activeElement) document.activeElement.blur(); return run(api('POST', `/api/sys/${ptzCard(fm)}/cameras/${fm.dataset.camform}`, c).then(() => toast('Camera saved')).finally(refetch)); }
     const k = fm.dataset.sys; const b = {};
     if (document.activeElement) document.activeElement.blur();
-    if (k === 'rs6') {
+    if (typeOf(k) === 'rs6') {
       b.host = fm.elements.host.value.trim(); b.protocol = fm.elements.protocol.value;
       for (const n of ['restPort', 'awjPort']) { const v = Number(fm.elements[n].value); if (v) b[n] = v; }
       const named = fm.elements.name && fm.elements.name.value.trim() ? api('POST', `/api/sys/instances/${k}/rename`, { name: fm.elements.name.value.trim() }) : Promise.resolve();
-      return run(named.then(() => api('POST', '/api/settings', b)).then(() => toast('RS6 connection saved')).finally(refetch));
+      const save = k === 'rs6' ? api('POST', '/api/settings', b) : api('POST', `/api/sys/${k}/connection`, b).then(() => (b.host ? api('POST', `/api/sys/${k}/connect`) : null));
+      return run(named.then(() => save).then(() => toast('RS6 connection saved')).finally(refetch));
     }
     for (const n of ['host', 'operatorId', 'transTime', 'prefix', 'time']) if (fm.elements[n]) b[n] = fm.elements[n].value.trim();
     if (fm.elements.port) b.port = Number(fm.elements.port.value) || undefined;
@@ -494,22 +501,37 @@
     }
     return undefined;
   });
-  function paintAtemTarget() {
-    const list = armed().filter((id) => kindOf(id) === 'atem').map(recOf);
-    const cur = atemTarget();
-    for (const head of document.querySelectorAll('#pane-atem .board-head, #pane-arouter .board-head, #pane-aaudio .board-head, #pane-akeys .board-head, #pane-alayout .board-head, #pane-amacros .board-head')) {
-      let slot = head.querySelector('.atem-target');
-      if (list.length < 2) { if (slot) slot.remove(); continue; }
-      if (!slot) { slot = document.createElement('span'); slot.className = 'seg-row atem-target'; const sp = head.querySelector('.spacer'); if (sp) sp.before(slot); else head.append(slot); }
-      const html = `<span class="modes-lbl">ATEM</span>${list.map((i) => `<button type="button" class="mode ${i.id === cur ? 'active' : ''}" data-atem-target="${esc(i.id)}">${esc(i.name || i.short)}</button>`).join('')}`;
-      if (slot.dataset.h !== html) { slot.dataset.h = html; slot.innerHTML = html; }
+  function paintFamilyTargets() {
+    const specs = [
+      ['atem', ['#pane-atem', '#pane-arouter', '#pane-aaudio', '#pane-akeys', '#pane-alayout', '#pane-amacros']],
+      ['rs6', ['#pane-presets', '#pane-inputs', '#pane-backup', '#pane-audio', '#pane-webrcs']],
+      ['preset', ['#pane-xpresets', '#pane-xcues', '#pane-xsources', '#pane-xstills', '#pane-xbackup']],
+      ['ptz', ['#pane-pctl', '#pane-pcams']],
+      ['pixera', ['#pane-pxplay', '#pane-pxcues']],
+      ['millumin', ['#pane-mlcol', '#pane-mllayer']],
+    ];
+    for (const [kind, sels] of specs) {
+      const list = armedOf(kind).map(recOf);
+      const cur = familyTarget(kind);
+      for (const sel of sels) {
+        const pane = document.querySelector(sel);
+        if (!pane) continue;
+        const head = pane.querySelector('.board-head') || pane;
+        let slot = head.querySelector(':scope > .family-target');
+        if (list.length < 2) { if (slot) slot.remove(); continue; }
+        if (!slot) { slot = document.createElement('span'); slot.className = 'seg-row family-target'; head.prepend(slot); }
+        const label = kind === 'preset' ? 'SWITCHER' : (list[0] && list[0].short) || kind.toUpperCase();
+        const html = `<span class="modes-lbl">${esc(label)}</span>${list.map((i) => `<button type="button" class="mode ${i.id === cur ? 'active' : ''}" data-inst-target="${esc(i.id)}" data-inst-kind="${kind}">${esc(i.name || i.short)}</button>`).join('')}`;
+        if (slot.dataset.h !== html) { slot.dataset.h = html; slot.innerHTML = html; }
+      }
     }
   }
   document.addEventListener('click', (ev) => {
-    const b = ev.target.closest('[data-atem-target]');
+    const b = ev.target.closest('[data-inst-target]');
     if (!b) return;
-    try { localStorage.setItem('cc.atemInst', b.dataset.atemTarget); } catch { /* private mode */ }
-    run(api('POST', '/api/sys/active', { system: b.dataset.atemTarget }).then((st) => onSys(st)));
+    const kind = b.dataset.instKind || kindOf(b.dataset.instTarget);
+    try { localStorage.setItem(`cc.inst.${kind}`, b.dataset.instTarget); if (kind === 'atem') localStorage.setItem('cc.atemInst', b.dataset.instTarget); } catch { /* private mode */ }
+    run(api('POST', '/api/sys/active', { system: b.dataset.instTarget }).then((st) => onSys(st)));
   });
 
   // ---------- presets ----------
@@ -644,7 +666,7 @@
     applyChrome();
     const t = CC.getTab();
     if (t === 'system') renderDash();
-    paintAtemTarget();
+    paintFamilyTargets();
     if (isX() && V && V.kind === 'preset') {
       if (t === 'xpresets') renderPresets(); else if (t === 'xsources') renderSources(); else if (t === 'xcues') renderCues(); else if (t === 'xstills') renderStills(); else if (t === 'xbackup') renderBackups();
     }
@@ -751,7 +773,7 @@
       CC.toast(`Saved show "${r.show.name}"${r.startup ? ' · ATEM startup state saved' : ''}${r.startupError ? ` · ${r.startupError}` : ''}`, !!r.startupError);
     }));
   });
-  window.CCSYS = { onRender: (fn) => listeners.push(fn), view: () => V, state: () => SYS, refetch, set, atemTarget, typeOf, instances };
+  window.CCSYS = { onRender: (fn) => listeners.push(fn), view: () => V, state: () => SYS, refetch, set, atemTarget, familyTarget, typeOf, kindOf, instances };
   window.addEventListener('cc:tab', () => setTimeout(renderAll, 0));
   // ⚙ Settings is the RS6 device dialog; with another system active it opens the SYSTEMS dashboard instead
   $('#btnSettings').addEventListener('click', (e) => { if (isX()) { e.stopImmediatePropagation(); CC.setTab('system'); } }, true);

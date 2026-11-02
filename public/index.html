@@ -103,6 +103,7 @@
       <div class="board-head">
         <button class="btn mini" id="btnPalShow" hidden>▶ MEMORIES</button>
         <div class="section-title">SCREENS <small>tap a tile to select it for TAKE / CUT</small></div>
+        <span id="rs6PeerNote" class="note small" hidden></span>
         <span class="spacer"></span>
         <span id="xtargets" class="xtargets"></span>
         <button class="btn mini bail-badge" id="bailBadge" type="button" data-bail="rs6" title="Auto recall (bail to): click to set it up"></button>
@@ -264,13 +265,16 @@
         <label>Transport
           <select id="tslTransport"><option value="mock">MOCK (log only)</option><option value="udp">UDP</option></select>
         </label>
+        <label>Name <input id="tslName" type="text" value="TSL" maxlength="40" spellcheck="false"></label>
         <label>Host <input id="tslHost" type="text" value="127.0.0.1" spellcheck="false" autocomplete="off"></label>
         <label>Port <input id="tslPort" type="number" min="1" max="65535" value="8900"></label>
         <button type="button" class="btn mini primary" id="tslSave">SAVE MAP</button>
         <button type="button" class="btn mini" id="tslTick">SEND NOW</button>
       </div>
-      <div class="note small">Each row is an ATEM input that triggers a TSL address. UDP sends to the host and port above (default port <b>8900</b>). A simulator session keeps UDP on loopback. The map is saved with the show. Scopes do not use this map.</div>
-      <table class="tsl-table" id="tslTable"><thead><tr><th>#</th><th>LABEL</th><th>ATEM</th><th>ATEM IN</th><th>PTZ CAM</th><th></th></tr></thead><tbody></tbody></table>
+      <div class="note small">The host and port above are the original TSL receiver (id <b>tsl</b>). Add another destination when a second tally box is on the same show. Same host with a different port is a different receiver. Same host and port is flagged. A simulator session keeps UDP on loopback. The map is saved with the show. Scopes do not use this map.</div>
+      <div id="tslRxs"></div>
+      <div class="tsl-row"><button type="button" class="btn mini" id="tslAddRx">＋ TSL DESTINATION</button></div>
+      <table class="tsl-table" id="tslTable"><thead><tr><th>#</th><th>LABEL</th><th>ATEM</th><th>ATEM IN</th><th>PTZ</th><th>PTZ CAM</th><th></th></tr></thead><tbody></tbody></table>
       <div class="tsl-row"><button type="button" class="btn mini" id="tslAdd">＋ ADDRESS</button><span id="tslMsg" class="cc-msg"></span></div>
       <div class="section-title" style="margin-top:10px">LAST PACKETS <small>sender log</small></div>
       <pre id="tslLog" class="tsl-log"></pre>

@@ -72,21 +72,37 @@ On a show, run `node server.js` and connect each system from **SYSTEMS → CONFI
 
 ## SYSTEMS
 
-**⌂ SYSTEMS** is the home page. The left column is a palette of every system type the app can drive (RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin). A palette row is a template: dragging it, or ADD, does not use it up.
+**⌂ SYSTEMS** is the home page. The left column is a palette of every system type the app can drive (RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin). A palette row is a template: dragging it, or ADD, does not use it up. Every type can be added more than once.
 
-The right column is the desk. Each card is one instance, with its own name, IP address (and port), type-specific settings, and connection status: CONNECTING, ONLINE, RECONNECTING, or OFFLINE. Drop the same type again to add another — ATEM A, ATEM B, ATEM C — and give each its own IP. A second card with the same IP shows **DUPLICATE IP**.
+The right column is the desk. Each card is one instance, with its own id, name, IP address and port, type-specific settings, and connection status: CONNECTING, ONLINE, RECONNECTING, or OFFLINE. Drop the same type again to add another — two RS6s, two E2s, two PTZ desks — and give each its own address. **DUPLICATE IP** means the same host and the same port. The same host on a different port is fine (a second PTZ camera port, or a second RS6 REST port).
 
-Right-click a desk card for **Rename**, **Duplicate**, **Disconnect / Connect**, and **Delete** (it asks first). Delete removes that instance. Presets, layout looks, tally rows, and Stream Deck pages store the instance id, not the IP, so changing the address does not retarget them.
+Right-click a desk card for **Rename**, **Duplicate**, **Disconnect / Connect**, and **Delete** (it asks first). Delete removes that instance. Layout looks, tally rows, and Stream Deck pages store the instance id, not the IP, so changing the address does not retarget them.
 
-An older `systems.json` with one ATEM becomes that one instance, id `atem`. New instances are ids like `atem-k3f2a1`. `/api/sys/atem/...` still means the original one.
+An older `systems.json` with one configured device becomes that one instance. The id stays the family key: `atem`, `e2`, `pixelhue`, `ptz`, `pixera`, `millumin`, and `rs6` when the RS6 already had an IP in settings. New copies are ids like `atem-k3f2a1` or `rs6-k3f2a1`.
 
-- **ADD** or drag puts an instance on the desk. The first of a type keeps the old id (`atem`, `e2`, …).
-- **OPEN** goes to that instance's pages (SWITCHER, LAYOUT, PTZ CONTROL, PRESETS, …).
+`/api/sys/<family>/...` still means the original instance (`/api/sys/atem/...`, `/api/sys/ptz/...`, `/api/sys/rs6/...`). `/api/sys/<instance-id>/...` is any other copy. The original RS6 connection is still saved with `/api/settings`. Every added RS6 has its own driver, IP, REST port, and AWJ port.
+
+- **ADD** or drag puts an instance on the desk. The first of a type keeps the old id.
+- **OPEN** goes to that instance's pages. When two or more of a family are on the desk, those pages show the same instance picker the ATEM pages use (RS6, E2 / PixelHue, PTZ, Pixera, Millumin).
 - **CONFIGURE** is the name, IP, and port. The summary on the card shows the address.
 - **REMOVE** takes it off the desk. **Delete** (right-click) also clears a primary connection.
-- **ADD AS SIMULATOR** runs a built-in fixture on 127.0.0.1 for that instance. It is not written into the show as the saved address.
+- **ADD AS SIMULATOR** runs a built-in fixture on 127.0.0.1 for that instance, including a second RS6. In `--mock` the first of each family is already the built-in mock; add another, then ADD AS SIMULATOR. The fixture address is not written into the show.
 
-ATEM pages (SWITCHER, ROUTER, AUDIO, DVE / SS / KEYS, LAYOUT, MACROS) and the TSL tally map grow an **ATEM** picker when two switchers are on the desk. Stream Deck assign buttons list each instance by name. The cue stack still stores a family (`e2`, `pixelhue`, `rs6`) until the cues tab, which is being redesigned separately, offers the instance id. The systems API already accepts that id on recall, take, and cut.
+Recall, take, and cut on an added RS6 go to that processor. The show book still lives on the original RS6, and the inputs, backup, audio, and Web RCS pages still read that original processor.
+
+A Stream Deck is keyed by its USB serial when the device reports one (`serial:…`). A DeckLink input is keyed by device index (`decklink:0`), not by an IP. An NDI sidecar source is keyed by its sidecar id (`ndi:…`). A camera on the original PTZ stays `cam:<id>`; a camera on an added PTZ is `cam:<instance-id>:<id>`.
+
+TSL tally can send to more than one receiver. The original receiver keeps id `tsl` and the host and port already on the ATEM page. **＋ TSL DESTINATION** adds another (`tsl-……`) with its own name, host, and port. The same host and port on two receivers is flagged.
+
+### What the cues tab still needs
+
+Cues files are unchanged in this change (they are owned by the cues redesign). After that merges, wire instance ids like this:
+
+- `lib/cues.js` `HIRES`, `cleanStep`, `inferSystem`, and `setSystem` must accept an instance id whose family is `rs6`, `e2`, or `pixelhue`: `^(rs6|e2|pixelhue)(-[a-z0-9]{4,12})?$`. Any other string is dropped today.
+- `CueStack.recall`: `system === 'rs6'` calls `engine.recall`, which is only the original processor. An RS6 instance id must call `systems.recall` (and take / cut the same way) so it hits that instance's driver. `e2` and `pixelhue` already call `systems.recall(system, preset)`, which works once the stored value is the instance id.
+- The cues catalog and the cues UI must list `systems.listInstances()` for those families. The stored value is the instance id. The label is the instance name.
+- Master cues: `macroRun` calls `systems.atem('macroRun', { macro })` with no instance. Pass the ATEM instance id. A PTZ step should pass `instance` when the camera is on an added PTZ.
+- Looks: the `system` field should be the instance id, and recall should target that id.
 
 Group chips (Presentation switchers, Production switchers, Cameras, Media servers) and the search
 box filter the cards. The look matches the rest of Control Center: dark panels, red for the system

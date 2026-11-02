@@ -14,7 +14,7 @@ The app has two rows of tabs under the header.
 * After it comes **one button per system group on the desk**. The order is always the same, no matter
   what order the systems were added in: RS6, E2 / PIXELHUE, ATEM, PTZ, PIXERA, MILLUMIN. A group that is
   not on the desk has no button. ADD or drag a type on the SYSTEMS page; REMOVE or Delete takes an instance off.
-  When a group has more than one instance (two ATEMs), the ATEM pages show a picker. The choice is the instance id, not the IP.
+  When a group has more than one instance, every page in that group shows an instance picker (RS6, E2 / PixelHue, ATEM, PTZ, Pixera, Millumin). The choice is the instance id, not the IP. Same host and same port is DUPLICATE IP. Same host, different port, is two devices.
 * The led on each button shows the worst status in that group: green means online, amber means degraded
   (for example 2/3 PTZ cameras online), red means offline, and grey means not set up. Hover the button to
   see each system's status.

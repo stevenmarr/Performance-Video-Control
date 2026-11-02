@@ -22,7 +22,8 @@
   const cats = new Map(); const catLoading = new Set(); let built = ''; const local = {}; const thumbVer = {};
   const camId = () => V && V.selected;
   const sel = () => (V && V.cameras ? V.cameras.find((c) => c.id === V.selected) : null);
-  const cmd = (name, body = {}) => api('POST', `/api/sys/ptz/cmd/${name}`, { cam: camId(), ...body });
+  const ptzId = () => (window.CCSYS && window.CCSYS.familyTarget && window.CCSYS.familyTarget('ptz')) || 'ptz';
+  const cmd = (name, body = {}) => api('POST', `/api/sys/${ptzId()}/cmd/${name}`, { cam: camId(), ...body });
   const catOf = (c) => (c ? cats.get(c.series) : null);
   const has = (id) => { const k = catOf(sel()); return !!(k && k.ops.some((o) => o.id === id)); };
 
@@ -30,7 +31,7 @@
   let kaTimer = null; let motionCam = null; const held = { pt: false, zoom: false, focus: false };
   const anyHeld = () => held.pt || held.zoom || held.focus;
   function keepAlive() {
-    if (anyHeld() && !kaTimer) kaTimer = setInterval(() => { if (motionCam) api('POST', '/api/sys/ptz/cmd/keepalive', { cam: motionCam }).catch(() => {}); }, 400);
+    if (anyHeld() && !kaTimer) kaTimer = setInterval(() => { if (motionCam) api('POST', `${ptzId()}/cmd/keepalive`, { cam: motionCam }).catch(() => {}); }, 400);
     if (!anyHeld() && kaTimer) { clearInterval(kaTimer); kaTimer = null; }
     document.body.classList.toggle('ptz-moving', anyHeld());
   }
@@ -41,12 +42,12 @@
       if (st.inflight) return;
       if (st.stop) {
         st.stop = false; st.inflight = true;
-        api('POST', '/api/sys/ptz/cmd/stop', { cam: st.cam, axes: [name] }).catch((e) => toast(e.message, true)).finally(() => { st.inflight = false; pump(); });
+        api('POST', `${ptzId()}/cmd/stop`, { cam: st.cam, axes: [name] }).catch((e) => toast(e.message, true)).finally(() => { st.inflight = false; pump(); });
         return;
       }
       if (!st.pending) return;
       const b = st.pending; st.pending = null; st.inflight = true;
-      api('POST', `/api/sys/ptz/cmd/${route}`, { ...b, cam: st.cam, speed: true })
+      api('POST', `/api/sys/${ptzId()}/cmd/${route}`, { ...b, cam: st.cam, speed: true })
         .catch((e) => { toast(e.message, true); release(name); })
         .finally(() => { st.inflight = false; setTimeout(pump, 45); });
     };
@@ -65,7 +66,7 @@
   function releaseAll(reason) {
     const cam = motionCam; const was = anyHeld();
     for (const k of Object.keys(AX)) release(k);
-    if (was && cam) api('POST', '/api/sys/ptz/cmd/stop', { cam }).catch(() => {});
+    if (was && cam) api('POST', `${ptzId()}/cmd/stop`, { cam }).catch(() => {});
     if (was && reason) console.info(`PTZ stop: ${reason}`);
   }
   const canMove = () => { const c = sel(); return !!(c && c.connected && c.power !== 'standby'); };
@@ -108,7 +109,7 @@
   window.addEventListener('blur', () => releaseAll('window blur'));
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll('page hidden'); });
   window.addEventListener('cc:tab', () => releaseAll('tab change'));
-  window.addEventListener('pagehide', () => { if (anyHeld() && motionCam && navigator.sendBeacon) navigator.sendBeacon('/api/sys/ptz/cmd/stop', new Blob([JSON.stringify({ cam: motionCam })], { type: 'application/json' })); });
+  window.addEventListener('pagehide', () => { if (anyHeld() && motionCam && navigator.sendBeacon) navigator.sendBeacon(`${ptzId()}/cmd/stop`, new Blob([JSON.stringify({ cam: motionCam })], { type: 'application/json' })); });
   document.addEventListener('contextmenu', (e) => { if (e.target.closest('#pane-pctl .joy, #pane-pctl .rock')) e.preventDefault(); });
   // keys: arrows pan / tilt at max speed, + / - zoom, Esc = all stop
   const KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }; const down = new Set();
@@ -356,7 +357,7 @@
     let h = '';
     for (let n = (page - 1) * PAGE + 1; n <= Math.min(V.presetCount, page * PAGE); n++) {
       const nm = names[n]; const last = c && c.lastPreset === n;
-      const img = thumbs && c && (nm || last) ? `<img alt="" loading="lazy" src="/api/sys/ptz/cameras/${encodeURIComponent(c.id)}/thumbnail/${n}?v=${thumbVer[`${c.id}:${n}`] || 1}">` : '';
+      const img = thumbs && c && (nm || last) ? `<img alt="" loading="lazy" src="${'/api/sys/' + ptzId() + '/cameras/' + encodeURIComponent(c.id) + '/thumbnail/' + n + '?v=' + (thumbVer[c.id + ':' + n] || 1)}">` : '';
       h += `<button class="thumb ${nm ? '' : 'unnamed'} ${last ? 'is-last' : ''} ${img ? '' : 'noimg'}" data-cp="${n}" ${off ? 'disabled' : ''} type="button">${img}<span class="ph">${n}</span><span class="cap"><b>${n}</b>${esc(nm || '')}</span>${last ? '<span class="tag">LAST</span>' : ''}</button>`;
     }
     S.set($('#ptzGrid'), 'ptzGrid', h);
@@ -378,7 +379,7 @@
     if (!c) { S.set($('#ptzRead'), 'ptzRead', ''); return; }
     readout(c);
     const k = catOf(c);
-    if (!k) { if (!catLoading.has(c.series)) { catLoading.add(c.series); api('GET', `/api/sys/ptz/cameras/${encodeURIComponent(c.id)}/catalog`).then((x) => { cats.set(x.series, x); }).catch((e) => toast(e.message, true)).finally(() => { catLoading.delete(c.series); renderCtl(); }); } return; }
+    if (!k) { if (!catLoading.has(c.series)) { catLoading.add(c.series); api('GET', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c.id)}/catalog`).then((x) => { cats.set(x.series, x); }).catch((e) => toast(e.message, true)).finally(() => { catLoading.delete(c.series); renderCtl(); }); } return; }
     const key = `${c.id}|${c.series}|${k.ops.length}`;
     if (built !== key) { build(c, k); built = key; }
     update(c, k);
@@ -435,7 +436,7 @@
     $('#ptzSnapHint').textContent = snap ? 'live frame, about every 1.5 s' : '';
     if (snapCam !== c.id) { snapCam = c.id; $('#ptzSnapImg').removeAttribute('src'); snapTick(); }
     const ii = info[c.id];
-    if (!ii || Date.now() - ii.at > 60000) { info[c.id] = { at: Date.now(), v: ii && ii.v }; api('GET', `/api/sys/ptz/cameras/${encodeURIComponent(c.id)}/info`).then((v) => { info[c.id] = { at: Date.now(), v }; renderExtras(sel() || c, catOf(sel() || c)); }).catch(() => {}); }
+    if (!ii || Date.now() - ii.at > 60000) { info[c.id] = { at: Date.now(), v: ii && ii.v }; api('GET', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c.id)}/info`).then((v) => { info[c.id] = { at: Date.now(), v }; renderExtras(sel() || c, catOf(sel() || c)); }).catch(() => {}); }
     const v = (ii && ii.v) || {};
     const row = (l, x, cls = '') => `<span class="kvl">${l}</span><span class="kvv ${cls}">${x}</span>`;
     S.set($('#ptzInfo'), 'ptzInfo', row('IP', `${esc(c.host)}<small>:${esc(c.port)}</small>`, 'mono') + row('MODEL', esc(c.model || '—')) + (c.title ? row('TITLE', esc(c.title)) : '') + (c.version ? row('FW', esc(c.version), 'mono') : '')
@@ -450,7 +451,7 @@
     const done = () => { snapBusy = false; img.onload = null; img.onerror = null; };
     img.onload = () => { done(); $('#ptzSnap').classList.remove('err'); paintPreview(); };
     img.onerror = () => { done(); if (sel() && sel().id === id) { $('#ptzSnap').classList.add('err'); $('#ptzSnapNa').textContent = 'Preview frame unavailable'; } };
-    img.src = `/api/sys/ptz/cameras/${encodeURIComponent(id)}/snapshot?t=${Date.now()}`;
+    img.src = `/api/sys/${ptzId()}/cameras/${encodeURIComponent(id)}/snapshot?t=${Date.now()}`;
     setTimeout(() => { if (snapBusy) done(); }, 5000);
   }
   setInterval(() => { if (V && V.kind === 'ptz' && window.CC.getTab() === 'pctl' && !document.hidden) snapTick(); }, 1500);
@@ -474,7 +475,7 @@
       <button class="btn mini ${c.id === V.selected ? 'primary' : ''}" data-selcam="${esc(c.id)}" type="button">${c.id === V.selected ? 'SELECTED' : 'SELECT'}</button>
       <button class="btn mini" data-edit="${esc(c.id)}" type="button">EDIT</button><button class="btn mini" data-login="${esc(c.id)}" type="button" title="User / password the camera asks for (factory: admin / 12345)">LOGIN</button><button class="btn mini danger" data-rm="${esc(c.id)}" type="button">REMOVE</button></div>`).join('') || '<div class="note">No cameras yet.</div>');
     const c = sel(); const k = catOf(c);
-    if (c && !k && !catLoading.has(c.series)) { catLoading.add(c.series); api('GET', `/api/sys/ptz/cameras/${encodeURIComponent(c.id)}/catalog`).then((x) => cats.set(x.series, x)).catch(() => {}).finally(() => { catLoading.delete(c.series); renderCams(); }); }
+    if (c && !k && !catLoading.has(c.series)) { catLoading.add(c.series); api('GET', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c.id)}/catalog`).then((x) => cats.set(x.series, x)).catch(() => {}).finally(() => { catLoading.delete(c.series); renderCams(); }); }
     S.set($('#ptzRef'), 'ptz-ref', c && k ? `<div class="note small">${esc(c.name)} · ${esc(c.model || '?')} · series ${esc(k.series)} · ${k.ops.length} commands. Sources: ${esc(k.sources.module)}; ${esc(k.sources.spec)}.</div>`
       + k.ops.map((o) => `<div class="row ref-row"><span class="chip ${o.src === 'spec' ? 'spec' : o.src === 'app' ? '' : 'mod'}">${o.src === 'spec' ? 'SPEC' : o.src === 'app' ? 'APP' : 'MODULE'}</span><span class="lbl">${esc(o.label)}<small>${esc(o.id)} · ${esc(o.group)}${o.type ? ` · ${esc(o.type)}` : ''}${o.range ? ` ${o.range.min}..${o.range.max}` : ''}${o.options ? ` · ${o.options.length} values` : ''}</small></span><span class="ref-src">${esc(o.ref)}</span></div>`).join('') : '');
   }
@@ -489,7 +490,7 @@
     const c = sel(); if (!c) return;
     if (!anyHeld() && !c.moving && Date.now() - lastRead < 2000) return;
     reading = true; lastRead = Date.now();
-    try { const x = await api('GET', `/api/sys/ptz/cameras/${encodeURIComponent(c.id)}/status`); const i = V.cameras.findIndex((y) => y.id === x.id); if (i >= 0) { V.cameras[i] = x; renderCtl(); } } catch { /* the stream will bring it */ } finally { reading = false; }
+    try { const x = await api('GET', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c.id)}/status`); const i = V.cameras.findIndex((y) => y.id === x.id); if (i >= 0) { V.cameras[i] = x; renderCtl(); } } catch { /* the stream will bring it */ } finally { reading = false; }
   }, 500);
 
   // ---------- events ----------
@@ -512,7 +513,7 @@
     const name = prompt(`Name for ${c.name} preset ${n} (empty clears it)`, nm || ''); if (name === null) return undefined;
     return run(cmd('rename', { preset: n, name: name.trim() }));
   });
-  $('#ptzCamList').addEventListener('change', (ev) => { const s = ev.target.closest('[data-series]'); if (!s) return; run(api('POST', `/api/sys/ptz/cameras/${s.dataset.series}`, { series: s.value }).then(() => { cats.clear(); built = ''; toast('Camera series saved'); })); });
+  $('#ptzCamList').addEventListener('change', (ev) => { const s = ev.target.closest('[data-series]'); if (!s) return; run(api('POST', `/api/sys/${ptzId()}/cameras/${s.dataset.series}`, { series: s.value }).then(() => { cats.clear(); built = ''; toast('Camera series saved'); })); });
   $('#ptzCamList').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return; const d = b.dataset;
     const c = d.selcam || d.edit || d.rm || d.login; const cam = (V.cameras || []).find((x) => x.id === c);
@@ -523,8 +524,8 @@
       dlg.showModal(); return undefined;
     }
     if (d.selcam) return run(cmd('select', { cam: c }));
-    if (d.edit) { const name = prompt('Camera name', cam.name); if (name === null) return undefined; const host = prompt('Camera IP address', cam.host); if (host === null) return undefined; const port = prompt('HTTP port', String(cam.port)); if (port === null) return undefined; return run(api('POST', `/api/sys/ptz/cameras/${c}`, { name, host, port: Number(port) || 80 }).then(() => toast('Camera saved'))); }
-    if (d.rm) { if (!confirm(`Remove ${cam.name} from this system?`)) return undefined; return run(api('DELETE', `/api/sys/ptz/cameras/${c}`).then(() => toast('Camera removed'))); }
+    if (d.edit) { const name = prompt('Camera name', cam.name); if (name === null) return undefined; const host = prompt('Camera IP address', cam.host); if (host === null) return undefined; const port = prompt('HTTP port', String(cam.port)); if (port === null) return undefined; return run(api('POST', `/api/sys/${ptzId()}/cameras/${c}`, { name, host, port: Number(port) || 80 }).then(() => toast('Camera saved'))); }
+    if (d.rm) { if (!confirm(`Remove ${cam.name} from this system?`)) return undefined; return run(api('DELETE', `/api/sys/${ptzId()}/cameras/${c}`).then(() => toast('Camera removed'))); }
     return undefined;
   });
   $('#dlgPtzLogin').addEventListener('close', () => {
@@ -532,11 +533,11 @@
     if (!id || !['save', 'factory'].includes(dlg.returnValue)) return;
     const user = fm.elements.user.value.trim();
     const body = dlg.returnValue === 'factory' ? { user: null, pass: null } : { user: user && user !== 'admin' ? user : null, ...(pass ? { pass } : {}) };
-    run(api('POST', `/api/sys/ptz/cameras/${encodeURIComponent(id)}`, body).then(() => toast(dlg.returnValue === 'factory' ? 'Camera login back to the factory default' : 'Camera login saved')).finally(S.refetch));
+    run(api('POST', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(id)}`, body).then(() => toast(dlg.returnValue === 'factory' ? 'Camera login back to the factory default' : 'Camera login saved')).finally(S.refetch));
   });
   $('#ptzAdd').addEventListener('submit', (ev) => {
     ev.preventDefault(); const fm = ev.target; const body = { name: fm.elements.name.value.trim(), host: fm.elements.host.value.trim(), port: Number(fm.elements.port.value) || 80 };
-    run(api('POST', '/api/sys/ptz/cameras', body).then(() => { fm.reset(); toast(`Added ${body.name || 'camera'}`); }).finally(S.refetch));
+    run(api('POST', `${ptzId()}/cameras`, body).then(() => { fm.reset(); toast(`Added ${body.name || 'camera'}`); }).finally(S.refetch));
   });
   // ---------- 0.11.1 dockable dashboard (public/dock.js) ----------
   // Panels move (drag the header; touch: hold, then drag), resize from the edges / bottom corners, collapse, pop out,
