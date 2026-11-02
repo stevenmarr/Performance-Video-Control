@@ -458,9 +458,13 @@ test('timeline steps stack across rows, reject a same-row clash, and keep an off
   assert.ok(moved.actions.every((a, i, list) => list.filter((b) => b.section === a.section).some((b) => b.step === 0)));
   const blocked = moveAction(rows, 'c', { section: 'take', step: 0 });
   assert.match(blocked.error, /RS6/);
-  assert.equal(rowKey({ type: 'hires', system: 'rs6' }, { rs6: ['desk-1'] }), 'desk-1');
-  assert.equal(rowKey({ type: 'hires', system: 'rs6', instance: 'desk-2' }, { rs6: ['desk-1', 'desk-2'] }), 'desk-2');
+  assert.equal(rowKey({ type: 'hires', system: 'rs6' }, { rs6: ['rs6-abcd1234'] }), 'rs6', 'a family name is the original instance');
+  assert.equal(rowKey({ type: 'hires', system: 'rs6', instance: 'rs6-abcd1234' }), 'rs6-abcd1234');
   assert.equal(rowKey({ type: 'atem-macro' }, {}), 'atem');
+  assert.equal(clashMessage([
+    { id: 'a', type: 'hires', system: 'rs6', instance: 'rs6', section: 'take', step: 0 },
+    { id: 'b', type: 'hires', system: 'rs6', instance: 'rs6-abcd1234', section: 'take', step: 0 },
+  ]), '');
 });
 
 test('post-take waits until the take step has fired', async () => {

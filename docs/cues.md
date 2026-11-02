@@ -8,7 +8,7 @@ The run is a small state machine in `lib/cue-machine.js`. It does not use a libr
 
 Edit mode, left to right, then the timeline across the bottom:
 
-- **Systems.** A tree of each system and the presets it already stores (RS6, E2, PixelHue, ATEM macros, PTZ, saved looks). Drag a preset onto a cue button or onto the timeline.
+- **Systems.** A tree of each system instance and the presets it already stores. The label is the instance name. The stored value is the instance id. A family name with no suffix (`rs6`, `atem`, `ptz`) is the original. Drag a preset onto a cue button or onto the timeline.
 - **Cue grid.** C1, C2, and the rest of the stack. A cue with presets on its timeline can be loaded. An empty cue is grey. Right-click a cue to edit, rename, clear, or delete it.
 - **Cue stack.** The order, the stacked-cues switch, and the selected cue's name. That panel is the right column. RUN CUE sits in the bottom-right corner, under it.
 - **Timeline.** An order of events, not a clock. The orange GO break splits a left TAKE panel from a right POST TAKE panel. Each system instance is one row. Columns are steps. Items in the same column fire together. Two items on the same row cannot share a step. Drag left or right to another step, or into the gap to insert a column. Empty steps close up. Right-click an item to set its offset (a delay after the step starts) or to remove it. The offset shows as a small badge.
@@ -53,7 +53,7 @@ The cue keys still POST `/api/master-cues/mcN/go`. That is RUN CUE for that cue,
 
 ## Saved cues
 
-Old `master-cues.json` files still load. An action that only had `offsetMs` is ordered by that time. Actions on different systems within 50 ms share a step, and the later one's offset is the remainder. Two actions on the same system never share a step. The first action in a step has offset 0. `section` stays `take` or `post`. `stacked` defaults to off. New saves store `step`, `offsetMs`, `section`, and an optional `instance` id. A row is that instance id. When the desk has exactly one instance of the system, the row is that id. Otherwise the row is the system type (`rs6`, `atem`, `ptz`, …).
+Old `master-cues.json` files still load. An action that only had `offsetMs` is ordered by that time. Actions on different systems within 50 ms share a step, and the later one's offset is the remainder. Two actions on the same instance never share a step. The first action in a step has offset 0. `section` stays `take` or `post`. `stacked` defaults to off. New saves store `step`, `offsetMs`, `section`, and the instance id. A row is that instance. Two RS6s are two rows. A saved family name with no suffix still means the original instance.
 
 ```mermaid
 flowchart LR

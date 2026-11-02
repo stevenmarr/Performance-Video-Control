@@ -11,6 +11,8 @@
 
   const cue = () => book.cues[selected] || null;
   const sys = () => book.system || 'rs6';
+  const switchers = () => (Array.isArray(book.instances) && book.instances.length ? book.instances.map((i) => [i.id, i.name || i.id]) : SYSTEMS);
+  const switcherName = () => { const hit = switchers().find(([id]) => id === sys()); return hit ? hit[1] : sys(); };
 
   async function api(method, path, body) {
     const r = await fetch(path, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
@@ -44,7 +46,7 @@
       const locked = !!(book.locked || book.runState === 'running' || book.firing);
       const firing = book.firing ? ` Firing ${book.firing.cue}, step ${book.firing.step}.` : '';
       const state = link.state || (link.connected ? 'connected' : 'offline');
-      st.textContent = `${(sys() || '').toUpperCase()} ${state}${link.simulator ? ' · simulator' : ''}.${firing}${locked ? ' GO is locked.' : ''} GO loads preview. TAKE is yours. Relative changes only the layers stored in that preset.`;
+      st.textContent = `${switcherName()} ${state}${link.simulator ? ' · simulator' : ''}.${firing}${locked ? ' GO is locked.' : ''} GO loads preview. TAKE is yours. Relative changes only the layers stored in that preset.`;
     }
     const go = document.getElementById('cueGo');
     if (go) go.disabled = !!(book.locked || book.runState === 'running') || !!(cue() && cue().invalid);
@@ -54,7 +56,7 @@
     const c = cue();
     const link = book.link || {};
     const head = `<div class="cue-link">
-      <label>SWITCHER <select id="cueSystem">${SYSTEMS.map(([id, label]) => `<option value="${id}" ${sys() === id ? 'selected' : ''}>${label}</option>`).join('')}</select></label>
+      <label>SWITCHER <select id="cueSystem">${switchers().map(([id, label]) => `<option value="${id}" ${sys() === id ? 'selected' : ''}>${esc(label)}</option>`).join('')}</select></label>
       <span class="pill ${link.connected ? 'ok' : 'off'}">${esc(link.state || 'offline')}</span>
       <button type="button" class="btn mini" id="cueConnect">${link.connected ? 'RECONNECT' : 'CONNECT'}</button>
       ${sys() === 'rs6' ? '<span class="note">RS6 has no simulator.</span>' : `<button type="button" class="btn mini" id="cueSim">${link.simulator ? 'SIMULATOR ON' : 'USE SIMULATOR'}</button>`}
