@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { SURFACES } = require('../lib/decks/surfaces');
 const { show, applyReadouts } = require('../lib/decks/faces');
 const { keySvg } = require('../lib/deck-image');
-const { keyModel, keyImage, stripImage } = require('../lib/decks/look');
+const { keyModel, keyImage, stripImage, dialSignature } = require('../lib/decks/look');
 
 test('deck keys use the Control Dark SVG, not a bitmap font', () => {
   const model = keyModel({ label: 'TAKE', caption: 'PGM', tone: 'stop' });
@@ -163,4 +163,54 @@ test('ATEM is one page per M/E plus routing, with long names and program / previ
   const me2 = show(SURFACES.xl, atemDesk, { system: 'atem', page: top.find((k) => k.label === 'ME2').page });
   assert.equal(me2.keys.find((k) => k.label === 'Super Source').tone, 'pvw');
   assert.equal(me2.keys.find((k) => k.label === 'Camera Left').caption, 'PGM');
+});
+
+test('the home page is labeled HOME and Control Center keys are not device keys', () => {
+  const home = show(SURFACES.xl, desk, {});
+  assert.equal(home.title, 'HOME');
+  const title = home.keys.find((k) => k.col === 0 && k.row === 0);
+  assert.equal(title.label, 'HOME');
+  assert.equal(title.tone, 'os');
+  const os = show(SURFACES.xl, desk, { system: 'console', page: 0 });
+  const save = os.keys.find((k) => k.label === 'SAVE');
+  const power = show(SURFACES.xl, desk, { system: 'console', page: 1 }).keys.find((k) => k.label === 'REBOOT');
+  assert.equal(save.tone, 'os');
+  assert.equal(power.tone, 'os');
+  const model = keyModel(save);
+  const device = keyModel({ label: 'TAKE', caption: 'PGM', tone: 'stop' });
+  assert.equal(model.os, true);
+  assert.equal(model.fill, '#243044');
+  assert.notEqual(model.fill, device.fill);
+  const svg = keySvg(model);
+  assert.match(svg, /SAVE/);
+  assert.match(svg, /#243044/);
+  assert.match(svg, /#8EA0B5/);
+  const back = keyModel({ label: 'HOME', caption: 'BACK', nav: 'home', tone: 'os' });
+  assert.equal(back.value, 'HOME');
+  assert.equal(back.os, true);
+});
+
+test('every PTZ page names the camera the deck is controlling', () => {
+  const ptzDesk = {
+    armed: ['ptz'],
+    byKey: { ptz: { cameras: [{ id: 'cam1', name: 'Wide' }, { id: 'cam2', name: 'Tight' }], selected: 'cam2' } },
+  };
+  const snap = { cameras: [{ id: 'cam1', name: 'Wide' }, { id: 'cam2', name: 'Tight', selected: true }], selected: 'cam2', readouts: {} };
+  const wide = show(SURFACES.plusxl, ptzDesk, { system: 'ptz', page: 0 });
+  const small = show(SURFACES.plus, ptzDesk, { system: 'ptz', page: 0 });
+  for (const first of [wide, small]) {
+    assert.equal(first.title, 'Tight');
+    for (let p = 0; p < first.pages; p++) {
+      const face = show(first === wide ? SURFACES.plusxl : SURFACES.plus, ptzDesk, { system: 'ptz', page: p });
+      const home = applyReadouts(face.keys, snap).find((k) => k.nav === 'home');
+      assert.ok(home, `page ${p} has a home key`);
+      assert.equal(home.label, 'HOME');
+      assert.equal(home.caption, 'Tight');
+    }
+  }
+  const switched = { ...snap, selected: 'cam1', cameras: snap.cameras.map((c) => ({ ...c, selected: c.id === 'cam1' })) };
+  const again = applyReadouts(wide.keys, switched).find((k) => k.nav === 'home');
+  assert.equal(again.caption, 'Wide');
+  const dials = [{ widget: 'iris' }, { widget: 'zoom' }];
+  assert.notEqual(dialSignature(dials, snap), dialSignature(dials, switched));
 });

@@ -50,3 +50,22 @@ build it and does not deploy through Companion.
 
 A mock deck exists only in `test/decks.test.js`, as a stand-in for hardware the test machine does
 not have. The server path in production is the plugin HTTP API above.
+
+## Key style
+
+The pictures follow the console surface rules:
+
+| | |
+|---|---|
+| Gray | a normal device key |
+| Blue | a selected device key, or a page key inside a system |
+| Green | preview |
+| Red | on air only. Red is not used for a warning |
+| Amber dashed | a guarded key (ALL STOP, and anything you have to hold) |
+| Slate, light bar, inner frame | a Control Center key |
+
+Control Center keys are the home page, the HOME key, the console page (shows, status, reconnect, alerts, lockout, power), and the system switcher. They use a slate fill (`#243044`), a light bar, and a second inner frame. Device keys do not. HOME is the word HOME. On a PTZ page that same key also shows the camera the deck is controlling, and the LCD strip shows that name. Both update when the camera changes.
+
+A stepped key (ND, D.EXT, gain, shutter, white balance, and every other list) wraps. The step past the last value comes back to the first. A long press steps the other way. A plain number, such as iris, still stops at the end of its range.
+
+Pan, tilt, zoom, and focus start slow and ease in while the key is held. A dial stays at one camera step until the turn is clearly fast, then eases up. The numbers are `ACCEL`, `OVERRIDES`, and `HOLD` in `lib/paint-accel.js`. Pass another cfg into `stepsFor`, `holdGain`, or `velocityFor` to try a different curve.
