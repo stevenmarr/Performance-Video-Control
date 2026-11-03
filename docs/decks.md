@@ -57,14 +57,14 @@ The + XL switcher page is JSON (`lib/decks/pages/atem-switcher.page.json`). See 
 
 | Row | Keys |
 |---|---|
-| 1 | HOME (house icon), ATEM INFO (name and IP), one blank, SWITCHER, ROUTER, AUDIO, KEYS/SS, MULTIVIEWER, one blank |
-| 2 | seven memory/macro keys, bank shift, CUT |
-| 3 | program slots 1–7, the M/Es that CUT and TRANS run on, TRANS (auto) |
-| 4 | preview slots 1–7, SHIFT, TRANS SELECTION |
+| 1 | HOME (house icon), ATEM INFO (name and IP), one blank, SWITCHER, ROUTER, AUDIO, KEYS/SS, MULTIVIEWER, TRANS SELECTION |
+| 2 | seven memory/macro keys, bank shift, the M/Es that CUT and TRANS run on |
+| 3 | program slots 1–7, one blank, CUT |
+| 4 | preview slots 1–7, SHIFT, TRANS (auto) |
 
-Nothing on the page says FLEX. A memory/macro key is blue for a macro, magenta for a memory, and dark grey when empty. The bank key reads SHIFT, with MACROS in the small line on bank 1 and MEMORY on bank 2. Banks 2–4 turn that key yellow and show the bank number. SHIFT stays on column 8, including after you leave the page. It shows sources 1–7, then 8–14. Sources 15 and 16 are not on this page. Program keys are muted red, and the source on program is bright red. Preview keys are muted green, and the source on preview is bright green. Names are the ATEM long names, wrapped. CUT and TRANS are solid red and turn lighter while a transition runs. Tabs are the name only. TRANS draws each layer: a red dot when that layer is on air, and a gold bar when it is in the next transition.
+Nothing on the page says FLEX. A memory/macro key is blue for a macro, magenta for a memory, and dark grey when empty. The bank key reads SHIFT, with a left arrow pointing at the memory/macro row and MACROS in the small line on bank 1 and MEMORY on bank 2. Banks 2–4 turn that key yellow and show the bank number. SHIFT stays on column 8, including after you leave the page. It shows sources 1–7, then 8–14. Sources 15 and 16 are not on this page. Program keys are muted red, and the source on program is bright red. Preview keys are muted green, and the source on preview is bright green. Names are the ATEM long names, wrapped. CUT and TRANS are solid red with no top bar and turn lighter while a transition runs. Tabs are the name only, all in one font size; long names break at a natural point (MULTI-/VIEWER, KEYS/ / SS). TRANS draws each layer: a red dot when that layer is on air, and a gold bar when it is in the next transition.
 
-The M/E key on row 3 cycles the M/Es that receive CUT and TRANS: each M/E, then every M/E together. The key reads `ME 1` or `ME 1+2`.
+The M/E key on row 2 toggles the M/Es that receive CUT and TRANS between this page's M/E and every M/E. The set always includes this page's M/E, so another M/E never fires alone. The key draws one box per M/E: a lit gold box fires, a dashed box does not. The small line reads THIS M/E or ALL M/Es. Turning the M/E encoder moves this page's M/E; in ALL mode every M/E still fires.
 
 Hold a memory, macro, program, or preview key and turn encoder 6. Release saves the mapping. One map is shared by every M/E unless the ATEM view has per-M/E bus mapping.
 
