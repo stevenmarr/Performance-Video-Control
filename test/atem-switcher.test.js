@@ -34,7 +34,14 @@ test('a + XL switcher page matches the drawn rows and a Mini keeps HOME and PAGE
   assert.equal(row(1)[7], 'SHIFT');
   assert.equal(row(1)[7] && xl.keys.find((k) => k.row === 1 && k.col === 7).caption, 'MACROS');
   assert.equal(xl.keys.find((k) => k.row === 1 && k.col === 7).faceStyle.arrow, 'left');
-  assert.equal(row(1)[8], 'ME 1');
+  assert.equal(row(1)[8], 'ME1');
+  assert.equal(xl.keys.find((k) => k.row === 1 && k.col === 8).faceStyle.bigText, 'ME1');
+  const four = { ...view, mes: [0, 1, 2, 3].map((i) => ({ ...view.mes[0], index: i })) };
+  const allDesk = { armed: ['atem'], byKey: { atem: { view: four, buttonMap: map.cleanMap(null) } } };
+  const bigOf = (ui) => show(SURFACES.plusxl, allDesk, { system: 'atem', page: 0, atemUi: ui }).keys.find((k) => k.row === 1 && k.col === 8).faceStyle.bigText;
+  assert.equal(bigOf({ me: 2, mes: [2] }), 'ME2');
+  assert.equal(bigOf({ me: 1, mes: [1, 2] }), 'ME1\nME2');
+  assert.equal(bigOf({ me: 3, mes: [1, 2, 3, 4] }), 'ME1 ME2\nME3 ME4');
   assert.equal(row(2)[7], '');
   assert.equal(row(2)[8], 'CUT');
   assert.equal(row(3)[7], 'SHIFT');

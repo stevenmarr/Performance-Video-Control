@@ -15,7 +15,7 @@
     { "id": "trans-select", "element": "button", "role": "toggle", "text": "SELECT", "style": { "bar": "#C42020" }, "feedbacks": [{ "when": "transHold", "style": { "bgcolor": "#3a1012", "border": "#C42020" } }], "actions": { "hold": [{ "action": "atem.transSelect" }] } },
     { "repeat": 7, "id": "flex", "element": "button", "role": "flex", "slotFrom": 0 },
     { "id": "macro-shift", "element": "button", "role": "shift", "text": "SHIFT", "caption": "MACROS", "feedbacks": [{ "when": "bankOn", "style": { "bgcolor": "#E0B030", "color": "#1a1404" } }], "actions": { "press": [{ "action": "atem.flexBank", "options": { "banks": 4 } }] } },
-    { "id": "mes", "element": "button", "role": "toggle", "text": "ME 1", "style": { "bar": null }, "feedbacks": [{ "when": "multi", "style": { "border": "#E0B030" } }], "actions": { "press": [{ "action": "atem.mes" }] } },
+    { "id": "mes", "element": "button", "role": "toggle", "text": "ME1", "style": { "bar": null }, "feedbacks": [{ "when": "multi", "style": { "border": "#E0B030" } }], "actions": { "press": [{ "action": "atem.mes" }] } },
     { "repeat": 7, "id": "pgm", "element": "button", "role": "program", "slotFrom": 1 },
     { "id": "blank", "element": "button", "role": "blank", "text": "" },
     { "id": "cut", "element": "button", "role": "hot", "text": "CUT", "style": { "bar": null }, "feedbacks": [{ "when": "transition", "style": { "bgcolor": "#ff6b6b" } }], "actions": { "press": [{ "action": "atem.cut", "instance": "$(target)", "options": { "mes": "$(atem:mes)" } }] } },

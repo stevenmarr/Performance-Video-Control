@@ -75,8 +75,13 @@ const states = [
   ['mapping', { atemUi: { shift: 0, me: 1, flexBank: 0, mes: [1], pending: { bus: 'pgm', slot: 2, index: 0, name: 'Mitti Walk In' } } }],
 ];
 
-for (const [name, session] of states) {
-  const face = show(SURFACES.plusxl, desk, { system: 'atem', page: 0, ...session });
+const base = desk.byKey.atem.view;
+const desk4 = { ...desk, byKey: { atem: { ...desk.byKey.atem, view: { ...base, topology: { ...base.topology, mixEffects: 4 }, mes: [...base.mes, { ...base.mes[1] }, { ...base.mes[1] }] } } } };
+states.push(['allme', { atemUi: { shift: 0, me: 1, flexBank: 0, mes: [1, 2] } }]);
+states.push(['allme-4me', { atemUi: { shift: 0, me: 1, flexBank: 0, mes: [1, 2, 3, 4] } }, desk4]);
+
+for (const [name, session, which] of states) {
+  const face = show(SURFACES.plusxl, which || desk, { system: 'atem', page: 0, ...session });
   const png = new Resvg(pageSvg(face), { fitTo: { mode: 'width', value: 900 }, font: { loadSystemFonts: true, defaultFontFamily: 'Arial' }, background: '#14161A' }).render().asPng();
   const file = path.join(outDir, `plusxl--atem-switcher--${name}.png`);
   fs.writeFileSync(file, png);
