@@ -28,7 +28,7 @@ test('a + XL switcher page matches the drawn rows and a Mini keeps HOME and PAGE
   const desk = { armed: ['atem'], byKey: { atem: { view, buttonMap: map.cleanMap(null) } } };
   const xl = show(SURFACES.plusxl, desk, { system: 'atem', page: 0 });
   const row = (r) => xl.keys.filter((k) => k.row === r).sort((a, b) => a.col - b.col).map((k) => k.label);
-  assert.deepEqual(row(0), ['HOME', 'INFO', '', '', 'SWITCHER', 'ROUTER', 'AUDIO', 'KEYS', 'MV']);
+  assert.deepEqual(row(0).map((label) => label.split('\n')[0]), ['HOME', 'ATEM —', '', 'SWITCHER', 'ROUTER', 'AUDIO', 'KEYS/SS', 'MULTIVIEWER', 'TRANS']);
   assert.equal(row(1)[7], 'MACRO');
   assert.equal(row(1)[8], 'CUT');
   assert.equal(row(2)[8], 'TRANS');
