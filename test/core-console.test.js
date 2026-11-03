@@ -203,7 +203,12 @@ test('the console is a deck page and a home key, and it posts core actions', () 
   assert.equal(face.keys.find((k) => k.col === 0 && k.row === 0).nav, 'home');
   const save = face.keys.find((k) => k.role === 'show.save');
   assert.equal(save.action.path, '/api/core/cmd/show.save');
-  const power = show(SURFACES.xl, { armed: [] }, { system: 'console', page: 1 });
+  let power = null;
+  for (let p = 0; p < 6; p++) {
+    const face = show(SURFACES.xl, { armed: [] }, { system: 'console', page: p });
+    if ((face.keys || []).some((k) => k.role === 'host.shutdown')) power = face;
+  }
+  assert.ok(power, 'the power page is on the console deck');
   assert.equal(power.keys.find((k) => k.role === 'host.shutdown').action.path, '/api/core/cmd/host.shutdown');
   const lib = libraryFor({ armed: ['rs6'] }, SURFACES.xl);
   assert.ok(lib.some((p) => p.id === 'console'));

@@ -51,6 +51,38 @@ build it and does not deploy through Companion.
 A mock deck exists only in `test/decks.test.js`, as a stand-in for hardware the test machine does
 not have. The server path in production is the plugin HTTP API above.
 
+## Page layouts
+
+The deck pages follow the console surface design (the 21-page gallery, plus the
+detail/chroma and gamma/knee RCP banks from the paint section).
+
+| Page | Where it sits |
+|---|---|
+| PTZ paint MSU, RCP EXP, WHITE/BLACK, DTL/CHROMA, GAMMA/KNEE, MATRIX | PTZ deck |
+| PTZ presets, list and matrix | PTZ deck |
+| PTZ lens | PTZ deck. Native on Stream Deck + |
+| ATEM companion, backup, memories | ATEM deck. The live M/E and aux pages are still there after these |
+| Videohub XY, flex, quick panel | Videohub deck |
+| E2 presets and flex | E2 and PixelHue decks |
+| Mitti cue grid, flex, playback | Mitti and Pixera decks |
+| HyperDeck flex and transport | HyperDeck deck |
+| OS page and Companion rows | Console deck |
+
+A deck whose size matches the drawing (9×4, 8×4, or 4×2) gets that grid.
+Mini, Neo, MK.2, and any other size keep the same keys in the same order,
+with HOME at the top left and PAGE in the corner so every page can be reached.
+
+These are the places the drawing could not be copied literally:
+
+* One PTZ card is one camera, so the MSU dials are that camera's paint knobs, not six different cameras.
+* Pan and tilt on the Stream Deck + are speed knobs. The deck has no joystick.
+* ND, picture level, and the matrix axes share the nearest existing knob.
+* GANG, COPY, COMPARE, and FOLLOW PVW are labeled. There is no command behind them yet.
+* The preset matrix keeps HOME at the top left, so that corner is not a camera key.
+* Adapted pages use the corner for PAGE. ALL STOP and GO stay in the corner only on the native grid.
+* RS6 keeps the memory pad. The design has no RS6 page.
+* Companion rows are drawn here and do nothing until Companion owns those keys.
+
 ## Key style
 
 The pictures follow the console surface rules:
