@@ -143,6 +143,10 @@ test('dials, keys, presets and HOME become Control Center HTTP calls and never a
   assert.equal(plans[11].requests[0].body.op, 'oneTouchAF');
   assert.deepEqual(plans[12].requests[0].body, { cam: 'cam1', op: 'gammaMode', value: '0' });
   assert.equal(plans[13].requests[0].body.tilt, 0.25);
+  const eased = deck.plan({ gesture: 'hold', role: 'moveUp', phase: 'move', heldMs: 0, snapshot: snap });
+  const full = deck.plan({ gesture: 'hold', role: 'moveUp', phase: 'move', heldMs: 5000, snapshot: snap });
+  assert.ok(eased.requests[0].body.tilt < 0.2);
+  assert.ok(full.requests[0].body.tilt > eased.requests[0].body.tilt);
   assert.deepEqual(plans[14].requests[0].body.axes, ['pt']);
   assert.equal(plans[15].profile, 'PTZ Paint');
   assert.deepEqual(plans[16].requests[0].body, { pt: 26 });
@@ -180,6 +184,15 @@ test('readouts match the paint pane, and the strip SVG is a circular knob (dual 
   assert.equal(deck.nextValue(irisOp, 98, 5), 99);
   const wb = PC.catalogFor('UE150').ops.find((o) => o.id === 'wbMode');
   assert.equal(deck.nextValue(wb, '0', 1), '1');
+  const nd = PC.catalogFor('UE150').ops.find((o) => o.id === 'ndFilter');
+  const dext = PC.catalogFor('UE150').ops.find((o) => o.id === 'dExtender');
+  for (const op of [nd, dext, wb]) {
+    const first = op.options[0][0];
+    const last = op.options[op.options.length - 1][0];
+    assert.equal(deck.nextValue(op, last, 1), first, `${op.id} wraps forward`);
+    assert.equal(deck.nextValue(op, first, -1), last, `${op.id} wraps backward`);
+  }
+  assert.equal(deck.nextValue(irisOp, 98, 5), 99, 'a numeric range still stops at the end');
 
   const face = deck.dialFace('gainRb', snap, 0);
   const svg = img.knobSvg(face);
@@ -293,7 +306,7 @@ test('GET /api/deck/ptz and POST step: the plugin path, with the camera password
   assert.ok(layout.bannedOnKeys.includes('rGain') && layout.bannedOnKeys.includes('bPed'));
   const ver = await (await fetch(`${B}/api/version`)).json();
   for (const f of ['streamDeck', 'ptzDeck']) assert.ok(ver.features.includes(f), f);
-  assert.equal(ver.appVersion, '0.26.0');
+  assert.equal(ver.appVersion, '0.26.1');
 
   assert.equal((await post('/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'iris', value: 20 })).status, 200);
   const stepped = await post('/api/sys/ptz/cmd/step', { cam: 'cam1', op: 'iris', steps: 5 });
