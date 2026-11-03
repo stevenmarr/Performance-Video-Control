@@ -105,7 +105,7 @@ test('PTZ camera keys are the cameras on the desk, and the selected one is marke
   assert.deepEqual(func.keys.filter((k) => k.cam).map((k) => k.label), ['Wide', 'Tight', 'End']);
 });
 
-test('ATEM is one page per M/E plus routing, with long names and program / preview feedback', () => {
+test('ATEM switcher is the + XL layout, and the router still names sources', () => {
   const view = {
     mes: [
       { index: 0, program: 2, preview: 1, bus: [
@@ -130,42 +130,30 @@ test('ATEM is one page per M/E plus routing, with long names and program / previ
     ],
   };
   const atemDesk = { armed: ['atem'], byKey: { atem: { view } } };
-  const cols = SURFACES.xl.cols;
-  let face = null;
-  for (let p = 0; p < 12; p++) {
-    const candidate = show(SURFACES.xl, atemDesk, { system: 'atem', page: p });
-    if (candidate.keys.some((k) => k.label === 'ME1')) { face = candidate; break; }
-  }
-  assert.ok(face, 'the live M/E page is still reachable');
-  assert.equal(face.keys.find((k) => k.col === cols - 1 && k.row === 0).label, 'AUTO');
-  assert.equal(face.keys.find((k) => k.col === cols - 2 && k.row === 0).label, 'CUT');
-  const top = face.keys.filter((k) => k.row === 0);
-  assert.equal(top.find((k) => k.label === 'ME1').tone, 'nav');
-  assert.equal(top.find((k) => k.label === 'ME1').on, true);
-  assert.equal(top.find((k) => k.label === 'ME2').tone, 'nav');
-  assert.equal(top.find((k) => k.label === 'ROUTE').tone, 'nav');
-  assert.ok(top.find((k) => k.label === 'ME1').col < cols - 2);
-  const pvw = face.keys.find((k) => k.label === 'Camera Left');
-  const pgm = face.keys.find((k) => k.label === 'Camera Right');
-  assert.equal(pvw.tone, 'pvw');
-  assert.equal(pvw.caption, 'PVW');
-  assert.equal(pvw.action.body.me, 1);
+  const face = show(SURFACES.plusxl, atemDesk, { system: 'atem', page: 0 });
+  assert.equal(face.designId, 'atem-switcher');
+  assert.equal(face.keys.find((k) => k.col === 0 && k.row === 0).label, 'HOME');
+  assert.equal(face.keys.find((k) => k.col === 0 && k.row === 0).tone, 'os');
+  assert.equal(face.keys.find((k) => k.col === 4 && k.row === 0).label, 'SWITCHER');
+  assert.equal(face.keys.find((k) => k.col === 8 && k.row === 1).label, 'CUT');
+  assert.equal(face.keys.find((k) => k.col === 8 && k.row === 2).label, 'TRANS');
+  assert.equal(face.keys.find((k) => k.col === 8 && k.row === 3).label, 'SHIFT');
+  const pgm = face.keys.find((k) => k.label === 'CamR' || k.label === 'Camera Right');
+  const pvw = face.keys.find((k) => k.caption === 'PVW');
   assert.equal(pgm.tone, 'stop');
   assert.equal(pgm.caption, 'PGM');
-  assert.ok(face.keys.some((k) => k.label === 'Super Source'));
-  const routePage = top.find((k) => k.label === 'ROUTE').page;
-  const route = show(SURFACES.xl, atemDesk, { system: 'atem', page: routePage });
+  assert.equal(pvw.tone, 'pvw');
+  assert.equal(face.dials.map((d) => d.label).join(','), 'ME,EFFECT,WIPE,AUTO,T-BAR,MAP');
+  const routePage = face.keys.find((k) => k.label === 'ROUTER').page;
+  const route = show(SURFACES.plusxl, atemDesk, { system: 'atem', page: routePage });
   assert.equal(route.keys.find((k) => k.caption === 'Aux 1').label, 'Camera Left');
   assert.equal(route.keys.find((k) => k.caption === 'Aux 2').label, 'Super Source');
   const pick = route.keys.find((k) => k.caption === 'Aux 2');
-  const assigning = show(SURFACES.xl, atemDesk, { system: 'atem', page: pick.page, out: pick.pick });
+  const assigning = show(SURFACES.plusxl, atemDesk, { system: 'atem', page: pick.page, out: pick.pick });
   const ss = assigning.keys.find((k) => k.label === 'Super Source');
   assert.equal(ss.tone, 'pvw');
   assert.equal(ss.action.body.output, 'aux:1');
   assert.equal(ss.action.body.source, 6000);
-  const me2 = show(SURFACES.xl, atemDesk, { system: 'atem', page: top.find((k) => k.label === 'ME2').page });
-  assert.equal(me2.keys.find((k) => k.label === 'Super Source').tone, 'pvw');
-  assert.equal(me2.keys.find((k) => k.label === 'Camera Left').caption, 'PGM');
 });
 
 test('the home page is labeled HOME and Control Center keys are not device keys', () => {

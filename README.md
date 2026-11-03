@@ -22,7 +22,7 @@ The product in the browser is Control Center.
 No build step for the desk. Node.js 16 or later. USB Stream Decks need
 `@elgato-stream-deck/node` **7.8.0** and `node-hid` **3.4.0**. That package needs
 **Node >=18.18**. The Pi's Node 18.20.4 is new enough. Do not upgrade Node for
-this. The Pi install below runs `npm install --omit=dev` so both packages are present.
+this. The Pi install below runs `npm ci --omit=dev` so both packages are present.
 The Stream Deck plugin is a separate package and needs Node.js 24.
 
 ---
@@ -328,18 +328,18 @@ The app's own default stays 8080, so `node server.js` on a Mac is unchanged. The
 Per-Pi settings do not belong in the unit file. Copying the unit overwrites local edits. Put
 them in a drop-in: `sudo systemctl edit control-center`.
 
-On this repo, `npm ci --omit=dev` from a clean checkout installs `@elgato-stream-deck/node` and `node-hid` (17 packages). The Pi's npm still reports `added 2 packages, and audited 3 packages` and leaves that folder out. Use `npm install --omit=dev` there. It installs the dependencies named in `package.json`.
+On this repo, `npm ci --omit=dev` from a clean checkout installs `@elgato-stream-deck/node` and `node-hid`. Use `npm ci`, not `npm install`. `npm install` rewrites `package-lock.json` on a Mac with Node 22, and that dirty lock blocks `git pull`.
 
-`npm install` still needs to delete `node_modules` first. If that folder is owned by root, npm warns `EACCES` `rmdir` `/opt/control-center/...` and the Stream Deck package never appears. Give the folder to `pi` and delete `node_modules` before `npm install`.
+`npm ci` still needs to delete `node_modules` first when that folder is owned by root. npm then warns `EACCES` `rmdir` `/opt/control-center/...` and the Stream Deck package never appears. Give the folder to `pi` and delete `node_modules` before `npm ci`.
 
-If `npm install` cannot download a node-hid prebuild, install the compiler first: `sudo apt-get install -y build-essential libudev-dev`. A warning about `@julusian/jpeg-turbo` wanting Node 22 is optional. Ignore it.
+If `npm ci` cannot download a node-hid prebuild, install the compiler first: `sudo apt-get install -y build-essential libudev-dev`. A warning about `@julusian/jpeg-turbo` wanting Node 22 is optional. Ignore it. The repo already allows the install scripts for `node-hid` and `@julusian/jpeg-turbo`, so npm will not ask again and will not edit `package.json`.
 
 ```bash
 sudo git clone https://github.com/stevenmarr/Performance-Video-Control.git /opt/control-center
 sudo mkdir -p /var/lib/control-center
 sudo chown -R pi:pi /opt/control-center /var/lib/control-center
 sudo rm -rf /opt/control-center/node_modules
-sudo -u pi npm install --omit=dev --prefix /opt/control-center
+sudo -u pi npm ci --omit=dev --prefix /opt/control-center
 sudo -u pi node -e "require('@elgato-stream-deck/node')"
 sudo cp /opt/control-center/tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
 sudo udevadm control --reload-rules
@@ -368,7 +368,7 @@ SupplementaryGroups=plugdev companion
 
 The `companion` group has to exist. If it does not, systemd fails the start with status 217/USER. Do not list a group that `getent group` cannot find.
 
-Update. `git checkout` throws away a local `npm install` that changed `package.json` or `package-lock.json`. Then `npm install --omit=dev` installs `@elgato-stream-deck/node` from `package.json`.
+Update. `git checkout` throws away a local edit to `package.json` or `package-lock.json`. Then `npm ci --omit=dev` installs the lockfile as it is. Do not run `npm install` here. That rewrites the lock on Node 22.
 
 ```bash
 cd /opt/control-center
@@ -376,7 +376,7 @@ git checkout -- package.json package-lock.json
 git pull
 sudo rm -rf /opt/control-center/node_modules
 sudo chown -R pi:pi /opt/control-center
-sudo -u pi npm install --omit=dev --prefix /opt/control-center
+sudo -u pi npm ci --omit=dev --prefix /opt/control-center
 sudo -u pi node -e "require('@elgato-stream-deck/node')"
 sudo cp tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
 sudo udevadm control --reload-rules

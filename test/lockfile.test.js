@@ -32,6 +32,8 @@ test('package-lock.json matches package.json and installs the Stream Deck librar
   assert.equal(deck.version, '7.8.0');
   assert.equal(deck.engines.node, '>=18.18');
   assert.notEqual(deck.optional, true);
+  assert.equal(pkg.allowScripts['node-hid@3.4.0'], true);
+  assert.equal(pkg.allowScripts['@julusian/jpeg-turbo@3.1.0'], true);
 });
 
 test('npm ci --omit=dev dry-run names @elgato-stream-deck/node and node-hid', () => {

@@ -23,7 +23,7 @@ test('USB scan logs found N decks, opened serial, and a missing library once', a
     svc._logScan({ installed: false, error: 'need the package', found: 0, opened: [], failed: [] });
     const missing = logs.filter((l) => /library is missing/.test(l));
     assert.equal(missing.length, alreadyMissing + 1);
-    assert.match(missing[missing.length - 1], /npm install --omit=dev/);
+    assert.match(missing[missing.length - 1], /npm ci --omit=dev/);
     const before = logs.length;
     svc._logScan({
       installed: true,
