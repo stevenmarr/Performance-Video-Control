@@ -30,14 +30,22 @@ test('a + XL switcher page matches the drawn rows and a Mini keeps HOME and PAGE
   const desk = { armed: ['atem'], byKey: { atem: { view, buttonMap: map.cleanMap(null) } } };
   const xl = show(SURFACES.plusxl, desk, { system: 'atem', page: 0 });
   const row = (r) => xl.keys.filter((k) => k.row === r).sort((a, b) => a.col - b.col).map((k) => k.label);
-  assert.deepEqual(row(0).map((label) => label.split('\n')[0]), ['HOME', 'ATEM —', '', 'SWITCHER', 'ROUTER', 'AUDIO', 'KEYS/SS', 'MULTIVIEWER', '']);
+  assert.deepEqual(row(0).map((label) => label.split('\n')[0]), ['HOME', 'ATEM —', '', 'SWITCHER', 'ROUTER', 'AUDIO', 'KEYS/SS', 'MULTIVIEWER', 'SELECT']);
   assert.equal(row(1)[7], 'SHIFT');
   assert.equal(row(1)[7] && xl.keys.find((k) => k.row === 1 && k.col === 7).caption, 'MACROS');
-  assert.equal(row(1)[8], 'CUT');
-  assert.equal(row(2)[7], 'ME 1');
-  assert.equal(row(2)[8], 'TRANS');
+  assert.equal(xl.keys.find((k) => k.row === 1 && k.col === 7).faceStyle.arrow, 'left');
+  assert.equal(row(1)[8], 'ME 1');
+  assert.equal(row(2)[7], '');
+  assert.equal(row(2)[8], 'CUT');
   assert.equal(row(3)[7], 'SHIFT');
-  assert.equal(row(3)[8], 'SELECT');
+  assert.equal(row(3)[8], 'TRANS');
+  const cut = xl.keys.find((k) => k.row === 2 && k.col === 8);
+  const trans = xl.keys.find((k) => k.row === 3 && k.col === 8);
+  assert.equal(cut.faceStyle.bar, cut.faceStyle.fill);
+  assert.equal(trans.faceStyle.bar, trans.faceStyle.fill);
+  const tabs = xl.keys.filter((k) => k.row === 0 && k.faceStyle && k.faceStyle.tab);
+  assert.equal(tabs.length, 5);
+  assert.equal(tabs.find((k) => k.label === 'MULTIVIEWER').faceStyle.value, 'MULTI-\nVIEWER');
   assert.equal(xl.keys.find((k) => k.col === 0 && k.row === 0).faceStyle.house, true);
   assert.equal(xl.keys.find((k) => k.label === 'SWITCHER').faceStyle.title, '');
   assert.equal(xl.keys.some((k) => /FLEX/.test(`${k.label} ${k.caption} ${(k.faceStyle && k.faceStyle.title) || ''} ${(k.faceStyle && k.faceStyle.value) || ''}`)), false);
@@ -51,9 +59,13 @@ test('a + XL switcher page matches the drawn rows and a Mini keeps HOME and PAGE
 test('shift shows the next seven sources and the effect list is the five ATEM styles', () => {
   assert.deepEqual(map.EFFECTS, ['MIX', 'DIP', 'WIPE', 'DVE', 'STING']);
   assert.equal(map.EFFECTS.includes('ARM'), false);
-  assert.deepEqual(map.cycleMes([1], 2), [2]);
-  assert.deepEqual(map.cycleMes([2], 2), [1, 2]);
-  assert.deepEqual(map.cycleMes([1, 2], 2), [1]);
+  assert.deepEqual(map.toggleMes([1], 1, 2), [1, 2]);
+  assert.deepEqual(map.toggleMes([1, 2], 1, 2), [1]);
+  assert.deepEqual(map.toggleMes([2], 2, 2), [1, 2]);
+  assert.deepEqual(map.toggleMes([1, 2], 2, 2), [2]);
+  assert.deepEqual(map.toggleMes([1], 1, 1), [1]);
+  assert.deepEqual(map.fireMes({ me: 1, mes: [2] }), [1]);
+  assert.deepEqual(map.fireMes({ me: 2, mes: [1, 2] }), [1, 2]);
   const desk = { armed: ['atem'], byKey: { atem: { view, buttonMap: map.cleanMap(null) } } };
   const shifted = show(SURFACES.plusxl, desk, { system: 'atem', page: 0, atemUi: { shift: 1, me: 1, mes: [1] } });
   assert.equal(shifted.keys.find((k) => k.row === 3 && k.col === 0).caption, '8');
@@ -86,7 +98,7 @@ test('a held transition strip updates as soon as a layer is toggled', () => {
     system: 'atem', page: 0,
     atemUi: { me: 1, mes: [1], transHold: true, next: { bkgd: true, keys: [false, true, false, false], dsk: [true, false] } },
   });
-  const trans = (face) => face.keys.find((k) => k.row === 2 && k.col === 8);
+  const trans = (face) => face.keys.find((k) => k.row === 3 && k.col === 8);
   assert.equal(trans(before).label, 'TRANS');
   assert.notEqual(trans(before).caption, trans(after).caption);
   assert.equal(trans(after).faceStyle.layers.find((layer) => layer.id === 'K2').next, true);
