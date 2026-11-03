@@ -237,8 +237,9 @@ test('REAL / SIM switches a desk card without writing the fixture address', asyn
     assert.equal(st.systems.millumin.connection.mock, false);
     assert.equal(systems.isMock('millumin'), false);
     st = await systems.simulate('ptz');
-    assert.equal(st.systems.ptz.connection.cameras.length, 3);
-    assert.ok(st.systems.ptz.connection.cameras.every((c) => c.host === '127.0.0.1'));
+    assert.equal(st.systems.ptz.connection.cameras.length, 1, 'one PTZ card is one simulated camera');
+    assert.equal(st.systems.ptz.connection.cameras[0].host, '127.0.0.1');
+    assert.equal(st.systems.ptz.connection.cameras[0].name, 'PTZ');
     assert.deepEqual(file().connections.ptz.cameras, []);
     assert.deepEqual(file().simulators, ['ptz']);
     assert.deepEqual(systems.showPart({ includeConnection: true }).systems.ptz.cameras, []);
@@ -280,16 +281,46 @@ test('a PTZ simulator is rebuilt after the app restarts', async () => {
   const first = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, autoStart: false });
   try {
     await first.simulate('ptz');
-    assert.deepEqual(first.conn('ptz').cameras.map((c) => c.name), ['Cam 1 Wide', 'Cam 2 Stage', 'Cam 3 Lectern']);
+    assert.deepEqual(first.conn('ptz').cameras.map((c) => c.name), ['PTZ']);
     await first.close();
     const again = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, autoStart: false });
     await again.restoreSims();
     const cams = again.conn('ptz').cameras;
-    assert.deepEqual(cams.map((c) => c.name), ['Cam 1 Wide', 'Cam 2 Stage', 'Cam 3 Lectern']);
+    assert.deepEqual(cams.map((c) => c.name), ['PTZ']);
     assert.ok(cams.every((c) => c.host === '127.0.0.1' && c.port > 0));
     assert.ok(again.cfg.armed.includes('ptz'));
     await again.close();
   } finally {
+    await ctx.teardown();
+  }
+});
+
+test('each SIM card is one device: one PTZ camera, one switcher, one deck', async () => {
+  const ctx = await setup({});
+  const sm = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, autoStart: false });
+  try {
+    await sm.simulate('ptz');
+    const a = await sm.addInstance('ptz', { name: 'PTZ A', simulate: true, focus: false });
+    const b = await sm.addInstance('ptz', { name: 'PTZ B', simulate: true, focus: false });
+    assert.equal(sm.conn('ptz').cameras.length, 1);
+    assert.equal(sm.conn(a.created).cameras.length, 1);
+    assert.equal(sm.conn(b.created).cameras.length, 1);
+    assert.equal(sm.conn(a.created).cameras[0].name, 'PTZ A');
+    assert.equal(sm.conn(b.created).cameras[0].name, 'PTZ B');
+    for (const id of ['atem', 'videohub', 'hyperdeck', 'mitti', 'e2']) {
+      await sm.simulate(id);
+      const c = sm.conn(id);
+      assert.equal(c.host, '127.0.0.1', id);
+      assert.equal(c.cameras, undefined, id);
+      await sm.simulate(id, { on: false });
+    }
+    await sm.simulate('rs6');
+    assert.ok(sm.sim.rs6.conn.restPort > 0);
+    assert.equal(sm.sim.rs6.conn.cameras, undefined);
+    assert.equal(sm.engine.settings.host, ctx.engine.settings.host);
+    await sm.simulate('rs6', { on: false });
+  } finally {
+    await sm.close();
     await ctx.teardown();
   }
 });

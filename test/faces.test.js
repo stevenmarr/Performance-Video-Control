@@ -12,6 +12,11 @@ test('deck keys use the Control Dark SVG, not a bitmap font', () => {
   assert.match(svg, /TAKE/);
   assert.match(svg, /Arial/);
   assert.match(svg, /#3A0D10/);
+  assert.match(svg, /#C42020/);
+  const guard = keySvg(keyModel({ label: 'ALL STOP', caption: 'HOLD', tone: 'guard' }));
+  assert.match(guard, /stroke-dasharray/);
+  assert.match(guard, /#E0B030/);
+  assert.doesNotMatch(guard, /#3A0D10/);
   const image = keyImage({ label: 'HOME', caption: 'BACK', nav: 'system', tone: 'home' }, 112, 112);
   assert.equal(image.data.length, 112 * 112 * 4);
   const strip = stripImage(1200, 100, [
@@ -45,10 +50,20 @@ test('a smaller deck needs more PTZ pages than a + XL', () => {
   assert.equal(big.keys.find((k) => k.col === big.keys.reduce((m, k) => Math.max(m, k.col), 0) && k.row === 0).label, 'FUNC');
   assert.equal(big.keys.find((k) => k.col === 1 && k.row === 1).label, 'UP');
   assert.equal(big.keys.find((k) => k.col === 1 && k.row === 2).label, 'STOP');
+  const allStop = big.keys.find((k) => k.label === 'ALL STOP');
+  assert.ok(allStop, 'wide PTZ page keeps ALL STOP');
+  assert.equal(allStop.col, 8);
+  assert.equal(allStop.row, 3);
   assert.equal(big.keys.find((k) => k.col === 0 && k.row === 2).label, 'LEFT');
   assert.equal(big.keys.find((k) => k.col === 5 && k.row === 1).label, '1');
   assert.equal(big.keys.find((k) => k.col === 3 && k.row === 1).label, 'TELE');
   const rs6 = show(SURFACES.xl, desk, { system: 'rs6', page: 0 });
+  const os = show(SURFACES.xl, desk, { system: 'console', page: 0 });
+  const go = os.keys.find((k) => k.label === 'GO');
+  assert.ok(go, 'console page keeps GO');
+  assert.equal(go.col, 7);
+  assert.equal(go.row, 3);
+  assert.equal(go.action.path, '/api/cues/go');
   assert.equal(rs6.keys.find((k) => k.col === 1 && k.row === 0).label, 'TAKE');
   assert.equal(rs6.keys.find((k) => k.col === 2 && k.row === 0).label, 'CUT');
   assert.equal(rs6.keys.find((k) => k.absolute && k.label === '1').col, 3, 'memory 1 sits in the pad, not under Home');
