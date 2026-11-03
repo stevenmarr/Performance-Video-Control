@@ -51,6 +51,23 @@ build it and does not deploy through Companion.
 A mock deck exists only in `test/decks.test.js`, as a stand-in for hardware the test machine does
 not have. The server path in production is the plugin HTTP API above.
 
+## ATEM switcher
+
+The ATEM page on a Stream Deck + XL is one fixed grid.
+
+| Row | Keys |
+|---|---|
+| 1 | HOME, ATEM INFO, two blanks, SWITCHER, ROUTER, AUDIO, KEYS, MV |
+| 2 | seven flex keys, MACRO/SHIFT, CUT |
+| 3 | program slots 1–8, TRANS (auto) |
+| 4 | preview slots 1–8, SHIFT |
+
+MACRO/SHIFT shows a second bank of seven flex keys. SHIFT shows mapping slots 9–16. A flex key runs an ATEM macro or recalls a Control Center memory. A program or preview key sends that mapped source. Hold any of those keys and turn encoder 6 to choose a new mapping. The strip shows the held key. Release commits it. The map is the same on every M/E unless the ATEM view has per-M/E bus mapping turned on.
+
+The six encoders are M/E, effect (mix, wipe, DVE), wipe pattern, auto time, T-bar, and button map. A Stream Deck + has four encoders, so it keeps M/E, effect, auto time, and button map. Smaller decks use the same key order, with HOME at the top left and PAGE in the corner.
+
+INFO opens the ATEM info page. Hold INFO to open the config page (name, model, host, port).
+
 ## Page layouts
 
 The deck pages follow the console surface design (the 21-page gallery, plus the

@@ -70,5 +70,30 @@ for (const model of models) {
     written.push(file);
   }
 }
+const atemDesk = {
+  armed: ['atem'],
+  byKey: {
+    atem: {
+      label: 'ATEM', host: '10.0.0.8', port: 9910,
+      view: {
+        model: 'Constellation',
+        mes: [{ program: 2, preview: 1, style: 'WIPE', mixRate: 30, handle: 2500, wipe: 1, bus: [
+          { id: 1, long: 'Cam L', short: 'Cam L' }, { id: 2, long: 'Cam R', short: 'Cam R' },
+          { id: 3, long: 'Mitti', short: 'Mitti' }, { id: 4, long: 'Hyper', short: 'Hyper' },
+        ] }],
+        macros: [{ index: 0, isUsed: true, name: 'Open' }],
+      },
+    },
+  },
+};
+for (const model of models) {
+  const surface = SURFACES[model];
+  const face = show(surface, atemDesk, { system: 'atem', page: 0 });
+  const svg = pageSvg(face, surface);
+  const png = new Resvg(svg, { fitTo: { mode: 'width', value: surface.cols * 90 }, font: { loadSystemFonts: true, defaultFontFamily: 'Arial' }, background: '#14161A' }).render().asPng();
+  const file = path.join(outDir, `${model}--atem-switcher.png`);
+  fs.writeFileSync(file, png);
+  written.push(file);
+}
 fs.writeFileSync(path.join(outDir, 'index.json'), JSON.stringify({ count: written.length, files: written.map((f) => path.basename(f)) }, null, 2));
 console.log(`wrote ${written.length} pages to ${outDir}`);
