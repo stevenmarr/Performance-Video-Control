@@ -21,7 +21,7 @@ const desk = {
         topology: { downstreamKeyers: 2, mixEffects: 2 },
         dsk: [{}, {}],
         mes: [
-          { program: 2, preview: 1, style: 'WIPE', mixRate: 30, handle: 4500, wipe: 2, inTransition: false, keyers: [{ onAir: true }, { onAir: false }], bus: [
+          { program: 2, preview: 1, style: 'WIPE', nextSelection: 1, mixRate: 30, handle: 4500, wipe: 0, inTransition: false, keyers: [{ onAir: true }, { onAir: false }], bus: [
             { id: 1, long: 'Camera Left', short: 'Cam L' },
             { id: 2, long: 'Camera Right', short: 'Cam R' },
             { id: 3, long: 'Mitti Walk In', short: 'Mitti' },
@@ -71,7 +71,7 @@ const states = [
   ['normal', {}],
   ['shift', { atemUi: { shift: 1, me: 1, flexBank: 0, mes: [1] } }],
   ['bank2', { atemUi: { shift: 0, me: 1, flexBank: 1, mes: [1] } }],
-  ['trans', { atemUi: { shift: 0, me: 1, flexBank: 0, mes: [1, 2], transHold: true, next: { bkgd: true, keys: [true, false], dsk: [true, false] } } }],
+  ['trans', { atemUi: { shift: 0, me: 1, flexBank: 0, mes: [1, 2], transHold: true, next: { bkgd: true, keys: [false, true], dsk: [false, true] } } }],
   ['mapping', { atemUi: { shift: 0, me: 1, flexBank: 0, mes: [1], pending: { bus: 'pgm', slot: 2, index: 0, name: 'Mitti Walk In' } } }],
 ];
 

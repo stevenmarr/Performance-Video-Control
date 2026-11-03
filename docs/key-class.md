@@ -34,7 +34,7 @@ A role is a preset of base style plus the usual feedbacks. The same role looks t
 | shift | Dark, yellow bar. Yellow fill while the shift or a higher flex bank is on |
 | flex-macro | Blue fill, no separate group bar |
 | flex-memory | Magenta fill, no separate group bar |
-| flex | Dark grey. Nothing is assigned |
+| flex | Dark grey. Nothing is assigned. The + XL page does not print this word; bank 1 reads MACROS and bank 2 reads MEMORY |
 | nav | Slate OS key. HOME |
 | tab | Darker than HOME, same group bar as navigation. The open tab is blue |
 | info | Slate, name and address on the key |

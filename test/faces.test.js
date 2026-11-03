@@ -137,7 +137,8 @@ test('ATEM switcher is the + XL layout, and the router still names sources', () 
   assert.equal(face.keys.find((k) => k.col === 3 && k.row === 0).label, 'SWITCHER');
   assert.equal(face.keys.find((k) => k.col === 8 && k.row === 1).label, 'CUT');
   assert.equal(face.keys.find((k) => k.col === 8 && k.row === 2).label, 'TRANS');
-  assert.equal(face.keys.find((k) => k.col === 8 && k.row === 3).label, 'SHIFT');
+  assert.equal(face.keys.find((k) => k.col === 7 && k.row === 3).label, 'SHIFT');
+  assert.equal(face.keys.find((k) => k.col === 8 && k.row === 3).label, 'SELECT');
   const pgm = face.keys.find((k) => k.label === 'CamR' || k.label === 'Camera Right');
   const pvw = face.keys.find((k) => k.caption === 'PVW');
   assert.equal(pgm.tone, 'stop');
