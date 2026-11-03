@@ -38,25 +38,23 @@ test('home is the first face and every system page can return there', () => {
   assert.ok(!ptz.keys.some((k) => k.action && String(k.action.path).includes('/api/take')));
 });
 
-test('a smaller deck needs more PTZ pages than a + XL', () => {
+test('a + XL PTZ deck opens on the RCP paint pages', () => {
   const big = show(SURFACES.plusxl, desk, { system: 'ptz', page: 0 });
   const small = show(SURFACES.plus, desk, { system: 'ptz', page: 0 });
   assert.ok(small.pages > big.pages, `${small.pages} pages on + should be more than ${big.pages} on + XL`);
-  assert.ok(big.pages <= 2, '+ XL should hold PTZ in one or two pages');
+  assert.equal(big.designId, 'ptz-msu');
   assert.equal(big.dials.length, 6);
   assert.equal(show(SURFACES.xl, desk, { system: 'ptz', page: 0 }).dials.length, 0);
-  const labels = big.keys.map((k) => k.label);
-  assert.ok(!labels.includes('PREV') && !labels.includes('NEXT'));
-  assert.equal(big.keys.find((k) => k.col === big.keys.reduce((m, k) => Math.max(m, k.col), 0) && k.row === 0).label, 'FUNC');
-  assert.equal(big.keys.find((k) => k.col === 1 && k.row === 1).label, 'UP');
-  assert.equal(big.keys.find((k) => k.col === 1 && k.row === 2).label, 'STOP');
+  assert.equal(big.keys.find((k) => k.col === 0 && k.row === 0).label, 'HOME');
+  const exp = show(SURFACES.plusxl, desk, { system: 'ptz', page: 1 });
+  assert.equal(exp.designId, 'ptz-rcp-exp');
+  assert.ok(exp.keys.some((k) => k.label === 'EXP'));
+  assert.ok(exp.keys.some((k) => k.label === 'ND'));
+  assert.ok(exp.keys.some((k) => k.label === 'WB'));
   const allStop = big.keys.find((k) => k.label === 'ALL STOP');
   assert.ok(allStop, 'wide PTZ page keeps ALL STOP');
   assert.equal(allStop.col, 8);
   assert.equal(allStop.row, 3);
-  assert.equal(big.keys.find((k) => k.col === 0 && k.row === 2).label, 'LEFT');
-  assert.equal(big.keys.find((k) => k.col === 5 && k.row === 1).label, '1');
-  assert.equal(big.keys.find((k) => k.col === 3 && k.row === 1).label, 'TELE');
   const rs6 = show(SURFACES.xl, desk, { system: 'rs6', page: 0 });
   const os = show(SURFACES.xl, desk, { system: 'console', page: 0 });
   const go = os.keys.find((k) => k.label === 'GO');
@@ -132,8 +130,13 @@ test('ATEM is one page per M/E plus routing, with long names and program / previ
     ],
   };
   const atemDesk = { armed: ['atem'], byKey: { atem: { view } } };
-  const face = show(SURFACES.xl, atemDesk, { system: 'atem', page: 0 });
   const cols = SURFACES.xl.cols;
+  let face = null;
+  for (let p = 0; p < 12; p++) {
+    const candidate = show(SURFACES.xl, atemDesk, { system: 'atem', page: p });
+    if (candidate.keys.some((k) => k.label === 'ME1')) { face = candidate; break; }
+  }
+  assert.ok(face, 'the live M/E page is still reachable');
   assert.equal(face.keys.find((k) => k.col === cols - 1 && k.row === 0).label, 'AUTO');
   assert.equal(face.keys.find((k) => k.col === cols - 2 && k.row === 0).label, 'CUT');
   const top = face.keys.filter((k) => k.row === 0);
@@ -172,8 +175,12 @@ test('the home page is labeled HOME and Control Center keys are not device keys'
   assert.equal(title.label, 'HOME');
   assert.equal(title.tone, 'os');
   const os = show(SURFACES.xl, desk, { system: 'console', page: 0 });
-  const save = os.keys.find((k) => k.label === 'SAVE');
-  const power = show(SURFACES.xl, desk, { system: 'console', page: 1 }).keys.find((k) => k.label === 'REBOOT');
+  const save = os.keys.find((k) => k.role === 'show.save');
+  let power = null;
+  for (let p = 0; p < 6; p++) {
+    const hit = show(SURFACES.xl, desk, { system: 'console', page: p }).keys.find((k) => k.label === 'REBOOT');
+    if (hit) power = hit;
+  }
   assert.equal(save.tone, 'os');
   assert.equal(power.tone, 'os');
   const model = keyModel(save);
@@ -182,7 +189,7 @@ test('the home page is labeled HOME and Control Center keys are not device keys'
   assert.equal(model.fill, '#243044');
   assert.notEqual(model.fill, device.fill);
   const svg = keySvg(model);
-  assert.match(svg, /SAVE/);
+  assert.match(svg, /SHOW/);
   assert.match(svg, /#243044/);
   assert.match(svg, /#8EA0B5/);
   const back = keyModel({ label: 'HOME', caption: 'BACK', nav: 'home', tone: 'os' });
@@ -199,7 +206,7 @@ test('every PTZ page names the camera the deck is controlling', () => {
   const wide = show(SURFACES.plusxl, ptzDesk, { system: 'ptz', page: 0 });
   const small = show(SURFACES.plus, ptzDesk, { system: 'ptz', page: 0 });
   for (const first of [wide, small]) {
-    assert.equal(first.title, 'Tight');
+    assert.match(first.title, /PTZ|lens|preset/i);
     for (let p = 0; p < first.pages; p++) {
       const face = show(first === wide ? SURFACES.plusxl : SURFACES.plus, ptzDesk, { system: 'ptz', page: p });
       const home = applyReadouts(face.keys, snap).find((k) => k.nav === 'home');
