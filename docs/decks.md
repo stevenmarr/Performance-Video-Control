@@ -53,20 +53,24 @@ not have. The server path in production is the plugin HTTP API above.
 
 ## ATEM switcher
 
-The ATEM page on a Stream Deck + XL is one fixed grid.
+The + XL switcher page is JSON (`lib/decks/pages/atem-switcher.page.json`). See `docs/key-class.md`. Other deck sizes are not changed.
 
 | Row | Keys |
 |---|---|
-| 1 | HOME, ATEM INFO, two blanks, SWITCHER, ROUTER, AUDIO, KEYS, MV |
+| 1 | HOME, ATEM INFO (name and IP), one blank, SWITCHER, ROUTER, AUDIO, KEYS/SS, MULTIVIEWER, TRANS SELECTION |
 | 2 | seven flex keys, MACRO/SHIFT, CUT |
 | 3 | program slots 1–8, TRANS (auto) |
 | 4 | preview slots 1–8, SHIFT |
 
-MACRO/SHIFT shows a second bank of seven flex keys. SHIFT shows mapping slots 9–16. A flex key runs an ATEM macro or recalls a Control Center memory. A program or preview key sends that mapped source. Hold any of those keys and turn encoder 6 to choose a new mapping. The strip shows the held key. Release commits it. The map is the same on every M/E unless the ATEM view has per-M/E bus mapping turned on.
+A flex key is blue for a macro, magenta for a memory, and dark grey when empty. MACRO/SHIFT cycles banks 1 through 4. Banks 2–4 turn that key yellow and show the bank number. SHIFT stays on, including after you leave the page, and shows slots 9–16. Program keys are muted red, and the source on program is bright red. Preview keys are muted green, and the source on preview is bright green. Names are the ATEM long names, wrapped. CUT and TRANS are solid red and turn lighter while a transition runs.
 
-The six encoders are M/E, effect (mix, wipe, DVE), wipe pattern, auto time, T-bar, and button map. A Stream Deck + has four encoders, so it keeps M/E, effect, auto time, and button map. Smaller decks use the same key order, with HOME at the top left and PAGE in the corner.
+Hold a flex, program, or preview key and turn encoder 6. Release saves the mapping. One map is shared by every M/E unless the ATEM view has per-M/E bus mapping.
 
-INFO opens the ATEM info page. Hold INFO to open the config page (name, model, host, port).
+The strip is not a PTZ knob. It shows the M/E number, mix/wipe/DVE, a wipe picture, auto time in frames, a vertical T-bar, and the mapping you are editing (blank if you are not holding a key).
+
+Hold TRANS SELECTION and the strip becomes the next-transition targets: background, the keyers on this M/E, downstream keyers only when M/E 1 is selected, and one touch target per M/E. The strip is outlined and the encoders do nothing. CUT and TRANS run on every M/E you selected.
+
+Tap INFO for the info page. Hold INFO for config.
 
 ## Page layouts
 
@@ -78,7 +82,7 @@ detail/chroma and gamma/knee RCP banks from the paint section).
 | PTZ paint MSU, RCP EXP, WHITE/BLACK, DTL/CHROMA, GAMMA/KNEE, MATRIX | PTZ deck |
 | PTZ presets, list and matrix | PTZ deck |
 | PTZ lens | PTZ deck. Native on Stream Deck + |
-| ATEM companion, backup, memories | ATEM deck. The live M/E and aux pages are still there after these |
+| ATEM switcher on + XL, then companion, backup, memories, router | ATEM deck. Other models keep their previous ATEM pages |
 | Videohub XY, flex, quick panel | Videohub deck |
 | E2 presets and flex | E2 and PixelHue decks |
 | Mitti cue grid, flex, playback | Mitti and Pixera decks |
