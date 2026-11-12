@@ -1,7 +1,7 @@
 'use strict';
 // PAGES, under Control Devices. Names a page for one surface type and assigns
-// library buttons onto keys, encoders, and touch segments. Nothing is pushed.
-// Buttons stay in button-library.json. Pages stay in surface-pages.json.
+// library buttons onto keys, encoders, and touch segments. Push sends the
+// selected page to an online Path C deck. It does not open a second deploy path.
 (() => {
   const root = document.querySelector('#pagesRoot');
   if (!root || !window.CC) return;
@@ -19,6 +19,7 @@
   let armed = '';
   let held = null;
   let confirmDelete = false;
+  let confirmPush = false;
   let notice = '';
 
   const surfaces = () => (view && view.surfaces) || {};
@@ -33,6 +34,7 @@
       surfaceId: d.surfaceId || null,
       online: d.online !== false,
       source: 'plugin',
+      warnings: d.warnings || [],
     }));
     const usb = ((view && view.control && view.control.devices) || [])
       .filter((d) => d && d.id && d.id !== 'preview' && d.transport !== 'preview')
@@ -197,6 +199,17 @@
     const library = surface ? `<div class="section-title">Library</div><div class="pages-lib">${buttons.length ? buttons.map((b) => `<button type="button" class="btn mini${armed === b.id ? ' on' : ''}" draggable="true" data-lib="${esc(b.id)}">${esc(b.name)} <small>${esc(ELEMENT[b.element] || b.element)}</small></button>`).join('') : '<p class="note small">No library buttons yet. Create them on Buttons.</p>'}</div>
     <p class="note small">${armed ? `Placing ${esc(byButton(armed) ? byButton(armed).name : 'button')}. Click a matching slot, or drag it.` : held ? 'Moving. Click another slot, or clear this one.' : 'Select a button, then a slot. Drag works the same way. Click a filled slot to move it.'}</p>
     ${held ? '<button type="button" class="btn" data-clear>Clear slot</button>' : ''}` : '';
+    const slots = page ? ((page.keys || []).length + (page.encoders || []).length + (page.touch || []).length) : 0;
+    const canPush = !!(page && device && device.source === 'plugin');
+    const warnText = device && device.warnings && device.warnings.length ? device.warnings.map((w) => w.message).join(' ') : '';
+    const push = !page ? '' : `<div class="bl-row">
+      ${canPush ? `<button type="button" class="btn" data-push>${confirmPush ? 'Push anyway' : 'Push'}</button>` : ''}
+      <span class="note small">${canPush
+        ? (device.online ? `Push “${esc(page.name)}” to ${esc(device.name)}. A surface type is not a deck.` : `${esc(device.name)} is offline. Push will be refused.`)
+        : 'Select an online Path C deck to push. A surface type is not a connected deck.'}</span>
+    </div>
+    ${warnText ? `<p class="note small">${esc(warnText)}</p>` : ''}
+    ${canPush && !slots ? '<p class="note small">This page has no buttons. Push will be refused.</p>' : ''}`;
     const board = surface ? `<div class="pages-board">${boardHtml(surface, page)}</div>
       <p class="note small">Built-in pages on Devices stay there. Row 1 is the top. On + XL, row 4 column 9 is the bottom-right key. Nothing is pushed.</p>` : '';
     root.innerHTML = `<div class="pages-layout">
@@ -218,6 +231,7 @@
         <p class="note small">${esc(detail)}</p>
         ${controls}
         ${library}
+        ${push}
         ${notice ? `<p class="note small" role="status">${esc(notice)}</p>` : ''}
         ${board}
       </div>
@@ -358,6 +372,7 @@
       armed = '';
       held = null;
       confirmDelete = false;
+      confirmPush = false;
       run(fillPreviews().then(paint));
       return;
     }
@@ -369,6 +384,7 @@
       armed = '';
       held = null;
       confirmDelete = false;
+      confirmPush = false;
       run(fillPreviews().then(paint));
       return;
     }
@@ -383,6 +399,7 @@
       armed = '';
       held = null;
       confirmDelete = false;
+      confirmPush = false;
       run(fillPreviews().then(paint));
       return;
     }
@@ -392,6 +409,7 @@
       armed = '';
       held = null;
       confirmDelete = false;
+      confirmPush = false;
       run(fillPreviews().then(paint));
       return;
     }
@@ -413,6 +431,7 @@
         pageId = made.id;
         notice = `Saved “${made.name}”. Nothing was pushed.`;
         confirmDelete = false;
+      confirmPush = false;
         paint();
       })());
       return;
@@ -431,7 +450,29 @@
       return;
     }
     if (ev.target.closest('[data-ask-delete]')) { confirmDelete = true; paint(); return; }
-    if (ev.target.closest('[data-cancel-delete]')) { confirmDelete = false; paint(); return; }
+    if (ev.target.closest('[data-cancel-delete]')) { confirmDelete = false; confirmPush = false; paint(); return; }
+    if (ev.target.closest('[data-push]')) {
+      const page = syncPage();
+      const target = selectedDevice();
+      if (!page) { toast('Create a page before pushing.', true); return; }
+      if (!target || target.source !== 'plugin') { toast('Select an online Path C deck. A surface type is not a connected deck.', true); return; }
+      const filled = ((page.keys || []).length + (page.encoders || []).length + (page.touch || []).length);
+      if (!filled) { toast('This page has no buttons.', true); return; }
+      if (target.warnings && target.warnings.length && !confirmPush) {
+        confirmPush = true;
+        notice = target.warnings.map((w) => w.message).join(' ');
+        paint();
+        return;
+      }
+      confirmPush = false;
+      run((async () => {
+        const result = await api('POST', '/api/decks/deploy', { deviceId: target.id, pageId: page.id });
+        const extra = result.warnings && result.warnings.length ? ` ${result.warnings[0].message}` : '';
+        notice = `Pushed “${page.name}” to ${target.name}.${extra}`;
+        await load();
+      })());
+      return;
+    }
     if (ev.target.closest('[data-do-delete]')) {
       const page = syncPage();
       if (!page) return;
@@ -440,6 +481,7 @@
         pages = pages.filter((p) => p.id !== page.id);
         pageId = '';
         confirmDelete = false;
+      confirmPush = false;
         notice = `Deleted “${page.name}”. The buttons are still in the library.`;
         paint();
       })());
