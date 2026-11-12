@@ -57,7 +57,7 @@ one-line hint (modes, and that live video is Desktop Video from a Mac sidecar).
 |---|---|
 | DEVICES | USB Stream Decks. Home picks one system. This is the view that used to be the whole tab. |
 | BUTTONS | Create, edit, duplicate, and delete library buttons. No grid. |
-| PAGES | The key grid for a connected deck, a remembered deck, or a surface type. No assign and no push. |
+| PAGES | Name a page for a surface type and assign library buttons onto the grid. No push. |
 
 **LAYOUT** is the M/E and SuperSource picture: resources on the left, canvases in the middle, properties on the right. **MULTIVIEW** is its own page. DVE / SS / KEYS stays the full key and DSK panel. See [atem-layout.md](atem-layout.md).
 

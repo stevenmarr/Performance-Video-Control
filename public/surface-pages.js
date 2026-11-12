@@ -1,6 +1,7 @@
 'use strict';
-// PAGES, under Control Devices. Draws a real surface grid. Read-only:
-// no assign, no rename, no push. Placement editing is a later step.
+// PAGES, under Control Devices. Names a page for one surface type and assigns
+// library buttons onto keys, encoders, and touch segments. Nothing is pushed.
+// Buttons stay in button-library.json. Pages stay in surface-pages.json.
 (() => {
   const root = document.querySelector('#pagesRoot');
   if (!root || !window.CC) return;
@@ -15,9 +16,14 @@
   let pageId = '';
   let chosen = false;
   let previews = new Map();
+  let armed = '';
+  let held = null;
+  let confirmDelete = false;
+  let notice = '';
 
   const surfaces = () => (view && view.surfaces) || {};
   const byButton = (id) => buttons.find((b) => b.id === id);
+  const ELEMENT = { button: 'Key', encoder: 'Encoder', 'touch-segment': 'Touch' };
 
   function reported() {
     const plugin = ((view && view.devices) || []).filter((d) => d && d.id).map((d) => ({
@@ -91,15 +97,31 @@
     return `<div class="pages-group"><div class="section-title">${title}</div>${body}</div>`;
   }
 
-  function emptyArt(kind) {
-    return `<div class="pages-empty" data-slot="${kind}">empty</div>`;
+  function emptyArt(kind, label) {
+    return `<div class="pages-empty" data-slot="${kind}">${esc(label || 'empty')}</div>`;
   }
 
-  function placedArt(slot, kind) {
-    if (!slot) return emptyArt(kind);
+  function placedArt(slot, kind, label) {
+    if (!slot) return emptyArt(kind, label);
     const svg = previews.get(slot.buttonId);
     const cls = kind === 'encoder' ? 'pages-encoder' : kind === 'touch' ? 'pages-touch' : 'deck-key big art';
     return `<div class="${cls}">${svg || '…'}</div>`;
+  }
+
+  function slotButton(kind, row, col, page) {
+    const list = kind === 'key' ? (page && page.keys) : kind === 'encoder' ? (page && page.encoders) : (page && page.touch);
+    const slot = list && list.find((s) => (kind === 'key' ? s.row === row && s.col === col : s.col === col));
+    const label = kind === 'key' ? `${row + 1}·${col + 1}` : kind === 'encoder' ? 'enc' : 'touch';
+    const title = kind === 'key' ? `Row ${row + 1}, column ${col + 1}` : kind === 'encoder' ? `Encoder column ${col + 1}` : `Touch column ${col + 1}`;
+    const on = held && held.kind === kind && held.col === col && (kind !== 'key' || held.row === row);
+    const cls = kind === 'key'
+      ? `deck-key big ${slot ? 'art' : 'empty'}${on ? ' on' : ''}`
+      : `pages-hit${on ? ' on' : ''}`;
+    const body = kind === 'key'
+      ? (slot ? (previews.get(slot.buttonId) || '…') : esc(label))
+      : placedArt(slot, kind, label);
+    const rowAttr = kind === 'key' ? ` data-row="${row}"` : '';
+    return `<button type="button" class="${cls}" draggable="${slot ? 'true' : 'false'}" data-kind="${kind}" data-col="${col}"${rowAttr} title="${esc(title)}">${body}</button>`;
   }
 
   function boardHtml(surface, page) {
@@ -114,53 +136,69 @@
           cells.push(`<div style="grid-column:${c + 1}"></div>`);
           continue;
         }
-        const enc = page && (page.encoders || []).find((s) => s.col === c);
-        const touch = page && (page.touch || []).find((s) => s.col === c);
-        cells.push(`<div class="pages-slot" style="grid-column:${c + 1}">${placedArt(enc, 'encoder')}${placedArt(touch, 'touch')}</div>`);
+        cells.push(`<div class="pages-slot" style="grid-column:${c + 1}">${slotButton('encoder', 0, c, page)}${slotButton('touch', 0, c, page)}</div>`);
       }
       strip = `<div class="pages-strip deck-strip" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${cells.join('')}</div>`;
     }
     const keys = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        const slot = page && (page.keys || []).find((s) => s.row === r && s.col === c);
-        const body = slot ? (previews.get(slot.buttonId) || '…') : 'empty';
-        keys.push(`<div class="deck-key big ${slot ? 'art' : 'empty'}" style="grid-column:${c + 1};grid-row:${r + 1}">${body}</div>`);
+        keys.push(slotButton('key', r, c, page).replace('class="', `style="grid-column:${c + 1};grid-row:${r + 1}" class="`));
       }
     }
     const grid = `<div class="deck-mini deck-face" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(72px,1fr))">${keys.join('')}</div>`;
     return strip + grid;
   }
 
+  function syncPage() {
+    const surface = surfaceOf();
+    const matching = surface ? pagesFor(surface.id) : [];
+    if (pageId && !matching.some((p) => p.id === pageId)) pageId = '';
+    if (!pageId && matching[0]) pageId = matching[0].id;
+    return matching.find((p) => p.id === pageId) || null;
+  }
+
   function paint() {
     const all = reported();
     const device = selectedDevice();
     const surface = surfaceOf();
+    const page = syncPage();
     const sid = surface && surface.id;
     const matching = sid ? pagesFor(sid) : [];
-    if (pageId && !matching.some((p) => p.id === pageId)) pageId = '';
-    if (!pageId && matching[0]) pageId = matching[0].id;
-    const page = matching.find((p) => p.id === pageId) || null;
     const typeButtons = ORDER.filter((id) => surfaces()[id]).map((id) => {
-      const on = !device && pick.kind === 'type' && pick.id === id;
+      const on = pick.kind === 'type' && pick.id === id && (!device || (page && page.surface === id));
       return `<button type="button" class="btn mini${on ? ' on' : ''}" data-type="${esc(id)}">${esc(SHORT[id] || surfaces()[id].label)}</button>`;
     }).join('');
-    let heading = 'No device connected';
+    const saved = pages.length
+      ? pages.map((p) => `<button type="button" class="deck-page${p.id === (page && page.id) ? ' on' : ''}" data-saved="${esc(p.id)}"><span><b>${esc(p.name)}</b><small>${esc(SHORT[p.surface] || p.surface)}</small></span></button>`).join('')
+      : '<p class="note small">None yet.</p>';
+    let heading = page ? page.name : 'No device connected';
     let detail = 'Pick a surface type to lay out a page. This is not a connected deck.';
-    if (device) {
+    if (page && surface) {
+      detail = `${surface.label} · saved for this surface type, not one deck`;
+    } else if (device) {
       heading = device.name;
       detail = `${device.model || 'model unknown'} · ${sizeText(surface)} · ${device.online ? 'online' : 'offline'}`;
-      if (!surface) detail += ' · Pick a surface type to preview a grid. That does not connect this deck.';
+      if (!surface) detail += ' · Pick a surface type to lay out a page. That does not connect this deck.';
     } else if (surface) {
       heading = surface.label;
       detail = `${sizeText(surface)} · no device connected`;
     }
-    const pageNote = !surface
-      ? ''
-      : (page
-        ? `<div class="pages-pages">${matching.map((p) => `<button type="button" class="btn mini${p.id === page.id ? ' on' : ''}" data-page="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>`
-        : '<p class="note small" id="pagesPlaceholder">No named page on this surface yet.</p>');
-    const board = surface ? `<div class="pages-board">${boardHtml(surface, page)}</div>` : '';
+    const controls = surface ? `<div class="bl-fields">
+      <label>New page<input id="pageNew" placeholder="Show ATEM" autocomplete="off"></label>
+      <label class="bl-row" style="align-self:end"><button type="button" class="btn" data-create>Create</button></label>
+      ${page ? `<label>Name<input id="pageName" value="${esc(page.name)}" autocomplete="off"></label>
+        <label class="bl-row" style="align-self:end"><button type="button" class="btn" data-rename>Rename</button></label>
+        <label class="bl-row" style="align-self:end">${confirmDelete
+          ? `<button type="button" class="btn" data-do-delete>Delete page</button><button type="button" class="btn" data-cancel-delete>Cancel</button>`
+          : `<button type="button" class="btn" data-ask-delete>Delete</button>`}</label>` : ''}
+    </div>
+    <p class="note small">${page ? (matching.length === 1 ? 'This is the only saved page for this size.' : `${matching.length} saved pages for this size.`) : 'No named page on this surface yet. The grid below is empty.'}</p>` : '';
+    const library = surface ? `<div class="section-title">Library</div><div class="pages-lib">${buttons.length ? buttons.map((b) => `<button type="button" class="btn mini${armed === b.id ? ' on' : ''}" draggable="true" data-lib="${esc(b.id)}">${esc(b.name)} <small>${esc(ELEMENT[b.element] || b.element)}</small></button>`).join('') : '<p class="note small">No library buttons yet. Create them on Buttons.</p>'}</div>
+    <p class="note small">${armed ? `Placing ${esc(byButton(armed) ? byButton(armed).name : 'button')}. Click a matching slot, or drag it.` : held ? 'Moving. Click another slot, or clear this one.' : 'Select a button, then a slot. Drag works the same way. Click a filled slot to move it.'}</p>
+    ${held ? '<button type="button" class="btn" data-clear>Clear slot</button>' : ''}` : '';
+    const board = surface ? `<div class="pages-board">${boardHtml(surface, page)}</div>
+      <p class="note small">Built-in pages on Devices stay there. Row 1 is the top. On + XL, row 4 column 9 is the bottom-right key. Nothing is pushed.</p>` : '';
     root.innerHTML = `<div class="pages-layout">
       <aside>
         ${group('Plugin', all.plugin)}
@@ -170,22 +208,24 @@
           <div class="section-title">Surface type</div>
           <div class="surface-type">${typeButtons}</div>
         </div>
+        <div class="pages-group">
+          <div class="section-title">Saved pages</div>
+          ${saved}
+        </div>
       </aside>
       <div>
         <div class="bl-head"><h2>${esc(heading)}</h2></div>
         <p class="note small">${esc(detail)}</p>
-        ${pageNote}
+        ${controls}
+        ${library}
+        ${notice ? `<p class="note small" role="status">${esc(notice)}</p>` : ''}
         ${board}
       </div>
     </div>`;
   }
 
   async function fillPreviews() {
-    const surface = surfaceOf();
-    const matching = surface ? pagesFor(surface.id) : [];
-    if (pageId && !matching.some((p) => p.id === pageId)) pageId = '';
-    if (!pageId && matching[0]) pageId = matching[0].id;
-    const page = matching.find((p) => p.id === pageId) || null;
+    const page = syncPage();
     if (!page) return;
     const ids = new Set();
     for (const slot of [...(page.keys || []), ...(page.encoders || []), ...(page.touch || [])]) {
@@ -199,6 +239,89 @@
         previews.set(id, (drawn && drawn.svg) || '');
       } catch { previews.set(id, ''); }
     }));
+  }
+
+  function slotsOf(page) {
+    const copy = (list) => (list || []).map((s) => ({ ...s }));
+    return { keys: copy(page.keys), encoders: copy(page.encoders), touch: copy(page.touch) };
+  }
+
+  function dropSlot(slots, slot) {
+    if (slot.kind === 'key') slots.keys = slots.keys.filter((s) => !(s.row === slot.row && s.col === slot.col));
+    else if (slot.kind === 'encoder') slots.encoders = slots.encoders.filter((s) => s.col !== slot.col);
+    else slots.touch = slots.touch.filter((s) => s.col !== slot.col);
+    return slots;
+  }
+
+  function putSlot(slots, slot, buttonId) {
+    dropSlot(slots, slot);
+    if (slot.kind === 'key') slots.keys.push({ buttonId, row: slot.row, col: slot.col });
+    else if (slot.kind === 'encoder') slots.encoders.push({ buttonId, col: slot.col });
+    else slots.touch.push({ buttonId, col: slot.col });
+    return slots;
+  }
+
+  function occupant(page, slot) {
+    if (!page) return null;
+    if (slot.kind === 'key') return (page.keys || []).find((s) => s.row === slot.row && s.col === slot.col) || null;
+    if (slot.kind === 'encoder') return (page.encoders || []).find((s) => s.col === slot.col) || null;
+    return (page.touch || []).find((s) => s.col === slot.col) || null;
+  }
+
+  function readSlot(el) {
+    const kind = el.dataset.kind;
+    const col = Number(el.dataset.col);
+    if (kind === 'key') return { kind, row: Number(el.dataset.row), col };
+    return { kind, col };
+  }
+
+  function sameSlot(a, b) {
+    if (!a || !b || a.kind !== b.kind || a.col !== b.col) return false;
+    return a.kind !== 'key' || a.row === b.row;
+  }
+
+  function assertFit(button, slot) {
+    const surface = surfaceOf();
+    const want = slot.kind === 'key' ? 'button' : slot.kind === 'encoder' ? 'encoder' : 'touch-segment';
+    if (button.element !== want) {
+      const got = button.element === 'button' ? 'key' : button.element === 'touch-segment' ? 'touch segment' : button.element;
+      const need = slot.kind === 'key' ? 'key' : slot.kind === 'encoder' ? 'encoder' : 'touch segment';
+      const article = (w) => (/^[aeiou]/.test(w) ? 'an' : 'a');
+      throw new Error(`${button.name} is ${article(got)} ${got}, not ${article(need)} ${need}`);
+    }
+    if (slot.kind !== 'key' && !(surface && (surface.knobCols || []).includes(slot.col))) {
+      throw new Error(`Column ${slot.col + 1} has no encoder on this surface`);
+    }
+  }
+
+  function slotLabel(slot) {
+    if (slot.kind === 'key') return `row ${slot.row + 1}, column ${slot.col + 1}`;
+    if (slot.kind === 'encoder') return `encoder column ${slot.col + 1}`;
+    return `touch column ${slot.col + 1}`;
+  }
+
+  async function saveSlots(page, slots, message) {
+    const saved = await api('PUT', `/api/surface-pages/${page.id}`, slots);
+    const i = pages.findIndex((p) => p.id === saved.id);
+    if (i >= 0) pages[i] = saved;
+    notice = message;
+    armed = '';
+    held = null;
+    await fillPreviews();
+    paint();
+  }
+
+  async function place(buttonId, slot, from) {
+    const page = syncPage();
+    if (!page) { notice = 'Create a page before assigning a button.'; paint(); return; }
+    const button = byButton(buttonId);
+    if (!button) { notice = 'That button is not in the library.'; paint(); return; }
+    assertFit(button, slot);
+    const slots = slotsOf(page);
+    if (from) dropSlot(slots, from);
+    putSlot(slots, slot, button.id);
+    const verb = from ? 'Moved' : 'Placed';
+    await saveSlots(page, slots, `${verb} ${button.name} on ${slotLabel(slot)}.`);
   }
 
   async function load() {
@@ -220,12 +343,21 @@
     paint();
   }
 
+  function readDrag(ev) {
+    const raw = (ev.dataTransfer && ev.dataTransfer.getData('text/plain')) || '';
+    if (!raw.startsWith('{"from":')) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  }
+
   root.addEventListener('click', (ev) => {
     const device = ev.target.closest('[data-device]');
     if (device) {
       chosen = true;
       pick = { kind: 'device', id: device.dataset.device };
       pageId = '';
+      armed = '';
+      held = null;
+      confirmDelete = false;
       run(fillPreviews().then(paint));
       return;
     }
@@ -234,14 +366,142 @@
       chosen = true;
       pick = { kind: 'type', id: type.dataset.type };
       pageId = '';
+      armed = '';
+      held = null;
+      confirmDelete = false;
       run(fillPreviews().then(paint));
       return;
     }
-    const page = ev.target.closest('[data-page]');
-    if (page) {
-      pageId = page.dataset.page;
+    const saved = ev.target.closest('[data-saved]');
+    if (saved) {
+      const next = pages.find((p) => p.id === saved.dataset.saved);
+      if (!next) return;
+      chosen = true;
+      const deviceNow = selectedDevice();
+      if (!deviceNow || deviceNow.surfaceId !== next.surface) pick = { kind: 'type', id: next.surface };
+      pageId = next.id;
+      armed = '';
+      held = null;
+      confirmDelete = false;
       run(fillPreviews().then(paint));
+      return;
     }
+    const pageBtn = ev.target.closest('[data-page]');
+    if (pageBtn) {
+      pageId = pageBtn.dataset.page;
+      armed = '';
+      held = null;
+      confirmDelete = false;
+      run(fillPreviews().then(paint));
+      return;
+    }
+    const libBtn = ev.target.closest('[data-lib]');
+    if (libBtn) {
+      held = null;
+      armed = armed === libBtn.dataset.lib ? '' : libBtn.dataset.lib;
+      paint();
+      return;
+    }
+    if (ev.target.closest('[data-create]')) {
+      const surface = surfaceOf();
+      const name = ((root.querySelector('#pageNew') || {}).value || '').trim();
+      if (!surface) { toast('Pick a surface type first.', true); return; }
+      if (!name) { toast('A name is required', true); return; }
+      run((async () => {
+        const made = await api('POST', '/api/surface-pages', { name, surface: surface.id });
+        pages.push(made);
+        pageId = made.id;
+        notice = `Saved “${made.name}”. Nothing was pushed.`;
+        confirmDelete = false;
+        paint();
+      })());
+      return;
+    }
+    if (ev.target.closest('[data-rename]')) {
+      const page = syncPage();
+      const name = ((root.querySelector('#pageName') || {}).value || '').trim();
+      if (!page) return;
+      run((async () => {
+        const saved = await api('POST', `/api/surface-pages/${page.id}/rename`, { name });
+        const i = pages.findIndex((p) => p.id === saved.id);
+        if (i >= 0) pages[i] = saved;
+        notice = `Renamed to “${saved.name}”.`;
+        paint();
+      })());
+      return;
+    }
+    if (ev.target.closest('[data-ask-delete]')) { confirmDelete = true; paint(); return; }
+    if (ev.target.closest('[data-cancel-delete]')) { confirmDelete = false; paint(); return; }
+    if (ev.target.closest('[data-do-delete]')) {
+      const page = syncPage();
+      if (!page) return;
+      run((async () => {
+        await api('DELETE', `/api/surface-pages/${page.id}`);
+        pages = pages.filter((p) => p.id !== page.id);
+        pageId = '';
+        confirmDelete = false;
+        notice = `Deleted “${page.name}”. The buttons are still in the library.`;
+        paint();
+      })());
+      return;
+    }
+    if (ev.target.closest('[data-clear]')) {
+      const page = syncPage();
+      if (!page || !held) return;
+      const slots = dropSlot(slotsOf(page), held);
+      run(saveSlots(page, slots, 'Slot cleared.'));
+      return;
+    }
+    const hit = ev.target.closest('[data-kind]');
+    if (!hit) return;
+    const slot = readSlot(hit);
+    const page = syncPage();
+    if (!page) { notice = 'Create a page before assigning a button.'; paint(); return; }
+    if (armed) {
+      run(place(armed, slot, null));
+      return;
+    }
+    if (held) {
+      if (sameSlot(held, slot)) { held = null; paint(); return; }
+      const from = occupant(page, held);
+      if (!from) { held = null; paint(); return; }
+      run(place(from.buttonId, slot, held));
+      return;
+    }
+    const filled = occupant(page, slot);
+    if (filled) { held = slot; paint(); }
+  });
+
+  root.addEventListener('dragstart', (ev) => {
+    const libBtn = ev.target.closest('[data-lib]');
+    const hit = ev.target.closest('[data-kind]');
+    if (libBtn) {
+      ev.dataTransfer.setData('text/plain', JSON.stringify({ from: 'library', buttonId: libBtn.dataset.lib }));
+      ev.dataTransfer.effectAllowed = 'copy';
+      return;
+    }
+    if (hit && hit.getAttribute('draggable') === 'true') {
+      const page = syncPage();
+      const slot = readSlot(hit);
+      const filled = occupant(page, slot);
+      if (!filled) return;
+      ev.dataTransfer.setData('text/plain', JSON.stringify({ from: 'slot', buttonId: filled.buttonId, slot }));
+      ev.dataTransfer.effectAllowed = 'move';
+    }
+  });
+
+  root.addEventListener('dragover', (ev) => {
+    if (ev.target.closest('[data-kind]')) ev.preventDefault();
+  });
+
+  root.addEventListener('drop', (ev) => {
+    const hit = ev.target.closest('[data-kind]');
+    if (!hit) return;
+    ev.preventDefault();
+    const payload = readDrag(ev);
+    if (!payload || !payload.buttonId) return;
+    const slot = readSlot(hit);
+    run(place(payload.buttonId, slot, payload.from === 'slot' ? payload.slot : null));
   });
 
   window.addEventListener('cc:tab', (ev) => { if (ev.detail === 'pages') run(load().catch((e) => toast(e.message || 'Could not load pages'))); });
