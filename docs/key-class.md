@@ -53,3 +53,7 @@ Buttons live in `button-library.json`. A named page lives in `surface-pages.json
 Encoder and touch placements are included as `knobs` and `strip`. `dials` stays one string per column (`off` unless it is a built-in paint widget) because the current plugin paints knobs from widget names. USB live paint of a library page is not part of this push.
 
 A stack in `decks.json` can hold a built-in id such as `ptz-live` and a saved page id together. Pushing a saved page puts that id first and leaves the built-in ids on the stack.
+
+Deploying the built-in + XL ATEM page uses this same key-class definition, the one the USB face already draws. The payload `keys` keep the older shape so plugin **0.20.0** (manifest `0.20.0.0` in `streamdeck/`) can paint them: `label`, `value`, `caption`, and `action` as `{ method, path, body }`. `dials` stays one string per column for that plugin. `keyClass` is the USB face, dials included. **0.20.0** ignores `keyClass`. No later plugin build in this repo reads it yet. An XL deploy of `atem-switcher` stays the packed page.
+
+A library action id and a USB press share one mapper to `{ path, body }`. A second ATEM or PTZ is the instance on the path (`/api/sys/atem-ab12cd/cmd/cut`, `/api/sys/ptz-ab12cd/cmd/recall`), which is the form Videohub, HyperDeck, and Mitti already used. Pixera and Millumin use that form too. The button catalog's `request` field is that same mapper.

@@ -38,6 +38,8 @@ those profiles are installed. Other systems paint the keys that are already on t
 
 **Push** on that screen sends the selected named page to the selected online Path C deck. It uses the same `POST /api/decks/deploy` as this tab, which calls plugin `POST /v1/deploy`. It does not open a second deploy path. After a successful push, `GET /api/decks` reports that deck's `loaded` titles the same way a built-in push does. A stack that is only `ptz-live` on an XL still deploys the old way, with that page first. Pushing a saved page puts that page first and leaves `ptz-live` on the stack. An empty page is refused. The plugin down, a missing deck, and an offline deck are still 502, 404, and 409.
 
+On a Stream Deck + XL, deploying the built-in `atem-switcher` page sends the same keys, labels, and actions as the USB face (the key-class page). Other sizes, including XL, still get the older packed switcher (CUT, AUTO, program inputs, jump to macros). Plugin **0.20.0** paints the older key fields and string `dials`. The USB dials ride along as `keyClass`, which **0.20.0** ignores. No plugin in this repo reads `keyClass` yet.
+
 ## The plugin API
 
 The plugin listens on `127.0.0.1:9721` (loopback only).
@@ -54,6 +56,8 @@ change the listen address. `RS6_DECK_PLUGIN_LAN=1` accepts clients that are not 
 
 When the plugin starts it tells Control Center `POST /api/decks/hello` with its URL. The device
 list Control Center shows is always a fresh `GET /v1/devices`, not the hello body.
+
+**Scan USB** on Control Devices posts `POST /api/decks/refresh`. That rescans USB once (`pollUsb`) and refreshes the plugin device list once. The response is the usual deck view: plugin decks in `devices`, USB decks in `control.devices`.
 
 The Companion file under **SYSTEMS → STREAM DECK PAGES** is a separate export. **DECKS** does not
 build it and does not deploy through Companion.
