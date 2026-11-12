@@ -74,12 +74,24 @@ test('pushing a saved page deploys it first and leaves a built-in stack in place
     const empty = await call('POST', '/api/surface-pages', { name: 'Empty', surface: 'xl' });
     assert.equal(page.status, 200);
 
-    const stack = await call('POST', '/api/decks/stack', { deviceId: '@(1)[4057/150]', pages: ['ptz-live', page.json.id] });
-    assert.equal(stack.status, 200, JSON.stringify(stack.json));
+    const liveOnly = await call('POST', '/api/decks/stack', { deviceId: '@(1)[4057/150]', pages: ['ptz-live'] });
+    assert.equal(liveOnly.status, 200);
     const builtIn = await call('POST', '/api/decks/deploy', { deviceId: '@(1)[4057/150]' });
     assert.equal(builtIn.status, 200, JSON.stringify(builtIn.json));
     assert.equal(pushed[0].pages[0].id, 'ptz-live');
     assert.equal(pushed[0].pages[0].device.cam, 'cam3');
+    const afterLive = await call('GET', '/api/decks');
+    const xlLive = afterLive.json.devices.find((d) => d.id === '@(1)[4057/150]');
+    assert.deepEqual(xlLive.pages.map((p) => p.id), ['ptz-live']);
+    assert.deepEqual(xlLive.loaded, builtIn.json.loaded);
+    assert.ok(xlLive.loaded.includes('PTZ LIVE'));
+
+    const stack = await call('POST', '/api/decks/stack', { deviceId: '@(1)[4057/150]', pages: ['ptz-live', page.json.id] });
+    assert.equal(stack.status, 200, JSON.stringify(stack.json));
+    pushed.length = 0;
+    const mixed = await call('POST', '/api/decks/deploy', { deviceId: '@(1)[4057/150]' });
+    assert.equal(mixed.status, 200, JSON.stringify(mixed.json));
+    assert.equal(pushed[0].pages[0].id, 'ptz-live');
     const saved = pushed[0].pages.find((p) => p.id === page.json.id);
     assert.equal(saved.title, 'Show ATEM');
     assert.equal(saved.keys.find((key) => key.row === 3 && key.col === 7).label, 'CUT');
@@ -95,7 +107,7 @@ test('pushing a saved page deploys it first and leaves a built-in stack in place
     const view = await call('GET', '/api/decks');
     const device = view.json.devices.find((d) => d.id === '@(1)[4057/150]');
     assert.deepEqual(device.pages.map((p) => p.id), [page.json.id, 'ptz-live']);
-    assert.ok(device.loaded.includes('Show ATEM'));
+    assert.deepEqual(device.loaded, again.json.loaded);
 
     const blank = await call('POST', '/api/decks/deploy', { deviceId: '@(1)[4057/150]', pageId: empty.json.id });
     assert.equal(blank.status, 400);

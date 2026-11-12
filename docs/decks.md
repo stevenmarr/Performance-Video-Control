@@ -30,6 +30,14 @@ when a button follows that system, or when its target is a fixed instance. See [
 PTZ pages use the profiles **PTZ Live**, **PTZ Paint**, **PTZ Functions**, and **PTZ Move** when
 those profiles are installed. Other systems paint the keys that are already on the deck.
 
+## Button library and the Pages screen
+
+**Control Devices → BUTTONS** is the button library. Each button is one element (a key, an encoder, or a touch-segment), a role, its text, and action ids such as `atem.cut`. The records are `button-library.json` in the data directory, next to `decks.json`. They are not deck stacks.
+
+**Control Devices → PAGES** is the mapping screen. It draws the real grid for a surface type (Mini, MK.2, Neo, XL, +, + XL), including the encoder row and touch strip when that surface has them. A named page belongs to one surface type, not to one deck, and is stored in `surface-pages.json`. Empty slots stay empty. A library button only lands on a slot of the same element type.
+
+**Push** on that screen sends the selected named page to the selected online Path C deck. It uses the same `POST /api/decks/deploy` as this tab, which calls plugin `POST /v1/deploy`. It does not open a second deploy path. After a successful push, `GET /api/decks` reports that deck's `loaded` titles the same way a built-in push does. A stack that is only `ptz-live` on an XL still deploys the old way, with that page first. Pushing a saved page puts that page first and leaves `ptz-live` on the stack. An empty page is refused. The plugin down, a missing deck, and an offline deck are still 502, 404, and 409.
+
 ## The plugin API
 
 The plugin listens on `127.0.0.1:9721` (loopback only).
