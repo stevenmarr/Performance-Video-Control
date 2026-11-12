@@ -597,14 +597,18 @@
   // 0.4.0: INPUTS / BACKUP / AUDIO / WEB RCS hide everything that belongs to presets (screen tiles, TAKE / CUT,
   // the PVW line) and use the full width. body.tab-<name> drives the CSS.
   // 0.6.0: + the SYSTEMS dashboard and the shared E2 / PixelHue tabs (public/sys.js renders those)
-  const TABS = ['presets', 'looks', 'cues', 'inputs', 'backup', 'audio', 'webrcs', 'system', 'xpresets', 'xcues', 'xsources', 'xstills', 'xbackup', 'atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amv', 'amacros', 'pctl', 'pcams', 'scopes', 'decks', 'pxplay', 'pxcues', 'mlcol', 'mllayer'];
+  const TABS = ['presets', 'looks', 'cues', 'inputs', 'backup', 'audio', 'webrcs', 'system', 'xpresets', 'xcues', 'xsources', 'xstills', 'xbackup', 'atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amv', 'amacros', 'pctl', 'pcams', 'scopes', 'decks', 'buttons', 'pxplay', 'pxcues', 'mlcol', 'mllayer'];
   function setTab(t) {
     tab = TABS.includes(t) ? t : 'presets';
     window.dispatchEvent(new CustomEvent('cc:tab', { detail: tab }));
     // 0.5.0 fix: MOVE (and SAVE) used to stay on across tab switches, so taps meant as RECALL on the way back
     // picked and moved tiles ("the presets are re ordered"). Leaving PRESETS always returns to RECALL.
     if (tab !== 'presets' && (mode === 'move' || mode === 'save')) setMode('recall');
-    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x.dataset.tab === tab));
+    const deckOpen = tab === 'decks' || tab === 'buttons' || tab === 'pages';
+    document.querySelectorAll('.tab').forEach((x) => {
+      const topDeck = x.classList.contains('tab-decks') && !x.classList.contains('decks-sub');
+      x.classList.toggle('active', x.dataset.tab === tab || (deckOpen && topDeck));
+    });
     for (const x of TABS) { const el = $(`#pane-${x}`); if (el) el.hidden = x !== tab && !(tab === 'amv' && x === 'alayout'); }
     for (const x of TABS) document.body.classList.toggle(`tab-${x}`, x === tab);
     if (tab === 'webrcs') openRcs(false);

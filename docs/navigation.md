@@ -30,7 +30,7 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
   vectorscope, Lightning, false colour), not a device to ADD TO DESK and not a PTZ page. **Lightning**
   is a mode inside that tab, not a tab of its own. A `/#lightning` link from 0.20.0 opens SCOPES.
   **TALLIES** (TSL) is a card on the SYSTEMS page.
-* **Control Devices** is always shown, the same way SCOPES is. It lists Stream Decks opened over USB. Home on the deck picks one system. `/#decks` opens it.
+* **Control Devices** is always shown, the same way SCOPES is. `/#decks` opens the USB view. The second row is DEVICES and BUTTONS. DEVICES is the USB assign view. BUTTONS creates library keys. Quit the Elgato Stream Deck app so this app can own a USB deck.
 * Tapping a group button opens **the page you last used in that group**. The first time, it opens the
   group's main page (PRESETS, SWITCHER, CAMERA CONTROL, TIMELINES, COLUMNS). The last page is remembered
   in this browser.
@@ -49,8 +49,14 @@ Only the pages of the selected group are shown, always in the same order:
 | MILLUMIN | COLUMNS · LAYER |
 
 **SCOPES** has no second-row page of its own. The top-row button opens the pane. The second row shows a
-one-line hint (modes, and that live video is Desktop Video from a Mac sidecar). **Control Devices** is the same:
-the top-row button opens the pane, and the second row is a one-line hint.
+one-line hint (modes, and that live video is Desktop Video from a Mac sidecar).
+
+**Control Devices** has a second row:
+
+| Page | What it is |
+|---|---|
+| DEVICES | USB Stream Decks. Home picks one system. This is the view that used to be the whole tab. |
+| BUTTONS | Create, edit, duplicate, and delete library buttons. No grid. |
 
 **LAYOUT** is the M/E and SuperSource picture: resources on the left, canvases in the middle, properties on the right. **MULTIVIEW** is its own page. DVE / SS / KEYS stays the full key and DSK panel. See [atem-layout.md](atem-layout.md).
 
