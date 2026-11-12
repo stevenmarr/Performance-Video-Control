@@ -81,9 +81,10 @@
   <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. Live video is Desktop Video from a Mac sidecar.</span>
   <span class="tabs-home-note" id="tabsLooksNote" hidden>One switcher per stack. Absolute is a full look. Relative changes only that preset's layers. GO loads preview. Bail loads after TAKE.</span>
   <span class="tabs-home-note" id="tabsCuesNote" hidden>Drag a preset onto a cue or its timeline. RUN CUE plays that cue and locks until the timeline finishes.</span>
-  <span class="tabs-home-note" id="tabsDecksNote" hidden>USB decks and a button library. Quit the Elgato Stream Deck app so this app can own the device.</span>
+  <span class="tabs-home-note" id="tabsDecksNote" hidden>USB decks, a button library, and page layouts. Quit the Elgato Stream Deck app so this app can own the device.</span>
   <button type="button" class="tab decks-sub" data-tab="decks" hidden>DEVICES</button>
   <button type="button" class="tab decks-sub" data-tab="buttons" hidden>BUTTONS</button>
+  <button type="button" class="tab decks-sub" data-tab="pages" hidden>PAGES</button>
   </div>
 </nav>
 
@@ -493,6 +494,12 @@
     </div>
     <div id="buttonRoot"></div>
   </section>
+  <section class="grid-wrap pane" id="pane-pages" hidden>
+    <div class="scopes-head">
+      <div class="section-title">PAGES <small>Lay out a surface. Nothing is assigned or pushed from here.</small></div>
+    </div>
+    <div id="pagesRoot"></div>
+  </section>
   <section class="grid-wrap pane" id="pane-pxplay" hidden>
     <div class="board-head"><div class="section-title">PIXERA TIMELINES <small id="pxInfo">transport per timeline</small></div><span class="spacer"></span>
       <button class="btn mini" id="pxRefresh" type="button">⟳ REFRESH</button></div>
@@ -838,6 +845,7 @@
 <script src="/scopes-tab.js"></script>
 <script src="/decks.js"></script>
 <script src="/button-library.js"></script>
+<script src="/surface-pages.js"></script>
 <script src="/tsl.js"></script>
 </body>
 </html>
