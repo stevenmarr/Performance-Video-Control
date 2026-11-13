@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **55**. Partial: **0**. Not yet: **1043**.
+Companion connection types: **1098**. Implemented: **57**. Partial: **0**. Not yet: **1041**.
 
 ## Systems in this build
 
@@ -50,6 +50,8 @@ Companion connection types: **1098**. Implemented: **55**. Partial: **0**. Not y
 | NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
 | Megapixel HELIOS (`helios`) | implemented | 6 | 3 | 2 | official | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
 | Behringer X32 (`behringer-x32`) | implemented | 4 | 3 | 2 | official | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
+| Art-Net (`artnet`) | implemented | 1 | 3 | 1 | official | https://art-net.org.uk/how-it-works/streaming-packets/art-dmx-packet-definition/ |
+| sACN (`sacn`) | implemented | 1 | 2 | 1 | official | https://tsp.esta.org/tsp/documents/published_docs.php |
 
 ## Notes on sources
 
@@ -449,7 +451,7 @@ Companion connection types: **1098**. Implemented: **55**. Partial: **0**. Not y
 | `gefen-dvimatrix` | not yet | — | — |
 | `genelec-smart-ip` | not yet | — | — |
 | `generic-aes70` | not yet | — | — |
-| `generic-artnet` | not yet | — | — |
+| `generic-artnet` | implemented | artnet | https://art-net.org.uk/how-it-works/streaming-packets/art-dmx-packet-definition/ |
 | `generic-blink` | not yet | — | — |
 | `generic-bridge` | not yet | — | — |
 | `generic-browsercontrol` | not yet | — | — |
@@ -471,7 +473,7 @@ Companion connection types: **1098**. Implemented: **55**. Partial: **0**. Not y
 | `generic-pjlink` | implemented | christie-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `generic-ptpv2-client` | not yet | — | — |
 | `generic-rss-client` | not yet | — | — |
-| `generic-sacn` | not yet | — | — |
+| `generic-sacn` | implemented | sacn | https://tsp.esta.org/tsp/documents/published_docs.php |
 | `generic-smtp` | not yet | — | — |
 | `generic-snmp` | not yet | — | — |
 | `generic-speedtest` | not yet | — | — |

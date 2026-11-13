@@ -54,6 +54,29 @@ test('Brompton brightness, NovaStar checksum and HELIOS sACN channels', async ()
   }
 });
 
+test('Art-Net ArtDmx carries the opcode and the slot', async () => {
+  const { artDmx } = require('../lib/modules/transports');
+  const packet = artDmx({ universe: 1, slots: [0, 255] });
+  assert.equal(packet.slice(0, 8).toString(), 'Art-Net\0');
+  assert.equal(packet.readUInt16LE(8), 0x5000);
+  assert.equal(packet[19], 255);
+  const dgram = require('dgram');
+  const sink = dgram.createSocket('udp4');
+  const got = new Promise((resolve) => sink.once('message', resolve));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const row = desk.create('artnet', { connection: { host: '127.0.0.1', port: sink.address().port, universe: 0 } });
+    await desk.run(row.id, 'slot', { channel: 2, value: 255, universe: 0 });
+    const msg = await got;
+    assert.equal(msg.slice(0, 8).toString(), 'Art-Net\0');
+    assert.equal(msg[19], 255);
+  } finally {
+    desk.close();
+    sink.close();
+  }
+});
+
 test('X32 channel fader is the published OSC address', async () => {
   const dgram = require('dgram');
   const osc = require('../lib/drivers/osc');
