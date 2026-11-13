@@ -546,3 +546,61 @@ test('Epson opens ESC/VP.net and then sends PWR ON', async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('the new display, camera, console, timer and protocol systems send their published commands', async () => {
+  const T = require('../lib/modules/transports');
+  const { get } = require('../lib/modules/catalog');
+  assert.equal(T.quMute({ channel: 1, on: true }).toString('hex'), '90207f902000');
+  assert.equal(T.quScene({ scene: 1 }).toString('hex'), 'b00000b02000c000');
+  assert.equal(T.modbusWriteRegister({ unit: 1, address: 0, value: 1 }).toString('hex'), '000100000006010600000001');
+  assert.equal(T.mscCommand(1).toString('hex'), 'f07f7f0201f7');
+  assert.ok(T.mqttPublish({ topic: 'a', payload: '1', clientId: 'cc' }).includes(Buffer.from('MQTT')));
+  assert.equal(T.snmpSet({ community: 'public', oid: '1.3.6.1.2.1.1.1.0', value: 1 })[0], 0x30);
+  for (const id of ['panasonic-projector', 'optoma-projector', 'vivitek-projector', 'sanyo-projector', 'eiki-projector', 'digital-projection']) {
+    assert.equal(get(id).actionMap.get('on').execute.command, '%1POWR 1\r');
+  }
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(tcp);
+  const dgram = require('dgram');
+  const sink = dgram.createSocket('udp4');
+  const packets = [];
+  sink.on('message', (msg) => packets.push(msg));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const lg = desk.create('lg-signage', { connection: { host: '127.0.0.1', port, reconnect: false } });
+    await desk.connect(lg.id);
+    await desk.run(lg.id, 'on', { id: '01' });
+    const sharp = desk.create('sharp-ascii', { connection: { host: '127.0.0.1', port, delimiter: '\\r', reconnect: false } });
+    await desk.connect(sharp.id);
+    await desk.run(sharp.id, 'on');
+    const qu = desk.create('allenheath-qu', { connection: { host: '127.0.0.1', port, reconnect: false } });
+    await desk.connect(qu.id);
+    await desk.run(qu.id, 'mute', { channel: 1 });
+    const sym = desk.create('symetrix-dsp', { connection: { host: '127.0.0.1', port, delimiter: '\\r', reconnect: false } });
+    await desk.connect(sym.id);
+    await desk.run(sym.id, 'set', { controller: 100, position: 32768 });
+    const para = desk.create('etc-paradigm', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    await desk.run(para.id, 'preset', { name: 'P1' });
+    await desk.run(para.id, 'preset', { name: 'P1' });
+    const clock = desk.create('clock-8001', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    await desk.run(clock.id, 'down', { timer: 0, seconds: 60 });
+    const msc = desk.create('midi-show-control', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    await desk.run(msc.id, 'go');
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const text = Buffer.concat(lines);
+    assert.ok(text.includes(Buffer.from('ka 01 01\r')));
+    assert.ok(text.includes(Buffer.from('power on\r')));
+    assert.ok(text.includes(Buffer.from('90207f902000', 'hex')));
+    assert.ok(text.includes(Buffer.from('CS 100 32768\r')));
+    const osc = require('../lib/drivers/osc');
+    assert.ok(packets.some((p) => p.includes(Buffer.from('pst act P1\r'))));
+    assert.ok(packets.some((p) => { const m = osc.decode(p); return m && m.address === '/clock/timer/0/countdown'; }));
+    assert.ok(packets.some((p) => p.toString('hex') === 'f07f7f0201f7'));
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => tcp.close(resolve));
+  }
+});

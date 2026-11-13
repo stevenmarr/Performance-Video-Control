@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not yet: **999**.
+Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not yet: **972**.
 
 ## Systems in this build
 
@@ -84,6 +84,31 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | Blackmagic Ultimatte (`bmd-ultimatte`) | implemented | 2 | 2 | 1 | official | https://documents.blackmagicdesign.com/DeveloperManuals/UltimatteEthernetProtocol.pdf |
 | Wake-on-LAN (`wake-on-lan`) | implemented | 1 | 1 | 1 | official | https://www.amd.com/content/dam/amd/en/documents/archived-tech-docs/white-papers/20213.pdf |
 | Epson projector (`epson-projector`) | implemented | 6 | 2 | 1 | official | https://files.support.epson.com/docid/cpd6/cpd65860/EN/Monitoring/Reference/esc_vp21_command_list.html |
+| LG signage (`lg-signage`) | implemented | 2 | 2 | 1 | official | https://gscs-b2c.lge.com/open/downloadFile?fileId=KROWM000594321.pdf |
+| Sharp display (`sharp-ascii`) | implemented | 5 | 2 | 1 | official | https://sharp-displays.jp.sharp/support/webdl/dl_service/data/projector/manual/common_ascii/common_ascii_e.pdf |
+| NEC projector ASCII (`nec-projector-ascii`) | implemented | 4 | 2 | 1 | official | https://business.sharpusa.com/Portals/0/downloads/Manuals/sharp-pj-control-command-codes.pdf |
+| Panasonic projector (`panasonic-projector`) | implemented | 4 | 2 | 1 | official | https://pjlink.jbmia.or.jp/english/data_cl2.html |
+| Digital Projection (`digital-projection`) | implemented | 4 | 2 | 1 | official | https://pjlink.jbmia.or.jp/english/data_cl2.html |
+| Optoma projector (`optoma-projector`) | implemented | 4 | 2 | 1 | official | https://pjlink.jbmia.or.jp/english/data_cl2.html |
+| Vivitek projector (`vivitek-projector`) | implemented | 4 | 2 | 1 | official | https://pjlink.jbmia.or.jp/english/data_cl2.html |
+| Sanyo projector (`sanyo-projector`) | implemented | 4 | 2 | 1 | official | https://pjlink.jbmia.or.jp/english/data_cl2.html |
+| Eiki projector (`eiki-projector`) | implemented | 4 | 2 | 1 | official | https://pjlink.jbmia.or.jp/english/data_cl2.html |
+| Panasonic AW camera (`panasonic-aw`) | implemented | 1 | 2 | 1 | official | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/UE80/AW-UE80UE50UE40_InterfaceSpecification_E.pdf |
+| JVC PTZ (`jvc-ptz`) | implemented | 2 | 2 | 1 | official | https://www.jvc.com/content/dam/jvc/usa/pro/professional-video/documents/manuals/pdf/HTTP-CGI-Command-support-table_001.pdf |
+| Axis PTZ (`axis-ptz`) | implemented | 2 | 2 | 1 | official | https://developer.axis.com/vapix/network-video/pantiltzoom-api/ |
+| Epiphan Pearl (`epiphan-pearl`) | implemented | 2 | 2 | 1 | official | https://www.epiphan.com/userguides/pdfs/Epiphan-Pearl-API-Guide.pdf |
+| ETC Paradigm (`etc-paradigm`) | implemented | 1 | 2 | 1 | official | https://www.etcconnect.com/WorkArea/DownloadAsset.aspx?id=10737514967 |
+| Allen & Heath Qu (`allenheath-qu`) | implemented | 3 | 3 | 1 | official | https://www.allen-heath.com/content/uploads/2023/06/Qu_MIDI_Protocol_V1.9.pdf |
+| Symetrix Composer (`symetrix-dsp`) | implemented | 1 | 2 | 1 | official | https://www.symetrix.co/tech-tips/basic-remote-terminal-commands |
+| Clock-8001 (`clock-8001`) | implemented | 4 | 2 | 1 | official | https://gitlab.com/clock-8001/clock-8001/-/blob/master/v4/osc.md |
+| Stagetimer (`stagetimer`) | implemented | 3 | 2 | 1 | official | https://stagetimer.io/docs/api-v1/ |
+| MQTT (`generic-mqtt`) | implemented | 1 | 2 | 1 | official | https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html |
+| Modbus TCP (`generic-modbus`) | implemented | 1 | 1 | 1 | official | https://modbus.org/docs/Modbus_Application_Protocol_V1_1b3.pdf |
+| SNMP (`generic-snmp`) | implemented | 1 | 2 | 1 | official | https://www.rfc-editor.org/rfc/rfc1157 |
+| WebSocket (`generic-websocket`) | implemented | 1 | 2 | 1 | official | https://www.rfc-editor.org/rfc/rfc6455 |
+| ONVIF (`generic-onvif`) | implemented | 1 | 2 | 1 | official | https://www.onvif.org/specs/core/ONVIF-Core-Specification.pdf |
+| MIDI Show Control (`midi-show-control`) | implemented | 2 | 2 | 1 | official | https://www.midi.org/specifications/midi1-specifications/midi-show-control-1-0 |
+| Ping (`generic-ping`) | implemented | 1 | 2 | 1 | official | https://www.rfc-editor.org/rfc/rfc792 |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -154,7 +179,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `allenheath-dlive` | implemented | allenheath-dlive | https://www.allen-heath.com/content/uploads/2024/06/dLive-MIDI-Over-TCP-Protocol-V2.0.pdf |
 | `allenheath-dlive-ilive` | not yet | — | — |
 | `allenheath-dt168` | not yet | — | — |
-| `allenheath-qu` | not yet | — | — |
+| `allenheath-qu` | implemented | allenheath-qu | https://www.allen-heath.com/content/uploads/2023/06/Qu_MIDI_Protocol_V1.9.pdf |
 | `allenheath-sq` | implemented | allenheath-sq | https://www.allen-heath.com/content/uploads/2023/11/SQ-MIDI-Protocol-Issue5.pdf |
 | `alto-tmd16` | not yet | — | — |
 | `amaran-desktop` | not yet | — | — |
@@ -227,7 +252,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `axeltechnology-youplay` | not yet | — | — |
 | `axia-livewire-lwrp` | not yet | — | — |
 | `aximmetry-composer` | not yet | — | — |
-| `axis-ptz` | not yet | — | — |
+| `axis-ptz` | implemented | axis-ptz | https://developer.axis.com/vapix/network-video/pantiltzoom-api/ |
 | `badgermedia-trustabel` | not yet | — | — |
 | `ballscore-broadcast` | not yet | — | — |
 | `barco-clickshare` | not yet | — | — |
@@ -394,7 +419,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `denon-dn-500bd-mkii` | not yet | — | — |
 | `denon-receiver` | not yet | — | — |
 | `denon-recorder` | not yet | — | — |
-| `depili-clock-8001` | not yet | — | — |
+| `depili-clock-8001` | implemented | clock-8001 | https://gitlab.com/clock-8001/clock-8001/-/blob/master/v4/osc.md |
 | `derhamproductions-presenteringest` | not yet | — | — |
 | `devantech-ds` | not yet | — | — |
 | `devcore-mixingstation` | not yet | — | — |
@@ -404,10 +429,10 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `dhdaudio-control-api` | not yet | — | — |
 | `dhdaudio-ecp` | not yet | — | — |
 | `digico-osc` | implemented | digico | https://digico.biz/digico-opens-up-the-sd-range-with-generic-osc-control/ |
-| `digital-projection` | not yet | — | — |
+| `digital-projection` | implemented | digital-projection | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `digitalloggers-powercontroller` | not yet | — | — |
 | `digitalprojection-highlight` | not yet | — | — |
-| `digitalprojection-projectors` | not yet | — | — |
+| `digitalprojection-projectors` | implemented | digital-projection | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `directout-audioprocessors` | not yet | — | — |
 | `discord-api` | not yet | — | — |
 | `disguise-liveupdate` | not yet | — | — |
@@ -435,17 +460,17 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `ecamm-live` | not yet | — | — |
 | `ecclesialab-worshiplive` | not yet | — | — |
 | `eidsystems-kaleoai` | not yet | — | — |
-| `eiki-wspprojector` | not yet | — | — |
+| `eiki-wspprojector` | implemented | eiki-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `elgato-keylight` | not yet | — | — |
 | `emotimo-st4` | not yet | — | — |
-| `epiphan-pearl` | not yet | — | — |
+| `epiphan-pearl` | implemented | epiphan-pearl | https://www.epiphan.com/userguides/pdfs/Epiphan-Pearl-API-Guide.pdf |
 | `epson-businesspj` | implemented | epson-projector | https://files.support.epson.com/docid/cpd6/cpd65860/EN/Monitoring/Reference/esc_vp21_command_list.html |
 | `equipson-lightshark` | not yet | — | — |
 | `ereca-stageracer` | not yet | — | — |
 | `esphome-api` | not yet | — | — |
 | `etc-echo` | not yet | — | — |
 | `etc-eos` | implemented | etc-eos | https://www.etcconnect.com/WebDocs/Controls/EosFamilyOnlineHelp/en/Content/ShowControl/OSC/OSC_Intro.htm |
-| `etc-paradigm` | not yet | — | — |
+| `etc-paradigm` | implemented | etc-paradigm | https://www.etcconnect.com/WorkArea/DownloadAsset.aspx?id=10737514967 |
 | `etcaudiovisuel-onlyview` | not yet | — | — |
 | `etl-rfmatrix` | not yet | — | — |
 | `eventapps-cueplayer` | not yet | — | — |
@@ -517,19 +542,19 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `generic-http` | implemented | generic-http | https://www.rfc-editor.org/rfc/rfc9110 |
 | `generic-ical` | not yet | — | — |
 | `generic-midi` | not yet | — | — |
-| `generic-modbus` | not yet | — | — |
-| `generic-mqtt` | not yet | — | — |
+| `generic-modbus` | implemented | generic-modbus | https://modbus.org/docs/Modbus_Application_Protocol_V1_1b3.pdf |
+| `generic-mqtt` | implemented | generic-mqtt | https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html |
 | `generic-mysql` | not yet | — | — |
-| `generic-onvif` | not yet | — | — |
+| `generic-onvif` | implemented | generic-onvif | https://www.onvif.org/specs/core/ONVIF-Core-Specification.pdf |
 | `generic-osc` | implemented | generic-udp | https://www.rfc-editor.org/rfc/rfc768 |
-| `generic-ping` | not yet | — | — |
+| `generic-ping` | implemented | generic-ping | https://www.rfc-editor.org/rfc/rfc792 |
 | `generic-pingandwake` | not yet | — | — |
 | `generic-pjlink` | implemented | christie-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `generic-ptpv2-client` | not yet | — | — |
 | `generic-rss-client` | not yet | — | — |
 | `generic-sacn` | implemented | sacn | https://tsp.esta.org/tsp/documents/published_docs.php |
 | `generic-smtp` | not yet | — | — |
-| `generic-snmp` | not yet | — | — |
+| `generic-snmp` | implemented | generic-snmp | https://www.rfc-editor.org/rfc/rfc1157 |
 | `generic-speedtest` | not yet | — | — |
 | `generic-ssh` | not yet | — | — |
 | `generic-stopwatch` | not yet | — | — |
@@ -540,7 +565,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `generic-tcp-udp` | implemented | generic-tcp + generic-udp | — |
 | `generic-timezone` | not yet | — | — |
 | `generic-wakeonlan` | implemented | wake-on-lan | https://www.amd.com/content/dam/amd/en/documents/archived-tech-docs/white-papers/20213.pdf |
-| `generic-websocket` | not yet | — | — |
+| `generic-websocket` | implemented | generic-websocket | https://www.rfc-editor.org/rfc/rfc6455 |
 | `generic-webtable` | not yet | — | — |
 | `getontime-ontime` | not yet | — | — |
 | `glensound-divine` | not yet | — | — |
@@ -632,8 +657,8 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `jubilatesoftware-zionworx` | not yet | — | — |
 | `julusian-test` | not yet | — | — |
 | `justmacros-lua` | not yet | — | — |
-| `jvc-camera` | not yet | — | — |
-| `jvc-ptz` | not yet | — | — |
+| `jvc-camera` | implemented | jvc-ptz | https://www.jvc.com/content/dam/jvc/usa/pro/professional-video/documents/manuals/pdf/HTTP-CGI-Command-support-table_001.pdf |
+| `jvc-ptz` | implemented | jvc-ptz | https://www.jvc.com/content/dam/jvc/usa/pro/professional-video/documents/manuals/pdf/HTTP-CGI-Command-support-table_001.pdf |
 | `kenku-fm` | not yet | — | — |
 | `kernels-powersequencer` | not yet | — | — |
 | `kiloview-4kconverter` | not yet | kiloview | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
@@ -671,7 +696,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `leolabs-ableset` | not yet | — | — |
 | `leonreucher-vstopowerpoint` | not yet | — | — |
 | `lgtv-display` | not yet | — | — |
-| `lgtv-prodisplay` | not yet | — | — |
+| `lgtv-prodisplay` | implemented | lg-signage | https://gscs-b2c.lge.com/open/downloadFile?fileId=KROWM000594321.pdf |
 | `libreoffice-impress` | not yet | — | — |
 | `lightware-lw2` | implemented | lightware-lw2 | https://www.lightware.com/en/support/open-api |
 | `lightware-lw3` | implemented | lightware-lw3 | https://www.lightware.com/en/support/open-api |
@@ -709,7 +734,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `makeprox-glue` | not yet | — | — |
 | `malighting-grandma2` | implemented | grandma2 | https://help.malighting.com/Page/grandMA2/remote_command/en/3.9 |
 | `malighting-grandma3` | implemented | grandma3 | https://help.malighting.com/grandMA3/2.5/HTML/osc_advanced_examples.html |
-| `malighting-msc` | not yet | — | — |
+| `malighting-msc` | implemented | midi-show-control | https://www.midi.org/specifications/midi1-specifications/midi-show-control-1-0 |
 | `manhattanbeachstudios-streamgraphicspro` | not yet | — | — |
 | `marshall-cv-minicam` | not yet | — | — |
 | `marshall-ipcamera` | not yet | — | — |
@@ -761,7 +786,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `myapplause-control` | not yet | — | — |
 | `nanoleaf-shapes` | not yet | — | — |
 | `nec-display` | implemented | nec-display | https://www.sharpnecdisplays.com/p/download/v/bce9d82928fe8cec24a1e81f0b0ad44a/cp/Products/LargeFormatDisplays/Products/CurrentProducts/Shared/Command_Lists/External_Control_Rev1.8%28G4%29.pdf?fn=External_Control_Rev1.8%28G4%29.pdf |
-| `nec-projectors` | not yet | — | — |
+| `nec-projectors` | implemented | nec-projector-ascii | https://business.sharpusa.com/Portals/0/downloads/Manuals/sharp-pj-control-command-codes.pdf |
 | `neodarque-stagetimer2` | not yet | — | — |
 | `neol-epowerswitch` | not yet | — | — |
 | `netgear-avline` | not yet | — | — |
@@ -823,7 +848,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `opticis-omm-1000` | not yet | — | — |
 | `optimalaudio-zone` | not yet | — | — |
 | `optisigns-digitalsignage` | not yet | — | — |
-| `optoma-z28s` | not yet | — | — |
+| `optoma-z28s` | implemented | optoma-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `orei-matrix` | not yet | — | — |
 | `orfast-ndi` | not yet | — | — |
 | `oscidi-oscidi` | not yet | — | — |
@@ -839,12 +864,12 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `panasonic-av-hsw10` | not yet | — | — |
 | `panasonic-avhs` | not yet | — | — |
 | `panasonic-camera-controller` | not yet | — | — |
-| `panasonic-cameras` | not yet | — | — |
+| `panasonic-cameras` | implemented | panasonic-aw | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/UE80/AW-UE80UE50UE40_InterfaceSpecification_E.pdf |
 | `panasonic-kairos` | not yet | — | — |
 | `panasonic-lumix` | not yet | — | — |
 | `panasonic-mediaproductionsuite` | not yet | — | — |
 | `panasonic-p2` | not yet | — | — |
-| `panasonic-projector` | not yet | — | — |
+| `panasonic-projector` | implemented | panasonic-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `panasonic-ptz` | implemented | ptz | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/AW-UE150/HD/HD_OperationManual_English.pdf |
 | `panasonic-tv-th` | not yet | — | — |
 | `pangolin-beyond` | not yet | — | — |
@@ -953,7 +978,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `samsung-led-vp` | not yet | — | — |
 | `samsung-smarttv` | not yet | — | — |
 | `samsung-tizenos` | not yet | — | — |
-| `sanyo-projector` | not yet | — | — |
+| `sanyo-projector` | implemented | sanyo-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `sardiusmedia-sardiuslive` | not yet | — | — |
 | `screenbird-signage` | not yet | — | — |
 | `screencloud-controller` | not yet | — | — |
@@ -966,7 +991,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `sennheiser-teamconnect-ceiling` | not yet | — | — |
 | `sevenpointtechnologies-7pointaudio` | not yet | — | — |
 | `sgl-dct` | not yet | — | — |
-| `sharp-tv` | not yet | — | — |
+| `sharp-tv` | implemented | sharp-ascii | https://sharp-displays.jp.sharp/support/webdl/dl_service/data/projector/manual/common_ascii/common_ascii_e.pdf |
 | `sharun-pdfpresenter` | not yet | — | — |
 | `shelly-http` | not yet | — | — |
 | `shelly-ws` | not yet | — | — |
@@ -1045,7 +1070,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `stagetec-nexus` | not yet | — | — |
 | `stagetec-rcp` | not yet | — | — |
 | `stagetec-xci` | not yet | — | — |
-| `stagetimerio-api` | not yet | — | — |
+| `stagetimerio-api` | implemented | stagetimer | https://stagetimer.io/docs/api-v1/ |
 | `storz-bickel-crafty` | not yet | — | — |
 | `stramatel-slvideosystem` | not yet | — | — |
 | `streamerbot-api` | not yet | — | — |
@@ -1056,7 +1081,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `stype-realline` | not yet | — | — |
 | `svt-bridge` | not yet | — | — |
 | `svt-neo` | not yet | — | — |
-| `symetrix-dsp` | not yet | — | — |
+| `symetrix-dsp` | implemented | symetrix-dsp | https://www.symetrix.co/tech-tips/basic-remote-terminal-commands |
 | `synaccess-netbooter-bseries` | not yet | — | — |
 | `syncer-live` | not yet | — | — |
 | `syncthingfoundation-syncthing` | not yet | — | — |
@@ -1177,7 +1202,7 @@ Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not y
 | `visualproductions-iocore` | not yet | — | — |
 | `visualproductions-timecore` | not yet | — | — |
 | `vitec-avediaplayer9300-series` | not yet | — | — |
-| `vivitek-projector` | not yet | — | — |
+| `vivitek-projector` | implemented | vivitek-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `vizio-smartcast` | not yet | — | — |
 | `vizrt-flowics` | not yet | — | — |
 | `vizrt-mosart` | not yet | — | — |
