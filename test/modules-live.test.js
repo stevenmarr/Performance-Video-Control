@@ -150,3 +150,35 @@ test('SmartView brightness is the Ethernet protocol block', async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('LW3, Extron SIS and Kramer Protocol 3000 send the published route lines', async () => {
+  const lines = [];
+  const server = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf.toString())));
+  const port = await listen(server);
+  const desk = new ModuleDesk();
+  try {
+    const lw = desk.create('lightware-lw3', { connection: { host: '127.0.0.1', port, delimiter: '\\r\\n', reconnect: false } });
+    await desk.connect(lw.id);
+    await desk.run(lw.id, 'switch', { input: 4, output: 1 });
+    const ex = desk.create('extron-sis', { connection: { host: '127.0.0.1', port, delimiter: '\\r\\n', reconnect: false } });
+    await desk.connect(ex.id);
+    await desk.run(ex.id, 'tie', { input: 1, output: 3 });
+    await desk.run(ex.id, 'video', { input: 7, output: 5 });
+    const kr = desk.create('kramer-p3000', { connection: { host: '127.0.0.1', port, delimiter: '\\r', reconnect: false } });
+    await desk.connect(kr.id);
+    const armed = await desk.run(kr.id, 'preset', { preset: 3 });
+    assert.equal(armed.pending, true);
+    await desk.run(kr.id, 'preset', { preset: 3 });
+    await desk.run(kr.id, 'route', { layer: 1, output: 4, input: 2 });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const text = lines.join('');
+    assert.match(text, /CALL \/MEDIA\/VIDEO\/XP:switch\(I4:O1\)\r\n/);
+    assert.match(text, /1\*3!\r/);
+    assert.match(text, /7\*5%\r/);
+    assert.match(text, /#ROUTE 1,4,2\r/);
+    assert.match(text, /#PRST-RCL 3\r/);
+  } finally {
+    desk.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **57**. Partial: **0**. Not yet: **1041**.
+Companion connection types: **1098**. Implemented: **65**. Partial: **0**. Not yet: **1033**.
 
 ## Systems in this build
 
@@ -45,6 +45,9 @@ Companion connection types: **1098**. Implemented: **57**. Partial: **0**. Not y
 | AJA Ki Pro (`aja-kipro`) | implemented | 5 | 2 | 1 | official | https://www.aja.com/support/item/4184 |
 | AJA KUMO (`aja-kumo`) | implemented | 2 | 3 | 1 | official | https://www.aja.com/support/item/9616 |
 | Blackmagic SmartView (`bmd-smartview`) | implemented | 3 | 3 | 1 | official | https://documents.blackmagicdesign.com/UserManuals/SmartViewManual.pdf |
+| Lightware LW3 (`lightware-lw3`) | implemented | 3 | 2 | 1 | official | https://www.lightware.com/en/support/open-api |
+| Extron SIS matrix (`extron-sis`) | implemented | 5 | 2 | 1 | official | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
+| Kramer Protocol 3000 (`kramer-p3000`) | implemented | 2 | 2 | 1 | official | https://k.kramerav.com/downloads/protocols/protocol_3000_3.0_master_user.pdf |
 | Ross XPression (`ross-xpression`) | implemented | 15 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | Brompton Tessera (`brompton-tessera`) | implemented | 6 | 4 | 2 | official | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
 | NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
@@ -406,17 +409,17 @@ Companion connection types: **1098**. Implemented: **57**. Partial: **0**. Not y
 | `evertz-vipx` | not yet | — | — |
 | `evision-hd102` | not yet | — | — |
 | `exertis-daisynet` | not yet | — | — |
-| `extron-dxp` | not yet | — | — |
-| `extron-dxp-hd-4k-plus` | not yet | — | — |
+| `extron-dxp` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
+| `extron-dxp-hd-4k-plus` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
 | `extron-in1604` | not yet | — | — |
 | `extron-ipl-t-pcs4` | not yet | — | — |
 | `extron-ipl250` | not yet | — | — |
-| `extron-matrix` | not yet | — | — |
-| `extron-mmx-tcp` | not yet | — | — |
+| `extron-matrix` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
+| `extron-mmx-tcp` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
 | `extron-smp111` | not yet | — | — |
 | `extron-smp351` | not yet | — | — |
-| `extron-smx` | not yet | — | — |
-| `extron-xtp-3200` | not yet | — | — |
+| `extron-smx` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
+| `extron-xtp-3200` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
 | `eyevinn-intercom` | not yet | — | — |
 | `ezcastpro-kvm` | not yet | — | — |
 | `ezcoo-matrix` | not yet | — | — |
@@ -599,7 +602,7 @@ Companion connection types: **1098**. Implemented: **57**. Partial: **0**. Not y
 | `knx-ip` | not yet | — | — |
 | `kommander-t3` | not yet | — | — |
 | `konftools-showplaypi` | not yet | — | — |
-| `kramer-matrix` | not yet | — | — |
+| `kramer-matrix` | implemented | kramer-p3000 | https://k.kramerav.com/downloads/protocols/protocol_3000_3.0_master_user.pdf |
 | `kramer-vp727` | not yet | — | — |
 | `kramer-vp734` | not yet | — | — |
 | `kramer-vp773a` | not yet | — | — |
@@ -620,7 +623,7 @@ Companion connection types: **1098**. Implemented: **57**. Partial: **0**. Not y
 | `lgtv-prodisplay` | not yet | — | — |
 | `libreoffice-impress` | not yet | — | — |
 | `lightware-lw2` | not yet | — | — |
-| `lightware-lw3` | not yet | — | — |
+| `lightware-lw3` | implemented | lightware-lw3 | https://www.lightware.com/en/support/open-api |
 | `lilliput-monitor` | not yet | — | — |
 | `limagiran-holyrics` | not yet | — | — |
 | `liminalet-zoomosc` | not yet | — | — |
