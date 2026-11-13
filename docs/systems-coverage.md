@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **37**. Partial: **2**. Not yet: **1059**.
+Companion connection types: **1098**. Implemented: **39**. Partial: **0**. Not yet: **1059**.
 
 ## Systems in this build
 
@@ -34,12 +34,12 @@ Companion connection types: **1098**. Implemented: **37**. Partial: **2**. Not y
 | ProPresenter (`propresenter`) | implemented | 4 | 3 | 2 | official | https://openapi.propresenter.com/ |
 | ETC Eos (`etc-eos`) | implemented | 5 | 2 | 2 | official | https://www.etcconnect.com/WebDocs/Controls/EosFamilyOnlineHelp/en/Content/ShowControl/OSC/OSC_Intro.htm |
 | grandMA2 (`grandma2`) | implemented | 5 | 2 | 1 | official | https://help.malighting.com/Page/grandMA2/remote_command/en/3.9 |
-| grandMA3 (`grandma3`) | partial | 3 | 2 | 1 | official | https://help.malighting.com/grandMA3/2.2/HTML/remote_inputs_osc.html |
+| grandMA3 (`grandma3`) | implemented | 6 | 7 | 3 | official | https://help.malighting.com/grandMA3/2.5/HTML/osc_advanced_examples.html |
 | Yamaha CL/QL (`yamaha-rcp`) | implemented | 5 | 2 | 1 | official | https://download.yamaha.com/files/tcm:39-1251310 |
 | Allen & Heath SQ (`allenheath-sq`) | implemented | 4 | 2 | 1 | official | https://www.allen-heath.com/content/uploads/2023/11/SQ-MIDI-Protocol-Issue5.pdf |
 | DiGiCo OSC (`digico`) | implemented | 3 | 2 | 1 | official | https://digico.biz/digico-opens-up-the-sd-range-with-generic-osc-control/ |
 | Christie / PJLink (`christie-projector`) | implemented | 5 | 3 | 2 | official | https://pjlink.jbmia.or.jp/english/data_cl2.html |
-| Barco projector (`barco-projector`) | partial | 4 | 2 | 2 | official | https://www.barco.com/en/support |
+| Barco Pulse (`barco-projector`) | implemented | 5 | 5 | 3 | official | https://www.barco.com/manuals/R5916611/w1p7s33hf4ko.html |
 | CasparCG (`casparcg`) | implemented | 6 | 2 | 2 | official | https://github.com/CasparCG/help/wiki/AMCP-Protocol |
 | NDI tools (`ndi`) | not yet | 0 | 1 | 1 | official | https://ndi.video/for-developers/ndi-sdk/ |
 
@@ -49,8 +49,8 @@ Companion connection types: **1098**. Implemented: **37**. Partial: **2**. Not y
 - Yamaha CL/QL commands are the published remote-control lines (`set MIXER:Current/...`, `ssrecall_ex`). The command list ships in Yamaha's setup package. https://github.com/BrenekH/yamaha-rcp-docs/ is a public transcription of that list, not a second protocol.
 - DiGiCo addresses are the console's own OSC paths. The Companion CSV is only a cross-reference.
 - NDI routing is not implemented. The NDI SDK is a licensed binary and there is no open wire protocol in this build.
-- grandMA3 sends `/cmd` only. Executor feedback is not parsed.
-- Barco projectors speak PJLink here. Barco Pulse JSON-RPC is not implemented.
+- grandMA3 control addresses are `/Page/Fader` and `/Page/Key`. Sequence feedback is the console's `/13.13.1.6.<n>` message (function, handle, percent).
+- Barco Pulse is JSON-RPC 2.0 on TCP 9090 (`system.poweron`, `system.poweroff`, `optics.shutter.target`, `image.window.main.source`). Christie stays on PJLink.
 - BirdDog uses the VISCA-over-IP command set its cameras document. Model-specific REST bodies are not guessed.
 - ATEM's public interface is the Blackmagic SDK. The desk speaks that switcher protocol. The byte layout is the SDK's, not a separate REST document.
 
@@ -176,7 +176,7 @@ Companion connection types: **1098**. Implemented: **37**. Partial: **2**. Not y
 | `barco-imagepro` | not yet | — | — |
 | `barco-matrixpro` | not yet | — | — |
 | `barco-pds` | not yet | — | — |
-| `barco-pulse` | partial | barco-projector | https://www.barco.com/en/support |
+| `barco-pulse` | implemented | barco-projector | https://www.barco.com/manuals/R5916611/w1p7s33hf4ko.html |
 | `base` | not yet | — | — |
 | `baserow-baserow` | not yet | — | — |
 | `baytto-q4` | not yet | — | — |
@@ -644,7 +644,7 @@ Companion connection types: **1098**. Implemented: **37**. Partial: **2**. Not y
 | `magnimage-mig-ec` | not yet | — | — |
 | `makeprox-glue` | not yet | — | — |
 | `malighting-grandma2` | implemented | grandma2 | https://help.malighting.com/Page/grandMA2/remote_command/en/3.9 |
-| `malighting-grandma3` | partial | grandma3 | https://help.malighting.com/grandMA3/2.2/HTML/remote_inputs_osc.html |
+| `malighting-grandma3` | implemented | grandma3 | https://help.malighting.com/grandMA3/2.5/HTML/osc_advanced_examples.html |
 | `malighting-msc` | not yet | — | — |
 | `manhattanbeachstudios-streamgraphicspro` | not yet | — | — |
 | `marshall-cv-minicam` | not yet | — | — |

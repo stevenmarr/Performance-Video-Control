@@ -283,13 +283,87 @@ test('OBS websocket 5 identifies with the documented password hash', async () =>
   }
 });
 
+test('grandMA3 stores the console sequence feedback and sends a Page fader', async () => {
+  const holder = dgram.createSocket('udp4');
+  await new Promise((resolve) => holder.bind(0, '127.0.0.1', resolve));
+  const port = holder.address().port;
+  holder.close();
+  await new Promise((resolve) => holder.once('close', resolve));
+  const desk = new ModuleDesk();
+  const heard = [];
+  const sink = dgram.createSocket('udp4');
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  sink.on('message', (msg) => heard.push(osc.decode(msg)));
+  try {
+    const row = desk.create('grandma3', { connection: { host: '127.0.0.1', port: sink.address().port, listenPort: port, prefix: '' } });
+    await desk.connect(row.id);
+    const packet = osc.encode('/13.13.1.6.1', [{ type: 's', value: 'FaderMaster' }, { type: 'i', value: 3 }, { type: 'f', value: 63.5 }]);
+    const sender = dgram.createSocket('udp4');
+    await new Promise((resolve, reject) => sender.send(packet, port, '127.0.0.1', (err) => err ? reject(err) : resolve()));
+    sender.close();
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(desk.must(row.id).vars.function, 'FaderMaster');
+    assert.equal(desk.must(row.id).vars.fader, '63.5');
+    assert.equal(desk.publicInstance(desk.must(row.id)).flags.fader, true);
+    await desk.run(row.id, 'fader', { page: 1, executor: 201, value: 50 });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.equal(heard.at(-1) && heard.at(-1).address, '/Page1/Fader201');
+  } finally {
+    desk.close();
+    await new Promise((resolve) => sink.close(resolve));
+  }
+});
+
+test('Barco Pulse power and shutter use the JSON-RPC property API', async () => {
+  const { takeJsonObjects } = require('../lib/modules/transports');
+  const rx = { buf: '' };
+  const server = net.createServer((sock) => {
+    sock.on('data', (chunk) => {
+      for (const raw of takeJsonObjects(rx, chunk)) {
+        const msg = JSON.parse(raw);
+        const reply = (result) => sock.write(`${JSON.stringify({ jsonrpc: '2.0', id: msg.id, result })}\n`);
+        if (msg.method === 'property.subscribe') reply(true);
+        else if (msg.method === 'property.get' && msg.params.property === 'system.state') reply('standby');
+        else if (msg.method === 'property.get') reply(null);
+        else if (msg.method === 'system.poweron') {
+          reply(null);
+          sock.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'property.changed', params: { property: [{ 'system.state': 'on' }] } })}\n`);
+        } else if (msg.method === 'property.set' && msg.params.property === 'optics.shutter.target') {
+          reply(true);
+          sock.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'property.changed', params: { property: [{ 'optics.shutter.position': msg.params.value }] } })}\n`);
+        } else reply(true);
+      }
+    });
+  });
+  const port = await listen(server);
+  const desk = new ModuleDesk();
+  try {
+    const row = desk.create('barco-projector', { connection: { host: '127.0.0.1', port } });
+    await desk.connect(row.id);
+    assert.equal(desk.must(row.id).vars.state, 'standby');
+    const armed = await desk.run(row.id, 'powerOn');
+    assert.equal(armed.pending, true);
+    await desk.run(row.id, 'powerOn');
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.equal(desk.must(row.id).vars.power, 'on');
+    await desk.run(row.id, 'shutterOpen');
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.equal(desk.must(row.id).vars.shutter, 'Open');
+    assert.equal(desk.publicInstance(desk.must(row.id)).flags.shutter, true);
+  } finally {
+    desk.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test('the coverage manifest lists every Companion module and matches the catalog', () => {
   const list = coverage.rows();
   assert.equal(list.length, coverage.ids.length);
   assert.equal(list.find((r) => r.id === 'studiocoast-vmix').status, 'implemented');
   assert.equal(list.find((r) => r.id === 'bmd-atem').status, 'implemented');
   assert.equal(list.find((r) => r.id === 'generic-tcp-udp').status, 'implemented');
-  assert.equal(list.find((r) => r.id === 'malighting-grandma3').status, 'partial');
+  assert.equal(list.find((r) => r.id === 'malighting-grandma3').status, 'implemented');
+  assert.equal(list.find((r) => r.id === 'barco-pulse').status, 'implemented');
   assert.equal(list.find((r) => r.id === 'newtek-ndistudiomonitor').status, 'not yet');
   const doc = fs.readFileSync(path.join(__dirname, '..', 'docs', 'systems-coverage.md'), 'utf8');
   assert.equal(doc, coverage.markdown());
