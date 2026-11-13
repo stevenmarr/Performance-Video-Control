@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not yet: **972**.
+Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not yet: **952**.
 
 ## Systems in this build
 
@@ -109,6 +109,25 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | ONVIF (`generic-onvif`) | implemented | 1 | 2 | 1 | official | https://www.onvif.org/specs/core/ONVIF-Core-Specification.pdf |
 | MIDI Show Control (`midi-show-control`) | implemented | 2 | 2 | 1 | official | https://www.midi.org/specifications/midi1-specifications/midi-show-control-1-0 |
 | Ping (`generic-ping`) | implemented | 1 | 2 | 1 | official | https://www.rfc-editor.org/rfc/rfc792 |
+| Allen & Heath Avantis (`allenheath-avantis`) | implemented | 2 | 2 | 1 | official | https://support.allen-heath.com/hc/en-gb/articles/45146889174801-Avantis-MIDI-TCP-IP-Protocol |
+| Allen & Heath CQ (`allenheath-cq`) | implemented | 2 | 2 | 1 | official | https://www.allen-heath.com/content/uploads/2024/10/CQ_MIDI_Protocol_V1_2_0_iss4.pdf |
+| Blackmagic MultiView (`bmd-multiview`) | implemented | 1 | 2 | 1 | official | https://documents.blackmagicdesign.com/UserManuals/BlackmagicMultiViewManual.pdf |
+| Blackmagic camera (`bmd-cameras`) | implemented | 4 | 2 | 1 | official | https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf |
+| Extron SMP 351 (`extron-smp351`) | implemented | 3 | 2 | 1 | official | https://aca.im/driver_docs/Extron/extron_smp300_Series.pdf |
+| Extron IPL T PCS4 (`extron-pcs4`) | implemented | 2 | 2 | 1 | official | https://media.extron.com/public/download/files/userman/68-738-07_C_IPL_T_PCS4_UG.pdf |
+| Vaddio PTZ (`vaddio-ptz`) | implemented | 2 | 2 | 1 | official | https://assetserver.net/_assets/vaddio/pdf/99999437000w-manual.pdf |
+| AVer PTZ (`aver-ptz`) | implemented | 3 | 1 | 1 | official | https://www.averusa.com/pro-av/downloads/control-codes/AVer%20Pro-AV%20PTZ%20Visca%20over%20IP-UDP%20and%20RS-232%20Guide.pdf |
+| Yamaha DM3 (`yamaha-dm`) | implemented | 3 | 2 | 1 | official | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
+| Sennheiser TeamConnect Ceiling 2 (`sennheiser-tcc2`) | implemented | 3 | 1 | 1 | official | https://assets.sennheiser.com/download/assets/TI_1245_v1.8.0_Sennheiser_Sound_Control_Protocol_TCC2_EN.pdf/c204169ce7bb11f0a354ea55b5d2fb86 |
+| Sennheiser EW-DX (`sennheiser-ewdx`) | implemented | 4 | 1 | 1 | official | https://docs.cloud.sennheiser.com/en-us/api-docs/resources/ew-dx-sound-control-protocol-3-0-x.pdf |
+| Ross video server (`ross-videoserver`) | implemented | 3 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
+| Ross Caprica (`ross-caprica`) | implemented | 4 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Automation%20&%20Control/Caprica/Device%20Setup%20Sheets/RossTalk/RossTalk-IN.pdf |
+| Viz Trio (`viz-trio`) | implemented | 3 | 2 | 1 | official | https://documentation.vizrt.com/viz-trio-guide-4.4.pdf |
+| Analog Way Picturall (`picturall`) | implemented | 3 | 2 | 1 | official | https://s3.eu-west-3.amazonaws.com/aw.store01/Site+Internet/Series/Picturall+Mark+I/Common/User+Manual/user-manual-picturall-media-server-3.5.3.pdf |
+| disguise (`disguise-osc`) | implemented | 5 | 2 | 1 | official | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
+| SPX Graphics (`spx-graphics`) | implemented | 3 | 2 | 1 | official | https://docs.spxgraphics.com/Documentation/Control+Interfaces/REST/Overview+of+SPX+API |
+| Viz Flowics (`viz-flowics`) | implemented | 2 | 3 | 1 | official | https://postman.flowics.com/ |
+| WLED (`wled`) | implemented | 3 | 2 | 1 | official | https://kno.wled.ge/interfaces/json-api/ |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -126,6 +145,22 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | TriCaster (`tricaster`) | not yet | 0 | 0 | 0 | official | https://vizrt.my.site.com/knowledgebase/s/article/TriCaster-remote-control-port |
 | Soundcraft Ui (`soundcraft-ui`) | not yet | 0 | 0 | 0 | official | https://www.soundcraft.com/ |
 | Kiloview (`kiloview`) | not yet | 0 | 0 | 0 | official | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
+| AJA FS and Bridge Live (`aja-fs-bridge`) | not yet | 0 | 0 | 0 | official | https://www.aja.com/support/item/4184 |
+| Datavideo DVIP (`datavideo-dvip`) | not yet | 0 | 0 | 0 | official | https://datavideo.com/us/protocol/36/datavideo-dvip-ethernet-control-protocol |
+| OBSBOT OSC (`obsbot-osc`) | not yet | 0 | 0 | 0 | official | https://www.obsbot.com/explore/obsbot-center/osc |
+| Clear-Com (`clearcom`) | not yet | 0 | 0 | 0 | official | https://www.clearcom.com/ |
+| Panasonic Kairos and AV-HS (`panasonic-open`) | not yet | 0 | 0 | 0 | official | https://pro-av.panasonic.net/manual/pdf/Kairos_guide(DVQP2366YA)_E.pdf |
+| Barco Encore, HDX and ClickShare (`barco-open`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/r5915531 |
+| PTZ controllers without a command line (`ptz-open`) | not yet | 0 | 0 | 0 | official | https://docs.ptzoptics.com/resources/guides/choosing-a-control-protocol/ |
+| Blackmagic products without a command line (`bmd-open`) | not yet | 0 | 0 | 0 | official | https://www.blackmagicdesign.com/developer |
+| Extron products outside the verified guides (`extron-open`) | not yet | 0 | 0 | 0 | official | https://media.extron.com/public/download/files/userman/68-738-07_C_IPL_T_PCS4_UG.pdf |
+| disguise products outside OSC transport (`disguise-open`) | not yet | 0 | 0 | 0 | official | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
+| Sennheiser products outside the verified SSC guides (`sennheiser-open`) | not yet | 0 | 0 | 0 | official | https://docs.cloud.sennheiser.com/en-us/api-docs/sound-control-protocol.html |
+| Shure P300 (`shure-p300`) | not yet | 0 | 0 | 0 | official | https://www.shure.com/en-US/docs/commandstrings/P300 |
+| Yamaha AD8HR and ADECIA (`yamaha-open`) | not yet | 0 | 0 | 0 | official | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
+| Allen & Heath iLive and DT168 (`allenheath-open`) | not yet | 0 | 0 | 0 | official | https://www.allen-heath.com/content/uploads/2023/05/Avantis-MIDI-TCP-Protocol-V1.0.pdf |
+| VICREO Timer (`vicreo-timer`) | not yet | 0 | 0 | 0 | official | https://www.vicreo-timer.com/help |
+| Eyevinn intercom (`eyevinn-intercom`) | not yet | 0 | 0 | 0 | official | https://github.com/Eyevinn/intercom-manager/ |
 
 ## Notes on sources
 
@@ -142,6 +177,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 - Ross NK third-party control is the NK-3RD serial protocols or the NK-SCP/A ASCII protocol. The user guide does not print a command line, so no button is sent.
 - Colorlight processors use the CLTPlatform brightness call. GrandShow is not that API. NovaStar COEX is the HTTP brightness API. The other NovaStar families are not that API and are not the VX Pro frame.
 - Roland basic PGM and CUT cover V-160HD, V-80HD, VR-120HD and V-1-4K. FOR-A's command list is behind a login. Evertz, Riedel RRCS, Haivision, Teradek, Magewell, Hippotizer and TriCaster did not yield a request line that was safe to send.
+- Avantis mute, CQ mute, MultiView routing, Blackmagic camera record, SMP 351 record, PCS4 receptacles, Vaddio presets, AVer VISCA, DM3 OSC, Sennheiser SSC, RossTalk server and Caprica, Viz Trio, Picturall, disguise OSC, SPX, Flowics reads and WLED are separate systems. AJA FS, Datavideo DVIP, OBSBOT, Clear-Com, Kairos, Encore, the SuperJoy, and the other ids named in the blocker rows did not yield a command line that was safe to send.
 
 ## Every Companion connection
 
@@ -167,18 +203,18 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `aimedia-lexilive` | not yet | — | — |
 | `aimp-audioplayer` | not yet | — | — |
 | `airtable-api` | not yet | — | — |
-| `aja-bridge-live` | not yet | — | — |
-| `aja-dante-12gam` | not yet | — | — |
-| `aja-fs` | not yet | — | — |
+| `aja-bridge-live` | not yet | aja-fs-bridge | https://www.aja.com/support/item/4184 |
+| `aja-dante-12gam` | not yet | aja-fs-bridge | https://www.aja.com/support/item/4184 |
+| `aja-fs` | not yet | aja-fs-bridge | https://www.aja.com/support/item/4184 |
 | `aja-helo` | implemented | aja-helo | https://gitlab.aja.com/pub/rest_api/-/blob/master/HELO/03_HELO_Commands.md |
 | `aja-kipro` | implemented | aja-kipro | https://www.aja.com/support/item/4184 |
 | `aja-kumo` | implemented | aja-kumo | https://www.aja.com/support/item/9616 |
 | `allenheath-ahm` | implemented | allenheath-ahm | https://www.allen-heath.com/content/uploads/2024/10/AHM-TCP-Protocol-V1.5.pdf |
-| `allenheath-avantis` | not yet | — | — |
-| `allenheath-cq` | not yet | — | — |
+| `allenheath-avantis` | implemented | allenheath-avantis | https://support.allen-heath.com/hc/en-gb/articles/45146889174801-Avantis-MIDI-TCP-IP-Protocol |
+| `allenheath-cq` | implemented | allenheath-cq | https://www.allen-heath.com/content/uploads/2024/10/CQ_MIDI_Protocol_V1_2_0_iss4.pdf |
 | `allenheath-dlive` | implemented | allenheath-dlive | https://www.allen-heath.com/content/uploads/2024/06/dLive-MIDI-Over-TCP-Protocol-V2.0.pdf |
-| `allenheath-dlive-ilive` | not yet | — | — |
-| `allenheath-dt168` | not yet | — | — |
+| `allenheath-dlive-ilive` | not yet | allenheath-open | https://www.allen-heath.com/content/uploads/2023/05/Avantis-MIDI-TCP-Protocol-V1.0.pdf |
+| `allenheath-dt168` | not yet | allenheath-open | https://www.allen-heath.com/content/uploads/2023/05/Avantis-MIDI-TCP-Protocol-V1.0.pdf |
 | `allenheath-qu` | implemented | allenheath-qu | https://www.allen-heath.com/content/uploads/2023/06/Qu_MIDI_Protocol_V1.9.pdf |
 | `allenheath-sq` | implemented | allenheath-sq | https://www.allen-heath.com/content/uploads/2023/11/SQ-MIDI-Protocol-Issue5.pdf |
 | `alto-tmd16` | not yet | — | — |
@@ -190,7 +226,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `analogway-livecore-custom` | not yet | analogway-livecore | https://www.analogway.com/downloads |
 | `analogway-livepremier` | implemented | rs6 | https://www.analogway.com/americas/products/aquilon-rs6/ |
 | `analogway-midra` | not yet | analogway-midra | https://www.analogway.com/downloads |
-| `analogway-picturall` | not yet | — | — |
+| `analogway-picturall` | implemented | picturall | https://s3.eu-west-3.amazonaws.com/aw.store01/Site+Internet/Series/Picturall+Mark+I/Common/User+Manual/user-manual-picturall-media-server-3.5.3.pdf |
 | `analogway-pls300` | not yet | — | — |
 | `analogway-vertige` | not yet | — | — |
 | `analogway-vio` | not yet | — | — |
@@ -224,7 +260,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `auri-tx2n` | not yet | — | — |
 | `autodirector-mirusuite` | not yet | — | — |
 | `auvicode-pixremote` | not yet | — | — |
-| `aver-ptz` | not yet | — | — |
+| `aver-ptz` | implemented | aver-ptz | https://www.averusa.com/pro-av/downloads/control-codes/AVer%20Pro-AV%20PTZ%20Visca%20over%20IP-UDP%20and%20RS-232%20Guide.pdf |
 | `avgear-ip410` | not yet | — | — |
 | `avgear-matrix` | not yet | — | — |
 | `avishop-hdbaset-matrix` | not yet | — | — |
@@ -255,13 +291,13 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `axis-ptz` | implemented | axis-ptz | https://developer.axis.com/vapix/network-video/pantiltzoom-api/ |
 | `badgermedia-trustabel` | not yet | — | — |
 | `ballscore-broadcast` | not yet | — | — |
-| `barco-clickshare` | not yet | — | — |
+| `barco-clickshare` | not yet | barco-open | https://www.barco.com/en/support/docs/r5915531 |
 | `barco-dcs` | not yet | — | — |
 | `barco-dp` | not yet | — | — |
-| `barco-encore` | not yet | — | — |
+| `barco-encore` | not yet | barco-open | https://www.barco.com/en/support/docs/r5915531 |
 | `barco-eventmaster` | implemented | e2 | https://www.barco.com/en/support |
 | `barco-eventmaster-xml` | implemented | e2 | https://www.barco.com/en/support |
-| `barco-hdx` | not yet | — | — |
+| `barco-hdx` | not yet | barco-open | https://www.barco.com/en/support/docs/r5915531 |
 | `barco-imagepro` | not yet | barco-imagepro | https://www.barco.com/en/support/docs/R5919184 |
 | `barco-matrixpro` | not yet | — | — |
 | `barco-pds` | implemented | barco-pds | https://www.fullcompass.com/common/files/83820-PDS4KUserGuide.pdf |
@@ -298,22 +334,22 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `blustream-acm200` | not yet | — | — |
 | `blustream-hdmimatrix` | not yet | — | — |
 | `bmd-atem` | implemented | atem | https://www.blackmagicdesign.com/developer |
-| `bmd-audiomonitor` | not yet | — | — |
-| `bmd-cameras` | not yet | — | — |
-| `bmd-fairlight-live` | not yet | — | — |
-| `bmd-gpi-and-tally-interface` | not yet | — | — |
+| `bmd-audiomonitor` | not yet | bmd-open | https://www.blackmagicdesign.com/developer |
+| `bmd-cameras` | implemented | bmd-cameras | https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf |
+| `bmd-fairlight-live` | not yet | bmd-open | https://www.blackmagicdesign.com/developer |
+| `bmd-gpi-and-tally-interface` | not yet | bmd-open | https://www.blackmagicdesign.com/developer |
 | `bmd-hyperdeck` | implemented | hyperdeck | https://documents.blackmagicdesign.com/DeveloperManuals/HyperDeckEthernetProtocol.pdf |
-| `bmd-multiview16` | not yet | — | — |
-| `bmd-multiview4` | not yet | — | — |
+| `bmd-multiview16` | implemented | bmd-multiview | https://documents.blackmagicdesign.com/UserManuals/BlackmagicMultiViewManual.pdf |
+| `bmd-multiview4` | implemented | bmd-multiview | https://documents.blackmagicdesign.com/UserManuals/BlackmagicMultiViewManual.pdf |
 | `bmd-smartview` | implemented | bmd-smartview | https://documents.blackmagicdesign.com/UserManuals/SmartViewManual.pdf |
 | `bmd-teranex` | implemented | bmd-teranex | https://documents.blackmagicdesign.com/UserManuals/TeranexManual.pdf |
-| `bmd-teranex-mini` | not yet | — | — |
+| `bmd-teranex-mini` | not yet | bmd-open | https://www.blackmagicdesign.com/developer |
 | `bmd-ultimatte` | implemented | bmd-ultimatte | https://documents.blackmagicdesign.com/DeveloperManuals/UltimatteEthernetProtocol.pdf |
 | `bmd-videohub` | implemented | videohub | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |
 | `bmd-videohub-controlpanel` | not yet | — | — |
 | `bmd-webpresenter` | implemented | bmd-streaming | https://documents.blackmagicdesign.com/DeveloperManuals/WebPresenterEthernetProtocol.pdf |
 | `boinx-mimolive` | not yet | — | — |
-| `bolin-ptz` | not yet | — | — |
+| `bolin-ptz` | not yet | ptz-open | https://docs.ptzoptics.com/resources/guides/choosing-a-control-protocol/ |
 | `bom-api` | not yet | — | — |
 | `borealis-vor` | not yet | — | — |
 | `borealsystems-director` | not yet | — | — |
@@ -363,9 +399,9 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `cisco-webex-prototype` | not yet | — | — |
 | `classx-liveboard` | not yet | — | — |
 | `classx-mixboard` | not yet | — | — |
-| `clearcom-freespeakii` | not yet | — | — |
-| `clearcom-rest` | not yet | — | — |
-| `clearcom-station-ic` | not yet | — | — |
+| `clearcom-freespeakii` | not yet | clearcom | https://www.clearcom.com/ |
+| `clearcom-rest` | not yet | clearcom | https://www.clearcom.com/ |
+| `clearcom-station-ic` | not yet | clearcom | https://www.clearcom.com/ |
 | `cleartouch-ippctrl` | not yet | — | — |
 | `clockworks-viewer` | not yet | — | — |
 | `cockos-reaper` | not yet | — | — |
@@ -410,7 +446,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `dataprobe-iboot-pdu` | not yet | — | — |
 | `dataton-watchout` | implemented | dataton-watchout | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
 | `dataton-watchout-json` | not yet | — | — |
-| `datavideo-dvip` | not yet | — | — |
+| `datavideo-dvip` | not yet | datavideo-dvip | https://datavideo.com/us/protocol/36/datavideo-dvip-ethernet-control-protocol |
 | `datavideo-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `dbaudiotechnik-amps` | not yet | — | — |
 | `dbaudiotechnik-dsp` | not yet | — | — |
@@ -435,12 +471,12 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `digitalprojection-projectors` | implemented | digital-projection | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `directout-audioprocessors` | not yet | — | — |
 | `discord-api` | not yet | — | — |
-| `disguise-liveupdate` | not yet | — | — |
-| `disguise-mtc` | not yet | — | — |
-| `disguise-osc` | not yet | — | — |
-| `disguise-session` | not yet | — | — |
-| `disguise-smc` | not yet | — | — |
-| `disguise-track-notes` | not yet | — | — |
+| `disguise-liveupdate` | not yet | disguise-open | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
+| `disguise-mtc` | not yet | disguise-open | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
+| `disguise-osc` | implemented | disguise-osc | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
+| `disguise-session` | not yet | disguise-open | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
+| `disguise-smc` | not yet | disguise-open | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
+| `disguise-track-notes` | not yet | disguise-open | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
 | `djsoft-radioboss` | not yet | — | — |
 | `dmxcontrolprojects-dmxcontrol3` | not yet | — | — |
 | `dmxcore-dmxcore100` | not yet | — | — |
@@ -487,16 +523,16 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `exertis-daisynet` | not yet | — | — |
 | `extron-dxp` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
 | `extron-dxp-hd-4k-plus` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
-| `extron-in1604` | not yet | — | — |
-| `extron-ipl-t-pcs4` | not yet | — | — |
-| `extron-ipl250` | not yet | — | — |
+| `extron-in1604` | not yet | extron-open | https://media.extron.com/public/download/files/userman/68-738-07_C_IPL_T_PCS4_UG.pdf |
+| `extron-ipl-t-pcs4` | implemented | extron-pcs4 | https://media.extron.com/public/download/files/userman/68-738-07_C_IPL_T_PCS4_UG.pdf |
+| `extron-ipl250` | not yet | extron-open | https://media.extron.com/public/download/files/userman/68-738-07_C_IPL_T_PCS4_UG.pdf |
 | `extron-matrix` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
 | `extron-mmx-tcp` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
-| `extron-smp111` | not yet | — | — |
-| `extron-smp351` | not yet | — | — |
+| `extron-smp111` | not yet | extron-open | https://media.extron.com/public/download/files/userman/68-738-07_C_IPL_T_PCS4_UG.pdf |
+| `extron-smp351` | implemented | extron-smp351 | https://aca.im/driver_docs/Extron/extron_smp300_Series.pdf |
 | `extron-smx` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
 | `extron-xtp-3200` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
-| `eyevinn-intercom` | not yet | — | — |
+| `eyevinn-intercom` | not yet | eyevinn-intercom | https://github.com/Eyevinn/intercom-manager/ |
 | `ezcastpro-kvm` | not yet | — | — |
 | `ezcoo-matrix` | not yet | — | — |
 | `faithchapel-videoplayoutserver` | not yet | — | — |
@@ -832,7 +868,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `ntp-technology-dot` | not yet | — | — |
 | `nws-api` | not yet | — | — |
 | `obs-studio` | implemented | obs | https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md |
-| `obsbot-osc` | not yet | — | — |
+| `obsbot-osc` | not yet | obsbot-osc | https://www.obsbot.com/explore/obsbot-center/osc |
 | `obsidiancontrol-onyx` | not yet | — | — |
 | `obsidiancontrol-onyx-osc` | not yet | — | — |
 | `octava-pro-dsx` | not yet | — | — |
@@ -861,11 +897,11 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `panasonic-ak-hrp1000` | not yet | — | — |
 | `panasonic-atss` | not yet | — | — |
 | `panasonic-av-hs6000` | implemented | panasonic-hs6000 | https://eww.pass.panasonic.co.jp/pro-av/support/dload/hs6000_3ext/AV-HS6000%20external%20IF_protocol-E.pdf |
-| `panasonic-av-hsw10` | not yet | — | — |
-| `panasonic-avhs` | not yet | — | — |
+| `panasonic-av-hsw10` | not yet | panasonic-open | https://pro-av.panasonic.net/manual/pdf/Kairos_guide(DVQP2366YA)_E.pdf |
+| `panasonic-avhs` | not yet | panasonic-open | https://pro-av.panasonic.net/manual/pdf/Kairos_guide(DVQP2366YA)_E.pdf |
 | `panasonic-camera-controller` | not yet | — | — |
 | `panasonic-cameras` | implemented | panasonic-aw | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/UE80/AW-UE80UE50UE40_InterfaceSpecification_E.pdf |
-| `panasonic-kairos` | not yet | — | — |
+| `panasonic-kairos` | not yet | panasonic-open | https://pro-av.panasonic.net/manual/pdf/Kairos_guide(DVQP2366YA)_E.pdf |
 | `panasonic-lumix` | not yet | — | — |
 | `panasonic-mediaproductionsuite` | not yet | — | — |
 | `panasonic-p2` | not yet | — | — |
@@ -908,7 +944,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `protopie-bridge` | not yet | — | — |
 | `proxicast-ezoutlet5` | not yet | — | — |
 | `prsi-ipower` | not yet | — | — |
-| `ptzoptics-superjoy` | not yet | — | — |
+| `ptzoptics-superjoy` | not yet | ptz-open | https://docs.ptzoptics.com/resources/guides/choosing-a-control-protocol/ |
 | `ptzoptics-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `pulseaudio-server` | not yet | — | — |
 | `purelink-pt-ma-hd44m` | not yet | — | — |
@@ -964,10 +1000,10 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `roland-xs42h` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | `roland-xs62s` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | `roland-xs84h` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
-| `rossvideo-caprica` | not yet | — | — |
+| `rossvideo-caprica` | implemented | ross-caprica | https://documentation.rossvideo.com/files/Manuals/Automation%20&%20Control/Caprica/Device%20Setup%20Sheets/RossTalk/RossTalk-IN.pdf |
 | `rossvideo-nkrouter` | not yet | ross-nk | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
 | `rossvideo-rosstalk` | implemented | ross-rosstalk | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
-| `rossvideo-videoserver` | not yet | — | — |
+| `rossvideo-videoserver` | implemented | ross-videoserver | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | `rossvideo-xpression` | implemented | ross-xpression | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | `rtw-touchmonitor` | not yet | — | — |
 | `rundown-studio` | not yet | — | — |
@@ -983,12 +1019,12 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `screenbird-signage` | not yet | — | — |
 | `screencloud-controller` | not yet | — | — |
 | `seervision-suite` | not yet | — | — |
-| `sennheiser-adn-mediactrl` | not yet | — | — |
-| `sennheiser-digital6000` | not yet | — | — |
-| `sennheiser-evolutionwireless` | not yet | — | — |
-| `sennheiser-ewdx` | not yet | — | — |
-| `sennheiser-spectera` | not yet | — | — |
-| `sennheiser-teamconnect-ceiling` | not yet | — | — |
+| `sennheiser-adn-mediactrl` | not yet | sennheiser-open | https://docs.cloud.sennheiser.com/en-us/api-docs/sound-control-protocol.html |
+| `sennheiser-digital6000` | not yet | sennheiser-open | https://docs.cloud.sennheiser.com/en-us/api-docs/sound-control-protocol.html |
+| `sennheiser-evolutionwireless` | not yet | sennheiser-open | https://docs.cloud.sennheiser.com/en-us/api-docs/sound-control-protocol.html |
+| `sennheiser-ewdx` | implemented | sennheiser-ewdx | https://docs.cloud.sennheiser.com/en-us/api-docs/resources/ew-dx-sound-control-protocol-3-0-x.pdf |
+| `sennheiser-spectera` | not yet | sennheiser-open | https://docs.cloud.sennheiser.com/en-us/api-docs/sound-control-protocol.html |
+| `sennheiser-teamconnect-ceiling` | implemented | sennheiser-tcc2 | https://assets.sennheiser.com/download/assets/TI_1245_v1.8.0_Sennheiser_Sound_Control_Protocol_TCC2_EN.pdf/c204169ce7bb11f0a354ea55b5d2fb86 |
 | `sevenpointtechnologies-7pointaudio` | not yet | — | — |
 | `sgl-dct` | not yet | — | — |
 | `sharp-tv` | implemented | sharp-ascii | https://sharp-displays.jp.sharp/support/webdl/dl_service/data/projector/manual/common_ascii/common_ascii_e.pdf |
@@ -1009,7 +1045,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `shure-mxcw` | not yet | — | — |
 | `shure-mxn5` | not yet | — | — |
 | `shure-mxw` | not yet | — | — |
-| `shure-p300` | not yet | — | — |
+| `shure-p300` | not yet | shure-p300 | https://www.shure.com/en-US/docs/commandstrings/P300 |
 | `shure-psm1000` | not yet | — | — |
 | `shure-scm820` | not yet | — | — |
 | `shure-wireless` | not yet | — | — |
@@ -1060,7 +1096,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `spacecommz-intercom` | not yet | — | — |
 | `sportsmodule-rundown` | not yet | — | — |
 | `spotify-remote` | not yet | — | — |
-| `spx-graphics-controller` | not yet | — | — |
+| `spx-graphics-controller` | implemented | spx-graphics | https://docs.spxgraphics.com/Documentation/Control+Interfaces/REST/Overview+of+SPX+API |
 | `squared-powerlink` | not yet | — | — |
 | `stageaudioworks-obs-multisite` | not yet | — | — |
 | `stagepoint-rundown` | not yet | — | — |
@@ -1117,7 +1153,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `template-es6` | not yet | — | — |
 | `template-js` | not yet | — | — |
 | `template-ts` | not yet | — | — |
-| `tenveo-ptz` | not yet | — | — |
+| `tenveo-ptz` | not yet | ptz-open | https://docs.ptzoptics.com/resources/guides/choosing-a-control-protocol/ |
 | `teracom-tcw181b` | not yet | — | — |
 | `teradek-prism` | not yet | teradek | https://www.teradek.com/ |
 | `teradek-vidiu` | not yet | teradek | https://www.teradek.com/ |
@@ -1166,7 +1202,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `utahscientific-bpspanel` | not yet | — | — |
 | `utopianacademy-deckboy` | not yet | — | — |
 | `uts-remotevolume` | not yet | — | — |
-| `vaddio-ptz` | not yet | — | — |
+| `vaddio-ptz` | implemented | vaddio-ptz | https://assetserver.net/_assets/vaddio/pdf/99999437000w-manual.pdf |
 | `vbaudio-voicemeeter` | not yet | — | — |
 | `vdo-ninja` | not yet | — | — |
 | `vdwall-lvp615` | not yet | — | — |
@@ -1178,7 +1214,7 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `vicreo-colorboxcontrol` | not yet | — | — |
 | `vicreo-display` | not yet | — | — |
 | `vicreo-hotkey` | not yet | — | — |
-| `vicreo-timer` | not yet | — | — |
+| `vicreo-timer` | not yet | vicreo-timer | https://www.vicreo-timer.com/help |
 | `vicreo-variablelistener` | not yet | — | — |
 | `videobridgesolutions-vbs-overlay` | not yet | — | — |
 | `videocom-zoom-bridge` | not yet | — | — |
@@ -1204,9 +1240,9 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `vitec-avediaplayer9300-series` | not yet | — | — |
 | `vivitek-projector` | implemented | vivitek-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `vizio-smartcast` | not yet | — | — |
-| `vizrt-flowics` | not yet | — | — |
+| `vizrt-flowics` | implemented | viz-flowics | https://postman.flowics.com/ |
 | `vizrt-mosart` | not yet | — | — |
-| `vizrt-tcp-engine-trio` | not yet | — | — |
+| `vizrt-tcp-engine-trio` | implemented | viz-trio | https://documentation.vizrt.com/viz-trio-guide-4.4.pdf |
 | `vkmedia-onairtimer` | not yet | — | — |
 | `voicemod-api` | not yet | — | — |
 | `vrowllabs-vrsync` | not yet | — | — |
@@ -1220,16 +1256,16 @@ Companion connection types: **1098**. Implemented: **126**. Partial: **0**. Not 
 | `webcomms-panel` | not yet | — | — |
 | `wheatstone-wheatnet` | not yet | — | — |
 | `wisycom-mat` | not yet | — | — |
-| `wled-websocket` | not yet | — | — |
+| `wled-websocket` | implemented | wled | https://kno.wled.ge/interfaces/json-api/ |
 | `wordnik-api` | not yet | — | — |
 | `workflownetwork-livetime` | not yet | — | — |
 | `wtav-watchout-director-control` | not yet | — | — |
 | `wyrestorm-matrix` | not yet | — | — |
 | `wyrestorm-sw0402mv` | not yet | — | — |
 | `xiamen-sprolink-vd-series` | not yet | — | — |
-| `yamaha-ad8hr` | not yet | — | — |
-| `yamaha-adecia` | not yet | — | — |
-| `yamaha-dm` | not yet | — | — |
+| `yamaha-ad8hr` | not yet | yamaha-open | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
+| `yamaha-adecia` | not yet | yamaha-open | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
+| `yamaha-dm` | implemented | yamaha-dm | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
 | `yamaha-rcp` | implemented | yamaha-rcp | https://download.yamaha.com/files/tcm:39-1251310 |
 | `youtube-live` | not yet | — | — |
 | `yunxi-yolobox` | not yet | — | — |
