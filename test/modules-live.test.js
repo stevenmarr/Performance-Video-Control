@@ -54,6 +54,26 @@ test('Brompton brightness, NovaStar checksum and HELIOS sACN channels', async ()
   }
 });
 
+test('X32 channel fader is the published OSC address', async () => {
+  const dgram = require('dgram');
+  const osc = require('../lib/drivers/osc');
+  const sink = dgram.createSocket('udp4');
+  const got = new Promise((resolve) => sink.once('message', resolve));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const row = desk.create('behringer-x32', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    await desk.run(row.id, 'fader', { channel: '01', level: '0.75' });
+    const msg = osc.decode(await got);
+    assert.equal(msg.address, '/ch/01/mix/fader');
+    assert.equal(msg.args[0].type, 'f');
+    assert.ok(Math.abs(msg.args[0].value - 0.75) < 0.001);
+  } finally {
+    desk.close();
+    sink.close();
+  }
+});
+
 test('Ki Pro record and KUMO crosspoint use the AJA /config parameters', async () => {
   const seen = [];
   const server = http.createServer((req, res) => { seen.push(req.url); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"value":"1"}'); });

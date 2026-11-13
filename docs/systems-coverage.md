@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **54**. Partial: **0**. Not yet: **1044**.
+Companion connection types: **1098**. Implemented: **55**. Partial: **0**. Not yet: **1043**.
 
 ## Systems in this build
 
@@ -49,6 +49,7 @@ Companion connection types: **1098**. Implemented: **54**. Partial: **0**. Not y
 | Brompton Tessera (`brompton-tessera`) | implemented | 6 | 4 | 2 | official | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
 | NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
 | Megapixel HELIOS (`helios`) | implemented | 6 | 3 | 2 | official | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
+| Behringer X32 (`behringer-x32`) | implemented | 4 | 3 | 2 | official | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
 
 ## Notes on sources
 
@@ -190,7 +191,7 @@ Companion connection types: **1098**. Implemented: **54**. Partial: **0**. Not y
 | `bbc-raven` | not yet | — | — |
 | `beaware-conferencecaptioning` | not yet | — | — |
 | `behringer-wing` | not yet | — | — |
-| `behringer-x32` | not yet | — | — |
+| `behringer-x32` | implemented | behringer-x32 | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
 | `behringer-xair` | not yet | — | — |
 | `betr-support` | not yet | — | — |
 | `biamp-audia` | not yet | — | — |
