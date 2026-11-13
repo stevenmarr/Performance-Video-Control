@@ -44,7 +44,7 @@ Only the pages of the selected group are shown, always in the same order:
 | RS6 | PRESETS · INPUTS · BACKUP · AUDIO · WEB RCS |
 | E2 / PIXELHUE | (E2 \| PIXELHUE focus) · PRESETS · CUES · SOURCES · STILLS · BACKUP |
 | ATEM | SWITCHER · ROUTER · AUDIO · DVE / SS / KEYS · LAYOUT · MULTIVIEW · MACROS |
-| PTZ | CAMERA CONTROL · CAMERAS · SCOPES (shortcut into the top-row SCOPES pane) |
+| PTZ | CAMERA CONTROL · TRACKING · CAMERAS · SCOPES (shortcut into the top-row SCOPES pane) |
 | PIXERA | TIMELINES · CUES |
 | MILLUMIN | COLUMNS · LAYER |
 

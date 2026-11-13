@@ -13,7 +13,7 @@ gets its own pages: presets, switcher, cameras, media. Program is red. Preview i
 | RS6 | Analog Way Aquilon RS6 presets, inputs, backup, audio, Web RCS |
 | E2 / PixelHue | Barco Event Master and PixelHue presets, cues, sources, stills |
 | ATEM | Blackmagic switcher, router (output, then source), audio, keys, macros, and **TSL tally** |
-| PTZ | Panasonic AW-UE / AW-HE camera control, plus the Path C Stream Deck pages |
+| PTZ | Panasonic AW-UE / AW-HE camera control, auto-tracking from a Mac menu-bar app ([docs/ptz-tracking.md](docs/ptz-tracking.md)), plus the Path C Stream Deck pages |
 | Pixera / Millumin | Timelines, cues, columns, layers |
 
 The npm package name is still `rs6-presets`. The on-disk data folder still uses that older name.
