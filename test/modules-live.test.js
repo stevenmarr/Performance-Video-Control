@@ -353,3 +353,40 @@ test('HS6000 bus select, Spyder transition and PDS preset use the published comm
     await new Promise((resolve) => tcp.close(resolve));
   }
 });
+
+test('Canon preset, V-60HD cut and WATCHOUT run use the published commands', async () => {
+  const seen = [];
+  const httpServer = http.createServer((req, res) => { seen.push(req.url); res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('p=1\n'); });
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const httpPort = await listen(httpServer);
+  const tcpPort = await listen(tcp);
+  const desk = new ModuleDesk();
+  try {
+    const canon = desk.create('canon-xc', { connection: { host: '127.0.0.1', port: httpPort } });
+    await desk.run(canon.id, 'preset', { preset: 1 });
+    await desk.run(canon.id, 'stop');
+    const roland = desk.create('roland-v60hd', { connection: { host: '127.0.0.1', port: tcpPort, reconnect: false } });
+    await desk.connect(roland.id);
+    await desk.run(roland.id, 'program', { input: 0 });
+    const armed = await desk.run(roland.id, 'cut');
+    assert.equal(armed.pending, true);
+    await desk.run(roland.id, 'cut');
+    const wo = desk.create('dataton-watchout', { connection: { host: '127.0.0.1', port: tcpPort, delimiter: '\\r\\n', reconnect: false } });
+    await desk.connect(wo.id);
+    await desk.run(wo.id, 'run');
+    await desk.run(wo.id, 'cue', { cue: 'Cue1' });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.ok(seen.some((u) => u.includes('/-wvhttp-01-/control.cgi') && u.includes('p=1')));
+    assert.ok(seen.some((u) => u.includes('p.action=stop')));
+    const text = Buffer.concat(lines);
+    assert.ok(text.includes(Buffer.from('\x02PGM:0;')));
+    assert.ok(text.includes(Buffer.from('\x02CUT;')));
+    assert.ok(text.includes(Buffer.from('run\r\n')));
+    assert.ok(text.includes(Buffer.from('gotoControlCue Cue1\r\n')));
+  } finally {
+    desk.close();
+    await new Promise((resolve) => httpServer.close(resolve));
+    await new Promise((resolve) => tcp.close(resolve));
+  }
+});

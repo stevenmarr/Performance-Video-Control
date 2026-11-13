@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **79**. Partial: **0**. Not yet: **1019**.
+Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not yet: **1016**.
 
 ## Systems in this build
 
@@ -68,6 +68,9 @@ Companion connection types: **1098**. Implemented: **79**. Partial: **0**. Not y
 | Panasonic AV-HS6000 (`panasonic-hs6000`) | implemented | 2 | 2 | 1 | official | https://eww.pass.panasonic.co.jp/pro-av/support/dload/hs6000_3ext/AV-HS6000%20external%20IF_protocol-E.pdf |
 | Christie Spyder (`christie-spyder`) | implemented | 2 | 2 | 1 | official | https://www.christiedigital.com/globalassets/resources/public/spyder-s-api-commands-version-6.1.3.pdf |
 | Barco PDS-4K (`barco-pds`) | implemented | 3 | 2 | 1 | official | https://www.fullcompass.com/common/files/83820-PDS4KUserGuide.pdf |
+| Canon XC (`canon-xc`) | implemented | 2 | 2 | 1 | official | https://output.nl/u/images/canon-xc-control-protocol-specifications-005.pdf |
+| Roland V-60HD (`roland-v60hd`) | implemented | 4 | 2 | 1 | official | https://static.roland.com/assets/media/pdf/V-60HD_reference_v31_eng04_W.pdf |
+| Dataton WATCHOUT (`dataton-watchout`) | implemented | 5 | 2 | 1 | official | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -279,7 +282,7 @@ Companion connection types: **1098**. Implemented: **79**. Partial: **0**. Not y
 | `calrec-cscp` | not yet | — | — |
 | `camstreamer-camstreamer` | not yet | — | — |
 | `canon-controller` | not yet | — | — |
-| `canon-ptz` | not yet | — | — |
+| `canon-ptz` | implemented | canon-xc | https://output.nl/u/images/canon-xc-control-protocol-specifications-005.pdf |
 | `canon-xf` | not yet | — | — |
 | `captionkit-api` | not yet | — | — |
 | `capture-visualiser` | not yet | — | — |
@@ -352,7 +355,7 @@ Companion connection types: **1098**. Implemented: **79**. Partial: **0**. Not y
 | `dashmaster-2k` | not yet | — | — |
 | `datapath-fx4` | not yet | — | — |
 | `dataprobe-iboot-pdu` | not yet | — | — |
-| `dataton-watchout` | not yet | — | — |
+| `dataton-watchout` | implemented | dataton-watchout | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
 | `dataton-watchout-json` | not yet | — | — |
 | `datavideo-dvip` | not yet | — | — |
 | `datavideo-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
@@ -899,7 +902,7 @@ Companion connection types: **1098**. Implemented: **79**. Partial: **0**. Not y
 | `roland-v1200hd` | not yet | — | — |
 | `roland-v160hd` | not yet | — | — |
 | `roland-v600uhd` | not yet | — | — |
-| `roland-v60hd` | not yet | — | — |
+| `roland-v60hd` | implemented | roland-v60hd | https://static.roland.com/assets/media/pdf/V-60HD_reference_v31_eng04_W.pdf |
 | `roland-v80hd` | not yet | — | — |
 | `roland-vp42h` | not yet | — | — |
 | `roland-vr120hd` | not yet | — | — |
