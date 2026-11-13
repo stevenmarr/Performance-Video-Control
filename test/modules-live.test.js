@@ -476,3 +476,51 @@ test('Q-SYS, Tesira, MXA910, Bravia and AHM send the published commands', async 
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('NEC power, Samsung MDC, Ultimatte density and Wake-on-LAN match the published bytes', async () => {
+  const { necPower, samsungMdcPower, wakeOnLan } = require('../lib/modules/transports');
+  const on = necPower(true, 'A');
+  let bcc = 0;
+  for (const byte of on.subarray(1, on.length - 2)) bcc ^= byte;
+  assert.equal(on[on.length - 2], bcc);
+  assert.equal(on[on.length - 1], 0x0d);
+  assert.ok(on.includes(Buffer.from('C203D60001')));
+  assert.equal(samsungMdcPower(1, false).toString('hex'), 'aa11010012');
+  assert.equal(samsungMdcPower(1, true).toString('hex'), 'aa11010113');
+  const lines = [];
+  const server = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(server);
+  const dgram = require('dgram');
+  const sink = dgram.createSocket('udp4');
+  const got = new Promise((resolve) => sink.once('message', resolve));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const nec = desk.create('nec-display', { connection: { host: '127.0.0.1', port, monitor: 'A', reconnect: false } });
+    await desk.connect(nec.id);
+    await desk.run(nec.id, 'on');
+    const sam = desk.create('samsung-mdc', { connection: { host: '127.0.0.1', port, monitorId: 1, reconnect: false } });
+    await desk.connect(sam.id);
+    const armed = await desk.run(sam.id, 'off', { id: 1 });
+    assert.equal(armed.pending, true);
+    await desk.run(sam.id, 'off', { id: 1 });
+    const ult = desk.create('bmd-ultimatte', { connection: { host: '127.0.0.1', port, delimiter: '\\n', reconnect: false } });
+    await desk.connect(ult.id);
+    await desk.run(ult.id, 'matte', { value: 100 });
+    const wol = desk.create('wake-on-lan', { connection: { host: '127.0.0.1', port: sink.address().port, mac: '00:11:22:33:44:55' } });
+    await desk.run(wol.id, 'wake', { mac: '00:11:22:33:44:55' });
+    const packet = await got;
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const text = Buffer.concat(lines);
+    assert.ok(text.includes(on));
+    assert.ok(text.includes(Buffer.from('aa11010012', 'hex')));
+    assert.match(text.toString(), /CONTROL:\nMatte Density: 100\n/);
+    assert.equal(packet.length, 102);
+    assert.equal(packet.slice(0, 6).toString('hex'), 'ffffffffffff');
+    assert.equal(packet.slice(6, 12).toString('hex'), '001122334455');
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

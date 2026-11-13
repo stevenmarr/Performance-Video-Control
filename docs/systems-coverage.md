@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **93**. Partial: **0**. Not yet: **1005**.
+Companion connection types: **1098**. Implemented: **98**. Partial: **0**. Not yet: **1000**.
 
 ## Systems in this build
 
@@ -79,6 +79,10 @@ Companion connection types: **1098**. Implemented: **93**. Partial: **0**. Not y
 | Shure MXA910 (`shure-mxa910`) | implemented | 5 | 2 | 1 | official | https://www.shure.com/en-US/docs/commandstrings/MXA910 |
 | Sony Bravia Simple IP (`sony-bravia-simple`) | implemented | 6 | 2 | 1 | official | https://pro-bravia.sony.net/remote-display-control/simple-ip-control/ |
 | Allen & Heath AHM (`allenheath-ahm`) | implemented | 4 | 2 | 1 | official | https://www.allen-heath.com/content/uploads/2024/10/AHM-TCP-Protocol-V1.5.pdf |
+| NEC display (`nec-display`) | implemented | 2 | 1 | 1 | official | https://www.sharpnecdisplays.com/p/download/v/bce9d82928fe8cec24a1e81f0b0ad44a/cp/Products/LargeFormatDisplays/Products/CurrentProducts/Shared/Command_Lists/External_Control_Rev1.8%28G4%29.pdf?fn=External_Control_Rev1.8%28G4%29.pdf |
+| Samsung MDC (`samsung-mdc`) | implemented | 2 | 1 | 1 | official | https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf |
+| Blackmagic Ultimatte (`bmd-ultimatte`) | implemented | 2 | 2 | 1 | official | https://documents.blackmagicdesign.com/DeveloperManuals/UltimatteEthernetProtocol.pdf |
+| Wake-on-LAN (`wake-on-lan`) | implemented | 1 | 1 | 1 | official | https://www.amd.com/content/dam/amd/en/documents/archived-tech-docs/white-papers/20213.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -276,7 +280,7 @@ Companion connection types: **1098**. Implemented: **93**. Partial: **0**. Not y
 | `bmd-smartview` | implemented | bmd-smartview | https://documents.blackmagicdesign.com/UserManuals/SmartViewManual.pdf |
 | `bmd-teranex` | implemented | bmd-teranex | https://documents.blackmagicdesign.com/UserManuals/TeranexManual.pdf |
 | `bmd-teranex-mini` | not yet | — | — |
-| `bmd-ultimatte` | not yet | — | — |
+| `bmd-ultimatte` | implemented | bmd-ultimatte | https://documents.blackmagicdesign.com/DeveloperManuals/UltimatteEthernetProtocol.pdf |
 | `bmd-videohub` | implemented | videohub | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |
 | `bmd-videohub-controlpanel` | not yet | — | — |
 | `bmd-webpresenter` | implemented | bmd-streaming | https://documents.blackmagicdesign.com/DeveloperManuals/WebPresenterEthernetProtocol.pdf |
@@ -532,7 +536,7 @@ Companion connection types: **1098**. Implemented: **93**. Partial: **0**. Not y
 | `generic-tcp-serial` | implemented | generic-tcp | https://www.rfc-editor.org/rfc/rfc9293 |
 | `generic-tcp-udp` | implemented | generic-tcp + generic-udp | — |
 | `generic-timezone` | not yet | — | — |
-| `generic-wakeonlan` | not yet | — | — |
+| `generic-wakeonlan` | implemented | wake-on-lan | https://www.amd.com/content/dam/amd/en/documents/archived-tech-docs/white-papers/20213.pdf |
 | `generic-websocket` | not yet | — | — |
 | `generic-webtable` | not yet | — | — |
 | `getontime-ontime` | not yet | — | — |
@@ -753,7 +757,7 @@ Companion connection types: **1098**. Implemented: **93**. Partial: **0**. Not y
 | `mvr-helios` | implemented | helios | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
 | `myapplause-control` | not yet | — | — |
 | `nanoleaf-shapes` | not yet | — | — |
-| `nec-display` | not yet | — | — |
+| `nec-display` | implemented | nec-display | https://www.sharpnecdisplays.com/p/download/v/bce9d82928fe8cec24a1e81f0b0ad44a/cp/Products/LargeFormatDisplays/Products/CurrentProducts/Shared/Command_Lists/External_Control_Rev1.8%28G4%29.pdf?fn=External_Control_Rev1.8%28G4%29.pdf |
 | `nec-projectors` | not yet | — | — |
 | `neodarque-stagetimer2` | not yet | — | — |
 | `neol-epowerswitch` | not yet | — | — |
@@ -941,8 +945,8 @@ Companion connection types: **1098**. Implemented: **93**. Partial: **0**. Not y
 | `rundown-studio` | not yet | — | — |
 | `saccani-live-studio` | not yet | — | — |
 | `sain-smart-relay` | not yet | — | — |
-| `samsung-business-tv` | not yet | — | — |
-| `samsung-display` | not yet | — | — |
+| `samsung-business-tv` | implemented | samsung-mdc | https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf |
+| `samsung-display` | implemented | samsung-mdc | https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf |
 | `samsung-led-vp` | not yet | — | — |
 | `samsung-smarttv` | not yet | — | — |
 | `samsung-tizenos` | not yet | — | — |
