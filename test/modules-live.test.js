@@ -434,3 +434,45 @@ test('Colorlight brightness, COEX cabinet brightness and Roland basic cut use th
     await new Promise((resolve) => tcp.close(resolve));
   }
 });
+
+test('Q-SYS, Tesira, MXA910, Bravia and AHM send the published commands', async () => {
+  const { braviaSimple } = require('../lib/modules/transports');
+  const on = braviaSimple('POWR', '1');
+  assert.equal(on.length, 24);
+  assert.equal(on.slice(0, 7).toString(), '*SCPOWR');
+  assert.equal(on[22], 0x31);
+  assert.equal(on[23], 0x0a);
+  const lines = [];
+  const server = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(server);
+  const desk = new ModuleDesk();
+  try {
+    const q = desk.create('qsys-qrc', { connection: { host: '127.0.0.1', port, delimiter: '\\0', reconnect: false } });
+    await desk.connect(q.id);
+    await desk.run(q.id, 'set', { name: 'MainGain', value: '-12' });
+    const tesira = desk.create('biamp-tesira', { connection: { host: '127.0.0.1', port, delimiter: '\\n', reconnect: false } });
+    await desk.connect(tesira.id);
+    const armed = await desk.run(tesira.id, 'preset', { preset: 1001 });
+    assert.equal(armed.pending, true);
+    await desk.run(tesira.id, 'preset', { preset: 1001 });
+    const shure = desk.create('shure-mxa910', { connection: { host: '127.0.0.1', port, delimiter: '\\r', reconnect: false } });
+    await desk.connect(shure.id);
+    await desk.run(shure.id, 'mute', { channel: '1' });
+    const tv = desk.create('sony-bravia-simple', { connection: { host: '127.0.0.1', port, reconnect: false } });
+    await desk.connect(tv.id);
+    await desk.run(tv.id, 'on');
+    const ahm = desk.create('allenheath-ahm', { connection: { host: '127.0.0.1', port, reconnect: false } });
+    await desk.connect(ahm.id);
+    await desk.run(ahm.id, 'mute', { channel: 1 });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const text = Buffer.concat(lines);
+    assert.ok(text.includes(Buffer.from('{"jsonrpc":"2.0","id":1,"method":"Control.Set","params":{"Name":"MainGain","Value":-12}}\0')));
+    assert.ok(text.includes(Buffer.from('DEVICE recallPreset 1001\n')));
+    assert.ok(text.includes(Buffer.from('< SET 1 AUDIO_MUTE ON >\r')));
+    assert.ok(text.includes(on));
+    assert.ok(text.includes(Buffer.from('90007f900000', 'hex')));
+  } finally {
+    desk.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

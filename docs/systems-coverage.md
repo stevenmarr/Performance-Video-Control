@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **88**. Partial: **0**. Not yet: **1010**.
+Companion connection types: **1098**. Implemented: **93**. Partial: **0**. Not yet: **1005**.
 
 ## Systems in this build
 
@@ -74,6 +74,11 @@ Companion connection types: **1098**. Implemented: **88**. Partial: **0**. Not y
 | Roland V-60HD (`roland-v60hd`) | implemented | 4 | 2 | 1 | official | https://static.roland.com/assets/media/pdf/V-60HD_reference_v31_eng04_W.pdf |
 | Dataton WATCHOUT (`dataton-watchout`) | implemented | 5 | 2 | 1 | official | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
 | Roland basic LAN (`roland-basic`) | implemented | 4 | 2 | 1 | official | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| Q-SYS QRC (`qsys-qrc`) | implemented | 2 | 2 | 1 | official | https://help.qsys.com/content/External_Control_APIs/QRC/QRC_Commands.htm |
+| Biamp Tesira (`biamp-tesira`) | implemented | 5 | 2 | 1 | official | https://downloads.biamp.com/assets/docs/default-source/control/tesira_text_protocol_v4-2_jan22.pdf?sfvrsn=100c2497_46 |
+| Shure MXA910 (`shure-mxa910`) | implemented | 5 | 2 | 1 | official | https://www.shure.com/en-US/docs/commandstrings/MXA910 |
+| Sony Bravia Simple IP (`sony-bravia-simple`) | implemented | 6 | 2 | 1 | official | https://pro-bravia.sony.net/remote-display-control/simple-ip-control/ |
+| Allen & Heath AHM (`allenheath-ahm`) | implemented | 4 | 2 | 1 | official | https://www.allen-heath.com/content/uploads/2024/10/AHM-TCP-Protocol-V1.5.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -136,7 +141,7 @@ Companion connection types: **1098**. Implemented: **88**. Partial: **0**. Not y
 | `aja-helo` | implemented | aja-helo | https://gitlab.aja.com/pub/rest_api/-/blob/master/HELO/03_HELO_Commands.md |
 | `aja-kipro` | implemented | aja-kipro | https://www.aja.com/support/item/4184 |
 | `aja-kumo` | implemented | aja-kumo | https://www.aja.com/support/item/9616 |
-| `allenheath-ahm` | not yet | — | — |
+| `allenheath-ahm` | implemented | allenheath-ahm | https://www.allen-heath.com/content/uploads/2024/10/AHM-TCP-Protocol-V1.5.pdf |
 | `allenheath-avantis` | not yet | — | — |
 | `allenheath-cq` | not yet | — | — |
 | `allenheath-dlive` | implemented | allenheath-dlive | https://www.allen-heath.com/content/uploads/2024/06/dLive-MIDI-Over-TCP-Protocol-V2.0.pdf |
@@ -240,7 +245,7 @@ Companion connection types: **1098**. Implemented: **88**. Partial: **0**. Not y
 | `betr-support` | not yet | — | — |
 | `biamp-audia` | not yet | — | — |
 | `biamp-qtx` | not yet | — | — |
-| `biamp-tesira` | not yet | — | — |
+| `biamp-tesira` | implemented | biamp-tesira | https://downloads.biamp.com/assets/docs/default-source/control/tesira_text_protocol_v4-2_jan22.pdf?sfvrsn=100c2497_46 |
 | `bigrig-tuneit` | not yet | — | — |
 | `binary-moipcontroller` | not yet | — | — |
 | `binwiederhier-ntfy` | not yet | — | — |
@@ -879,7 +884,7 @@ Companion connection types: **1098**. Implemented: **88**. Partial: **0**. Not y
 | `pushover-api` | not yet | — | — |
 | `pynch-nexa` | not yet | — | — |
 | `qmsk-e2` | not yet | — | — |
-| `qsys-remote-control` | not yet | — | — |
+| `qsys-remote-control` | implemented | qsys-qrc | https://help.qsys.com/content/External_Control_APIs/QRC/QRC_Commands.htm |
 | `quicklink-studiopro` | not yet | — | — |
 | `radiodj-rest` | not yet | — | — |
 | `raspberry-gpio` | not yet | — | — |
@@ -968,7 +973,7 @@ Companion connection types: **1098**. Implemented: **88**. Partial: **0**. Not y
 | `shure-dca901` | not yet | — | — |
 | `shure-dis-ccu` | not yet | — | — |
 | `shure-dsp` | not yet | — | — |
-| `shure-mxa910` | not yet | — | — |
+| `shure-mxa910` | implemented | shure-mxa910 | https://www.shure.com/en-US/docs/commandstrings/MXA910 |
 | `shure-mxcw` | not yet | — | — |
 | `shure-mxn5` | not yet | — | — |
 | `shure-mxw` | not yet | — | — |
@@ -1007,7 +1012,7 @@ Companion connection types: **1098**. Implemented: **88**. Partial: **0**. Not y
 | `sonoran-coyote` | not yet | — | — |
 | `sonos-speakers` | not yet | — | — |
 | `sony-bravia` | not yet | — | — |
-| `sony-bravia-simpleip` | not yet | — | — |
+| `sony-bravia-simpleip` | implemented | sony-bravia-simple | https://pro-bravia.sony.net/remote-display-control/simple-ip-control/ |
 | `sony-broadcastmonitor` | not yet | — | — |
 | `sony-cled` | not yet | — | — |
 | `sony-ptz` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
