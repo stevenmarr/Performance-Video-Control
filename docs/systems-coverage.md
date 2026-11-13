@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not yet: **1022**.
+Companion connection types: **1098**. Implemented: **79**. Partial: **0**. Not yet: **1019**.
 
 ## Systems in this build
 
@@ -65,6 +65,13 @@ Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not y
 | sACN (`sacn`) | implemented | 1 | 2 | 1 | official | https://tsp.esta.org/tsp/documents/published_docs.php |
 | ChamSys MagicQ (`chamsys-magicq`) | implemented | 7 | 2 | 1 | official | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/OSC.html |
 | ChamSys QuickQ (`chamsys-quickq`) | implemented | 5 | 2 | 1 | official | https://docs.chamsys.co.uk/quickq/13.0/manual/touchosc.html |
+| Panasonic AV-HS6000 (`panasonic-hs6000`) | implemented | 2 | 2 | 1 | official | https://eww.pass.panasonic.co.jp/pro-av/support/dload/hs6000_3ext/AV-HS6000%20external%20IF_protocol-E.pdf |
+| Christie Spyder (`christie-spyder`) | implemented | 2 | 2 | 1 | official | https://www.christiedigital.com/globalassets/resources/public/spyder-s-api-commands-version-6.1.3.pdf |
+| Barco PDS-4K (`barco-pds`) | implemented | 3 | 2 | 1 | official | https://www.fullcompass.com/common/files/83820-PDS4KUserGuide.pdf |
+| Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
+| Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
+| Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
+| Ross NK router (`ross-nk`) | not yet | 0 | 0 | 0 | official | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
 
 ## Notes on sources
 
@@ -76,6 +83,9 @@ Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not y
 - Barco Pulse is JSON-RPC 2.0 on TCP 9090 (`system.poweron`, `system.poweroff`, `optics.shutter.target`, `image.window.main.source`). Christie stays on PJLink.
 - BirdDog uses the VISCA-over-IP command set its cameras document. Model-specific REST bodies are not guessed.
 - ATEM's public interface is the Blackmagic SDK. The desk speaks that switcher protocol. The byte layout is the SDK's, not a separate REST document.
+- Analog Way Midra and LiveCore have no buttons. The classic Midra programmer guide was not found on an Analog Way download, and LiveCore is not the LivePremier protocol already spoken by RS6.
+- Barco ImagePRO-4K is listed on the Event Master protocol, which the E2 system already speaks. The older ImagePRO ASCII set is not aliased to PDS-4K.
+- Ross NK third-party control is the NK-3RD serial protocols or the NK-SCP/A ASCII protocol. The user guide does not print a command line, so no button is sent.
 
 ## Every Companion connection
 
@@ -120,10 +130,10 @@ Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not y
 | `analogway-awj` | implemented | rs6 | https://www.analogway.com/americas/products/aquilon-rs6/ |
 | `analogway-coreplay` | not yet | — | — |
 | `analogway-eks500` | not yet | — | — |
-| `analogway-livecore` | not yet | — | — |
-| `analogway-livecore-custom` | not yet | — | — |
+| `analogway-livecore` | not yet | analogway-livecore | https://www.analogway.com/downloads |
+| `analogway-livecore-custom` | not yet | analogway-livecore | https://www.analogway.com/downloads |
 | `analogway-livepremier` | implemented | rs6 | https://www.analogway.com/americas/products/aquilon-rs6/ |
-| `analogway-midra` | not yet | — | — |
+| `analogway-midra` | not yet | analogway-midra | https://www.analogway.com/downloads |
 | `analogway-picturall` | not yet | — | — |
 | `analogway-pls300` | not yet | — | — |
 | `analogway-vertige` | not yet | — | — |
@@ -196,9 +206,9 @@ Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not y
 | `barco-eventmaster` | implemented | e2 | https://www.barco.com/en/support |
 | `barco-eventmaster-xml` | implemented | e2 | https://www.barco.com/en/support |
 | `barco-hdx` | not yet | — | — |
-| `barco-imagepro` | not yet | — | — |
+| `barco-imagepro` | not yet | barco-imagepro | https://www.barco.com/en/support/docs/R5919184 |
 | `barco-matrixpro` | not yet | — | — |
-| `barco-pds` | not yet | — | — |
+| `barco-pds` | implemented | barco-pds | https://www.fullcompass.com/common/files/83820-PDS4KUserGuide.pdf |
 | `barco-pulse` | implemented | barco-projector | https://www.barco.com/manuals/R5916611/w1p7s33hf4ko.html |
 | `base` | not yet | — | — |
 | `baserow-baserow` | not yet | — | — |
@@ -282,7 +292,7 @@ Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not y
 | `chamsys-quickq` | implemented | chamsys-quickq | https://docs.chamsys.co.uk/quickq/13.0/manual/touchosc.html |
 | `chilibytes-pdfosc` | not yet | — | — |
 | `christie-projector` | implemented | christie-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
-| `christie-spyder` | not yet | — | — |
+| `christie-spyder` | implemented | christie-spyder | https://www.christiedigital.com/globalassets/resources/public/spyder-s-api-commands-version-6.1.3.pdf |
 | `christie-wd` | not yet | — | — |
 | `chromaq-vista` | not yet | — | — |
 | `churchapps-freeshow` | not yet | — | — |
@@ -794,7 +804,7 @@ Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not y
 | `overlaysuno-control` | not yet | — | — |
 | `panasonic-ak-hrp1000` | not yet | — | — |
 | `panasonic-atss` | not yet | — | — |
-| `panasonic-av-hs6000` | not yet | — | — |
+| `panasonic-av-hs6000` | implemented | panasonic-hs6000 | https://eww.pass.panasonic.co.jp/pro-av/support/dload/hs6000_3ext/AV-HS6000%20external%20IF_protocol-E.pdf |
 | `panasonic-av-hsw10` | not yet | — | — |
 | `panasonic-avhs` | not yet | — | — |
 | `panasonic-camera-controller` | not yet | — | — |
@@ -899,7 +909,7 @@ Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not y
 | `roland-xs62s` | not yet | — | — |
 | `roland-xs84h` | not yet | — | — |
 | `rossvideo-caprica` | not yet | — | — |
-| `rossvideo-nkrouter` | not yet | — | — |
+| `rossvideo-nkrouter` | not yet | ross-nk | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
 | `rossvideo-rosstalk` | implemented | ross-rosstalk | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | `rossvideo-videoserver` | not yet | — | — |
 | `rossvideo-xpression` | implemented | ross-xpression | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |

@@ -310,3 +310,46 @@ test('LW2, Protocol 2000, dLive and Wing send the published messages', async () 
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('HS6000 bus select, Spyder transition and PDS preset use the published commands', async () => {
+  const { spyderPacket } = require('../lib/modules/transports');
+  const spy = spyderPacket('METR 1 D1');
+  assert.equal(spy.slice(0, 6).toString(), 'spyder');
+  assert.equal(spy[6], 0);
+  assert.equal(spy.slice(10).toString(), 'METR 1 D1');
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const tcpPort = await listen(tcp);
+  const dgram = require('dgram');
+  const sink = dgram.createSocket('udp4');
+  const got = new Promise((resolve) => sink.once('message', resolve));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const hs = desk.create('panasonic-hs6000', { connection: { host: '127.0.0.1', port: tcpPort, reconnect: false } });
+    await desk.connect(hs.id);
+    await desk.run(hs.id, 'bus', { bus: '01', source: '02' });
+    const pds = desk.create('barco-pds', { connection: { host: '127.0.0.1', port: tcpPort, delimiter: '\\r\\n', reconnect: false } });
+    await desk.connect(pds.id);
+    const armed = await desk.run(pds.id, 'recall', { preset: 10 });
+    assert.equal(armed.pending, true);
+    await desk.run(pds.id, 'recall', { preset: 10 });
+    const sp = desk.create('christie-spyder', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    const armedTake = await desk.run(sp.id, 'transition', { mix: 1, frames: 1 });
+    assert.equal(armedTake.pending, true);
+    await desk.run(sp.id, 'transition', { mix: 1, frames: 1 });
+    const packet = await got;
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const text = Buffer.concat(lines);
+    assert.equal(text[0], 0x02);
+    assert.ok(text.includes(Buffer.from('SBUS:01:02')));
+    assert.ok(text.includes(0x03));
+    assert.ok(text.includes(Buffer.from('PRESET -r 10\r')));
+    assert.equal(packet.slice(0, 6).toString(), 'spyder');
+    assert.equal(packet.slice(10).toString(), 'METR 1 D1');
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => tcp.close(resolve));
+  }
+});
