@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **39**. Partial: **0**. Not yet: **1059**.
+Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not yet: **1056**.
 
 ## Systems in this build
 
@@ -42,6 +42,9 @@ Companion connection types: **1098**. Implemented: **39**. Partial: **0**. Not y
 | Barco Pulse (`barco-projector`) | implemented | 5 | 5 | 3 | official | https://www.barco.com/manuals/R5916611/w1p7s33hf4ko.html |
 | CasparCG (`casparcg`) | implemented | 6 | 2 | 2 | official | https://github.com/CasparCG/help/wiki/AMCP-Protocol |
 | NDI tools (`ndi`) | not yet | 0 | 1 | 1 | official | https://ndi.video/for-developers/ndi-sdk/ |
+| AJA Ki Pro (`aja-kipro`) | implemented | 5 | 2 | 1 | official | https://www.aja.com/support/item/4184 |
+| AJA KUMO (`aja-kumo`) | implemented | 2 | 3 | 1 | official | https://www.aja.com/support/item/9616 |
+| Blackmagic SmartView (`bmd-smartview`) | implemented | 3 | 3 | 1 | official | https://documents.blackmagicdesign.com/UserManuals/SmartViewManual.pdf |
 
 ## Notes on sources
 
@@ -82,8 +85,8 @@ Companion connection types: **1098**. Implemented: **39**. Partial: **0**. Not y
 | `aja-dante-12gam` | not yet | — | — |
 | `aja-fs` | not yet | — | — |
 | `aja-helo` | not yet | — | — |
-| `aja-kipro` | not yet | — | — |
-| `aja-kumo` | not yet | — | — |
+| `aja-kipro` | implemented | aja-kipro | https://www.aja.com/support/item/4184 |
+| `aja-kumo` | implemented | aja-kumo | https://www.aja.com/support/item/9616 |
 | `allenheath-ahm` | not yet | — | — |
 | `allenheath-avantis` | not yet | — | — |
 | `allenheath-cq` | not yet | — | — |
@@ -216,7 +219,7 @@ Companion connection types: **1098**. Implemented: **39**. Partial: **0**. Not y
 | `bmd-hyperdeck` | implemented | hyperdeck | https://documents.blackmagicdesign.com/DeveloperManuals/HyperDeckEthernetProtocol.pdf |
 | `bmd-multiview16` | not yet | — | — |
 | `bmd-multiview4` | not yet | — | — |
-| `bmd-smartview` | not yet | — | — |
+| `bmd-smartview` | implemented | bmd-smartview | https://documents.blackmagicdesign.com/UserManuals/SmartViewManual.pdf |
 | `bmd-teranex` | not yet | — | — |
 | `bmd-teranex-mini` | not yet | — | — |
 | `bmd-ultimatte` | not yet | — | — |
