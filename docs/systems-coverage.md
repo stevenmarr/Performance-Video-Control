@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **52**. Partial: **0**. Not yet: **1046**.
+Companion connection types: **1098**. Implemented: **54**. Partial: **0**. Not yet: **1044**.
 
 ## Systems in this build
 
@@ -46,6 +46,9 @@ Companion connection types: **1098**. Implemented: **52**. Partial: **0**. Not y
 | AJA KUMO (`aja-kumo`) | implemented | 2 | 3 | 1 | official | https://www.aja.com/support/item/9616 |
 | Blackmagic SmartView (`bmd-smartview`) | implemented | 3 | 3 | 1 | official | https://documents.blackmagicdesign.com/UserManuals/SmartViewManual.pdf |
 | Ross XPression (`ross-xpression`) | implemented | 15 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
+| Brompton Tessera (`brompton-tessera`) | implemented | 6 | 4 | 2 | official | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
+| NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
+| Megapixel HELIOS (`helios`) | implemented | 6 | 3 | 2 | official | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
 
 ## Notes on sources
 
@@ -242,7 +245,7 @@ Companion connection types: **1098**. Implemented: **52**. Partial: **0**. Not y
 | `brightsign-player` | not yet | — | — |
 | `broadcastapps-soundbyte` | not yet | — | — |
 | `broadlink-remote` | not yet | — | — |
-| `brompton-tessera` | not yet | — | — |
+| `brompton-tessera` | implemented | brompton-tessera | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
 | `bss-soundweb` | not yet | — | — |
 | `bytehive-playoutbee` | not yet | — | — |
 | `c4-clock` | not yet | — | — |
@@ -697,7 +700,7 @@ Companion connection types: **1098**. Implemented: **52**. Partial: **0**. Not y
 | `multicamsystems-multicamsuite` | not yet | — | — |
 | `mutedeck-mutedeck` | not yet | — | — |
 | `muxlab-kvm` | not yet | — | — |
-| `mvr-helios` | not yet | — | — |
+| `mvr-helios` | implemented | helios | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
 | `myapplause-control` | not yet | — | — |
 | `nanoleaf-shapes` | not yet | — | — |
 | `nec-display` | not yet | — | — |

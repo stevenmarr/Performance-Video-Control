@@ -10,6 +10,50 @@ function listen(server) {
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 }
 
+test('Brompton brightness, NovaStar checksum and HELIOS sACN channels', async () => {
+  const { novastarBrightness, sacnPacket } = require('../lib/modules/transports');
+  assert.equal(novastarBrightness(255).slice(-3).toString('hex'), 'ff545b');
+  const packet = sacnPacket({ universe: 1, slots: [255, 0, 200, 119] });
+  assert.equal(packet.slice(4, 13).toString(), 'ASC-E1.17');
+  assert.equal(packet[128], 200);
+  const seen = [];
+  const httpServer = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', (c) => { body += c; });
+    req.on('end', () => { seen.push(`${req.method} ${req.url} ${body}`); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"brightness":5000}'); });
+  });
+  const httpPort = await listen(httpServer);
+  const frames = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => frames.push(Buffer.from(buf))));
+  const tcpPort = await listen(tcp);
+  const dgram = require('dgram');
+  const sink = dgram.createSocket('udp4');
+  const got = new Promise((resolve) => sink.once('message', resolve));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const tessera = desk.create('brompton-tessera', { connection: { host: '127.0.0.1', port: httpPort } });
+    await desk.run(tessera.id, 'brightness', { value: 5000 });
+    assert.ok(seen.some((line) => line.startsWith('PUT /api/output/global-colour/brightness') && line.includes('"data":5000')));
+    const armed = await desk.run(tessera.id, 'blackout');
+    assert.equal(armed.pending, true);
+    const nova = desk.create('novastar-vxpro', { connection: { host: '127.0.0.1', port: tcpPort } });
+    await desk.connect(nova.id);
+    await desk.run(nova.id, 'brightness', { level: 255 });
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.equal(Buffer.concat(frames).slice(-3).toString('hex'), 'ff545b');
+    const wall = desk.create('helios', { connection: { host: '127.0.0.1', port: sink.address().port, universe: 1 } });
+    await desk.run(wall.id, 'brightness', { level: 200 });
+    const msg = await got;
+    assert.equal(msg[128], 200);
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => httpServer.close(resolve));
+    await new Promise((resolve) => tcp.close(resolve));
+  }
+});
+
 test('Ki Pro record and KUMO crosspoint use the AJA /config parameters', async () => {
   const seen = [];
   const server = http.createServer((req, res) => { seen.push(req.url); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"value":"1"}'); });
