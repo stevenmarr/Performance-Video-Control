@@ -364,6 +364,8 @@ test('the coverage manifest lists every Companion module and matches the catalog
   assert.equal(list.find((r) => r.id === 'generic-tcp-udp').status, 'implemented');
   assert.equal(list.find((r) => r.id === 'malighting-grandma3').status, 'implemented');
   assert.equal(list.find((r) => r.id === 'barco-pulse').status, 'implemented');
+  assert.equal(list.find((r) => r.id === 'ptzoptics-visca').status, 'implemented');
+  assert.equal(list.find((r) => r.id === 'aja-kumo').status, 'implemented');
   assert.equal(list.find((r) => r.id === 'newtek-ndistudiomonitor').status, 'not yet');
   const doc = fs.readFileSync(path.join(__dirname, '..', 'docs', 'systems-coverage.md'), 'utf8');
   assert.equal(doc, coverage.markdown());

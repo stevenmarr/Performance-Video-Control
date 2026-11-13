@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not yet: **1056**.
+Companion connection types: **1098**. Implemented: **51**. Partial: **0**. Not yet: **1047**.
 
 ## Systems in this build
 
@@ -120,7 +120,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `aten-matrix` | not yet | — | — |
 | `aten-pdu` | not yet | — | — |
 | `atlasied-atmosphere` | not yet | — | — |
-| `atlona-camera-visca` | not yet | — | — |
+| `atlona-camera-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `atlona-clso` | not yet | — | — |
 | `atlona-omega` | not yet | — | — |
 | `attend2it-speakertimer` | not yet | — | — |
@@ -325,7 +325,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `dataton-watchout` | not yet | — | — |
 | `dataton-watchout-json` | not yet | — | — |
 | `datavideo-dvip` | not yet | — | — |
-| `datavideo-visca` | not yet | — | — |
+| `datavideo-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `dbaudiotechnik-amps` | not yet | — | — |
 | `dbaudiotechnik-dsp` | not yet | — | — |
 | `dcc-ex-commandstation` | not yet | — | — |
@@ -361,7 +361,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `dolby-cinemaprocessor` | not yet | — | — |
 | `dpa-wireless` | not yet | — | — |
 | `draco-tera` | not yet | — | — |
-| `dreamchip-visca` | not yet | — | — |
+| `dreamchip-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `dreamsolutions-lightfactory` | not yet | — | — |
 | `dsan-limitimer` | not yet | — | — |
 | `dsan-perfectcue` | not yet | — | — |
@@ -427,7 +427,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `focusrite-clarett` | not yet | — | — |
 | `focusrite-mp8r` | not yet | — | — |
 | `folivora-btt` | not yet | — | — |
-| `fomako-camera-visca` | not yet | — | — |
+| `fomako-camera-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `foobar2000-foobar2000` | not yet | — | — |
 | `fora-hvs` | not yet | — | — |
 | `fora-mfr` | not yet | — | — |
@@ -514,7 +514,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `haivision-makito-x4-decoder` | not yet | — | — |
 | `haivision-makito-x4-encoder` | not yet | — | — |
 | `harrison-mixbus32c` | not yet | — | — |
-| `hdkatov-visca` | not yet | — | — |
+| `hdkatov-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `hdtv-wolfpackgreen` | not yet | — | — |
 | `highcriteria-lhs` | not yet | — | — |
 | `highend-hog4` | not yet | — | — |
@@ -631,7 +631,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `lost-cause-photographic-controlroom` | not yet | — | — |
 | `ltn-schedule` | not yet | — | — |
 | `lumens-mediaprocessor` | not yet | — | — |
-| `lumens-visca` | not yet | — | — |
+| `lumens-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `luminex-gigacore` | not yet | — | — |
 | `luminex-luminode` | not yet | — | — |
 | `lutron-caseta` | not yet | — | — |
@@ -652,7 +652,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `manhattanbeachstudios-streamgraphicspro` | not yet | — | — |
 | `marshall-cv-minicam` | not yet | — | — |
 | `marshall-ipcamera` | not yet | — | — |
-| `marshall-visca` | not yet | — | — |
+| `marshall-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `massimo-callegari-qlcplus` | not yet | — | — |
 | `matrox-conductip` | not yet | — | — |
 | `matrox-monarch` | not yet | — | — |
@@ -823,7 +823,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `proxicast-ezoutlet5` | not yet | — | — |
 | `prsi-ipower` | not yet | — | — |
 | `ptzoptics-superjoy` | not yet | — | — |
-| `ptzoptics-visca` | not yet | — | — |
+| `ptzoptics-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `pulseaudio-server` | not yet | — | — |
 | `purelink-pt-ma-hd44m` | not yet | — | — |
 | `puretools-matrix` | not yet | — | — |
@@ -964,7 +964,7 @@ Companion connection types: **1098**. Implemented: **42**. Partial: **0**. Not y
 | `sony-ptz` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `sony-pxw` | not yet | — | — |
 | `sony-serialtally` | not yet | — | — |
-| `sony-srg-a12` | not yet | — | — |
+| `sony-srg-a12` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `sony-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `soonia-events` | not yet | — | — |
 | `soundcraft-ui` | not yet | — | — |
