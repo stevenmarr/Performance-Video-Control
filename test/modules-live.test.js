@@ -266,3 +266,47 @@ test('X Air channel fader is the published OSC example', async () => {
     sink.close();
   }
 });
+
+test('LW2, Protocol 2000, dLive and Wing send the published messages', async () => {
+  const { p2000Packet, dliveMute, dliveScene } = require('../lib/modules/transports');
+  assert.equal(p2000Packet({ instruction: 1, input: 5, output: 8, machine: 3 }).toString('hex'), '01858883');
+  assert.equal(dliveMute({ channel: 1, on: true, midi: 0 }).toString('hex'), '90007f900000');
+  assert.equal(dliveScene({ scene: 1, midi: 0 }).toString('hex'), 'b00000c000');
+  const lines = [];
+  const server = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(server);
+  const dgram = require('dgram');
+  const osc = require('../lib/drivers/osc');
+  const sink = dgram.createSocket('udp4');
+  const messages = [];
+  sink.on('message', (msg) => messages.push(osc.decode(msg)));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const lw = desk.create('lightware-lw2', { connection: { host: '127.0.0.1', port, reconnect: false } });
+    await desk.connect(lw.id);
+    await desk.run(lw.id, 'switch', { input: 1, output: 5 });
+    const kr = desk.create('kramer-p2000', { connection: { host: '127.0.0.1', port, reconnect: false } });
+    await desk.connect(kr.id);
+    await desk.run(kr.id, 'video', { input: 5, output: 8, machine: 3 });
+    const dl = desk.create('allenheath-dlive', { connection: { host: '127.0.0.1', port, midiChannel: 1, reconnect: false } });
+    await desk.connect(dl.id);
+    await desk.run(dl.id, 'mute', { channel: 1 });
+    const wing = desk.create('behringer-wing', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    await desk.run(wing.id, 'fader', { channel: 2, db: '-2.5' });
+    await desk.run(wing.id, 'mute', { channel: 1 });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const text = Buffer.concat(lines);
+    assert.ok(text.includes(Buffer.from('{1@5}')));
+    assert.ok(text.includes(Buffer.from('01858883', 'hex')));
+    assert.ok(text.includes(Buffer.from('90007f900000', 'hex')));
+    const fader = messages.find((m) => m.address === '/ch/2/fdr');
+    assert.ok(fader && fader.args[0].type === 'f' && Math.abs(fader.args[0].value + 2.5) < 0.001);
+    const mute = messages.find((m) => m.address === '/ch/1/mute');
+    assert.ok(mute && mute.args[0].type === 'i' && mute.args[0].value === 1);
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

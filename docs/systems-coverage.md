@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **71**. Partial: **0**. Not yet: **1027**.
+Companion connection types: **1098**. Implemented: **76**. Partial: **0**. Not yet: **1022**.
 
 ## Systems in this build
 
@@ -51,12 +51,16 @@ Companion connection types: **1098**. Implemented: **71**. Partial: **0**. Not y
 | AJA HELO (`aja-helo`) | implemented | 7 | 2 | 1 | official | https://gitlab.aja.com/pub/rest_api/-/blob/master/HELO/03_HELO_Commands.md |
 | Blackmagic Teranex (`bmd-teranex`) | implemented | 1 | 2 | 1 | official | https://documents.blackmagicdesign.com/UserManuals/TeranexManual.pdf |
 | Blackmagic Streaming Encoder (`bmd-streaming`) | implemented | 4 | 2 | 1 | official | https://documents.blackmagicdesign.com/DeveloperManuals/WebPresenterEthernetProtocol.pdf |
+| Lightware LW2 (`lightware-lw2`) | implemented | 4 | 2 | 1 | official | https://www.lightware.com/en/support/open-api |
+| Kramer Protocol 2000 (`kramer-p2000`) | implemented | 3 | 1 | 1 | official | https://cdn.kramerav.com/web/downloads/manuals/protocol_2000_rev0_51.pdf |
 | Ross XPression (`ross-xpression`) | implemented | 15 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | Brompton Tessera (`brompton-tessera`) | implemented | 6 | 4 | 2 | official | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
 | NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
 | Megapixel HELIOS (`helios`) | implemented | 6 | 3 | 2 | official | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
 | Behringer X32 (`behringer-x32`) | implemented | 4 | 3 | 2 | official | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
 | Behringer X Air (`behringer-xair`) | implemented | 3 | 3 | 1 | official | https://www.manualshelf.com/manual/behringer/x18/air-series-osc-documentation-english.html |
+| Allen & Heath dLive (`allenheath-dlive`) | implemented | 4 | 3 | 1 | official | https://www.allen-heath.com/content/uploads/2024/06/dLive-MIDI-Over-TCP-Protocol-V2.0.pdf |
+| Behringer Wing (`behringer-wing`) | implemented | 3 | 3 | 1 | official | https://mediadl.musictribe.com/download/software/behringer/WING/WING%20Remote%20Protocols.pdf |
 | Art-Net (`artnet`) | implemented | 1 | 3 | 1 | official | https://art-net.org.uk/how-it-works/streaming-packets/art-dmx-packet-definition/ |
 | sACN (`sacn`) | implemented | 1 | 2 | 1 | official | https://tsp.esta.org/tsp/documents/published_docs.php |
 | ChamSys MagicQ (`chamsys-magicq`) | implemented | 7 | 2 | 1 | official | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/OSC.html |
@@ -106,7 +110,7 @@ Companion connection types: **1098**. Implemented: **71**. Partial: **0**. Not y
 | `allenheath-ahm` | not yet | — | — |
 | `allenheath-avantis` | not yet | — | — |
 | `allenheath-cq` | not yet | — | — |
-| `allenheath-dlive` | not yet | — | — |
+| `allenheath-dlive` | implemented | allenheath-dlive | https://www.allen-heath.com/content/uploads/2024/06/dLive-MIDI-Over-TCP-Protocol-V2.0.pdf |
 | `allenheath-dlive-ilive` | not yet | — | — |
 | `allenheath-dt168` | not yet | — | — |
 | `allenheath-qu` | not yet | — | — |
@@ -201,7 +205,7 @@ Companion connection types: **1098**. Implemented: **71**. Partial: **0**. Not y
 | `baytto-q4` | not yet | — | — |
 | `bbc-raven` | not yet | — | — |
 | `beaware-conferencecaptioning` | not yet | — | — |
-| `behringer-wing` | not yet | — | — |
+| `behringer-wing` | implemented | behringer-wing | https://mediadl.musictribe.com/download/software/behringer/WING/WING%20Remote%20Protocols.pdf |
 | `behringer-x32` | implemented | behringer-x32 | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
 | `behringer-xair` | implemented | behringer-xair | https://www.manualshelf.com/manual/behringer/x18/air-series-osc-documentation-english.html |
 | `betr-support` | not yet | — | — |
@@ -609,10 +613,10 @@ Companion connection types: **1098**. Implemented: **71**. Partial: **0**. Not y
 | `kommander-t3` | not yet | — | — |
 | `konftools-showplaypi` | not yet | — | — |
 | `kramer-matrix` | implemented | kramer-p3000 | https://k.kramerav.com/downloads/protocols/protocol_3000_3.0_master_user.pdf |
-| `kramer-vp727` | not yet | — | — |
+| `kramer-vp727` | implemented | kramer-p2000 | https://cdn.kramerav.com/web/downloads/manuals/protocol_2000_rev0_51.pdf |
 | `kramer-vp734` | not yet | — | — |
 | `kramer-vp773a` | not yet | — | — |
-| `kramer-vs41h` | not yet | — | — |
+| `kramer-vs41h` | implemented | kramer-p2000 | https://cdn.kramerav.com/web/downloads/manuals/protocol_2000_rev0_51.pdf |
 | `kxwell-ptz` | not yet | — | — |
 | `lacoustics-amplifiers` | not yet | — | — |
 | `lanternbird-cuecapture` | not yet | — | — |
@@ -628,7 +632,7 @@ Companion connection types: **1098**. Implemented: **71**. Partial: **0**. Not y
 | `lgtv-display` | not yet | — | — |
 | `lgtv-prodisplay` | not yet | — | — |
 | `libreoffice-impress` | not yet | — | — |
-| `lightware-lw2` | not yet | — | — |
+| `lightware-lw2` | implemented | lightware-lw2 | https://www.lightware.com/en/support/open-api |
 | `lightware-lw3` | implemented | lightware-lw3 | https://www.lightware.com/en/support/open-api |
 | `lilliput-monitor` | not yet | — | — |
 | `limagiran-holyrics` | not yet | — | — |
