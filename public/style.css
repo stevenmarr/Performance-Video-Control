@@ -177,12 +177,6 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .mem.pgm.pvw{box-shadow:inset 3px 0 0 var(--pgm),inset 6px 0 0 var(--pvw)}
 .mem.empty{opacity:.5}
 .mem.armed[hidden]{display:none}
-.ptabs{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
-.ptab{padding:8px 2px;border-radius:7px;background:var(--panel2);border:1px solid var(--line);font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--dim);display:flex;flex-direction:column;align-items:center;gap:2px}
-.ptab span{font-size:12px;color:var(--text)}
-.ptab.active{background:var(--accent);border-color:var(--accent);color:#fff}
-.ptab.active span{color:#fff}
-.armed{background:var(--accent);border-color:var(--accent);color:#fff}
 .mem.armed .s{color:#dbe8ff}
 .mem.dragsrc{opacity:.4}
 .board-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
@@ -699,29 +693,8 @@ body.tab-atem .main{gap:14px}
 .thumbs.mode-recall .thumb:hover{border-color:var(--accent)}
 .rcp-presets .modes{margin-bottom:0}.rcp-presets .pager{display:flex;flex-wrap:wrap;gap:4px}
 .rcp-ctl.inline{margin-top:4px}
-.ref-row{gap:10px}.ref-row .chip.spec{background:#2a2350;color:#c9c2ff}.ref-row .chip.mod{background:#11304a;color:#9fd0ff}
-.ref-row .ref-src{font:12px ui-monospace,Menlo,monospace;color:var(--dim);max-width:46%;text-align:right}
-
-/* 0.9.0 Companion pages (SYSTEMS) */
-.cc-pages{margin-top:28px;padding-top:14px;border-top:1px solid var(--line);opacity:.9}
-.cc-surfaces{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin-bottom:10px}
-.cc-surface{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:var(--r);background:var(--panel2);border:2px solid var(--line);cursor:pointer}
-.cc-surface.on{border-color:var(--accent)}
-.cc-surface input{margin-top:3px}
-.cc-surface .cc-name{font-weight:800}
-.cc-surface .cc-meta{font-size:12px;color:var(--dim)}
-.cc-surface .cc-grid{display:grid;gap:2px;margin-top:6px}
-.cc-surface .cc-grid i{display:block;width:10px;height:10px;border-radius:2px;background:#33404f}
-.cc-surface .cc-grid i.strip{background:#3b5f8f;height:6px}
-.cc-surface .cc-grid i.knob{background:#555;border-radius:50%}
-.cc-surface .cc-grid i.none{background:transparent}
-.cc-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
-.cc-row label{display:flex;flex-direction:column;font-size:12px;color:var(--dim);gap:4px}
-.cc-row label.cc-check{flex-direction:row;align-items:center;color:var(--text)}
-.cc-row input[type=text],.cc-row input[type=number]{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;min-width:120px}
 .cc-msg{font-size:13px;color:var(--dim)}
 .cc-msg.err{color:#ff9b91}
-.cc-help{font-size:12px}
 
 /* ---------- 0.9.8 CAMERA CONTROL: full-screen RCP + joystick layout ---------- */
 .rcp-bus{flex-wrap:nowrap}.rcp-bus .cam-strip{flex:1;display:flex;flex-wrap:nowrap;min-width:0;gap:6px}
@@ -1156,8 +1129,6 @@ body.dk-busy-rz-e *,body.dk-busy-rz-w *{cursor:ew-resize!important}body.dk-busy-
 .scopes-pane{display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden}
 body.tab-scopes #pane-scopes{display:flex}
 body.tab-scopes #scopesFrame{flex:1 1 auto;width:100%;height:100%;min-height:0}
-.ptz-ref{margin:8px 0 16px}
-.ptz-ref summary{cursor:pointer;color:var(--dim);font-size:12px}
 @container dk (max-width: 220px){
   .sys-cols{grid-template-columns:1fr}.pmem{grid-template-columns:1fr}
   .joy-foot{grid-template-columns:1fr}.joy-foot .rcp-home{width:100%}
@@ -1304,11 +1275,6 @@ body.tab-scopes #scopesFrame{flex:1 1 auto;width:100%;height:100%;min-height:0}
 #pane-pctl:not([hidden]){display:flex;flex-direction:column;overflow:hidden;height:100%;min-height:0}
 #pane-pctl .rcp-bus,#pane-pctl .rcp-read{flex:none}
 #pane-pctl .rcp{flex:1 1 auto;min-height:0;overflow:hidden;align-content:start}
-#ptzCamTabs{display:inline-flex;align-items:flex-end;gap:6px;flex:0 0 auto}
-#ptzCamTabs[hidden]{display:none !important}
-.tgrp.cam{letter-spacing:.06em;font-size:11px;padding:8px 12px;text-transform:uppercase}
-.tgrp.cam.active{border-color:#3ccf62;box-shadow:inset 0 -3px 0 #3ccf62}
-.tgrp.cam .mock{background:#4b3a00;color:#ffd35c;padding:1px 5px;border-radius:5px;margin-left:4px;letter-spacing:.04em;font-size:9px}
 
 /* ATEM LAYOUT: properties, every M/E or SuperSource canvas, resource pool */
 .lay{display:grid;grid-template-columns:minmax(200px,250px) minmax(0,1fr) minmax(260px,320px);gap:12px;align-items:start}
@@ -1399,7 +1365,6 @@ nav.tabs{padding:0 6px}
 .tabs-top .tab.tab-scopes,.tabs-top .tab.tab-decks,.tabs-top .tab.tab-cues,.tabs-top .tab.tab-looks{margin-left:4px}
 .tabs-home-note{font-size:11px;line-height:1.25;padding:2px 4px}
 .main{padding:4px 6px 6px;gap:8px}
-.tgrp.cam{padding:3px 8px;min-height:0}
 
 /* Button library and surface pages (Control Devices second row). */
 .btn-editor{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px;align-items:start}

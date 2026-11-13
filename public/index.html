@@ -45,7 +45,7 @@
     <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
     <button class="tab tab-cues" data-tab="cues" title="Cues. RUN CUE plays the loaded cue. The button locks while that timeline is running.">CUES</button>
     <button class="tab tab-looks" data-tab="looks" title="Hi-res cue stack for one switcher: RS6, E2 or PixelHue. Absolute and relative recalls. Not ATEM.">PRESETS</button>
-    <button class="tab tab-decks" data-tab="decks" title="Stream Decks connected over USB. Home picks one system. This app draws the keys. The Elgato app is not used.">Control Devices</button>
+    <button class="tab tab-decks" data-tab="decks" title="USB Stream Decks, the button library, and Path C page push. USB needs the Elgato app quit. Path C push needs the plugin.">Control Devices</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
@@ -81,7 +81,7 @@
   <span class="tabs-home-note" id="tabsScopesNote" hidden>Waveform, parade, vectorscope, Lightning (Y / R−Y / B−Y), false colour. Live video is Desktop Video from a Mac sidecar.</span>
   <span class="tabs-home-note" id="tabsLooksNote" hidden>One switcher per stack. Absolute is a full look. Relative changes only that preset's layers. GO loads preview. Bail loads after TAKE.</span>
   <span class="tabs-home-note" id="tabsCuesNote" hidden>Drag a preset onto a cue or its timeline. RUN CUE plays that cue and locks until the timeline finishes.</span>
-  <span class="tabs-home-note" id="tabsDecksNote" hidden>USB decks, a button library, and page layouts. Quit the Elgato Stream Deck app so this app can own the device.</span>
+  <span class="tabs-home-note" id="tabsDecksNote" hidden>DEVICES is USB (quit the Elgato app so this app can open the deck). PAGES pushes a layout to the Path C plugin.</span>
   <button type="button" class="tab decks-sub" data-tab="decks" hidden>DEVICES</button>
   <button type="button" class="tab decks-sub" data-tab="buttons" hidden>BUTTONS</button>
   <button type="button" class="tab decks-sub" data-tab="pages" hidden>PAGES</button>
@@ -175,7 +175,7 @@
   <!-- 0.6.0 SYSTEMS dashboard: one card per system, live status, connection, and the switch between them -->
   <section class="grid-wrap pane dash" id="pane-system" hidden>
     <div class="dash-head">
-      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Left: every system type, and it stays there. Drag one onto the desk to add an instance — ATEM A, ATEM B, another PTZ — each with its own name and IP. Right-click an instance to rename, duplicate, disconnect, or delete. A PTZ camera is still its own card under that PTZ.</div></div>
+      <div><div class="dash-title">SYSTEMS</div><div class="dash-sub">Left: every system type, and it stays there. Drag one onto the desk to add an instance — ATEM A, ATEM B, another PTZ — each with its own name and IP. Right-click an instance to rename, duplicate, disconnect, or delete. Cameras on a PTZ are added on PTZ → CAMERAS.</div></div>
       <span class="spacer"></span>
       <div class="dash-tools"><div id="dashSummary" class="dash-summary"></div>
         <input type="search" id="dashSearch" class="dash-search" placeholder="Filter systems… (name, group, status, address)" autocomplete="off"></div>
@@ -184,21 +184,6 @@
     <div class="dash-filters"><div id="dashGroups" class="seg-row dash-groups" role="group" aria-label="Show systems of"></div><span class="spacer"></span><div id="dashStatus" class="seg-row" role="group" aria-label="Show systems that are"></div></div>
     <div id="sysCards"></div>
     <div id="sysMenu" class="sys-menu" hidden></div>
-    <div id="sysPlannedWrap" hidden><div class="section-title">MORE SYSTEMS <small>driver interface ready, drivers not built yet</small></div>
-    <div id="sysPlanned" class="sys-cards planned"></div></div>
-    <!-- Companion page download stays available, but it is not the system cards and it is not Path C. -->
-    <div class="cc-pages" id="ccPages">
-      <div class="section-title">STREAM DECK PAGES <small>Companion page file for the other surfaces. PTZ Live / Paint / Functions / Move are the Path C plugin (<code>streamdeck/</code>), not these cards.</small></div>
-      <div id="ccSurfaces" class="cc-surfaces"></div>
-      <div class="cc-row">
-        <label>App address Companion uses <input id="ccHost" type="text" autocomplete="off" spellcheck="false"></label>
-        <label>Port <input id="ccPort" type="number" min="1" max="65535"></label>
-        <label>Companion connection label <input id="ccLabel" type="text" value="rs6presets" autocomplete="off" spellcheck="false"></label>
-        <label class="cc-check"><input id="ccCombined" type="checkbox"> One file for all ticked surfaces</label>
-      </div>
-      <div class="cc-row"><button class="btn primary" id="ccDownload" type="button">DOWNLOAD</button><button class="btn ghost" id="ccRefresh" type="button">REFRESH</button><span id="ccMsg" class="cc-msg"></span></div>
-      <div class="note cc-help">In Companion: <b>Import / Export</b> › choose the file › <b>Full Import</b> with only <b>Buttons</b> ticked › <b>IMPORT PRESERVING UNSELECTED</b>. That replaces <b>all</b> button pages in Companion (export first to keep yours); connections are kept, and a connection with the label above is reused. Then set each Stream Deck's start page to its HOME page. The file only adds this app's pages; nothing is sent to a device.</div>
-    </div>
   </section>
 
   <!-- 0.6.0 shared switcher UI for E2 / PixelHue (public/sys.js). Same tiles, destinations and TAKE / CUT as RS6. -->
@@ -472,8 +457,6 @@
     <form id="ptzAdd" class="row add-cam"><span class="lbl">Add a camera<small>Panasonic AW-UE / AW-HE, HTTP (CGI) control</small></span>
       <input name="name" placeholder="Name" maxlength="40"><input name="host" placeholder="IP address" autocomplete="off" spellcheck="false"><input name="port" type="number" min="1" max="65535" placeholder="80" class="slot-in">
       <button class="btn mini primary">ADD CAMERA</button></form>
-    <div class="section-title">COMMAND REFERENCE <small>closed unless you need the CGI list</small></div>
-    <details class="ptz-ref"><summary>Every command this camera accepts</summary><div id="ptzRef" class="rows ref"></div></details>
   </section>
   <!-- SCOPES: persistent engineering tab. Lightning is a mode inside the scope strip. Desktop Video is the live input. public/scopes-tab.js -->
   <section class="grid-wrap pane scopes-pane" id="pane-scopes" hidden>
@@ -496,7 +479,7 @@
   </section>
   <section class="grid-wrap pane" id="pane-pages" hidden>
     <div class="scopes-head">
-      <div class="section-title">PAGES <small>Lay out a surface. Nothing is assigned or pushed from here.</small></div>
+      <div class="section-title">PAGES <small>Lay out a surface, then push that page to an online Path C deck.</small></div>
     </div>
     <div id="pagesRoot"></div>
   </section>
@@ -840,7 +823,6 @@
 <script src="/ptz.js"></script>
 <script src="/pixera.js"></script>
 <script src="/millumin.js"></script>
-<script src="/companion.js"></script>
 <script src="/scopes-sources.js"></script>
 <script src="/scopes-tab.js"></script>
 <script src="/decks.js"></script>
