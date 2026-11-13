@@ -390,3 +390,47 @@ test('Canon preset, V-60HD cut and WATCHOUT run use the published commands', asy
     await new Promise((resolve) => tcp.close(resolve));
   }
 });
+
+test('Colorlight brightness, COEX cabinet brightness and Roland basic cut use the published commands', async () => {
+  const seen = [];
+  const httpServer = http.createServer((req, res) => {
+    const chunks = [];
+    req.on('data', (c) => chunks.push(c));
+    req.on('end', () => {
+      seen.push({ method: req.method, url: req.url, body: Buffer.concat(chunks).toString() });
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end('{"code":0,"message":"Success"}');
+    });
+  });
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf.toString())));
+  const httpPort = await listen(httpServer);
+  const tcpPort = await listen(tcp);
+  const desk = new ModuleDesk();
+  try {
+    const color = desk.create('colorlight-processor', { connection: { host: '127.0.0.1', port: httpPort } });
+    await desk.run(color.id, 'brightness', { index: 0, group: 0, brightness: 80 });
+    const coex = desk.create('novastar-coex', { connection: { host: '127.0.0.1', port: httpPort } });
+    await desk.run(coex.id, 'cabinet', { cabinet: '42', ratio: '0.5' });
+    const roland = desk.create('roland-basic', { connection: { host: '127.0.0.1', port: tcpPort, delimiter: '\\n', reconnect: false } });
+    await desk.connect(roland.id);
+    await desk.run(roland.id, 'program', { channel: 'INPUT2' });
+    const armed = await desk.run(roland.id, 'cut');
+    assert.equal(armed.pending, true);
+    await desk.run(roland.id, 'cut');
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const bright = seen.find((s) => s.url.includes('/processor/setBrightness'));
+    assert.equal(bright.method, 'POST');
+    assert.equal(JSON.parse(bright.body).data.brightness, 80);
+    const cab = seen.find((s) => s.url.includes('/api/v1/device/cabinet/brightness'));
+    assert.equal(cab.method, 'PUT');
+    assert.equal(JSON.parse(cab.body).ratio, 0.5);
+    const text = lines.join('');
+    assert.match(text, /PGM:INPUT2;/);
+    assert.match(text, /CUT;/);
+  } finally {
+    desk.close();
+    await new Promise((resolve) => httpServer.close(resolve));
+    await new Promise((resolve) => tcp.close(resolve));
+  }
+});

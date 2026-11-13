@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not yet: **1016**.
+Companion connection types: **1098**. Implemented: **88**. Partial: **0**. Not yet: **1010**.
 
 ## Systems in this build
 
@@ -57,6 +57,8 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | Brompton Tessera (`brompton-tessera`) | implemented | 6 | 4 | 2 | official | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
 | NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
 | Megapixel HELIOS (`helios`) | implemented | 6 | 3 | 2 | official | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
+| Colorlight processor (`colorlight-processor`) | implemented | 1 | 3 | 1 | official | https://developer.colorlightcloud.com/CLTServer/en/api-reference/sender-device/screen-group/brightness-and-color-temperature/set-screen-brightness.html |
+| NovaStar COEX (`novastar-coex`) | implemented | 2 | 3 | 1 | official | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
 | Behringer X32 (`behringer-x32`) | implemented | 4 | 3 | 2 | official | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
 | Behringer X Air (`behringer-xair`) | implemented | 3 | 3 | 1 | official | https://www.manualshelf.com/manual/behringer/x18/air-series-osc-documentation-english.html |
 | Allen & Heath dLive (`allenheath-dlive`) | implemented | 4 | 3 | 1 | official | https://www.allen-heath.com/content/uploads/2024/06/dLive-MIDI-Over-TCP-Protocol-V2.0.pdf |
@@ -71,10 +73,22 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | Canon XC (`canon-xc`) | implemented | 2 | 2 | 1 | official | https://output.nl/u/images/canon-xc-control-protocol-specifications-005.pdf |
 | Roland V-60HD (`roland-v60hd`) | implemented | 4 | 2 | 1 | official | https://static.roland.com/assets/media/pdf/V-60HD_reference_v31_eng04_W.pdf |
 | Dataton WATCHOUT (`dataton-watchout`) | implemented | 5 | 2 | 1 | official | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
+| Roland basic LAN (`roland-basic`) | implemented | 4 | 2 | 1 | official | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
 | Ross NK router (`ross-nk`) | not yet | 0 | 0 | 0 | official | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
+| Colorlight GrandShow (`colorlight-grandshow`) | not yet | 0 | 0 | 0 | official | https://developer.colorlightcloud.com/CLTServer/en/api-reference/sender-device/screen-group/brightness-and-color-temperature/set-screen-brightness.html |
+| NovaStar other families (`novastar-other`) | not yet | 0 | 0 | 0 | official | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| FOR-A (`fora`) | not yet | 0 | 0 | 0 | official | https://www.for-a.com/products/hvs6000/ |
+| Roland other models (`roland-other`) | not yet | 0 | 0 | 0 | official | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| Evertz (`evertz`) | not yet | 0 | 0 | 0 | official | https://evertz.com/ |
+| Riedel (`riedel`) | not yet | 0 | 0 | 0 | official | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
+| Haivision (`haivision`) | not yet | 0 | 0 | 0 | official | https://doc.haivision.com/MakitoX4Enc/1.9/accessing-the-rest-api |
+| Teradek (`teradek`) | not yet | 0 | 0 | 0 | official | https://www.teradek.com/ |
+| Magewell (`magewell`) | not yet | 0 | 0 | 0 | official | https://www.magewell.com/developer/27/detail |
+| Green Hippo Hippotizer (`hippotizer`) | not yet | 0 | 0 | 0 | official | https://support.green-hippo.com/hc/en-gb/articles/29184031287442-NDI-Troubleshooting |
+| TriCaster (`tricaster`) | not yet | 0 | 0 | 0 | official | https://vizrt.my.site.com/knowledgebase/s/article/TriCaster-remote-control-port |
 
 ## Notes on sources
 
@@ -89,6 +103,8 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 - Analog Way Midra and LiveCore have no buttons. The classic Midra programmer guide was not found on an Analog Way download, and LiveCore is not the LivePremier protocol already spoken by RS6.
 - Barco ImagePRO-4K is listed on the Event Master protocol, which the E2 system already speaks. The older ImagePRO ASCII set is not aliased to PDS-4K.
 - Ross NK third-party control is the NK-3RD serial protocols or the NK-SCP/A ASCII protocol. The user guide does not print a command line, so no button is sent.
+- Colorlight processors use the CLTPlatform brightness call. GrandShow is not that API. NovaStar COEX is the HTTP brightness API. The other NovaStar families are not that API and are not the VX Pro frame.
+- Roland basic PGM and CUT cover V-160HD, V-80HD, VR-120HD and V-1-4K. FOR-A's command list is behind a login. Evertz, Riedel RRCS, Haivision, Teradek, Magewell, Hippotizer and TriCaster did not yield a request line that was safe to send.
 
 ## Every Companion connection
 
@@ -318,8 +334,8 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `cockos-reaper` | not yet | — | — |
 | `coda-linus` | not yet | — | — |
 | `codirect-codirect` | not yet | — | — |
-| `colorlight-grandshow` | not yet | — | — |
-| `colorlight-processor` | not yet | — | — |
+| `colorlight-grandshow` | not yet | colorlight-grandshow | https://developer.colorlightcloud.com/CLTServer/en/api-reference/sender-device/screen-group/brightness-and-color-temperature/set-screen-brightness.html |
+| `colorlight-processor` | implemented | colorlight-processor | https://developer.colorlightcloud.com/CLTServer/en/api-reference/sender-device/screen-group/brightness-and-color-temperature/set-screen-brightness.html |
 | `combitech-vidblasterx` | not yet | — | — |
 | `companion-satellite` | not yet | — | — |
 | `connect-webcaster` | not yet | — | — |
@@ -426,10 +442,10 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `eventinteractions-live` | not yet | — | — |
 | `eventspro-toolspro-timer` | not yet | — | — |
 | `eventsync-server` | not yet | — | — |
-| `evertz-dreamcatcher` | not yet | — | — |
-| `evertz-quartz` | not yet | — | — |
-| `evertz-symphony` | not yet | — | — |
-| `evertz-vipx` | not yet | — | — |
+| `evertz-dreamcatcher` | not yet | evertz | https://evertz.com/ |
+| `evertz-quartz` | not yet | evertz | https://evertz.com/ |
+| `evertz-symphony` | not yet | evertz | https://evertz.com/ |
+| `evertz-vipx` | not yet | evertz | https://evertz.com/ |
 | `evision-hd102` | not yet | — | — |
 | `exertis-daisynet` | not yet | — | — |
 | `extron-dxp` | implemented | extron-sis | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
@@ -462,9 +478,9 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `folivora-btt` | not yet | — | — |
 | `fomako-camera-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `foobar2000-foobar2000` | not yet | — | — |
-| `fora-hvs` | not yet | — | — |
-| `fora-mfr` | not yet | — | — |
-| `fora-processors` | not yet | — | — |
+| `fora-hvs` | not yet | fora | https://www.for-a.com/products/hvs6000/ |
+| `fora-mfr` | not yet | fora | https://www.for-a.com/products/hvs6000/ |
+| `fora-processors` | not yet | fora | https://www.for-a.com/products/hvs6000/ |
 | `foscam-ptz` | not yet | — | — |
 | `fourkay-matrix` | not yet | — | — |
 | `fritz-fritzbox` | not yet | — | — |
@@ -536,16 +552,16 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `grassvalley-kframe` | not yet | — | — |
 | `gravitycurrent-synesthesia` | not yet | — | — |
 | `greengo-intercom` | not yet | — | — |
-| `greenhippo-hippotizer` | not yet | — | — |
-| `greenhippo-hippotizer-rest` | not yet | — | — |
+| `greenhippo-hippotizer` | not yet | hippotizer | https://support.green-hippo.com/hc/en-gb/articles/29184031287442-NDI-Troubleshooting |
+| `greenhippo-hippotizer-rest` | not yet | hippotizer | https://support.green-hippo.com/hc/en-gb/articles/29184031287442-NDI-Troubleshooting |
 | `groupme-webhooks` | not yet | — | — |
 | `gudesystems-smartpdu` | not yet | — | — |
 | `h2r-graphics` | not yet | — | — |
 | `h2r-layouts` | not yet | — | — |
-| `haivision-connectdvr` | not yet | — | — |
-| `haivision-kbencoder` | not yet | — | — |
-| `haivision-makito-x4-decoder` | not yet | — | — |
-| `haivision-makito-x4-encoder` | not yet | — | — |
+| `haivision-connectdvr` | not yet | haivision | https://doc.haivision.com/MakitoX4Enc/1.9/accessing-the-rest-api |
+| `haivision-kbencoder` | not yet | haivision | https://doc.haivision.com/MakitoX4Enc/1.9/accessing-the-rest-api |
+| `haivision-makito-x4-decoder` | not yet | haivision | https://doc.haivision.com/MakitoX4Enc/1.9/accessing-the-rest-api |
+| `haivision-makito-x4-encoder` | not yet | haivision | https://doc.haivision.com/MakitoX4Enc/1.9/accessing-the-rest-api |
 | `harrison-mixbus32c` | not yet | — | — |
 | `hdkatov-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `hdtv-wolfpackgreen` | not yet | — | — |
@@ -671,9 +687,9 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `lyntec-rpc-breaker` | not yet | — | — |
 | `mackie-dlzcreator` | not yet | — | — |
 | `madrix-aura` | not yet | — | — |
-| `magewell-director` | not yet | — | — |
-| `magewell-proconvert-decoder` | not yet | — | — |
-| `magewell-ultrastream` | not yet | — | — |
+| `magewell-director` | not yet | magewell | https://www.magewell.com/developer/27/detail |
+| `magewell-proconvert-decoder` | not yet | magewell | https://www.magewell.com/developer/27/detail |
+| `magewell-ultrastream` | not yet | magewell | https://www.magewell.com/developer/27/detail |
 | `magichome-bulb` | not yet | — | — |
 | `magicsoft-recorder` | not yet | — | — |
 | `magnimage-fseries` | not yet | — | — |
@@ -749,7 +765,7 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `newbluefx-titler` | not yet | — | — |
 | `neworange-encoder` | not yet | — | — |
 | `newtek-ndistudiomonitor` | not yet | ndi | https://ndi.video/for-developers/ndi-sdk/ |
-| `newtek-tricaster` | not yet | — | — |
+| `newtek-tricaster` | not yet | tricaster | https://vizrt.my.site.com/knowledgebase/s/article/TriCaster-remote-control-port |
 | `nexo-nxamp` | not yet | — | — |
 | `nextkon-screen` | not yet | — | — |
 | `nextologies-nextotalk` | not yet | — | — |
@@ -764,17 +780,17 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `noismada-octopusshowcontrol` | not yet | — | — |
 | `nortek-bluebolt` | not yet | — | — |
 | `notion-timestamp` | not yet | — | — |
-| `novastar-allinone` | not yet | — | — |
-| `novastar-broadcastswitcher` | not yet | — | — |
-| `novastar-coex` | not yet | — | — |
-| `novastar-controller` | not yet | — | — |
-| `novastar-d12` | not yet | — | — |
-| `novastar-mediaserver` | not yet | — | — |
-| `novastar-mxreal3` | not yet | — | — |
-| `novastar-splicer` | not yet | — | — |
-| `novastar-switcher` | not yet | — | — |
-| `novastar-t-series` | not yet | — | — |
-| `novastar-vx4s` | not yet | — | — |
+| `novastar-allinone` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-broadcastswitcher` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-coex` | implemented | novastar-coex | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-controller` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-d12` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-mediaserver` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-mxreal3` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-splicer` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-switcher` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-t-series` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
+| `novastar-vx4s` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
 | `nrk-sofie-chef` | not yet | — | — |
 | `ntp-technology-dot` | not yet | — | — |
 | `nws-api` | not yet | — | — |
@@ -884,10 +900,10 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `rgblink-tao1pro` | not yet | — | — |
 | `rgblink-vsp628pro` | not yet | — | — |
 | `rgblink-x3` | not yet | — | — |
-| `riedel-medianetworks` | not yet | — | — |
-| `riedel-mediornet` | not yet | — | — |
-| `riedel-rrcs` | not yet | — | — |
-| `riedel-smartpanel` | not yet | — | — |
+| `riedel-medianetworks` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
+| `riedel-mediornet` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
+| `riedel-rrcs` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
+| `riedel-smartpanel` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
 | `riotgames-leagueoflegends` | not yet | — | — |
 | `riotgames-replay` | not yet | — | — |
 | `rm-tallylights` | not yet | — | — |
@@ -896,21 +912,21 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `rode-rcv` | not yet | — | — |
 | `rogueamoeba-farrago` | not yet | — | — |
 | `roku-tv` | not yet | — | — |
-| `roland-m5000` | not yet | — | — |
-| `roland-p20hd` | not yet | — | — |
-| `roland-v1-4k` | not yet | — | — |
-| `roland-v1200hd` | not yet | — | — |
-| `roland-v160hd` | not yet | — | — |
-| `roland-v600uhd` | not yet | — | — |
+| `roland-m5000` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-p20hd` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-v1-4k` | implemented | roland-basic | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-v1200hd` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-v160hd` | implemented | roland-basic | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-v600uhd` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | `roland-v60hd` | implemented | roland-v60hd | https://static.roland.com/assets/media/pdf/V-60HD_reference_v31_eng04_W.pdf |
-| `roland-v80hd` | not yet | — | — |
-| `roland-vp42h` | not yet | — | — |
-| `roland-vr120hd` | not yet | — | — |
-| `roland-vr400uhd` | not yet | — | — |
-| `roland-vr50hd-mk2` | not yet | — | — |
-| `roland-xs42h` | not yet | — | — |
-| `roland-xs62s` | not yet | — | — |
-| `roland-xs84h` | not yet | — | — |
+| `roland-v80hd` | implemented | roland-basic | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-vp42h` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-vr120hd` | implemented | roland-basic | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-vr400uhd` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-vr50hd-mk2` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-xs42h` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-xs62s` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
+| `roland-xs84h` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | `rossvideo-caprica` | not yet | — | — |
 | `rossvideo-nkrouter` | not yet | ross-nk | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
 | `rossvideo-rosstalk` | implemented | ross-rosstalk | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
@@ -1066,9 +1082,9 @@ Companion connection types: **1098**. Implemented: **82**. Partial: **0**. Not y
 | `template-ts` | not yet | — | — |
 | `tenveo-ptz` | not yet | — | — |
 | `teracom-tcw181b` | not yet | — | — |
-| `teradek-prism` | not yet | — | — |
-| `teradek-vidiu` | not yet | — | — |
-| `teradek-vidiux` | not yet | — | — |
+| `teradek-prism` | not yet | teradek | https://www.teradek.com/ |
+| `teradek-vidiu` | not yet | teradek | https://www.teradek.com/ |
+| `teradek-vidiux` | not yet | teradek | https://www.teradek.com/ |
 | `tesla-smart` | not yet | — | — |
 | `tesmart-hdmimatrix` | not yet | — | — |
 | `testbildmedia-stgtime` | not yet | — | — |
