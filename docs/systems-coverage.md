@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not yet: **952**.
+Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not yet: **936**.
 
 ## Systems in this build
 
@@ -128,6 +128,22 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | SPX Graphics (`spx-graphics`) | implemented | 3 | 2 | 1 | official | https://docs.spxgraphics.com/Documentation/Control+Interfaces/REST/Overview+of+SPX+API |
 | Viz Flowics (`viz-flowics`) | implemented | 2 | 3 | 1 | official | https://postman.flowics.com/ |
 | WLED (`wled`) | implemented | 3 | 2 | 1 | official | https://kno.wled.ge/interfaces/json-api/ |
+| APC switched rack PDU (`apc-rackpdu`) | implemented | 2 | 2 | 1 | official | https://www.se.com/us/en/faqs/FA156163/ |
+| Gude Expert Power Control (`gude-pdu`) | implemented | 2 | 2 | 1 | official | https://wiki.gude-systems.com/EPC_HTTP_Interface |
+| Neol ePowerSwitch (`neol-epowerswitch`) | implemented | 3 | 2 | 1 | official | https://www.kvm-concepts.de/wp-content/uploads/neol_epowerswitch_4iec_manual.pdf |
+| Dataprobe iBoot PDU (`dataprobe-iboot`) | implemented | 2 | 2 | 1 | official | https://44852427.fs1.hubspotusercontent-na1.net/hubfs/44852427/Dataprobe_February_2024/Pdf/iboot-pdu_restful_api.pdf |
+| ATEN PDU (`aten-pdu`) | implemented | 2 | 2 | 1 | official | https://assets.aten.com/product/manual/Restful-API-Guide-for-PDU_2022-11-18.pdf |
+| Audio-Technica ATDM (`audiotechnica-atdm`) | implemented | 4 | 2 | 1 | official | https://docs.audio-technica.com/us/ATDM-0604_IP_Control_Protcol_Specification_EN_Ver1.1.3_web_200821.pdf |
+| Biamp Audia (`biamp-audia`) | implemented | 2 | 2 | 1 | official | https://support.biamp.com/Audia-Nexia/Control/Audia-Nexia_Text_Protocol |
+| Sony Bravia (`sony-bravia`) | implemented | 1 | 2 | 1 | official | https://pro-bravia.sony.net/remote-display-control/rest-api/guide/ |
+| Denon DN-500BD MKII (`denon-dn500`) | implemented | 5 | 2 | 1 | official | https://cdn.inmusicbrands.com/DenonPro/cdn/1841/documents/DN-500BD_MKII_Protocol_Guide_v1.1.pdf |
+| Foscam PTZ (`foscam-ptz`) | implemented | 3 | 2 | 1 | official | https://www.alarmforum.de/attachment.php?aid=2467 |
+| ZoneMinder (`zoneminder`) | implemented | 2 | 2 | 1 | official | https://zoneminder.readthedocs.io/en/stable/api.html |
+| Lilliput matrix (`lilliput-matrix`) | implemented | 1 | 1 | 1 | official | https://www.lilliputuk.com/assets/downloads/MSS0811-API-Guide.pdf |
+| H2R Graphics (`h2r-graphics`) | implemented | 4 | 2 | 1 | official | https://h2r.graphics/docs/api/http/ |
+| Viz Mosart (`viz-mosart`) | implemented | 3 | 2 | 1 | official | https://documentation.vizrt.com/viz-mosart-admin-guide/5.13/Mosart_Remote_Control_REST_API.html |
+| CueTimer (`cuetimer`) | implemented | 5 | 2 | 1 | official | https://cuetimer.com/userguide/ |
+| Irisdown countdown (`irisdown-timer`) | implemented | 3 | 2 | 1 | official | https://release.irisdown.co.uk/Countdown%20Timer%20v2.0%20-%20Remote%20Control%20Protocol.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -161,6 +177,18 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | Allen & Heath iLive and DT168 (`allenheath-open`) | not yet | 0 | 0 | 0 | official | https://www.allen-heath.com/content/uploads/2023/05/Avantis-MIDI-TCP-Protocol-V1.0.pdf |
 | VICREO Timer (`vicreo-timer`) | not yet | 0 | 0 | 0 | official | https://www.vicreo-timer.com/help |
 | Eyevinn intercom (`eyevinn-intercom`) | not yet | 0 | 0 | 0 | official | https://github.com/Eyevinn/intercom-manager/ |
+| APC UPS (`apc-ups`) | not yet | 0 | 0 | 0 | official | https://www.se.com/us/en/faqs/FA156163/ |
+| CyberPower and Eaton PDUs (`cyberpower-eaton`) | not yet | 0 | 0 | 0 | official | https://eaton.my.site.com/publicknowledge/s/article/API-documentation-for-G4-PDUs |
+| Crestron NVX and DM (`crestron-nvx`) | not yet | 0 | 0 | 0 | official | https://sdkcon78221.crestron.com/sdk/DM_NVX_REST_API/Content/Topics/Making-API-Calls.htm |
+| Dahua PTZ (`dahua-ptz`) | not yet | 0 | 0 | 0 | official | https://www.dahuasecurity.com/ |
+| d&b audiotechnik (`db-audio`) | not yet | 0 | 0 | 0 | official | https://www.dbaudio.com/assets/products/downloads/ti/dbaudio-technical-information-ti313-1.0-en.pdf |
+| Christie WD (`christie-wd`) | not yet | 0 | 0 | 0 | official | https://www.christiedigital.com/globalassets/resources/public/020-100291-03-christie-3-dlp-sxga-hd-xenon-rs232-serial-communications.pdf |
+| Barco DCS, DP and MatrixPRO (`barco-matrix`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support |
+| Biamp Qt X (`biamp-qtx`) | not yet | 0 | 0 | 0 | official | https://support.biamp.com/Audia-Nexia/Control/Audia-Nexia_Text_Protocol |
+| Denon receiver and recorder (`denon-other`) | not yet | 0 | 0 | 0 | official | https://cdn.inmusicbrands.com/DenonPro/cdn/1841/documents/DN-500BD_MKII_Protocol_Guide_v1.1.pdf |
+| Panasonic Lumix (`panasonic-lumix`) | not yet | 0 | 0 | 0 | official | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/CX350_CX4000_Command_for_PTZ_Control_Protocol.pdf |
+| Voicemeeter (`voicemeeter`) | not yet | 0 | 0 | 0 | official | https://download.vb-audio.com/Download_CABLE/VoicemeeterRemoteAPI.pdf |
+| LG display (`lgtv-display`) | not yet | 0 | 0 | 0 | official | https://gscs-b2c.lge.com/open/downloadFile?fileId=KROWM000594321.pdf |
 
 ## Notes on sources
 
@@ -178,6 +206,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 - Colorlight processors use the CLTPlatform brightness call. GrandShow is not that API. NovaStar COEX is the HTTP brightness API. The other NovaStar families are not that API and are not the VX Pro frame.
 - Roland basic PGM and CUT cover V-160HD, V-80HD, VR-120HD and V-1-4K. FOR-A's command list is behind a login. Evertz, Riedel RRCS, Haivision, Teradek, Magewell, Hippotizer and TriCaster did not yield a request line that was safe to send.
 - Avantis mute, CQ mute, MultiView routing, Blackmagic camera record, SMP 351 record, PCS4 receptacles, Vaddio presets, AVer VISCA, DM3 OSC, Sennheiser SSC, RossTalk server and Caprica, Viz Trio, Picturall, disguise OSC, SPX, Flowics reads and WLED are separate systems. AJA FS, Datavideo DVIP, OBSBOT, Clear-Com, Kairos, Encore, the SuperJoy, and the other ids named in the blocker rows did not yield a command line that was safe to send.
+- APC switched-rack `on 1`, Gude `cmd=1`, Neol `M0:O1=ON`, Dataprobe outlet control, ATEN `/api/outlet/relay`, ATDM mute, Audia `RECALL 0 PRESET`, Bravia `setPlayContent`, DN-500BD `@0PW00`, Foscam CGI, ZoneMinder alarm, Lilliput `1v2.`, H2R `/run`, Mosart `start-continue`, CueTimer `/global/fire` and Irisdown `GO` are separate systems. A zero-button row is a recorded blocker, not a command system. APC UPS, CyberPower, Eaton, Crestron NVX, Dahua, d&b, Christie WD, Barco DCS/DP/MatrixPRO, Biamp QTX, the other Denon ids and Lumix did not get a command copied from a different product.
 
 ## Every Companion connection
 
@@ -232,15 +261,15 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `analogway-vio` | not yet | — | — |
 | `android-tv` | not yet | — | — |
 | `anomes-millumin` | implemented | millumin | https://www.millumin.com/documentation/ |
-| `apc-rackpdu` | not yet | — | — |
-| `apc-ups` | not yet | — | — |
+| `apc-rackpdu` | implemented | apc-rackpdu | https://www.se.com/us/en/faqs/FA156163/ |
+| `apc-ups` | not yet | apc-ups | https://www.se.com/us/en/faqs/FA156163/ |
 | `apple-tv` | not yet | — | — |
 | `arkaos-mediamaster` | not yet | — | — |
 | `arkona-bladerunner` | not yet | — | — |
 | `arri-tally` | not yet | — | — |
 | `astrastudio-onairscreen` | not yet | — | — |
 | `aten-matrix` | not yet | — | — |
-| `aten-pdu` | not yet | — | — |
+| `aten-pdu` | implemented | aten-pdu | https://assets.aten.com/product/manual/Restful-API-Guide-for-PDU_2022-11-18.pdf |
 | `atlasied-atmosphere` | not yet | — | — |
 | `atlona-camera-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `atlona-clso` | not yet | — | — |
@@ -251,7 +280,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `audinate-dantecontroller` | not yet | — | — |
 | `audiostrom-liveprofessor` | not yet | — | — |
 | `audiotechnica-ceilingarray` | not yet | — | — |
-| `audiotechnica-digitalmixer` | not yet | — | — |
+| `audiotechnica-digitalmixer` | implemented | audiotechnica-atdm | https://docs.audio-technica.com/us/ATDM-0604_IP_Control_Protcol_Specification_EN_Ver1.1.3_web_200821.pdf |
 | `audiotechnica-discussionsystem` | not yet | — | — |
 | `audiotechnica-esw` | not yet | — | — |
 | `audiotechnica-system20` | not yet | — | — |
@@ -292,14 +321,14 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `badgermedia-trustabel` | not yet | — | — |
 | `ballscore-broadcast` | not yet | — | — |
 | `barco-clickshare` | not yet | barco-open | https://www.barco.com/en/support/docs/r5915531 |
-| `barco-dcs` | not yet | — | — |
-| `barco-dp` | not yet | — | — |
+| `barco-dcs` | not yet | barco-matrix | https://www.barco.com/en/support |
+| `barco-dp` | not yet | barco-matrix | https://www.barco.com/en/support |
 | `barco-encore` | not yet | barco-open | https://www.barco.com/en/support/docs/r5915531 |
 | `barco-eventmaster` | implemented | e2 | https://www.barco.com/en/support |
 | `barco-eventmaster-xml` | implemented | e2 | https://www.barco.com/en/support |
 | `barco-hdx` | not yet | barco-open | https://www.barco.com/en/support/docs/r5915531 |
 | `barco-imagepro` | not yet | barco-imagepro | https://www.barco.com/en/support/docs/R5919184 |
-| `barco-matrixpro` | not yet | — | — |
+| `barco-matrixpro` | not yet | barco-matrix | https://www.barco.com/en/support |
 | `barco-pds` | implemented | barco-pds | https://www.fullcompass.com/common/files/83820-PDS4KUserGuide.pdf |
 | `barco-pulse` | implemented | barco-projector | https://www.barco.com/manuals/R5916611/w1p7s33hf4ko.html |
 | `base` | not yet | — | — |
@@ -311,8 +340,8 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `behringer-x32` | implemented | behringer-x32 | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
 | `behringer-xair` | implemented | behringer-xair | https://www.manualshelf.com/manual/behringer/x18/air-series-osc-documentation-english.html |
 | `betr-support` | not yet | — | — |
-| `biamp-audia` | not yet | — | — |
-| `biamp-qtx` | not yet | — | — |
+| `biamp-audia` | implemented | biamp-audia | https://support.biamp.com/Audia-Nexia/Control/Audia-Nexia_Text_Protocol |
+| `biamp-qtx` | not yet | biamp-qtx | https://support.biamp.com/Audia-Nexia/Control/Audia-Nexia_Text_Protocol |
 | `biamp-tesira` | implemented | biamp-tesira | https://downloads.biamp.com/assets/docs/default-source/control/tesira_text_protocol_v4-2_jan22.pdf?sfvrsn=100c2497_46 |
 | `bigrig-tuneit` | not yet | — | — |
 | `binary-moipcontroller` | not yet | — | — |
@@ -385,7 +414,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `chilibytes-pdfosc` | not yet | — | — |
 | `christie-projector` | implemented | christie-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `christie-spyder` | implemented | christie-spyder | https://www.christiedigital.com/globalassets/resources/public/spyder-s-api-commands-version-6.1.3.pdf |
-| `christie-wd` | not yet | — | — |
+| `christie-wd` | not yet | christie-wd | https://www.christiedigital.com/globalassets/resources/public/020-100291-03-christie-3-dlp-sxga-hd-xenon-rs232-serial-communications.pdf |
 | `chromaq-vista` | not yet | — | — |
 | `churchapps-freeshow` | not yet | — | — |
 | `churchtranslator-api` | not yet | — | — |
@@ -418,9 +447,9 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `cosmostreamer-cosmostreamer` | not yet | — | — |
 | `creativeland-capacitimer` | not yet | — | — |
 | `creativeland-mediacontrolbridge` | not yet | — | — |
-| `crestron-digitalmatrix` | not yet | — | — |
-| `crestron-hd-mdnxm-4kz-e` | not yet | — | — |
-| `crestron-nvx` | not yet | — | — |
+| `crestron-digitalmatrix` | not yet | crestron-nvx | https://sdkcon78221.crestron.com/sdk/DM_NVX_REST_API/Content/Topics/Making-API-Calls.htm |
+| `crestron-hd-mdnxm-4kz-e` | not yet | crestron-nvx | https://sdkcon78221.crestron.com/sdk/DM_NVX_REST_API/Content/Topics/Making-API-Calls.htm |
+| `crestron-nvx` | not yet | crestron-nvx | https://sdkcon78221.crestron.com/sdk/DM_NVX_REST_API/Content/Topics/Making-API-Calls.htm |
 | `crewlan-connect` | not yet | — | — |
 | `crystal-scte` | not yet | — | — |
 | `ctpsystems-dio8008r` | not yet | — | — |
@@ -432,9 +461,9 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `cuetone-cueplayer` | not yet | — | — |
 | `cuevacontrol-relo-io8` | not yet | — | — |
 | `cvmeventi-countdown` | not yet | — | — |
-| `cyberpower-pdu` | not yet | — | — |
+| `cyberpower-pdu` | not yet | cyberpower-eaton | https://eaton.my.site.com/publicknowledge/s/article/API-documentation-for-G4-PDUs |
 | `cyp-matrix` | not yet | — | — |
-| `dahuasecurity-ptz` | not yet | — | — |
+| `dahuasecurity-ptz` | not yet | dahua-ptz | https://www.dahuasecurity.com/ |
 | `dalite-scb` | not yet | — | — |
 | `dan-dugan-automixer` | not yet | — | — |
 | `danielnoethen-butt` | not yet | — | — |
@@ -443,18 +472,18 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `dashare-multiplay3` | not yet | — | — |
 | `dashmaster-2k` | not yet | — | — |
 | `datapath-fx4` | not yet | — | — |
-| `dataprobe-iboot-pdu` | not yet | — | — |
+| `dataprobe-iboot-pdu` | implemented | dataprobe-iboot | https://44852427.fs1.hubspotusercontent-na1.net/hubfs/44852427/Dataprobe_February_2024/Pdf/iboot-pdu_restful_api.pdf |
 | `dataton-watchout` | implemented | dataton-watchout | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
 | `dataton-watchout-json` | not yet | — | — |
 | `datavideo-dvip` | not yet | datavideo-dvip | https://datavideo.com/us/protocol/36/datavideo-dvip-ethernet-control-protocol |
 | `datavideo-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
-| `dbaudiotechnik-amps` | not yet | — | — |
-| `dbaudiotechnik-dsp` | not yet | — | — |
+| `dbaudiotechnik-amps` | not yet | db-audio | https://www.dbaudio.com/assets/products/downloads/ti/dbaudio-technical-information-ti313-1.0-en.pdf |
+| `dbaudiotechnik-dsp` | not yet | db-audio | https://www.dbaudio.com/assets/products/downloads/ti/dbaudio-technical-information-ti313-1.0-en.pdf |
 | `dcc-ex-commandstation` | not yet | — | — |
 | `denchisoft-vtubestudio` | not yet | — | — |
-| `denon-dn-500bd-mkii` | not yet | — | — |
-| `denon-receiver` | not yet | — | — |
-| `denon-recorder` | not yet | — | — |
+| `denon-dn-500bd-mkii` | implemented | denon-dn500 | https://cdn.inmusicbrands.com/DenonPro/cdn/1841/documents/DN-500BD_MKII_Protocol_Guide_v1.1.pdf |
+| `denon-receiver` | not yet | denon-other | https://cdn.inmusicbrands.com/DenonPro/cdn/1841/documents/DN-500BD_MKII_Protocol_Guide_v1.1.pdf |
+| `denon-recorder` | not yet | denon-other | https://cdn.inmusicbrands.com/DenonPro/cdn/1841/documents/DN-500BD_MKII_Protocol_Guide_v1.1.pdf |
 | `depili-clock-8001` | implemented | clock-8001 | https://gitlab.com/clock-8001/clock-8001/-/blob/master/v4/osc.md |
 | `derhamproductions-presenteringest` | not yet | — | — |
 | `devantech-ds` | not yet | — | — |
@@ -492,7 +521,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `dylanmaudio-apps` | not yet | — | — |
 | `easyprompter-remote` | not yet | — | — |
 | `easyrecord-cgcontrol` | not yet | — | — |
-| `eaton-epdu` | not yet | — | — |
+| `eaton-epdu` | not yet | cyberpower-eaton | https://eaton.my.site.com/publicknowledge/s/article/API-documentation-for-G4-PDUs |
 | `ecamm-live` | not yet | — | — |
 | `ecclesialab-worshiplive` | not yet | — | — |
 | `eidsystems-kaleoai` | not yet | — | — |
@@ -554,7 +583,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `fora-hvs` | not yet | fora | https://www.for-a.com/products/hvs6000/ |
 | `fora-mfr` | not yet | fora | https://www.for-a.com/products/hvs6000/ |
 | `fora-processors` | not yet | fora | https://www.for-a.com/products/hvs6000/ |
-| `foscam-ptz` | not yet | — | — |
+| `foscam-ptz` | implemented | foscam-ptz | https://www.alarmforum.de/attachment.php?aid=2467 |
 | `fourkay-matrix` | not yet | — | — |
 | `fritz-fritzbox` | not yet | — | — |
 | `fulldomepro-server` | not yet | — | — |
@@ -628,8 +657,8 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `greenhippo-hippotizer` | not yet | hippotizer | https://support.green-hippo.com/hc/en-gb/articles/29184031287442-NDI-Troubleshooting |
 | `greenhippo-hippotizer-rest` | not yet | hippotizer | https://support.green-hippo.com/hc/en-gb/articles/29184031287442-NDI-Troubleshooting |
 | `groupme-webhooks` | not yet | — | — |
-| `gudesystems-smartpdu` | not yet | — | — |
-| `h2r-graphics` | not yet | — | — |
+| `gudesystems-smartpdu` | implemented | gude-pdu | https://wiki.gude-systems.com/EPC_HTTP_Interface |
+| `h2r-graphics` | implemented | h2r-graphics | https://h2r.graphics/docs/api/http/ |
 | `h2r-layouts` | not yet | — | — |
 | `haivision-connectdvr` | not yet | haivision | https://doc.haivision.com/MakitoX4Enc/1.9/accessing-the-rest-api |
 | `haivision-kbencoder` | not yet | haivision | https://doc.haivision.com/MakitoX4Enc/1.9/accessing-the-rest-api |
@@ -680,7 +709,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `iobroker-ws` | not yet | — | — |
 | `ioversal-vertex` | not yet | — | — |
 | `ipl-ocp` | not yet | — | — |
-| `irisdown-countdowntimer` | not yet | — | — |
+| `irisdown-countdowntimer` | implemented | irisdown-timer | https://release.irisdown.co.uk/Countdown%20Timer%20v2.0%20-%20Remote%20Control%20Protocol.pdf |
 | `irisdown-remoteshowcontrol` | not yet | — | — |
 | `itsblue-scstw` | not yet | — | — |
 | `jetbrains-ides` | not yet | — | — |
@@ -731,12 +760,12 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `lectrosonics-aspen` | not yet | — | — |
 | `leolabs-ableset` | not yet | — | — |
 | `leonreucher-vstopowerpoint` | not yet | — | — |
-| `lgtv-display` | not yet | — | — |
+| `lgtv-display` | not yet | lgtv-display | https://gscs-b2c.lge.com/open/downloadFile?fileId=KROWM000594321.pdf |
 | `lgtv-prodisplay` | implemented | lg-signage | https://gscs-b2c.lge.com/open/downloadFile?fileId=KROWM000594321.pdf |
 | `libreoffice-impress` | not yet | — | — |
 | `lightware-lw2` | implemented | lightware-lw2 | https://www.lightware.com/en/support/open-api |
 | `lightware-lw3` | implemented | lightware-lw3 | https://www.lightware.com/en/support/open-api |
-| `lilliput-monitor` | not yet | — | — |
+| `lilliput-monitor` | implemented | lilliput-matrix | https://www.lilliputuk.com/assets/downloads/MSS0811-API-Guide.pdf |
 | `limagiran-holyrics` | not yet | — | — |
 | `liminalet-zoomosc` | not yet | — | — |
 | `lindy-38359-matrix` | not yet | — | — |
@@ -824,7 +853,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `nec-display` | implemented | nec-display | https://www.sharpnecdisplays.com/p/download/v/bce9d82928fe8cec24a1e81f0b0ad44a/cp/Products/LargeFormatDisplays/Products/CurrentProducts/Shared/Command_Lists/External_Control_Rev1.8%28G4%29.pdf?fn=External_Control_Rev1.8%28G4%29.pdf |
 | `nec-projectors` | implemented | nec-projector-ascii | https://business.sharpusa.com/Portals/0/downloads/Manuals/sharp-pj-control-command-codes.pdf |
 | `neodarque-stagetimer2` | not yet | — | — |
-| `neol-epowerswitch` | not yet | — | — |
+| `neol-epowerswitch` | implemented | neol-epowerswitch | https://www.kvm-concepts.de/wp-content/uploads/neol_epowerswitch_4iec_manual.pdf |
 | `netgear-avline` | not yet | — | — |
 | `netinsight-nimbraedge` | not yet | — | — |
 | `netio-powerbox` | not yet | — | — |
@@ -902,7 +931,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `panasonic-camera-controller` | not yet | — | — |
 | `panasonic-cameras` | implemented | panasonic-aw | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/UE80/AW-UE80UE50UE40_InterfaceSpecification_E.pdf |
 | `panasonic-kairos` | not yet | panasonic-open | https://pro-av.panasonic.net/manual/pdf/Kairos_guide(DVQP2366YA)_E.pdf |
-| `panasonic-lumix` | not yet | — | — |
+| `panasonic-lumix` | not yet | panasonic-lumix | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/CX350_CX4000_Command_for_PTZ_Control_Protocol.pdf |
 | `panasonic-mediaproductionsuite` | not yet | — | — |
 | `panasonic-p2` | not yet | — | — |
 | `panasonic-projector` | implemented | panasonic-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
@@ -935,7 +964,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `pomfort-livegradepro` | not yet | — | — |
 | `powersoft-amplifiers` | not yet | — | — |
 | `presentationtools-aps` | not yet | — | — |
-| `presentationtools-cuetimer` | not yet | — | — |
+| `presentationtools-cuetimer` | implemented | cuetimer | https://cuetimer.com/userguide/ |
 | `prinsvision-server` | not yet | — | — |
 | `prodigy-osc` | not yet | — | — |
 | `prodlink-comms` | not yet | — | — |
@@ -1079,7 +1108,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `sononum-horae` | not yet | — | — |
 | `sonoran-coyote` | not yet | — | — |
 | `sonos-speakers` | not yet | — | — |
-| `sony-bravia` | not yet | — | — |
+| `sony-bravia` | implemented | sony-bravia | https://pro-bravia.sony.net/remote-display-control/rest-api/guide/ |
 | `sony-bravia-simpleip` | implemented | sony-bravia-simple | https://pro-bravia.sony.net/remote-display-control/simple-ip-control/ |
 | `sony-broadcastmonitor` | not yet | — | — |
 | `sony-cled` | not yet | — | — |
@@ -1203,7 +1232,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `utopianacademy-deckboy` | not yet | — | — |
 | `uts-remotevolume` | not yet | — | — |
 | `vaddio-ptz` | implemented | vaddio-ptz | https://assetserver.net/_assets/vaddio/pdf/99999437000w-manual.pdf |
-| `vbaudio-voicemeeter` | not yet | — | — |
+| `vbaudio-voicemeeter` | not yet | voicemeeter | https://download.vb-audio.com/Download_CABLE/VoicemeeterRemoteAPI.pdf |
 | `vdo-ninja` | not yet | — | — |
 | `vdwall-lvp615` | not yet | — | — |
 | `ventuz-director` | not yet | — | — |
@@ -1241,7 +1270,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `vivitek-projector` | implemented | vivitek-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `vizio-smartcast` | not yet | — | — |
 | `vizrt-flowics` | implemented | viz-flowics | https://postman.flowics.com/ |
-| `vizrt-mosart` | not yet | — | — |
+| `vizrt-mosart` | implemented | viz-mosart | https://documentation.vizrt.com/viz-mosart-admin-guide/5.13/Mosart_Remote_Control_REST_API.html |
 | `vizrt-tcp-engine-trio` | implemented | viz-trio | https://documentation.vizrt.com/viz-trio-guide-4.4.pdf |
 | `vkmedia-onairtimer` | not yet | — | — |
 | `voicemod-api` | not yet | — | — |
@@ -1275,7 +1304,7 @@ Companion connection types: **1098**. Implemented: **146**. Partial: **0**. Not 
 | `zigatron-internetclicker` | not yet | — | — |
 | `zinc-oscpoint` | not yet | — | — |
 | `zipsolutions-zipcaptions` | not yet | — | — |
-| `zoneminder-camera` | not yet | — | — |
+| `zoneminder-camera` | implemented | zoneminder | https://zoneminder.readthedocs.io/en/stable/api.html |
 | `zoom-cavzrc` | not yet | — | — |
 | `zoom-osc-iso` | not yet | — | — |
 | `zoom-tiles` | not yet | — | — |
