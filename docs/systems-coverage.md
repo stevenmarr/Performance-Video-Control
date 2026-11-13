@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **70**. Partial: **0**. Not yet: **1028**.
+Companion connection types: **1098**. Implemented: **71**. Partial: **0**. Not yet: **1027**.
 
 ## Systems in this build
 
@@ -56,6 +56,7 @@ Companion connection types: **1098**. Implemented: **70**. Partial: **0**. Not y
 | NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
 | Megapixel HELIOS (`helios`) | implemented | 6 | 3 | 2 | official | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
 | Behringer X32 (`behringer-x32`) | implemented | 4 | 3 | 2 | official | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
+| Behringer X Air (`behringer-xair`) | implemented | 3 | 3 | 1 | official | https://www.manualshelf.com/manual/behringer/x18/air-series-osc-documentation-english.html |
 | Art-Net (`artnet`) | implemented | 1 | 3 | 1 | official | https://art-net.org.uk/how-it-works/streaming-packets/art-dmx-packet-definition/ |
 | sACN (`sacn`) | implemented | 1 | 2 | 1 | official | https://tsp.esta.org/tsp/documents/published_docs.php |
 | ChamSys MagicQ (`chamsys-magicq`) | implemented | 7 | 2 | 1 | official | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/OSC.html |
@@ -202,7 +203,7 @@ Companion connection types: **1098**. Implemented: **70**. Partial: **0**. Not y
 | `beaware-conferencecaptioning` | not yet | — | — |
 | `behringer-wing` | not yet | — | — |
 | `behringer-x32` | implemented | behringer-x32 | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
-| `behringer-xair` | not yet | — | — |
+| `behringer-xair` | implemented | behringer-xair | https://www.manualshelf.com/manual/behringer/x18/air-series-osc-documentation-english.html |
 | `betr-support` | not yet | — | — |
 | `biamp-audia` | not yet | — | — |
 | `biamp-qtx` | not yet | — | — |

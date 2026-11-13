@@ -244,3 +244,25 @@ test('MagicQ go and blackout use the published OSC addresses', async () => {
     sink.close();
   }
 });
+
+test('X Air channel fader is the published OSC example', async () => {
+  const dgram = require('dgram');
+  const osc = require('../lib/drivers/osc');
+  const sink = dgram.createSocket('udp4');
+  const messages = [];
+  sink.on('message', (msg) => messages.push(osc.decode(msg)));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const row = desk.create('behringer-xair', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    await desk.run(row.id, 'fader', { channel: '01', level: '0.5' });
+    await desk.run(row.id, 'info');
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const fader = messages.find((m) => m.address === '/ch/01/mix/fader');
+    assert.ok(fader && fader.args[0].type === 'f' && Math.abs(fader.args[0].value - 0.5) < 0.001);
+    assert.ok(messages.some((m) => m.address === '/xinfo' && m.args.length === 0));
+  } finally {
+    desk.close();
+    sink.close();
+  }
+});
