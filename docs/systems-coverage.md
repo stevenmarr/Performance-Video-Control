@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **68**. Partial: **0**. Not yet: **1030**.
+Companion connection types: **1098**. Implemented: **70**. Partial: **0**. Not yet: **1028**.
 
 ## Systems in this build
 
@@ -58,6 +58,8 @@ Companion connection types: **1098**. Implemented: **68**. Partial: **0**. Not y
 | Behringer X32 (`behringer-x32`) | implemented | 4 | 3 | 2 | official | http://www.behringer.com/assets/X32_OSC_Remote_Protocol.pdf |
 | Art-Net (`artnet`) | implemented | 1 | 3 | 1 | official | https://art-net.org.uk/how-it-works/streaming-packets/art-dmx-packet-definition/ |
 | sACN (`sacn`) | implemented | 1 | 2 | 1 | official | https://tsp.esta.org/tsp/documents/published_docs.php |
+| ChamSys MagicQ (`chamsys-magicq`) | implemented | 7 | 2 | 1 | official | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/OSC.html |
+| ChamSys QuickQ (`chamsys-quickq`) | implemented | 5 | 2 | 1 | official | https://docs.chamsys.co.uk/quickq/13.0/manual/touchosc.html |
 
 ## Notes on sources
 
@@ -270,9 +272,9 @@ Companion connection types: **1098**. Implemented: **68**. Partial: **0**. Not y
 | `casparcg-server` | implemented | casparcg | https://github.com/CasparCG/help/wiki/AMCP-Protocol |
 | `castr-api` | not yet | — | — |
 | `cedar-dns8d` | not yet | — | — |
-| `chamsys-magicq-osc` | not yet | — | — |
+| `chamsys-magicq-osc` | implemented | chamsys-magicq | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/OSC.html |
 | `chamsys-magicq-udp` | not yet | — | — |
-| `chamsys-quickq` | not yet | — | — |
+| `chamsys-quickq` | implemented | chamsys-quickq | https://docs.chamsys.co.uk/quickq/13.0/manual/touchosc.html |
 | `chilibytes-pdfosc` | not yet | — | — |
 | `christie-projector` | implemented | christie-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `christie-spyder` | not yet | — | — |

@@ -217,3 +217,30 @@ test('HELO record, Teranex output mode and Streaming Encoder start use the publi
     await new Promise((resolve) => tcp.close(resolve));
   }
 });
+
+test('MagicQ go and blackout use the published OSC addresses', async () => {
+  const dgram = require('dgram');
+  const osc = require('../lib/drivers/osc');
+  const sink = dgram.createSocket('udp4');
+  const messages = [];
+  sink.on('message', (msg) => messages.push(osc.decode(msg)));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const desk = new ModuleDesk();
+  try {
+    const magic = desk.create('chamsys-magicq', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    await desk.run(magic.id, 'go', { playback: 1 });
+    const armed = await desk.run(magic.id, 'blackout');
+    assert.equal(armed.pending, true);
+    await desk.run(magic.id, 'blackout');
+    const quick = desk.create('chamsys-quickq', { connection: { host: '127.0.0.1', port: sink.address().port } });
+    await desk.run(quick.id, 'go', { playback: 3 });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    assert.ok(messages.some((m) => m.address === '/pb/1/go' && m.args.length === 0));
+    const dbo = messages.find((m) => m.address === '/dbo');
+    assert.ok(dbo && dbo.args[0].type === 'i' && dbo.args[0].value === 0);
+    assert.ok(messages.some((m) => m.address === '/pb/3/go'));
+  } finally {
+    desk.close();
+    sink.close();
+  }
+});
