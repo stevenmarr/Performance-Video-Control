@@ -50,12 +50,16 @@ public struct Easer: Sendable {
 
     public mutating func reset() { value = 0 }
 
-    public mutating func step(toward target: Double, dt rawDt: Double, smoothing: Double, maxAccel: Double) -> Double {
+    /// `maxDecel` limits a move toward zero or a reversal. `maxAccel` limits a move that speeds up.
+    /// Pass a negative decel to use the same cap for both, which is what older settings do.
+    public mutating func step(toward target: Double, dt rawDt: Double, smoothing: Double, maxAccel: Double, maxDecel: Double = -1) -> Double {
         let dt = min(0.25, max(0.001, rawDt))
         let tau = 0.045 + min(1, max(0, smoothing)) * 0.70
         let alpha = 1 - PtMath.exp(-dt / tau)
         var next = value + (target - value) * alpha
-        let cap = max(0, maxAccel) * dt
+        let braking = abs(target) < abs(value) || (value != 0 && target != 0 && (target > 0) != (value > 0))
+        let rate = braking && maxDecel >= 0 ? maxDecel : maxAccel
+        let cap = max(0, rate) * dt
         if next > value + cap { next = value + cap }
         if next < value - cap { next = value - cap }
         value = next
@@ -92,6 +96,9 @@ public final class MotionController: @unchecked Sendable {
     private var panHold = false
     private var tiltHold = false
     private var zoomHold = false
+    private var panFilter = ErrorFilter()
+    private var tiltFilter = ErrorFilter()
+    private var zoomFilter = ErrorFilter()
     public private(set) var aim = Aim(centerX: 0.5, top: 0.12, height: 0.55)
     public private(set) var predicted: NormBox?
 
@@ -107,6 +114,9 @@ public final class MotionController: @unchecked Sendable {
         panHold = false
         tiltHold = false
         zoomHold = false
+        panFilter.reset()
+        tiltFilter.reset()
+        zoomFilter.reset()
     }
 
     public var velocityX: Double { predictor.vx }
@@ -118,13 +128,16 @@ public final class MotionController: @unchecked Sendable {
         predicted = ahead
         let framing = settings.resolvedFraming
         aim = FramingMath.aim(box: ahead, velocityX: predictor.vx, framing: framing)
-        let errorX = ahead.centerX - aim.centerX
-        let errorY = ahead.top - aim.top
-        let errorZ = framing.subjectHeight - ahead.h
-        let targetPan = gated(error: errorX, dead: settings.deadZone.x, maxSpeed: settings.maxSpeed.pan, hold: &panHold)
-        let targetTilt = -gated(error: errorY, dead: settings.deadZone.y, maxSpeed: settings.maxSpeed.tilt, hold: &tiltHold)
+        let rawX = ahead.centerX - aim.centerX
+        let rawY = ahead.top - aim.top
+        let rawZ = framing.subjectHeight - ahead.h
+        let errorX = panFilter.push(rawX, jitter: settings.resolvedJitter)
+        let errorY = tiltFilter.push(rawY, jitter: settings.resolvedJitter)
+        let errorZ = zoomFilter.push(rawZ, jitter: settings.resolvedJitter)
+        let targetPan = command(error: errorX, imageSpeed: predictor.vx, dead: settings.deadZone.x, gentleSpeed: settings.resolvedGentleSpeed.pan, maxSpeed: settings.maxSpeed.pan, gain: settings.resolvedGain.pan, hold: &panHold, settings: settings)
+        let targetTilt = -command(error: errorY, imageSpeed: predictor.vy, dead: settings.deadZone.y, gentleSpeed: settings.resolvedGentleSpeed.tilt, maxSpeed: settings.maxSpeed.tilt, gain: settings.resolvedGain.tilt, hold: &tiltHold, settings: settings)
         let targetZoom = settings.zoomEnabled
-            ? gated(error: errorZ, dead: settings.deadZone.size, maxSpeed: settings.maxSpeed.zoom, hold: &zoomHold)
+            ? command(error: errorZ, imageSpeed: predictor.vh, dead: settings.deadZone.size, gentleSpeed: settings.resolvedGentleSpeed.zoom, maxSpeed: settings.maxSpeed.zoom, gain: settings.resolvedGain.zoom, hold: &zoomHold, settings: settings)
             : 0
         if !settings.zoomEnabled { zoom.reset() }
         return step(pan: targetPan, tilt: targetTilt, zoom: targetZoom, dt: dt, settings: settings)
@@ -137,19 +150,24 @@ public final class MotionController: @unchecked Sendable {
         return step(pan: 0, tilt: 0, zoom: 0, dt: dt, settings: settings)
     }
 
-    /// Inside the dead zone the target is 0 and the axis latches. It stays latched until the error
-    /// grows to about twice the zone, so a sway on the boundary does not start and stop the head.
-    private func gated(error: Double, dead: Double, maxSpeed: Double, hold: inout Bool) -> Double {
-        let mag = abs(error)
-        if hold {
-            if mag < dead * 1.85 { return 0 }
-            hold = false
-        }
-        if mag <= dead {
+    /// Dead zone, gentle band, fast zone, and drift suppression for one axis.
+    private func command(error: Double, imageSpeed: Double, dead: Double, gentleSpeed: Double, maxSpeed: Double, gain: Double, hold: inout Bool, settings: TrackingSettings) -> Double {
+        if ResponseMath.suppressDrift(error: error, imageSpeed: imageSpeed, dead: dead, hysteresis: settings.resolvedHysteresis, drift: settings.resolvedDrift) {
             hold = true
             return 0
         }
-        return FramingMath.response(error: error, dead: dead, maxSpeed: maxSpeed)
+        let tune = AxisTune(
+            dead: dead,
+            gentle: settings.resolvedGentle,
+            fast: settings.resolvedFast,
+            gentleSpeed: gentleSpeed,
+            maxSpeed: maxSpeed,
+            gain: gain,
+            hysteresis: settings.resolvedHysteresis
+        )
+        let result = ResponseMath.target(error: error, tune: tune, holding: hold)
+        hold = result.holding
+        return result.speed
     }
 
     private func delta(to time: Double) -> Double {
@@ -159,9 +177,11 @@ public final class MotionController: @unchecked Sendable {
     }
 
     private func step(pan targetPan: Double, tilt targetTilt: Double, zoom targetZoom: Double, dt: Double, settings: TrackingSettings) -> MotionOutput {
-        let p = pan.step(toward: targetPan, dt: dt, smoothing: settings.smoothing, maxAccel: settings.maxAccel.pan)
-        let t = tilt.step(toward: targetTilt, dt: dt, smoothing: settings.smoothing, maxAccel: settings.maxAccel.tilt)
-        let z = zoom.step(toward: targetZoom, dt: dt, smoothing: settings.smoothing, maxAccel: settings.maxAccel.zoom)
+        let smooth = settings.resolvedAxisSmoothing
+        let decel = settings.resolvedDecel
+        let p = pan.step(toward: targetPan, dt: dt, smoothing: smooth.pan, maxAccel: settings.maxAccel.pan, maxDecel: decel.pan)
+        let t = tilt.step(toward: targetTilt, dt: dt, smoothing: smooth.tilt, maxAccel: settings.maxAccel.tilt, maxDecel: decel.tilt)
+        let z = zoom.step(toward: targetZoom, dt: dt, smoothing: smooth.zoom, maxAccel: settings.maxAccel.zoom, maxDecel: decel.zoom)
         let continuous = AxisTriple(pan: p, tilt: t, zoom: z)
         return MotionOutput(continuous: continuous, quantized: continuous.quantized())
     }

@@ -96,6 +96,8 @@ Boxes are fractions of the frame. Origin is the top-left, `x` grows right, `y` g
 
 `panTilt` is the Panasonic CGI code last sent. `PTS5050` is stop. Positive pan in `lastCommand.pan` is camera-right. Positive tilt is camera-up.
 
+`aim` is where the framing math wants the subject (`centerX`, `top`, `height`, fractions of the frame). `velocity` is the speed command right now, Panasonic counts, −49…+49, 0 is stop. The TRACKING page draws the dead zone and the framing box from `aim` and the saved dead zone, and prints `velocity`.
+
 ### ping / pong
 
 ```json
@@ -136,6 +138,17 @@ The same object is stored in Control Center's `ptz-tracking.json` (without `cont
   "maxSpeed": { "pan": 18, "tilt": 14, "zoom": 8 },
   "maxAccel": { "pan": 70, "tilt": 60, "zoom": 30 },
   "smoothing": 0.45,
+  "feel": "medium",
+  "maxDecel": { "pan": 90, "tilt": 80, "zoom": 40 },
+  "gentleSpeed": { "pan": 6, "tilt": 5, "zoom": 3 },
+  "gain": { "pan": 8, "tilt": 8, "zoom": 6 },
+  "axisSmoothing": { "pan": 0.45, "tilt": 0.5, "zoom": 0.55 },
+  "gentle": 0.05,
+  "fast": 0.12,
+  "hysteresis": 1.85,
+  "jitter": 0.35,
+  "drift": 0.035,
+  "minSubject": 0.08,
   "latencyMs": 180,
   "lostHoldMs": 1200,
   "lostAction": "reacquire",
@@ -168,6 +181,17 @@ The same object is stored in Control Center's `ptz-tracking.json` (without `cont
 | `maxSpeed` | Panasonic units, 1...49. |
 | `maxAccel` | How fast the speed number may change, per second. |
 | `smoothing` | 0 snaps (still acceleration-limited). 1 is a slow ease. |
+| `feel` | `lecture`, `medium`, `sports`, or `custom`. A named feel replaces the reaction numbers. |
+| `maxDecel` | Per axis, speed counts per second while slowing down or reversing. |
+| `gentleSpeed` | Per axis, Panasonic cap inside the gentle band. 1…49. |
+| `gain` | Per axis, how fast the curve climbs once they leave the dead zone. 0.5…20. |
+| `axisSmoothing` | Per axis low-pass, 0…1. |
+| `gentle` | Width of the gentle band past the dead zone, fraction of the frame. 0 is one curve. |
+| `fast` | Width of the ramp from the gentle cap up to the full cap. |
+| `hysteresis` | How many times the dead zone a settled axis must be pushed before it moves. 1.05…3. |
+| `jitter` | Error filter. 0 is raw. Near 1, a one-frame spike barely moves the output. |
+| `drift` | Fraction of the frame per second that still counts as standing still. 0 turns it off. |
+| `minSubject` | Smallest box height, fraction of the frame, that will be followed. |
 | `latencyMs` | Video-to-head delay the predictor steps forward by. 0...2000. |
 | `lostHoldMs` | How long to hold still after the person disappears. |
 | `lostAction` | `reacquire` looks again. `stop` goes idle. |

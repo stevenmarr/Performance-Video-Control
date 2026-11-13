@@ -10,13 +10,15 @@
   let view = null;
   let camId = null;
   let timer = null;
+  let liveTimer = null;
   let snapAt = 0;
   let built = '';
 
   const selected = () => (view && view.cameras || []).find((c) => c.id === camId) || (view && view.cameras[0]) || null;
 
-  function field(name, label, value, attrs) {
-    return `<label class="track-field">${label}<input data-k="${name}" value="${esc(value)}" ${attrs || ''}></label>`;
+  const pct = (n) => Math.round(Number(n) * 1000) / 10;
+  function field(name, label, value, attrs, hint, group) {
+    return `<label class="track-field" title="${esc(hint || '')}">${label}<input data-k="${name}" data-group="${group || ''}" value="${esc(value)}" ${attrs || ''}><small>${esc(hint || '')}</small></label>`;
   }
 
   function shell(cam) {
@@ -44,6 +46,10 @@
           <button class="btn mini" type="button" id="trackUnlock">UNLOCK</button>
         </div>
         <p class="note small" id="trackCmd"></p>
+        <div class="section-title">REACTION</div>
+        <div class="modes" id="trackFeel">
+          ${[['lecture', 'SLOW / LECTURE'], ['medium', 'MEDIUM'], ['sports', 'FAST / SPORTS'], ['custom', 'CUSTOM']].map(([id, label]) => `<button type="button" class="mode ${s.feel === id ? 'active' : ''}" data-feel="${id}">${label}</button>`).join('')}
+        </div>
         <div class="section-title">SHOT</div>
         <div class="modes" id="trackPreset">
           ${['wide', 'medium', 'close', 'custom'].map((p) => `<button type="button" class="mode ${s.preset === p ? 'active' : ''}" data-preset="${p}">${p.toUpperCase()}</button>`).join('')}
@@ -52,34 +58,72 @@
           <button type="button" class="mode ${s.detect !== 'face' ? 'active' : ''}" data-detect="body">BODY</button>
           <button type="button" class="mode ${s.detect === 'face' ? 'active' : ''}" data-detect="face">FACE</button>
         </div>
+        <div class="section-title">SENSITIVITY</div>
         <div class="track-grid">
-          ${field('headroom', 'Headroom', f.headroom ?? 0.12, 'type="number" min="0" max="0.45" step="0.01"')}
-          ${field('subjectHeight', 'Subject size', f.subjectHeight ?? 0.55, 'type="number" min="0.05" max="0.95" step="0.01"')}
-          ${field('anchorX', 'Horizontal', f.anchorX ?? 0.5, 'type="number" min="0.1" max="0.9" step="0.01"')}
-          ${field('lead', 'Lead room', f.lead ?? 0.08, 'type="number" min="0" max="0.3" step="0.01"')}
-          ${field('deadX', 'Dead zone X', d.x ?? 0.045, 'type="number" min="0" max="0.4" step="0.005"')}
-          ${field('deadY', 'Dead zone Y', d.y ?? 0.05, 'type="number" min="0" max="0.4" step="0.005"')}
-          ${field('deadSize', 'Size zone', d.size ?? 0.06, 'type="number" min="0" max="0.4" step="0.005"')}
-          ${field('speedPan', 'Max pan', sp.pan ?? 18, 'type="number" min="1" max="49" step="1"')}
-          ${field('speedTilt', 'Max tilt', sp.tilt ?? 14, 'type="number" min="1" max="49" step="1"')}
-          ${field('speedZoom', 'Max zoom', sp.zoom ?? 8, 'type="number" min="1" max="49" step="1"')}
-          ${field('smoothing', 'Smoothing', s.smoothing ?? 0.45, 'type="number" min="0" max="1" step="0.05"')}
-          ${field('latencyMs', 'Latency ms', s.latencyMs ?? 180, 'type="number" min="0" max="2000" step="10"')}
-          ${field('lostHoldMs', 'Lost hold ms', s.lostHoldMs ?? 1200, 'type="number" min="0" max="10000" step="100"')}
-          ${field('overrideResumeMs', 'Resume ms', s.overrideResumeMs ?? 2000, 'type="number" min="0" max="30000" step="100"')}
+          ${field('deadX', 'Dead zone, pan', pct(d.x ?? 0.045), 'data-scale="100" type="number" min="0" max="40" step="0.5"', 'percent of the picture, each side, before pan starts', 'feel')}
+          ${field('deadY', 'Dead zone, tilt', pct(d.y ?? 0.05), 'data-scale="100" type="number" min="0" max="40" step="0.5"', 'percent of the picture, up and down, before tilt starts', 'feel')}
+          ${field('deadSize', 'Dead zone, zoom', pct(d.size ?? 0.06), 'data-scale="100" type="number" min="0" max="40" step="0.5"', 'percent of subject size the zoom will ignore', 'feel')}
+          ${field('minConfidence', 'Confidence', pct(s.minConfidence ?? 0.4), 'data-scale="100" type="number" min="0" max="100" step="5"', 'percent. Boxes below this are ignored', 'feel')}
+          ${field('minSubject', 'Smallest subject', pct(s.minSubject ?? 0.08), 'data-scale="100" type="number" min="0" max="80" step="1"', 'percent of the picture height. Smaller than this is not a person', 'feel')}
+          ${field('lostHoldMs', 'Hold after a loss', s.lostHoldMs ?? 1200, 'type="number" min="0" max="10000" step="100"', 'milliseconds to wait before searching again or stopping', 'feel')}
+          ${field('hysteresis', 'Stickiness', s.hysteresis ?? 1.85, 'type="number" min="1.05" max="3" step="0.05"', 'how far past the dead zone a settled axis must be pushed to move again', 'feel')}
+          ${field('jitter', 'Jitter filter', s.jitter ?? 0.35, 'type="number" min="0" max="0.95" step="0.05"', '0 is raw. Near 1, a one-frame twitch is ignored', 'feel')}
+          ${field('drift', 'Drift ignore', pct(s.drift ?? 0.035), 'data-scale="100" type="number" min="0" max="100" step="0.5"', 'percent of the picture per second that still counts as standing still', 'feel')}
+        </div>
+        <div class="section-title">REACTION TIME</div>
+        <div class="track-grid">
+          ${field('latencyMs', 'Delay', s.latencyMs ?? 180, 'type="number" min="0" max="2000" step="10"', 'milliseconds of picture delay the aim steps forward by', 'feel')}
+          ${field('speedPan', 'Pan speed cap', sp.pan ?? 18, 'type="number" min="1" max="49" step="1"', '1–49, the camera’s own scale. 49 is as fast as the head goes', 'feel')}
+          ${field('speedTilt', 'Tilt speed cap', sp.tilt ?? 14, 'type="number" min="1" max="49" step="1"', '1–49, same scale as pan', 'feel')}
+          ${field('speedZoom', 'Zoom speed cap', sp.zoom ?? 8, 'type="number" min="1" max="49" step="1"', '1–49. Zoom stays off until ZOOM FOLLOWS is on', 'feel')}
+          ${field('accelPan', 'Pan acceleration', (s.maxAccel || {}).pan ?? 70, 'type="number" min="1" max="500" step="1"', 'speed counts per second while speeding up', 'feel')}
+          ${field('accelTilt', 'Tilt acceleration', (s.maxAccel || {}).tilt ?? 60, 'type="number" min="1" max="500" step="1"', 'speed counts per second while speeding up', 'feel')}
+          ${field('accelZoom', 'Zoom acceleration', (s.maxAccel || {}).zoom ?? 30, 'type="number" min="1" max="500" step="1"', 'speed counts per second while speeding up', 'feel')}
+          ${field('decelPan', 'Pan deceleration', (s.maxDecel || {}).pan ?? 90, 'type="number" min="1" max="500" step="1"', 'speed counts per second while slowing down', 'feel')}
+          ${field('decelTilt', 'Tilt deceleration', (s.maxDecel || {}).tilt ?? 80, 'type="number" min="1" max="500" step="1"', 'speed counts per second while slowing down', 'feel')}
+          ${field('decelZoom', 'Zoom deceleration', (s.maxDecel || {}).zoom ?? 40, 'type="number" min="1" max="500" step="1"', 'speed counts per second while slowing down', 'feel')}
+          ${field('smoothPan', 'Pan smoothing', (s.axisSmoothing || {}).pan ?? s.smoothing ?? 0.45, 'type="number" min="0" max="1" step="0.05"', '0 snaps, 1 is a slow ease. Low-pass on the speed', 'feel')}
+          ${field('smoothTilt', 'Tilt smoothing', (s.axisSmoothing || {}).tilt ?? s.smoothing ?? 0.5, 'type="number" min="0" max="1" step="0.05"', '0 snaps, 1 is a slow ease', 'feel')}
+          ${field('smoothZoom', 'Zoom smoothing', (s.axisSmoothing || {}).zoom ?? s.smoothing ?? 0.55, 'type="number" min="0" max="1" step="0.05"', '0 snaps, 1 is a slow ease', 'feel')}
+          ${field('gainPan', 'Pan response', (s.gain || {}).pan ?? 8, 'type="number" min="0.5" max="20" step="0.5"', 'higher reaches the speed cap sooner once they leave the dead zone', 'feel')}
+          ${field('gainTilt', 'Tilt response', (s.gain || {}).tilt ?? 8, 'type="number" min="0.5" max="20" step="0.5"', 'higher reaches the speed cap sooner', 'feel')}
+          ${field('gainZoom', 'Zoom response', (s.gain || {}).zoom ?? 6, 'type="number" min="0.5" max="20" step="0.5"', 'higher reaches the speed cap sooner', 'feel')}
+          ${field('gentle', 'Gentle band', pct(s.gentle ?? 0.05), 'data-scale="100" type="number" min="0" max="50" step="0.5"', 'percent of the picture past the dead zone that stays on the slow cap. 0 is one curve', 'feel')}
+          ${field('fast', 'Fast ramp', pct(s.fast ?? 0.12), 'data-scale="100" type="number" min="0" max="80" step="0.5"', 'percent of the picture spent climbing from the slow cap to the full cap', 'feel')}
+          ${field('gentlePan', 'Gentle pan cap', (s.gentleSpeed || {}).pan ?? 6, 'type="number" min="1" max="49" step="1"', 'camera speed while they are only just outside the dead zone', 'feel')}
+          ${field('gentleTilt', 'Gentle tilt cap', (s.gentleSpeed || {}).tilt ?? 5, 'type="number" min="1" max="49" step="1"', 'camera speed while they are only just outside the dead zone', 'feel')}
+          ${field('gentleZoom', 'Gentle zoom cap', (s.gentleSpeed || {}).zoom ?? 3, 'type="number" min="1" max="49" step="1"', 'camera speed while the size is only just off', 'feel')}
+        </div>
+        <div class="section-title">FRAMING</div>
+        <div class="track-grid">
+          ${field('headroom', 'Headroom', pct(f.headroom ?? 0.12), 'data-scale="100" type="number" min="0" max="45" step="0.5"', 'percent of the picture left empty above them', 'shot')}
+          ${field('subjectHeight', 'Subject size', pct(f.subjectHeight ?? 0.55), 'data-scale="100" type="number" min="5" max="95" step="1"', 'how tall they should be, percent of the picture', 'shot')}
+          ${field('anchorX', 'Horizontal', pct(f.anchorX ?? 0.5), 'data-scale="100" type="number" min="10" max="90" step="1"', 'where they sit, left to right. 50 is the centre', 'shot')}
+          ${field('lead', 'Lead room', pct(f.lead ?? 0.08), 'data-scale="100" type="number" min="0" max="30" step="0.5"', 'percent of the picture left empty in the direction they are walking', 'shot')}
+          ${field('overrideResumeMs', 'Resume after a stick', s.overrideResumeMs ?? 2000, 'type="number" min="0" max="30000" step="100"', 'milliseconds after you let go before tracking takes over again', '')}
         </div>
         <div class="modes">
           <button type="button" class="mode ${s.lostAction === 'stop' ? 'active' : ''}" id="trackLostStop">STOP WHEN LOST</button>
           <button type="button" class="mode ${s.zoomEnabled ? 'active' : ''}" id="trackZoom">ZOOM FOLLOWS</button>
           <button type="button" class="mode ${s.source === 'jpeg' ? 'active' : ''}" id="trackJpeg">JPEG POLL</button>
         </div>
-        <button class="btn mini primary" type="button" id="trackApply">APPLY</button>
-        <p class="note small">A joystick, preset or stop on this camera pauses tracking, then it resumes. JPEG poll uses the snapshot the camera already serves, if the MJPEG address is wrong.</p>
+        <div class="modes">
+          <button class="btn mini primary" type="button" id="trackApply">APPLY</button>
+          <button class="btn mini" type="button" id="trackReset">RESET TO MEDIUM</button>
+        </div>
+        <div class="section-title">THIS CAMERA</div>
+        <div class="track-link">
+          <input id="trackProfileName" placeholder="Profile name" maxlength="40">
+          <button class="btn mini" type="button" id="trackProfileSave">SAVE</button>
+        </div>
+        <div class="modes" id="trackProfiles"></div>
+        <p class="note small">Changes apply while tracking is running. A joystick, preset or stop pauses it. Speeds are the UE150 scale, 1 to 49. A Stream Deck encoder can nudge sensitivity or speed: actions ptz.trackSensitivity and ptz.trackSpeed, or dials named trackSens and trackSpeed.</p>
       </div>
       <div class="panel track-view">
         <div class="section-title">PREVIEW <small>tap a box to lock. Boxes are from the tracker. The still is the camera snapshot.</small></div>
         <div class="track-stage" id="trackStage">
           <img alt="" id="trackImg">
+          <div id="trackGuides"></div>
           <div id="trackBoxes"></div>
           <span class="snap-na" id="trackNa">No snapshot yet</span>
         </div>
@@ -90,14 +134,28 @@
   function readForm() {
     const cam = selected();
     const s = { ...(cam && cam.settings) };
-    const num = (k) => Number(root.querySelector(`[data-k="${k}"]`).value);
+    const num = (k) => { const el = root.querySelector(`[data-k="${k}"]`); return Number(el.value) / Number(el.dataset.scale || 1); };
     s.framing = { headroom: num('headroom'), subjectHeight: num('subjectHeight'), anchorX: num('anchorX'), lead: num('lead') };
     s.deadZone = { x: num('deadX'), y: num('deadY'), size: num('deadSize') };
     s.maxSpeed = { pan: num('speedPan'), tilt: num('speedTilt'), zoom: num('speedZoom') };
-    s.smoothing = num('smoothing');
+    s.maxAccel = { pan: num('accelPan'), tilt: num('accelTilt'), zoom: num('accelZoom') };
+    s.maxDecel = { pan: num('decelPan'), tilt: num('decelTilt'), zoom: num('decelZoom') };
+    s.gentleSpeed = { pan: num('gentlePan'), tilt: num('gentleTilt'), zoom: num('gentleZoom') };
+    s.gain = { pan: num('gainPan'), tilt: num('gainTilt'), zoom: num('gainZoom') };
+    s.axisSmoothing = { pan: num('smoothPan'), tilt: num('smoothTilt'), zoom: num('smoothZoom') };
+    s.smoothing = s.axisSmoothing.pan;
+    s.gentle = num('gentle');
+    s.fast = num('fast');
+    s.hysteresis = num('hysteresis');
+    s.jitter = num('jitter');
+    s.drift = num('drift');
+    s.minConfidence = num('minConfidence');
+    s.minSubject = num('minSubject');
     s.latencyMs = num('latencyMs');
     s.lostHoldMs = num('lostHoldMs');
     s.overrideResumeMs = num('overrideResumeMs');
+    const feelBtn = root.querySelector('#trackFeel .mode.active');
+    s.feel = feelBtn ? feelBtn.dataset.feel : (s.feel || 'custom');
     const presetBtn = root.querySelector('#trackPreset .mode.active');
     s.preset = presetBtn ? presetBtn.dataset.preset : s.preset;
     const detectBtn = root.querySelector('#trackDetect .mode.active');
@@ -114,8 +172,25 @@
     const st = cam.status || {};
     root.querySelector('#trackState').textContent = (st.state || 'off').toUpperCase();
     root.querySelector('#trackFps').textContent = st.fps ? `${Number(st.fps).toFixed(1)} fps` : '';
-    const cmd = st.lastCommand;
-    root.querySelector('#trackCmd').textContent = cmd ? `Last ${cmd.panTilt || ''}  pan ${cmd.pan}  tilt ${cmd.tilt}${cmd.zoom ? `  zoom ${cmd.zoom}` : ''}` : '';
+    const vel = st.velocity || st.lastCommand || {};
+    const signed = (n) => { const v = Math.round(Number(n) || 0); return v > 0 ? `+${v}` : String(v); };
+    root.querySelector('#trackCmd').textContent = `Pan ${signed(vel.pan)}   Tilt ${signed(vel.tilt)}   Zoom ${signed(vel.zoom)}    camera speed, −49 to +49, 0 is stop`;
+    const guides = root.querySelector('#trackGuides');
+    if (guides && cam.settings) {
+      const fr = cam.settings.framing || {};
+      const aim = st.aim || { centerX: fr.anchorX || 0.5, top: fr.headroom || 0.12, height: fr.subjectHeight || 0.55 };
+      const dz = cam.settings.deadZone || { x: 0.045, y: 0.05 };
+      const fw = (aim.height || 0.55) * 0.45;
+      const place = (x, y, w, h) => `left:${(x * 100).toFixed(2)}%;top:${(y * 100).toFixed(2)}%;width:${Math.max(0, w * 100).toFixed(2)}%;height:${Math.max(0, h * 100).toFixed(2)}%`;
+      const cy = aim.top + aim.height / 2;
+      guides.innerHTML = `<div class="track-guide frame" style="${place(aim.centerX - fw / 2, aim.top, fw, aim.height)}"></div><div class="track-guide dead" style="${place(aim.centerX - dz.x, cy - dz.y, dz.x * 2, dz.y * 2)}"></div>`;
+    }
+    const prof = root.querySelector('#trackProfiles');
+    if (prof) {
+      const rows = (view.profiles || []).filter((p) => p.cameraKey === `${ptzId()}:${cam.id}`);
+      const html = rows.map((p) => `<button type="button" class="mode" data-profile="${esc(p.id)}">${esc(p.name)}</button>`).join('') || '<span class="note small">No saved profile for this camera.</span>';
+      if (prof.dataset.h !== html) { prof.dataset.h = html; prof.innerHTML = html; }
+    }
     const link = view.link || {};
     const err = root.querySelector('#trackLinkErr');
     if (document.activeElement !== root.querySelector('#trackHost')) {
@@ -161,6 +236,12 @@
   root.addEventListener('click', (ev) => {
     const camBtn = ev.target.closest('[data-cam]');
     if (camBtn) { camId = camBtn.dataset.cam; built = ''; refresh(); return; }
+    const feel = ev.target.closest('[data-feel]');
+    if (feel) {
+      root.querySelectorAll('#trackFeel .mode').forEach((b) => b.classList.toggle('active', b === feel));
+      post('/settings', { settings: { ...readForm(), feel: feel.dataset.feel } }).catch((e) => toast(e.message, true));
+      return;
+    }
     const preset = ev.target.closest('[data-preset]');
     if (preset) { root.querySelectorAll('#trackPreset .mode').forEach((b) => b.classList.toggle('active', b === preset)); return; }
     const detect = ev.target.closest('[data-detect]');
@@ -173,13 +254,20 @@
       return;
     }
     if (ev.target.id === 'trackApply') {
-      const framingKeys = ['headroom', 'subjectHeight', 'anchorX', 'lead'];
-      const touched = framingKeys.some((k) => root.querySelector(`[data-k="${k}"]`).dataset.dirty === '1');
       const body = { settings: readForm() };
-      if (touched) body.settings.preset = 'custom';
+      if ([...root.querySelectorAll('[data-group="shot"]')].some((el) => el.dataset.dirty === '1')) body.settings.preset = 'custom';
+      if ([...root.querySelectorAll('[data-group="feel"]')].some((el) => el.dataset.dirty === '1')) body.settings.feel = 'custom';
       post('/settings', body).then(() => toast('Tracking settings saved')).catch((e) => toast(e.message, true));
       return;
     }
+    if (ev.target.id === 'trackReset') { post('/reset', {}).then(() => toast('Reset to Medium')).catch((e) => toast(e.message, true)); return; }
+    if (ev.target.id === 'trackProfileSave') {
+      const name = root.querySelector('#trackProfileName').value.trim();
+      post('/profile', { name }).then(() => toast(`Saved “${name}”`)).catch((e) => toast(e.message, true));
+      return;
+    }
+    const profile = ev.target.closest('[data-profile]');
+    if (profile) { post('/profile/load', { id: profile.dataset.profile }).then(() => toast('Profile loaded')).catch((e) => toast(e.message, true)); return; }
     const run = (path, body) => post(path, body).catch((e) => toast(e.message, true));
     if (ev.target.id === 'trackStart') { run('/start', { settings: readForm() }); return; }
     if (ev.target.id === 'trackStop') { run('/stop', {}); return; }
@@ -189,7 +277,15 @@
     if (box) run('/lock', { targetId: box.dataset.target });
   });
   root.addEventListener('input', (ev) => {
-    if (ev.target.dataset && ev.target.dataset.k) ev.target.dataset.dirty = '1';
+    if (!ev.target.dataset || !ev.target.dataset.k) return;
+    ev.target.dataset.dirty = '1';
+    clearTimeout(liveTimer);
+    liveTimer = setTimeout(() => {
+      const body = { settings: readForm() };
+      if (ev.target.dataset.group === 'shot') body.settings.preset = 'custom';
+      if (ev.target.dataset.group === 'feel') body.settings.feel = 'custom';
+      post('/settings', body).catch((e) => toast(e.message, true));
+    }, 250);
   });
 
   function arm() {

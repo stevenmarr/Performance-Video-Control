@@ -176,7 +176,40 @@ final class TrackerRuntime {
         DispatchQueue.main.async { [onState] in onState?(snapshot) }
     }
 
+    /// The tuning window reads this on the main queue.
+    func readTuning(_ done: @escaping ([TuningReadout]) -> Void) {
+        queue.async { [weak self] in
+            guard let self else { DispatchQueue.main.async { done([]) }; return }
+            let rows = self.cameras.keys.sorted().compactMap { id -> TuningReadout? in
+                guard let pipeline = self.cameras[id] else { return nil }
+                let speed = pipeline.session.speeds
+                return TuningReadout(cameraId: id, settings: pipeline.session.settings, phase: pipeline.session.phase, pan: speed.pan, tilt: speed.tilt, zoom: speed.zoom)
+            }
+            DispatchQueue.main.async { done(rows) }
+        }
+    }
+
+    /// A change from the menu-bar window. Pushed to Control Center as a settings message so the page matches.
+    func applyLocal(cameraId: String, settings: TrackingSettings) {
+        queue.async { [weak self] in
+            guard let self, let pipeline = self.cameras[cameraId] else { return }
+            let clean = settings.clamped()
+            pipeline.apply(clean)
+            self.send(TrackerMessage(type: "settings", cameraId: cameraId, settings: clean))
+            self.publish()
+        }
+    }
+
     private func now() -> Double { Date().timeIntervalSince1970 }
+}
+
+struct TuningReadout {
+    var cameraId: String
+    var settings: TrackingSettings
+    var phase: TrackingPhase
+    var pan: Double
+    var tilt: Double
+    var zoom: Double
 }
 
 private final class Pipeline {

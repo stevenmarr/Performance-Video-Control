@@ -71,6 +71,8 @@ public struct TrackerMessage: Codable, Equatable, Sendable {
     public var detections: [StatusDetection]?
     public var lockedTarget: String?
     public var lastCommand: CommandReport?
+    public var aim: Aim?
+    public var velocity: AxisTriple?
     public var code: String?
     public var message: String?
 
@@ -90,6 +92,8 @@ public struct TrackerMessage: Codable, Equatable, Sendable {
         detections: [StatusDetection]? = nil,
         lockedTarget: String? = nil,
         lastCommand: CommandReport? = nil,
+        aim: Aim? = nil,
+        velocity: AxisTriple? = nil,
         code: String? = nil,
         message: String? = nil
     ) {
@@ -108,6 +112,8 @@ public struct TrackerMessage: Codable, Equatable, Sendable {
         self.detections = detections
         self.lockedTarget = lockedTarget
         self.lastCommand = lastCommand
+        self.aim = aim
+        self.velocity = velocity
         self.code = code
         self.message = message
     }
@@ -115,7 +121,7 @@ public struct TrackerMessage: Codable, Equatable, Sendable {
     enum CodingKeys: String, CodingKey {
         case v, type, role, name
         case proto = "protocol"
-        case cameraId, settings, targetId, reason, command, state, fps, detections, lockedTarget, lastCommand, code, message
+        case cameraId, settings, targetId, reason, command, state, fps, detections, lockedTarget, lastCommand, aim, velocity, code, message
     }
 }
 

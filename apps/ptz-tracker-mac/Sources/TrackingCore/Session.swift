@@ -103,7 +103,12 @@ public final class TrackingSession: @unchecked Sendable {
     /// `detections == nil` advances timers only (pause expiry, lost hold) and does not count a missed frame.
     public func tick(detections: [Detection]?, now: Double) -> TickResult {
         if let detections {
-            let usable = detections.filter { $0.kind == settings.detect && $0.confidence >= settings.minConfidence * 0.5 }
+            let floor = settings.resolvedMinSubject
+            let usable = detections.filter {
+                $0.kind == settings.detect
+                    && $0.confidence >= settings.minConfidence
+                    && $0.box.h + 1e-6 >= floor
+            }
             tracks = associator.update(usable, time: now)
         }
         let step = machine.advance(tracks: tracks, now: now, settings: settings)
@@ -126,7 +131,9 @@ public final class TrackingSession: @unchecked Sendable {
             fps: fps,
             detections: tracks.map(StatusDetection.init),
             lockedTarget: lockedId,
-            lastCommand: report
+            lastCommand: report,
+            aim: aim,
+            velocity: speeds.quantized()
         )
     }
 

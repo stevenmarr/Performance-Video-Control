@@ -7,7 +7,9 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const net = require('net');
-const { cleanSettings, loadStore, saveStore, fileFor } = require('../lib/tracking/settings');
+const { cleanSettings, loadStore, saveStore, fileFor, nudge, defaults } = require('../lib/tracking/settings');
+const { actionToRequest } = require('../lib/decks/page-push');
+const deck = require('../lib/deck');
 const { TrackingService } = require('../lib/tracking/service');
 const { FrameDecoder } = require('../lib/tracking/ws');
 const { SystemManager } = require('../lib/systems');
@@ -188,6 +190,57 @@ test('tracking bridge: settings, status, start, and a desk move tells the tracke
     await cam.stop();
     await ctx.teardown();
   }
+});
+
+test('tracking feel, nudge, and the encoder actions stay inside the camera scale', async () => {
+  const lecture = cleanSettings({ feel: 'lecture', smoothing: 0 });
+  const sports = cleanSettings({ feel: 'sports' });
+  assert.ok(lecture.maxSpeed.pan < sports.maxSpeed.pan);
+  assert.ok(lecture.deadZone.x > sports.deadZone.x);
+  assert.ok(lecture.jitter > sports.jitter);
+  for (const speed of [lecture.maxSpeed.pan, lecture.maxSpeed.tilt, lecture.maxSpeed.zoom, sports.maxSpeed.pan, sports.maxSpeed.tilt, sports.maxSpeed.zoom]) {
+    assert.ok(speed >= 1 && speed <= 49);
+  }
+  assert.equal(lecture.smoothing, 0.72, 'a named feel replaces a number sent with it');
+  const kept = cleanSettings({ deadZone: { x: 0.2, y: 0.2, size: 0.2 }, lostAction: 'stop' });
+  assert.equal(kept.feel, 'custom');
+  assert.equal(kept.deadZone.x, 0.2);
+  assert.equal(kept.lostAction, 'stop');
+
+  const nudged = nudge(defaults(), 'deadZone', 1);
+  assert.equal(nudged.feel, 'custom');
+  assert.equal(Math.round(nudged.deadZone.x * 1000), Math.round((defaults().deadZone.x + 0.005) * 1000));
+  assert.equal(nudge(defaults(), 'maxSpeed', 100).maxSpeed.pan, defaults().maxSpeed.pan + 20, 'a detent burst is clamped to 20');
+  assert.equal(nudge({ maxSpeed: { pan: 48, tilt: 14, zoom: 8 } }, 'maxSpeed', 5).maxSpeed.pan, 49);
+  assert.equal(nudge({ deadZone: { x: 0.2, y: 0.2, size: 0.2 } }, 'deadZone', 0, true).deadZone.x, defaults().deadZone.x);
+
+  const sens = actionToRequest({ action: 'ptz.trackSensitivity', options: { steps: 1 } });
+  assert.equal(sens.path, '/api/sys/ptz/tracking/tune');
+  assert.equal(sens.body.param, 'deadZone');
+  assert.equal(sens.body.steps, 1);
+  const speed = actionToRequest({ action: 'ptz.trackSpeed', instance: 'ptz-ab12', options: { steps: -2 } });
+  assert.equal(speed.path, '/api/sys/ptz-ab12/tracking/tune');
+  assert.equal(speed.body.steps, -2);
+  const dial = deck.plan({ gesture: 'dial', widget: 'trackSens', event: 'rotate', ticks: 2, snapshot: { selected: 'cam1' } });
+  assert.equal(dial.requests[0].path, '/api/sys/ptz/tracking/tune');
+  assert.equal(dial.requests[0].body.param, 'deadZone');
+  assert.equal(dial.requests[0].body.steps, 2);
+  assert.equal(dial.requests[0].body.cam, 'cam1');
+  const reset = deck.plan({ gesture: 'dial', widget: 'trackSpeed', event: 'reset', snapshot: { selected: 'cam1' } });
+  assert.equal(reset.requests[0].body.reset, true);
+  assert.equal(reset.requests[0].body.param, 'maxSpeed');
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ptz-track-'));
+  const svc = new TrackingService({ dataDir: dir, cameras: () => [{ id: 'cam1', name: 'Wide', host: '127.0.0.1', port: 80 }] });
+  try {
+    const saved = svc.saveProfile('ptz', { cam: 'cam1', name: 'Choir' });
+    assert.equal(saved.profiles.length, 1);
+    svc.tune('ptz', { cam: 'cam1', param: 'maxSpeed', steps: 2 });
+    assert.equal(svc.view('ptz').cameras[0].settings.maxSpeed.pan, defaults().maxSpeed.pan + 2);
+    const loaded = svc.loadProfile('ptz', { cam: 'cam1', id: saved.profiles[0].id });
+    assert.equal(loaded.cameras[0].settings.maxSpeed.pan, defaults().maxSpeed.pan);
+    assert.equal(JSON.stringify(JSON.parse(fs.readFileSync(fileFor(dir), 'utf8'))).includes('12345'), false);
+  } finally { svc.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('tracking service does not connect until a link is saved', () => {

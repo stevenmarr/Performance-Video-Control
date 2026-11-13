@@ -10,6 +10,7 @@ import TrackingCore
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var runtime: TrackerRuntime?
     private let menu = MenuController()
+    private var tuning: TuningWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -20,6 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.runtime = runtime
         menu.onQuit = { NSApp.terminate(nil) }
+        menu.onTune = { [weak self] in self?.showTuning() }
         runtime.start()
     }
 
@@ -29,11 +31,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         return runtime == nil ? .terminateNow : .terminateLater
     }
+
+    private func showTuning() {
+        guard let runtime else { return }
+        if tuning == nil { tuning = TuningWindow(runtime: runtime) }
+        tuning?.show()
+    }
 }
 
 final class MenuController: NSObject {
     private var item: NSStatusItem?
     var onQuit: (() -> Void)?
+    var onTune: (() -> Void)?
 
     func update(_ snapshot: TrackerSnapshot) {
         if item == nil {
@@ -62,12 +71,16 @@ final class MenuController: NSObject {
             }
         }
         menu.addItem(.separator())
+        let tune = NSMenuItem(title: "Tuning…", action: #selector(openTuning), keyEquivalent: "t")
+        tune.target = self
+        menu.addItem(tune)
         let quit = NSMenuItem(title: "Quit PTZ Tracker", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
         item.menu = menu
     }
 
+    @objc private func openTuning() { onTune?() }
     @objc private func quit() { onQuit?() }
 }
 

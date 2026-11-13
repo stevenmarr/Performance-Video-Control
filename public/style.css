@@ -1457,6 +1457,11 @@ nav.tabs{padding:0 6px}
 .track-box{position:absolute;border:2px solid #3b8cff;background:rgba(59,140,255,.12);color:#fff;padding:0}
 .track-box.locked{border-color:#18c35a;background:rgba(24,195,90,.15)}
 .track-box span{position:absolute;left:0;top:0;font:700 11px/1.2 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.55);padding:1px 4px}
+.track-field small{font-weight:500;letter-spacing:0;line-height:1.25}
+#trackGuides{position:absolute;inset:0;pointer-events:none}
+.track-guide{position:absolute;box-sizing:border-box}
+.track-guide.frame{border:1px solid rgba(255,255,255,.85)}
+.track-guide.dead{border:1px dashed #f0a500;background:rgba(240,165,0,.08)}
 .track-stage .snap-na{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dim);font-weight:700}
 .track-stage .snap-na[hidden]{display:none}
 @media (max-width:900px){.track-layout{grid-template-columns:1fr}}

@@ -99,22 +99,85 @@ Unsigned is enough for the show Macs. Nothing in the build requires a certificat
 
 Do not sandbox the first build. A sandbox needs an entitlements file (`com.apple.security.network.client` and `.server`) and a different test pass. Add that file when you sign, not before.
 
-## Tuning
+## Controls
 
-Start from the defaults. Change one thing and watch a walk, not a still person.
+The same numbers live on PTZ → TRACKING and in the menu-bar app’s **Tuning…** window. A change on the page is sent to the Mac immediately, including while it is already tracking. A change in the Mac window is sent back and saved in `ptz-tracking.json`. Speeds are the Panasonic scale used by `#PTS` and `#Z`: **1** is a creep, **49** is as fast as the head will go, **0** is stop.
+
+Three reaction presets set the whole feel. The shot (wide / medium / close) is separate.
+
+| Feel | What it is for | Pan cap | Dead zone, pan | Smoothing | Delay |
+|---|---|---|---|---|---|
+| Slow / Lecture | Someone who shifts their weight and should not be chased | 10 | 8% of the picture | 0.72 | 240 ms |
+| Medium | The default | 18 | 4.5% | 0.45 | 180 ms |
+| Fast / Sports | A person who actually crosses the stage | 36 | 2.5% | 0.18 | 100 ms |
+
+Custom keeps whatever you type. Nudging a number, including from a Stream Deck encoder, switches the feel to Custom so the preset does not put the number back.
+
+### Sensitivity
+
+| Control | Unit | Medium | What to do |
+|---|---|---|---|
+| Dead zone, pan / tilt / zoom | Percent of the picture | 4.5% / 5% / 6% | How far they can move before that axis starts. Raise it if the head chases breathing. |
+| Confidence | Percent | 40% | Boxes the detector is less sure about are ignored. Raise it if a coat on a chair gets locked. |
+| Smallest subject | Percent of the picture height | 8% | Shorter than this is not treated as a person. |
+| Hold after a loss | Milliseconds | 1200 | How long the head waits, stopped, after they disappear. Then it searches again, or stops for good if STOP WHEN LOST is on. |
+| Stickiness | Times the dead zone | 1.85 | Once an axis has settled, the error must grow this far past the dead zone before it moves again. Stops the head ticking on the edge. |
+| Jitter filter | 0 raw, near 1 heavy | 0.35 | A one-frame twitch is blended away. Raise it if the box flickers. |
+| Drift ignore | Percent of the picture per second | 3.5% | Motion slower than this, and still inside the release band, is treated as standing still. |
+
+### Reaction time
+
+Each of pan, tilt and zoom has its own cap, acceleration, deceleration, smoothing and response.
+
+| Control | Unit | Medium (pan) | What to do |
+|---|---|---|---|
+| Delay | Milliseconds | 180 | How far ahead the aim is placed, to cover the lag between the picture and the head. Raise it if the head sits behind a walk. |
+| Speed cap | Camera speed, 1–49 | 18 | The fastest that axis will be told to go. 49 is a whip. |
+| Acceleration | Speed counts per second | 70 | How fast the speed number may rise. Lower it if the start is abrupt. |
+| Deceleration | Speed counts per second | 90 | How fast the speed number may fall, including a reversal. Raise it if the head coasts past them. |
+| Smoothing | 0 snaps, 1 eases | 0.45 | A low-pass on the speed command, after the cap. |
+| Response | 0.5–20 | 8 | How quickly the curve climbs toward the cap once they leave the dead zone. |
+| Gentle band | Percent of the picture past the dead zone | 5% | Inside this band the speed is held to the gentle cap. 0 means one curve all the way to the full cap. |
+| Gentle cap | Camera speed, 1–49 | 6 | The slow speed used in that band. |
+| Fast ramp | Percent of the picture | 12% | How wide the climb is from the gentle cap up to the full cap. |
+
+### Framing, profiles, overlay
+
+Headroom, subject size, horizontal position and lead room are the shot, not the reaction. They are percents of the picture. 50% horizontal is the centre.
+
+SAVE on THIS CAMERA stores the current numbers under a name for that camera. Tap the name to recall it. RESET TO MEDIUM puts the reaction and the shot back to the Medium / medium-shot defaults and turns zoom off. The stream choice and face-or-body choice are kept.
+
+The preview draws two boxes. The solid one is the framing box (where they should sit, and how tall). The dashed amber one is the dead zone around that aim. The line under the state is the speed command right now: pan, tilt, zoom, on the camera’s −49…+49 scale.
+
+### Stream Deck
+
+A library button or encoder can use these action ids. One step is one detent. A long press on the matching dial resets that control to Medium.
+
+| Action | What one step does |
+|---|---|
+| `ptz.trackSensitivity` | Dead zone, all three axes, by 0.5% of the picture |
+| `ptz.trackSpeed` | Pan and tilt speed caps, by 1 (zoom cap stays put) |
+| `ptz.trackSmoothing` | Smoothing, by 0.05, on all three axes |
+| `ptz.trackLatency` | Delay, by 20 ms |
+| `ptz.trackConfidence` | Confidence, by 5% |
+
+On a + / + XL dial the widget names are `trackSens` and `trackSpeed`. They are not on a built-in page. A saved layout can name the dial. Rotate sends the steps. A long press resets that one control.
+
+### If the head…
 
 | If the head… | Try |
 |---|---|
-| chases breathing and small shifts | Raise the dead zone a little. |
-| starts or stops too suddenly | Raise smoothing, or lower max acceleration. |
-| never quite catches a walk | Raise max pan, a little. 49 is a whip. |
-| sits behind a fast walk | Raise latency, in steps of about 30 ms, toward the real video delay. |
-| hunts left and right | Lower max speed and raise smoothing before you touch the dead zone again. |
-| frames the head against the top | Raise headroom, or use Wide. |
+| chases breathing and small shifts | Slow / Lecture, or raise the dead zone and the jitter filter. |
+| starts too suddenly | Lower pan acceleration, or raise pan smoothing. |
+| coasts past them | Raise pan deceleration. |
+| never quite catches a walk | Fast / Sports, or raise the pan cap a little. Stay well under 49. |
+| sits behind a fast walk | Raise the delay, about 30 ms at a time. |
+| hunts left and right | Lower the pan cap and raise smoothing before you shrink the dead zone. |
+| ticks on the edge of the zone | Raise stickiness. |
+| locks a coat on a chair | Raise confidence, or the smallest-subject percent. |
+| frames them against the top | Raise headroom, or use the Wide shot. |
 | leaves no room in front of a walk | Raise lead room. |
-| zooms in and out on its own | Leave zoom off until pan and tilt are calm. |
-
-Lost hold of about a second covers a person passing in front of the subject. Longer than that and the head is frozen while the show has moved on.
+| zooms in and out | Leave ZOOM FOLLOWS off until pan and tilt are calm. |
 
 ## Real UE150 checklist
 

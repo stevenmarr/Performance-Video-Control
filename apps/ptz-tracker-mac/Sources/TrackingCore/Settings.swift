@@ -24,6 +24,18 @@ public enum ShotPreset: String, Codable, Equatable, Sendable {
     }
 }
 
+/// How quickly the head is willing to move. Separate from the shot size (`ShotPreset`).
+public enum Feel: String, Codable, Equatable, Sendable {
+    /// Wide dead zone, low speeds, heavy filtering. A lecturer who shifts their weight.
+    case lecture
+    /// The show default. One curve up to a moderate cap.
+    case medium
+    /// Tight dead zone, high caps, light filtering.
+    case sports
+    /// The stored numbers, not a built-in table.
+    case custom
+}
+
 public enum LostAction: String, Codable, Equatable, Sendable {
     /// Drop the lock and look again. One person in frame is taken automatically when auto-lock is on.
     case reacquire
@@ -116,6 +128,28 @@ public struct TrackingSettings: Codable, Equatable, Sendable {
     public var source: VideoInput
     public var streamUrl: String
     public var control: CameraEndpoint?
+    /// Missing on a settings object from before feel presets. Nil keeps the stored numbers.
+    public var feel: Feel?
+    /// Speed counts per second when slowing down. Nil uses `maxAccel`.
+    public var maxDecel: AxisLimits?
+    /// Panasonic cap inside the gentle band. Nil is about 40% of `maxSpeed`.
+    public var gentleSpeed: AxisLimits?
+    /// How fast the curve climbs, per axis. Nil is 8.
+    public var gain: AxisLimits?
+    /// Low-pass strength per axis. Nil uses the single `smoothing` value.
+    public var axisSmoothing: AxisLimits?
+    /// Width of the gentle band past the dead zone, as a fraction of the frame. Nil or 0 is one curve.
+    public var gentle: Double?
+    /// Width of the ramp from the gentle cap up to full speed. Nil or 0 skips the ramp.
+    public var fast: Double?
+    /// How far past the dead zone a settled axis must be pushed before it moves again. Nil is 1.85.
+    public var hysteresis: Double?
+    /// Error filter. 0 is raw. Near 1, a one-frame spike barely moves the output.
+    public var jitter: Double?
+    /// Fraction of the frame per second that still counts as creep. 0 turns this off.
+    public var drift: Double?
+    /// Smallest subject height, as a fraction of the frame, that tracking will follow. 0 follows any box.
+    public var minSubject: Double?
 
     public init(
         detect: DetectMode = .body,
@@ -135,7 +169,18 @@ public struct TrackingSettings: Codable, Equatable, Sendable {
         minConfidence: Double = 0.4,
         source: VideoInput = .mjpeg,
         streamUrl: String = "",
-        control: CameraEndpoint? = nil
+        control: CameraEndpoint? = nil,
+        feel: Feel? = nil,
+        maxDecel: AxisLimits? = nil,
+        gentleSpeed: AxisLimits? = nil,
+        gain: AxisLimits? = nil,
+        axisSmoothing: AxisLimits? = nil,
+        gentle: Double? = nil,
+        fast: Double? = nil,
+        hysteresis: Double? = nil,
+        jitter: Double? = nil,
+        drift: Double? = nil,
+        minSubject: Double? = nil
     ) {
         self.detect = detect
         self.preset = preset
@@ -155,6 +200,34 @@ public struct TrackingSettings: Codable, Equatable, Sendable {
         self.source = source
         self.streamUrl = streamUrl
         self.control = control
+        self.feel = feel
+        self.maxDecel = maxDecel
+        self.gentleSpeed = gentleSpeed
+        self.gain = gain
+        self.axisSmoothing = axisSmoothing
+        self.gentle = gentle
+        self.fast = fast
+        self.hysteresis = hysteresis
+        self.jitter = jitter
+        self.drift = drift
+        self.minSubject = minSubject
+    }
+
+    public var resolvedGentle: Double { min(0.5, max(0, gentle ?? 0)) }
+    public var resolvedFast: Double { min(0.8, max(0, fast ?? 0)) }
+    public var resolvedHysteresis: Double { min(3, max(1.05, hysteresis ?? 1.85)) }
+    public var resolvedJitter: Double { min(0.95, max(0, jitter ?? 0)) }
+    public var resolvedDrift: Double { min(1, max(0, drift ?? 0)) }
+    public var resolvedMinSubject: Double { min(0.8, max(0, minSubject ?? 0)) }
+    public var resolvedDecel: AxisLimits { maxDecel ?? maxAccel }
+    public var resolvedGain: AxisLimits { gain ?? AxisLimits(pan: 8, tilt: 8, zoom: 8) }
+    public var resolvedAxisSmoothing: AxisLimits { axisSmoothing ?? AxisLimits(pan: smoothing, tilt: smoothing, zoom: smoothing) }
+    public var resolvedGentleSpeed: AxisLimits {
+        gentleSpeed ?? AxisLimits(
+            pan: max(1, maxSpeed.pan * 0.4),
+            tilt: max(1, maxSpeed.tilt * 0.4),
+            zoom: max(1, maxSpeed.zoom * 0.4)
+        )
     }
 
     /// Preset numbers win until the operator picks Custom. Then the stored framing is used.
@@ -192,6 +265,24 @@ public struct TrackingSettings: Codable, Equatable, Sendable {
             tilt: accelLimit(s.maxAccel.tilt),
             zoom: accelLimit(s.maxAccel.zoom)
         )
+        if let decel = s.maxDecel {
+            s.maxDecel = AxisLimits(pan: accelLimit(decel.pan), tilt: accelLimit(decel.tilt), zoom: accelLimit(decel.zoom))
+        }
+        if let gentleSpeed = s.gentleSpeed {
+            s.gentleSpeed = AxisLimits(pan: speedLimit(gentleSpeed.pan), tilt: speedLimit(gentleSpeed.tilt), zoom: speedLimit(gentleSpeed.zoom))
+        }
+        if let gain = s.gain {
+            s.gain = AxisLimits(pan: min(20, max(0.5, gain.pan)), tilt: min(20, max(0.5, gain.tilt)), zoom: min(20, max(0.5, gain.zoom)))
+        }
+        if let axisSmoothing = s.axisSmoothing {
+            s.axisSmoothing = AxisLimits(pan: clampUnit(axisSmoothing.pan), tilt: clampUnit(axisSmoothing.tilt), zoom: clampUnit(axisSmoothing.zoom))
+        }
+        if let gentle = s.gentle { s.gentle = min(0.5, max(0, gentle)) }
+        if let fast = s.fast { s.fast = min(0.8, max(0, fast)) }
+        if let hysteresis = s.hysteresis { s.hysteresis = min(3, max(1.05, hysteresis)) }
+        if let jitter = s.jitter { s.jitter = min(0.95, max(0, jitter)) }
+        if let drift = s.drift { s.drift = min(1, max(0, drift)) }
+        if let minSubject = s.minSubject { s.minSubject = min(0.8, max(0, minSubject)) }
         if s.preset != .custom {
             s.framing = s.preset.builtIn
         }
@@ -199,11 +290,83 @@ public struct TrackingSettings: Codable, Equatable, Sendable {
     }
 }
 
+/// Built-in reaction tables. The same numbers live in `lib/tracking/settings.js` (`FEELS`).
+public enum FeelLibrary {
+    public static func apply(_ feel: Feel, to base: TrackingSettings) -> TrackingSettings {
+        guard feel != .custom else {
+            var custom = base
+            custom.feel = .custom
+            return custom.clamped()
+        }
+        var s = base
+        s.feel = feel
+        switch feel {
+        case .lecture:
+            s.deadZone = DeadZone(x: 0.08, y: 0.09, size: 0.1)
+            s.maxSpeed = AxisLimits(pan: 10, tilt: 8, zoom: 4)
+            s.maxAccel = AxisLimits(pan: 28, tilt: 22, zoom: 12)
+            s.maxDecel = AxisLimits(pan: 40, tilt: 32, zoom: 16)
+            s.gentleSpeed = AxisLimits(pan: 3, tilt: 2, zoom: 2)
+            s.gain = AxisLimits(pan: 5, tilt: 5, zoom: 4)
+            s.axisSmoothing = AxisLimits(pan: 0.72, tilt: 0.75, zoom: 0.8)
+            s.smoothing = 0.72
+            s.latencyMs = 240
+            s.lostHoldMs = 2000
+            s.minConfidence = 0.35
+            s.minSubject = 0.1
+            s.gentle = 0.08
+            s.fast = 0.2
+            s.hysteresis = 2.2
+            s.jitter = 0.7
+            s.drift = 0.06
+        case .medium:
+            s.deadZone = DeadZone(x: 0.045, y: 0.05, size: 0.06)
+            s.maxSpeed = AxisLimits(pan: 18, tilt: 14, zoom: 8)
+            s.maxAccel = AxisLimits(pan: 70, tilt: 60, zoom: 30)
+            s.maxDecel = AxisLimits(pan: 90, tilt: 80, zoom: 40)
+            s.gentleSpeed = AxisLimits(pan: 6, tilt: 5, zoom: 3)
+            s.gain = AxisLimits(pan: 8, tilt: 8, zoom: 6)
+            s.axisSmoothing = AxisLimits(pan: 0.45, tilt: 0.5, zoom: 0.55)
+            s.smoothing = 0.45
+            s.latencyMs = 180
+            s.lostHoldMs = 1200
+            s.minConfidence = 0.4
+            s.minSubject = 0.08
+            s.gentle = 0.05
+            s.fast = 0.12
+            s.hysteresis = 1.85
+            s.jitter = 0.35
+            s.drift = 0.035
+        case .sports:
+            s.deadZone = DeadZone(x: 0.025, y: 0.03, size: 0.04)
+            s.maxSpeed = AxisLimits(pan: 36, tilt: 28, zoom: 16)
+            s.maxAccel = AxisLimits(pan: 160, tilt: 130, zoom: 70)
+            s.maxDecel = AxisLimits(pan: 200, tilt: 170, zoom: 90)
+            s.gentleSpeed = AxisLimits(pan: 12, tilt: 10, zoom: 6)
+            s.gain = AxisLimits(pan: 12, tilt: 12, zoom: 10)
+            s.axisSmoothing = AxisLimits(pan: 0.18, tilt: 0.22, zoom: 0.3)
+            s.smoothing = 0.18
+            s.latencyMs = 100
+            s.lostHoldMs = 600
+            s.minConfidence = 0.5
+            s.minSubject = 0.05
+            s.gentle = 0.02
+            s.fast = 0.06
+            s.hysteresis = 1.3
+            s.jitter = 0.15
+            s.drift = 0.015
+        case .custom:
+            break
+        }
+        return s.clamped()
+    }
+}
+
 private func clampUnit(_ value: Double) -> Double { min(1, max(0, value)) }
 private func speedLimit(_ value: Double) -> Double { min(49, max(1, value)) }
 private func accelLimit(_ value: Double) -> Double { min(500, max(1, value)) }
 
-public struct Aim: Equatable, Sendable {
+public struct Aim: Codable, Equatable, Sendable {
     public var centerX: Double
     public var top: Double
     public var height: Double
