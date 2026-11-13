@@ -524,3 +524,25 @@ test('NEC power, Samsung MDC, Ultimatte density and Wake-on-LAN match the publis
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('Epson opens ESC/VP.net and then sends PWR ON', async () => {
+  const lines = [];
+  const server = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(server);
+  const desk = new ModuleDesk();
+  try {
+    const row = desk.create('epson-projector', { connection: { host: '127.0.0.1', port, delimiter: '\\r', reconnect: false } });
+    await desk.connect(row.id);
+    await desk.run(row.id, 'on');
+    await desk.run(row.id, 'hdmi1');
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const text = Buffer.concat(lines);
+    assert.equal(text.slice(0, 16).toString('hex'), '4553432f56502e6e6574100300000000');
+    assert.ok(text.includes(Buffer.from('PWR ON\r')));
+    assert.ok(text.includes(Buffer.from('SOURCE 30\r')));
+    assert.equal(text.indexOf(Buffer.from('PWR ON')), 16);
+  } finally {
+    desk.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

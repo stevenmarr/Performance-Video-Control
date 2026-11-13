@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **98**. Partial: **0**. Not yet: **1000**.
+Companion connection types: **1098**. Implemented: **99**. Partial: **0**. Not yet: **999**.
 
 ## Systems in this build
 
@@ -83,6 +83,7 @@ Companion connection types: **1098**. Implemented: **98**. Partial: **0**. Not y
 | Samsung MDC (`samsung-mdc`) | implemented | 2 | 1 | 1 | official | https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf |
 | Blackmagic Ultimatte (`bmd-ultimatte`) | implemented | 2 | 2 | 1 | official | https://documents.blackmagicdesign.com/DeveloperManuals/UltimatteEthernetProtocol.pdf |
 | Wake-on-LAN (`wake-on-lan`) | implemented | 1 | 1 | 1 | official | https://www.amd.com/content/dam/amd/en/documents/archived-tech-docs/white-papers/20213.pdf |
+| Epson projector (`epson-projector`) | implemented | 6 | 2 | 1 | official | https://files.support.epson.com/docid/cpd6/cpd65860/EN/Monitoring/Reference/esc_vp21_command_list.html |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -98,6 +99,8 @@ Companion connection types: **1098**. Implemented: **98**. Partial: **0**. Not y
 | Magewell (`magewell`) | not yet | 0 | 0 | 0 | official | https://www.magewell.com/developer/27/detail |
 | Green Hippo Hippotizer (`hippotizer`) | not yet | 0 | 0 | 0 | official | https://support.green-hippo.com/hc/en-gb/articles/29184031287442-NDI-Troubleshooting |
 | TriCaster (`tricaster`) | not yet | 0 | 0 | 0 | official | https://vizrt.my.site.com/knowledgebase/s/article/TriCaster-remote-control-port |
+| Soundcraft Ui (`soundcraft-ui`) | not yet | 0 | 0 | 0 | official | https://www.soundcraft.com/ |
+| Kiloview (`kiloview`) | not yet | 0 | 0 | 0 | official | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
 
 ## Notes on sources
 
@@ -436,7 +439,7 @@ Companion connection types: **1098**. Implemented: **98**. Partial: **0**. Not y
 | `elgato-keylight` | not yet | — | — |
 | `emotimo-st4` | not yet | — | — |
 | `epiphan-pearl` | not yet | — | — |
-| `epson-businesspj` | not yet | — | — |
+| `epson-businesspj` | implemented | epson-projector | https://files.support.epson.com/docid/cpd6/cpd65860/EN/Monitoring/Reference/esc_vp21_command_list.html |
 | `equipson-lightshark` | not yet | — | — |
 | `ereca-stageracer` | not yet | — | — |
 | `esphome-api` | not yet | — | — |
@@ -633,12 +636,12 @@ Companion connection types: **1098**. Implemented: **98**. Partial: **0**. Not y
 | `jvc-ptz` | not yet | — | — |
 | `kenku-fm` | not yet | — | — |
 | `kernels-powersequencer` | not yet | — | — |
-| `kiloview-4kconverter` | not yet | — | — |
-| `kiloview-cuber1` | not yet | — | — |
-| `kiloview-cubex1` | not yet | — | — |
-| `kiloview-decoder` | not yet | — | — |
-| `kiloview-encoder` | not yet | — | — |
-| `kiloview-mediagateway` | not yet | — | — |
+| `kiloview-4kconverter` | not yet | kiloview | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
+| `kiloview-cuber1` | not yet | kiloview | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
+| `kiloview-cubex1` | not yet | kiloview | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
+| `kiloview-decoder` | not yet | kiloview | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
+| `kiloview-encoder` | not yet | kiloview | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
+| `kiloview-mediagateway` | not yet | kiloview | https://www.kiloview.com/en/docs/device-http-api/description-of-http-api/ |
 | `kiloview-ndi` | not yet | ndi | https://ndi.video/for-developers/ndi-sdk/ |
 | `kinetra-graphics` | not yet | — | — |
 | `kissbox-gpio` | not yet | — | — |
@@ -1025,7 +1028,7 @@ Companion connection types: **1098**. Implemented: **98**. Partial: **0**. Not y
 | `sony-srg-a12` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `sony-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `soonia-events` | not yet | — | — |
-| `soundcraft-ui` | not yet | — | — |
+| `soundcraft-ui` | not yet | soundcraft-ui | https://www.soundcraft.com/ |
 | `sounddevices-pixnet` | not yet | — | — |
 | `soundtrack-remote` | not yet | — | — |
 | `spaceage-visibox` | not yet | — | — |
