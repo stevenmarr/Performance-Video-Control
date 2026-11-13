@@ -71,6 +71,7 @@
   <button class="tab x-only" data-tab="amacros" data-cap="atemMacros" data-sys="atem">MACROS</button>
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
   <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
+  <button class="tab x-only" data-tab="ptrack" data-cap="ptzControl" data-sys="ptz">TRACKING</button>
   <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras" data-sys="ptz">CAMERAS</button>
   <span class="tab-group x-only pixera-grp" data-grp="pixera">PIXERA</span>
   <button class="tab x-only" data-tab="pxplay" data-cap="pixeraTransport" data-sys="pixera">TIMELINES</button>
@@ -466,6 +467,12 @@
       </div>
     </div>
   </section>
+  <section class="grid-wrap pane" id="pane-ptrack" hidden>
+    <div class="board-head">
+      <div class="section-title">TRACKING <small>the Mac app follows one person. This page holds the settings. Tracking keeps going if the browser closes.</small></div>
+    </div>
+    <div id="trackRoot"></div>
+  </section>
   <section class="grid-wrap pane" id="pane-pcams" hidden>
     <div class="section-title">PTZ CAMERAS <small>every camera under this system · add, edit, remove · status polled every 3 s</small></div>
     <div id="ptzCamList" class="rows"></div>
@@ -838,6 +845,7 @@
 <script src="/atem-ext.js"></script>
 <script src="/atem-layout.js"></script>
 <script src="/ptz.js"></script>
+<script src="/tracking.js"></script>
 <script src="/pixera.js"></script>
 <script src="/millumin.js"></script>
 <script src="/companion.js"></script>
