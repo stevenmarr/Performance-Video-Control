@@ -30,6 +30,22 @@ test('Ki Pro record and KUMO crosspoint use the AJA /config parameters', async (
   }
 });
 
+test('XPression TAKE uses the RossTalk framebuffer form', async () => {
+  const lines = [];
+  const server = net.createServer((sock) => sock.on('data', (buf) => { lines.push(buf.toString()); sock.write('OK\r\n'); }));
+  const port = await listen(server);
+  const desk = new ModuleDesk();
+  try {
+    const row = desk.create('ross-xpression', { connection: { host: '127.0.0.1', port } });
+    await desk.connect(row.id);
+    await desk.run(row.id, 'take', { take: '5', buffer: 0, layer: 7, expect: 'OK' });
+    assert.ok(lines.some((l) => l.includes('TAKE 5:0:7')));
+  } finally {
+    desk.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test('SmartView brightness is the Ethernet protocol block', async () => {
   const lines = [];
   const server = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf.toString())));

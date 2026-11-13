@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **51**. Partial: **0**. Not yet: **1047**.
+Companion connection types: **1098**. Implemented: **52**. Partial: **0**. Not yet: **1046**.
 
 ## Systems in this build
 
@@ -45,6 +45,7 @@ Companion connection types: **1098**. Implemented: **51**. Partial: **0**. Not y
 | AJA Ki Pro (`aja-kipro`) | implemented | 5 | 2 | 1 | official | https://www.aja.com/support/item/4184 |
 | AJA KUMO (`aja-kumo`) | implemented | 2 | 3 | 1 | official | https://www.aja.com/support/item/9616 |
 | Blackmagic SmartView (`bmd-smartview`) | implemented | 3 | 3 | 1 | official | https://documents.blackmagicdesign.com/UserManuals/SmartViewManual.pdf |
+| Ross XPression (`ross-xpression`) | implemented | 15 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 
 ## Notes on sources
 
@@ -882,7 +883,7 @@ Companion connection types: **1098**. Implemented: **51**. Partial: **0**. Not y
 | `rossvideo-nkrouter` | not yet | — | — |
 | `rossvideo-rosstalk` | implemented | ross-rosstalk | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | `rossvideo-videoserver` | not yet | — | — |
-| `rossvideo-xpression` | not yet | — | — |
+| `rossvideo-xpression` | implemented | ross-xpression | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | `rtw-touchmonitor` | not yet | — | — |
 | `rundown-studio` | not yet | — | — |
 | `saccani-live-studio` | not yet | — | — |
