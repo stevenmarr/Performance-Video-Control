@@ -182,3 +182,38 @@ test('LW3, Extron SIS and Kramer Protocol 3000 send the published route lines', 
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('HELO record, Teranex output mode and Streaming Encoder start use the published commands', async () => {
+  const seen = [];
+  const httpServer = http.createServer((req, res) => { seen.push(req.url); res.writeHead(200); res.end('{"value":"1"}'); });
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf.toString())));
+  const httpPort = await listen(httpServer);
+  const tcpPort = await listen(tcp);
+  const desk = new ModuleDesk();
+  try {
+    const helo = desk.create('aja-helo', { connection: { host: '127.0.0.1', port: httpPort } });
+    const armed = await desk.run(helo.id, 'record');
+    assert.equal(armed.pending, true);
+    await desk.run(helo.id, 'record');
+    await desk.run(helo.id, 'recordingprofile', { profile: 2 });
+    assert.ok(seen.some((u) => u.includes('eParamID_ReplicatorCommand') && u.includes('value=1')));
+    assert.ok(seen.some((u) => u.includes('eParamID_RecordingProfileSel') && u.includes('value=2')));
+    const teranex = desk.create('bmd-teranex', { connection: { host: '127.0.0.1', port: tcpPort, delimiter: '\\n', reconnect: false } });
+    await desk.connect(teranex.id);
+    await desk.run(teranex.id, 'output', { mode: '1080i5994' });
+    const stream = desk.create('bmd-streaming', { connection: { host: '127.0.0.1', port: tcpPort, delimiter: '\\n', reconnect: false } });
+    await desk.connect(stream.id);
+    const live = await desk.run(stream.id, 'start');
+    assert.equal(live.pending, true);
+    await desk.run(stream.id, 'start');
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const text = lines.join('');
+    assert.match(text, /VIDEO OUTPUT:\nVideo mode: 1080i5994\n/);
+    assert.match(text, /STREAM STATE:\nAction: Start\n/);
+  } finally {
+    desk.close();
+    await new Promise((resolve) => httpServer.close(resolve));
+    await new Promise((resolve) => tcp.close(resolve));
+  }
+});

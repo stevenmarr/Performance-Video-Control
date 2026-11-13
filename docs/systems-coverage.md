@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **65**. Partial: **0**. Not yet: **1033**.
+Companion connection types: **1098**. Implemented: **68**. Partial: **0**. Not yet: **1030**.
 
 ## Systems in this build
 
@@ -48,6 +48,9 @@ Companion connection types: **1098**. Implemented: **65**. Partial: **0**. Not y
 | Lightware LW3 (`lightware-lw3`) | implemented | 3 | 2 | 1 | official | https://www.lightware.com/en/support/open-api |
 | Extron SIS matrix (`extron-sis`) | implemented | 5 | 2 | 1 | official | https://media.extron.com/public/download/files/userman/68-2368-51_B.pdf |
 | Kramer Protocol 3000 (`kramer-p3000`) | implemented | 2 | 2 | 1 | official | https://k.kramerav.com/downloads/protocols/protocol_3000_3.0_master_user.pdf |
+| AJA HELO (`aja-helo`) | implemented | 7 | 2 | 1 | official | https://gitlab.aja.com/pub/rest_api/-/blob/master/HELO/03_HELO_Commands.md |
+| Blackmagic Teranex (`bmd-teranex`) | implemented | 1 | 2 | 1 | official | https://documents.blackmagicdesign.com/UserManuals/TeranexManual.pdf |
+| Blackmagic Streaming Encoder (`bmd-streaming`) | implemented | 4 | 2 | 1 | official | https://documents.blackmagicdesign.com/DeveloperManuals/WebPresenterEthernetProtocol.pdf |
 | Ross XPression (`ross-xpression`) | implemented | 15 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | Brompton Tessera (`brompton-tessera`) | implemented | 6 | 4 | 2 | official | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
 | NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
@@ -94,7 +97,7 @@ Companion connection types: **1098**. Implemented: **65**. Partial: **0**. Not y
 | `aja-bridge-live` | not yet | — | — |
 | `aja-dante-12gam` | not yet | — | — |
 | `aja-fs` | not yet | — | — |
-| `aja-helo` | not yet | — | — |
+| `aja-helo` | implemented | aja-helo | https://gitlab.aja.com/pub/rest_api/-/blob/master/HELO/03_HELO_Commands.md |
 | `aja-kipro` | implemented | aja-kipro | https://www.aja.com/support/item/4184 |
 | `aja-kumo` | implemented | aja-kumo | https://www.aja.com/support/item/9616 |
 | `allenheath-ahm` | not yet | — | — |
@@ -230,12 +233,12 @@ Companion connection types: **1098**. Implemented: **65**. Partial: **0**. Not y
 | `bmd-multiview16` | not yet | — | — |
 | `bmd-multiview4` | not yet | — | — |
 | `bmd-smartview` | implemented | bmd-smartview | https://documents.blackmagicdesign.com/UserManuals/SmartViewManual.pdf |
-| `bmd-teranex` | not yet | — | — |
+| `bmd-teranex` | implemented | bmd-teranex | https://documents.blackmagicdesign.com/UserManuals/TeranexManual.pdf |
 | `bmd-teranex-mini` | not yet | — | — |
 | `bmd-ultimatte` | not yet | — | — |
 | `bmd-videohub` | implemented | videohub | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |
 | `bmd-videohub-controlpanel` | not yet | — | — |
-| `bmd-webpresenter` | not yet | — | — |
+| `bmd-webpresenter` | implemented | bmd-streaming | https://documents.blackmagicdesign.com/DeveloperManuals/WebPresenterEthernetProtocol.pdf |
 | `boinx-mimolive` | not yet | — | — |
 | `bolin-ptz` | not yet | — | — |
 | `bom-api` | not yet | — | — |
