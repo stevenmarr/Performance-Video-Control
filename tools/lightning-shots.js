@@ -53,10 +53,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
     await p.evaluate(() => document.querySelector('#tslPanel') && document.querySelector('#tslPanel').scrollIntoView());
     await sleep(400);
   });
-  await shot('ptz-scopes-shortcut', async (p) => {
+  await shot('scopes-tab', async (p) => {
     await p.goto(B + '/#pctl'); await sleep(600);
     await p.evaluate(() => localStorage.setItem('cc.scopes.src', 'cam:cam1'));
-    await p.click('.tgrp[data-tabgrp=ptz]'); await p.click('.tab[data-tab=pscopes]'); await sleep(3500);
+    await p.click('.tab[data-tab=scopes]'); await sleep(3500);
   });
   await b.close(); srv.kill(); fs.rmSync(data, { recursive: true, force: true });
 })().catch((e) => { console.error(e); process.exit(1); });

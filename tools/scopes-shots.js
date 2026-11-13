@@ -32,10 +32,10 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   await shot('zebra-moving', 'src=test:moving.h264&show=pic,wfm&view=2', { wait: 3000 });
   await shot('ipad-portrait', 'src=test:ramps.h264&show=pic,wfm,parade,vec&view=1', { w: 820, h: 1180 });
   await shot('mse-fallback-plain-http', 'src=test:bars.h264&show=pic,wfm,parade,vec', { host: 'scopes.test', still: false });
-  // the SCOPES tab in the PTZ group
+  // the top-row SCOPES tab (the old PTZ → SCOPES shortcut is gone)
   await fetch(`http://127.0.0.1:${port}/api/sys/active`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system: 'ptz' }) });
   const p = await b.newPage({ viewport: { width: 1600, height: 1000 } }); await p.goto(`http://127.0.0.1:${port}/#pctl`); await sleep(800);
   await p.evaluate(() => { localStorage.setItem('cc.scopes.src', 'cam:cam1'); localStorage.setItem('cc.scopes.aw', '640'); });
-  await p.click('.tab[data-tab=pscopes]'); await sleep(5000); await p.screenshot({ path: path.join(OUT, '90-scopes-ptz-tab.png') }); console.log('90-scopes-ptz-tab.png');
+  await p.click('.tab[data-tab=scopes]'); await sleep(5000); await p.screenshot({ path: path.join(OUT, '90-scopes-tab.png') }); console.log('90-scopes-tab.png');
   await b.close(); srv.kill(); fs.rmSync(data, { recursive: true, force: true });
 })().catch((e) => { console.error(e); process.exit(1); });

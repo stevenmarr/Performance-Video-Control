@@ -186,7 +186,7 @@
     sel.innerHTML = sourceMenu(r.sources);
     if (first) {
       if (!r.sources.some((s) => s.key === st.src)) st.src = (r.sources.find((s) => s.kind === 'camera' && s.ok) || r.sources[0] || {}).key || '';
-      // The SCOPES tab prefers a Desktop Video ingest. PTZ → SCOPES keeps the camera preference.
+      // The embedded SCOPES tab prefers a Desktop Video ingest when one is already pushing.
       if (!livePreferApplied && preferLive) {
         livePreferApplied = true;
         const live = window.ScopesSources ? window.ScopesSources.preferLiveSource(r.sources) : null;
