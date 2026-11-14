@@ -1,0 +1,31 @@
+/* Module tabs. A system is a connection, its status, and its buttons.
+   This is not a surface page. */
+body.tab-modsys .main { display: none !important; }
+body.tab-modsys #tabsHomeNote,
+body.tab-modsys #tabsScopesNote,
+body.tab-modsys #tabsLooksNote,
+body.tab-modsys #tabsCuesNote,
+body.tab-modsys #tabsDecksNote { display: none !important; }
+.mod-sub { display: none; }
+body.tab-modsys .mod-sub { display: inline-flex; }
+.tgrp.mod-inst { display: inline-flex; }
+#pane-modsys { padding: 14px 18px 48px; max-width: 1280px; }
+.mod-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.mod-cats { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.mod-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.mod-card { text-align: left; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 10px 12px; color: var(--text); }
+.mod-card .bar { height: 4px; border-radius: 3px; margin-bottom: 8px; }
+.mod-card b { display: block; letter-spacing: .04em; }
+.mod-card small { color: var(--dim); }
+.mod-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin: 8px 0 12px; }
+.mod-form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; font-weight: 700; letter-spacing: .06em; color: var(--dim); }
+.mod-form input, .mod-form select { font: inherit; color: var(--text); background: var(--panel2, #1a1e24); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
+.mod-keys { display: flex; flex-wrap: wrap; gap: 10px; }
+.mod-key { width: 104px; background: transparent; border: 0; padding: 0; color: inherit; text-align: left; }
+.mod-key svg { width: 104px; height: 104px; display: block; border-radius: 12px; }
+.mod-key span { display: block; font-size: 10px; color: var(--dim); margin-top: 4px; min-height: 2.4em; }
+.mod-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.mod-table th, .mod-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.mod-on { color: #9BE7B5; font-weight: 800; }
+.mod-off { color: var(--dim); }
+.mod-theme { margin-left: auto; }

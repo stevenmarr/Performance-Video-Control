@@ -20,7 +20,13 @@ Each event has a list of actions. Events are `press`, `release`, `hold`, `turn` 
 
 ## Feedbacks
 
-An ordered list. A boolean feedback overrides style fields when its `when` flag is true. An advanced feedback may return a style object. Later feedbacks win.
+An ordered list. A boolean feedback overrides style fields when its `when` flag is true. A feedback may also name a `variable`, an `op` (`eq`, `ne`, `gt`, `lt`, `gte`, `lte`, `contains`, `truthy`) and a `value`. An advanced feedback may return a style object. Later feedbacks win.
+
+## Theme, confirm, and more than one action
+
+`theme` is `dark` (the default) or `light`. Light uses the same roles: green for preview, red only for on air, amber for a key that needs confirmation, and a slate fill with an inner frame for an OS key. The text is dark on a light fill so it stays readable. `resolveKey` takes the theme as its fourth argument, or reads `key.theme`.
+
+`confirm: true` draws the amber dashed border. The first press arms the command. The second press, within a few seconds, sends it. A press list is already more than one action. `delayMs` on a step waits before that step. Encoder `turn` / `push` and touch `touch` are the same list.
 
 ## Roles
 

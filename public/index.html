@@ -10,6 +10,7 @@
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/modules.css">
 </head>
 <body>
 <header class="top">
@@ -42,6 +43,7 @@
     <button type="button" class="tgrp" data-tabgrp="ptz" hidden><i class="led"></i>PTZ</button>
     <button type="button" class="tgrp" data-tabgrp="pixera" hidden><i class="led"></i>PIXERA</button>
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
+    <button class="tab tab-modules" data-tab="modsys" title="Connection modules: setup, status, buttons, variables and feedbacks. No surface pages.">MODULES</button>
     <button class="tab tab-scopes" data-tab="scopes" title="Scopes for the whole desk: waveform, parade, vectorscope, Lightning, false colour. Live video is a Desktop Video (DeckLink) input from a Mac sidecar.">SCOPES</button>
     <button class="tab tab-cues" data-tab="cues" title="Cues. RUN CUE plays the loaded cue. The button locks while that timeline is running.">CUES</button>
     <button class="tab tab-looks" data-tab="looks" title="Hi-res cue stack for one switcher: RS6, E2 or PixelHue. Absolute and relative recalls. Not ATEM.">PRESETS</button>
@@ -847,5 +849,6 @@
 <script src="/button-library.js"></script>
 <script src="/surface-pages.js"></script>
 <script src="/tsl.js"></script>
+<script src="/modules-tab.js"></script>
 </body>
 </html>
