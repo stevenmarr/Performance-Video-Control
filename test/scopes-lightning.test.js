@@ -21,15 +21,18 @@ test('SCOPES is the persistent top tab; LIGHTNING is not a nav group', () => {
   assert.doesNotMatch(html, /id="pane-lightning"/);
   assert.match(html, /id="pane-scopes"/);
   assert.match(html, /id="scopesFrame"/);
-  // The tab is an iframe of the scopes page. The sidecar lines live with that tab,
-  // and the page itself is a Desktop Video picker, not a typed source name.
-  assert.match(tab, /decklink-sidecar\.js --list/);
-  assert.match(tab, /decklink-sidecar\.js --device 0/);
+  // The tab is an iframe of the scopes page. Sidecar commands live in the ingest doc.
+  // The page itself is a Desktop Video picker, not a typed source name.
+  assert.match(tab, /scopesFrame/);
+  assert.match(tab, /scopes\.html/);
   assert.match(page, /DESKTOP VIDEO/);
   assert.match(page, /<select id="src"/);
   assert.match(read('docs/scopes.md'), /cannot type a new source/i);
   assert.doesNotMatch(html + page, /MOCK FIXTURES/);
   assert.doesNotMatch(html + page, /id="ndiMock"/);
+  assert.doesNotMatch(html, /id="ccPages"/, 'Companion page export is not on SYSTEMS');
+  assert.match(read('docs/decklink-ingest.md'), /decklink-sidecar\.js --list/);
+  assert.match(read('docs/decklink-ingest.md'), /--device 0/);
   const atem = html.slice(html.indexOf('id="pane-atem"'), html.indexOf('id="pane-arouter"'));
   const system = html.slice(html.indexOf('id="pane-system"'), html.indexOf('id="pane-xpresets"'));
   assert.match(atem, /id="tslPanel"/);

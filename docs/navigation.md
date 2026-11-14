@@ -11,7 +11,7 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
 ## Row 1: home, system groups, and Scopes
 
 ```
-[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [SCOPES] [CUES] [PRESETS] [Control Devices]
+[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [MODULES] [SCOPES] [CUES] [PRESETS] [Control Devices]
 ```
 
 * **⌂ SYSTEMS** is always first. It is the home page: a palette of every system type on the left, and one card per instance on the desk.
@@ -26,11 +26,13 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
   see each system's status.
 * E2 and PixelHue share one group because they share the preset pages. The button shows whichever of the
   two are on the desk, for example `E2 / PIXELHUE`.
+* **MODULES** is always shown. It is connection modules (setup, status, buttons, variables, feedbacks), not a device to ADD TO DESK and not a Stream Deck page.
 * **SCOPES** is always shown. It is the engineering scopes for the whole app (waveform, parade,
   vectorscope, Lightning, false colour), not a device to ADD TO DESK and not a PTZ page. **Lightning**
   is a mode inside that tab, not a tab of its own. A `/#lightning` link from 0.20.0 opens SCOPES.
-  **TALLIES** (TSL) is a card on the SYSTEMS page.
-* **Control Devices** is always shown, the same way SCOPES is. `/#decks` opens the USB view. The second row is DEVICES, BUTTONS, and PAGES. DEVICES is the USB assign view. BUTTONS creates library keys. PAGES lays out a surface. Quit the Elgato Stream Deck app so this app can own a USB deck.
+  `/#pscopes` does the same. There is no PTZ → SCOPES tab.
+  **TALLIES** (TSL) are on **ATEM → SWITCHER**, not a SYSTEMS card and not a scope mode.
+* **Control Devices** is always shown, the same way SCOPES is. `/#decks` opens DEVICES. The second row is DEVICES, BUTTONS, and PAGES. DEVICES is the USB assign view (quit the Elgato app so this app can open the deck). BUTTONS creates library keys. PAGES lays out a surface and pushes it to an online Path C deck (the Elgato plugin has to be running for that push).
 * Tapping a group button opens **the page you last used in that group**. The first time, it opens the
   group's main page (PRESETS, SWITCHER, CAMERA CONTROL, TIMELINES, COLUMNS). The last page is remembered
   in this browser.
@@ -44,7 +46,7 @@ Only the pages of the selected group are shown, always in the same order:
 | RS6 | PRESETS · INPUTS · BACKUP · AUDIO · WEB RCS |
 | E2 / PIXELHUE | (E2 \| PIXELHUE focus) · PRESETS · CUES · SOURCES · STILLS · BACKUP |
 | ATEM | SWITCHER · ROUTER · AUDIO · DVE / SS / KEYS · LAYOUT · MULTIVIEW · MACROS |
-| PTZ | CAMERA CONTROL · CAMERAS · SCOPES (shortcut into the top-row SCOPES pane) |
+| PTZ | CAMERA CONTROL · TRACKING · CAMERAS |
 | PIXERA | TIMELINES · CUES |
 | MILLUMIN | COLUMNS · LAYER |
 

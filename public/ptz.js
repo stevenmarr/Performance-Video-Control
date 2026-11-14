@@ -1,6 +1,6 @@
 'use strict';
 // 0.8.0 / 0.9.8 Panasonic PTZ: CAMERA CONTROL, one dashboard laid out like an AW-RP150 / RP60 joystick controller plus an
-// AW-RCP paint panel, and CAMERAS (add / edit / remove, command reference).
+// AW-RCP paint panel, and CAMERAS (add / edit / remove / login / simulator). The camera strip on this page is the selector.
 //   * The controls come from the camera's command catalog (GET /api/sys/ptz/cameras/:id/catalog): what its model
 //     series supports, per the Companion module's series table plus the UE150 / HE145 spec extras. Every catalog
 //     command has a control here; nothing a camera lacks is offered.
@@ -468,16 +468,12 @@
   });
   function renderCams() {
     S.set($('#ptzCamList'), 'ptz-cams', (V.cameras || []).map((c) => `<div class="row cam-line ${c.connected ? '' : 'off'}" data-cam="${esc(c.id)}">
-      <span class="led ${c.connected ? 'ok' : 'off'}"></span><span class="lbl">${esc(c.name)}<small>${esc(c.model || 'unknown model')} · series ${esc(c.series)}${c.title ? ` · ${esc(c.title)}` : ''} · ${esc(c.host)}:${esc(c.port)}${c.connected ? '' : ` · ${esc(c.error || 'offline')}`}</small></span>
-      <span class="chip">${c.power ? esc(c.power.toUpperCase()) : '—'}</span>${c.tally ? '<span class="chip pgmc">TALLY</span>' : ''}<span class="spacer"></span>
+      <span class="led ${c.connected ? 'ok' : 'off'}"></span><span class="lbl">${esc(c.name)}<small>${esc(c.model || 'unknown model')} · series ${esc(c.series)}${c.title ? ` · ${esc(c.title)}` : ''} · ${esc(c.host)}:${esc(c.port)}${c.sim ? ' · simulator' : ''}${c.connected ? '' : ` · ${esc(c.error || 'offline')}`}</small></span>
+      <span class="chip">${c.power ? esc(c.power.toUpperCase()) : '—'}</span>${c.tally ? '<span class="chip pgmc">TALLY</span>' : ''}${c.sim ? '<span class="chip">SIM</span>' : ''}<span class="spacer"></span>
       <span class="chip login ${c.authError ? 'bad' : ''}" title="${c.authError ? 'The camera refused the login' : c.authScheme ? `The camera asked for a login (HTTP ${c.authScheme})` : 'Sent only if the camera asks for a login'}">${c.authError ? 'LOGIN REFUSED' : `LOGIN ${esc(c.user || 'admin')}${c.loginDefault ? ' · FACTORY' : ''}`}</span>
       <label class="ctl-sel mini" title="Model series used for the command set ('auto' = from the camera's model)"><select data-series="${esc(c.id)}"><option value="">series: auto</option>${(V.seriesList || []).map((s) => `<option value="${esc(s)}" ${c.series === s && c.seriesOverride ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
       <button class="btn mini ${c.id === V.selected ? 'primary' : ''}" data-selcam="${esc(c.id)}" type="button">${c.id === V.selected ? 'SELECTED' : 'SELECT'}</button>
-      <button class="btn mini" data-edit="${esc(c.id)}" type="button">EDIT</button><button class="btn mini" data-login="${esc(c.id)}" type="button" title="User / password the camera asks for (factory: admin / 12345)">LOGIN</button><button class="btn mini danger" data-rm="${esc(c.id)}" type="button">REMOVE</button></div>`).join('') || '<div class="note">No cameras yet.</div>');
-    const c = sel(); const k = catOf(c);
-    if (c && !k && !catLoading.has(c.series)) { catLoading.add(c.series); api('GET', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c.id)}/catalog`).then((x) => cats.set(x.series, x)).catch(() => {}).finally(() => { catLoading.delete(c.series); renderCams(); }); }
-    S.set($('#ptzRef'), 'ptz-ref', c && k ? `<div class="note small">${esc(c.name)} · ${esc(c.model || '?')} · series ${esc(k.series)} · ${k.ops.length} commands. Sources: ${esc(k.sources.module)}; ${esc(k.sources.spec)}.</div>`
-      + k.ops.map((o) => `<div class="row ref-row"><span class="chip ${o.src === 'spec' ? 'spec' : o.src === 'app' ? '' : 'mod'}">${o.src === 'spec' ? 'SPEC' : o.src === 'app' ? 'APP' : 'MODULE'}</span><span class="lbl">${esc(o.label)}<small>${esc(o.id)} · ${esc(o.group)}${o.type ? ` · ${esc(o.type)}` : ''}${o.range ? ` ${o.range.min}..${o.range.max}` : ''}${o.options ? ` · ${o.options.length} values` : ''}</small></span><span class="ref-src">${esc(o.ref)}</span></div>`).join('') : '');
+      <button class="btn mini" data-edit="${esc(c.id)}" type="button">EDIT</button><button class="btn mini" data-login="${esc(c.id)}" type="button" title="User / password the camera asks for (factory: admin / 12345)">LOGIN</button><button class="btn mini" data-camsim="${esc(c.id)}" data-on="${c.sim ? '0' : '1'}" type="button">${c.sim ? 'USE SAVED ADDRESS' : 'ASSIGN AS SIM'}</button><button class="btn mini danger" data-rm="${esc(c.id)}" type="button">REMOVE</button></div>`).join('') || '<div class="note">No cameras yet. Add one below.</div>');
   }
   S.onRender((v, tab) => {
     V = v; if (!V || V.kind !== 'ptz') { releaseAll(); return; }
@@ -516,13 +512,14 @@
   $('#ptzCamList').addEventListener('change', (ev) => { const s = ev.target.closest('[data-series]'); if (!s) return; run(api('POST', `/api/sys/${ptzId()}/cameras/${s.dataset.series}`, { series: s.value }).then(() => { cats.clear(); built = ''; toast('Camera series saved'); })); });
   $('#ptzCamList').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return; const d = b.dataset;
-    const c = d.selcam || d.edit || d.rm || d.login; const cam = (V.cameras || []).find((x) => x.id === c);
+    const c = d.selcam || d.edit || d.rm || d.login || d.camsim; const cam = (V.cameras || []).find((x) => x.id === c);
     if (d.login) { // 0.11.1 camera login dialog
       const dlg = $('#dlgPtzLogin'); const fm = $('#formPtzLogin'); fm.dataset.cam = c; fm.elements.user.value = cam.user || 'admin'; fm.elements.pass.value = '';
       $('#ptzLoginCam').textContent = `${cam.name} · ${cam.host}`;
       $('#ptzLoginState').textContent = cam.authError ? 'The camera refused the current login.' : cam.loginDefault ? 'Using the factory default login.' : 'Using a login saved on this install.';
       dlg.showModal(); return undefined;
     }
+    if (d.camsim) { const on = d.on !== '0'; return run(api('POST', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c)}/sim`, { on }).then(() => toast(on ? 'Camera assigned as a simulator' : 'Camera using its saved address')).finally(S.refetch)); }
     if (d.selcam) return run(cmd('select', { cam: c }));
     if (d.edit) { const name = prompt('Camera name', cam.name); if (name === null) return undefined; const host = prompt('Camera IP address', cam.host); if (host === null) return undefined; const port = prompt('HTTP port', String(cam.port)); if (port === null) return undefined; return run(api('POST', `/api/sys/${ptzId()}/cameras/${c}`, { name, host, port: Number(port) || 80 }).then(() => toast('Camera saved'))); }
     if (d.rm) { if (!confirm(`Remove ${cam.name} from this system?`)) return undefined; return run(api('DELETE', `/api/sys/${ptzId()}/cameras/${c}`).then(() => toast('Camera removed'))); }
@@ -537,7 +534,7 @@
   });
   $('#ptzAdd').addEventListener('submit', (ev) => {
     ev.preventDefault(); const fm = ev.target; const body = { name: fm.elements.name.value.trim(), host: fm.elements.host.value.trim(), port: Number(fm.elements.port.value) || 80 };
-    run(api('POST', `${ptzId()}/cameras`, body).then(() => { fm.reset(); toast(`Added ${body.name || 'camera'}`); }).finally(S.refetch));
+    run(api('POST', `/api/sys/${ptzId()}/cameras`, body).then(() => { fm.reset(); toast(`Added ${body.name || 'camera'}`); }).finally(S.refetch));
   });
   // ---------- 0.11.1 dockable dashboard (public/dock.js) ----------
   // Panels move (drag the header; touch: hold, then drag), resize from the edges / bottom corners, collapse, pop out,

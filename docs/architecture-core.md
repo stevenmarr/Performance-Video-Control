@@ -121,7 +121,7 @@ First press arms the key for 8 seconds and does nothing to the machine. Second p
 
 ## Companion, next to the native deck
 
-You already export Companion pages (`lib/companion/`, SYSTEMS → STREAM DECK PAGES). That stays.
+The Companion page file (`lib/companion/`, SYSTEMS → STREAM DECK PAGES) is gone. Path C push and the USB deck are the Stream Deck paths.
 
 Phase 1 adds ownership and feedback:
 

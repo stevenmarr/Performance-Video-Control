@@ -211,7 +211,7 @@
     ${warnText ? `<p class="note small">${esc(warnText)}</p>` : ''}
     ${canPush && !slots ? '<p class="note small">This page has no buttons. Push will be refused.</p>' : ''}`;
     const board = surface ? `<div class="pages-board">${boardHtml(surface, page)}</div>
-      <p class="note small">Built-in pages on Devices stay there. Row 1 is the top. On + XL, row 4 column 9 is the bottom-right key. Nothing is pushed.</p>` : '';
+      <p class="note small">Built-in pages already on a deck stay on that stack. Row 1 is the top. On + XL, row 4 column 9 is the bottom-right key. Push sends this page.</p>` : '';
     root.innerHTML = `<div class="pages-layout">
       <aside>
         ${group('Plugin', all.plugin)}
