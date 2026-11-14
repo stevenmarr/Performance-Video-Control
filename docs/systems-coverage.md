@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not yet: **936**.
+Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not yet: **921**.
 
 ## Systems in this build
 
@@ -144,6 +144,21 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | Viz Mosart (`viz-mosart`) | implemented | 3 | 2 | 1 | official | https://documentation.vizrt.com/viz-mosart-admin-guide/5.13/Mosart_Remote_Control_REST_API.html |
 | CueTimer (`cuetimer`) | implemented | 5 | 2 | 1 | official | https://cuetimer.com/userguide/ |
 | Irisdown countdown (`irisdown-timer`) | implemented | 3 | 2 | 1 | official | https://release.irisdown.co.uk/Countdown%20Timer%20v2.0%20-%20Remote%20Control%20Protocol.pdf |
+| WyreStorm matrix (`wyrestorm-matrix`) | implemented | 2 | 2 | 1 | official | https://downloads.wyrestorm.cloud/switchers/matrix-switchers/documents/MX-0404-SCL%20API%20092225.pdf |
+| Blustream matrix (`blustream-matrix`) | implemented | 3 | 2 | 1 | official | https://www.blustream.co.uk/Attachment/DownloadFile?downloadId=1250 |
+| TESmart matrix (`tesmart-matrix`) | implemented | 2 | 2 | 1 | official | https://support.tesmart.com/hc/en-us/articles/10270214101913-LAN-RS232-Control-Protocols |
+| Gefen DVI matrix (`gefen-matrix`) | implemented | 2 | 2 | 1 | official | https://www.fullcompass.com/common/files/28025-GefenIncGEFDVI16416PBManual.pdf |
+| DirectOut (`directout`) | implemented | 2 | 2 | 1 | official | https://www.directout.eu/wp-content/uploads/m1k2/www_ship/en/help/telnet.html |
+| Panasonic TH display (`panasonic-th`) | implemented | 3 | 2 | 1 | official | https://docs.connect.panasonic.com/prodisplays/support/download/pdf/BQ1_SerialCommandList.pdf |
+| CueServer (`cueserver`) | implemented | 2 | 1 | 1 | official | https://www.interactive-online.com/manuals/cueserver/cuescript-via-udp |
+| AVMatrix switcher (`avmatrix-switcher`) | implemented | 1 | 1 | 1 | official | https://www.vuetec.de/SW53/media/pdf/39/26/f6/API-Guide-for-MSS0811-V1-0.pdf |
+| Atlona Omega (`atlona-omega`) | implemented | 1 | 2 | 1 | official | https://ts.atlona.com/pdf/AT-OME-RX21_API.pdf |
+| Atlona CLSO (`atlona-clso`) | implemented | 3 | 2 | 1 | official | https://ts.atlona.com/pdf/AT-UHD-CLSO-601_API.pdf |
+| WattBox (`wattbox`) | implemented | 2 | 2 | 1 | official | https://www.snapav.com/wcsstore/ExtendedSitesCatalogAssetStore/attachments/documents/PowerManagement/SupportDocuments/Wattbox%20API%20v2.0.pdf |
+| Audio-Technica ceiling array (`atnd1061`) | implemented | 4 | 2 | 1 | official | https://www.audio-technica.com.tw/index.php?attachment_id=658&dispatch=attachments.getfile |
+| VidBlasterX (`vidblaster`) | implemented | 3 | 2 | 1 | official | https://vidblaster.com/help/x6/API.html |
+| Blackbird matrix (`blackbird-matrix`) | implemented | 2 | 2 | 1 | official | https://downloads.monoprice.com/files/manuals/27841_Manual_180419.pdf |
+| CYP matrix (`cyp-matrix`) | implemented | 3 | 2 | 1 | official | https://cypeurope.com/wp-content/uploads/2023/04/EL-42M-PIP_PDF-Manual_v1.02_Web.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -207,6 +222,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 - Roland basic PGM and CUT cover V-160HD, V-80HD, VR-120HD and V-1-4K. FOR-A's command list is behind a login. Evertz, Riedel RRCS, Haivision, Teradek, Magewell, Hippotizer and TriCaster did not yield a request line that was safe to send.
 - Avantis mute, CQ mute, MultiView routing, Blackmagic camera record, SMP 351 record, PCS4 receptacles, Vaddio presets, AVer VISCA, DM3 OSC, Sennheiser SSC, RossTalk server and Caprica, Viz Trio, Picturall, disguise OSC, SPX, Flowics reads and WLED are separate systems. AJA FS, Datavideo DVIP, OBSBOT, Clear-Com, Kairos, Encore, the SuperJoy, and the other ids named in the blocker rows did not yield a command line that was safe to send.
 - APC switched-rack `on 1`, Gude `cmd=1`, Neol `M0:O1=ON`, Dataprobe outlet control, ATEN `/api/outlet/relay`, ATDM mute, Audia `RECALL 0 PRESET`, Bravia `setPlayContent`, DN-500BD `@0PW00`, Foscam CGI, ZoneMinder alarm, Lilliput `1v2.`, H2R `/run`, Mosart `start-continue`, CueTimer `/global/fire` and Irisdown `GO` are separate systems. A zero-button row is a recorded blocker, not a command system. APC UPS, CyberPower, Eaton, Crestron NVX, Dahua, d&b, Christie WD, Barco DCS/DP/MatrixPRO, Biamp QTX, the other Denon ids and Lumix did not get a command copied from a different product.
+- WyreStorm `SET SW in4 out1`, Blustream `OUT01FR04`, TESmart `MT00SW0102NT`, Gefen `r 7 3`, DirectOut `audioxp 1 65 66`, Panasonic TH `PON` in an STX/ETX frame, CueServer `Cue 1 Go`, AVMatrix `1v2.`, Atlona Omega `x2AVx1`, Atlona CLSO `Input HDMI 2`, WattBox `command=1`, ATND1061 mute, VidBlaster `apiwrite`, Blackbird `1V2.` and CYP `set out A route 1` are separate systems. MT-VIKI and OREI route lines were only found outside the manufacturer, so they are not sent.
 
 ## Every Companion connection
 
@@ -272,14 +288,14 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `aten-pdu` | implemented | aten-pdu | https://assets.aten.com/product/manual/Restful-API-Guide-for-PDU_2022-11-18.pdf |
 | `atlasied-atmosphere` | not yet | — | — |
 | `atlona-camera-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
-| `atlona-clso` | not yet | — | — |
-| `atlona-omega` | not yet | — | — |
+| `atlona-clso` | implemented | atlona-clso | https://ts.atlona.com/pdf/AT-UHD-CLSO-601_API.pdf |
+| `atlona-omega` | implemented | atlona-omega | https://ts.atlona.com/pdf/AT-OME-RX21_API.pdf |
 | `attend2it-speakertimer` | not yet | — | — |
 | `audac-mtx` | not yet | — | — |
 | `audinate-dante-ddm` | not yet | — | — |
 | `audinate-dantecontroller` | not yet | — | — |
 | `audiostrom-liveprofessor` | not yet | — | — |
-| `audiotechnica-ceilingarray` | not yet | — | — |
+| `audiotechnica-ceilingarray` | implemented | atnd1061 | https://www.audio-technica.com.tw/index.php?attachment_id=658&dispatch=attachments.getfile |
 | `audiotechnica-digitalmixer` | implemented | audiotechnica-atdm | https://docs.audio-technica.com/us/ATDM-0604_IP_Control_Protcol_Specification_EN_Ver1.1.3_web_200821.pdf |
 | `audiotechnica-discussionsystem` | not yet | — | — |
 | `audiotechnica-esw` | not yet | — | — |
@@ -297,7 +313,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `avitech-sequoia4k60-sequoia4k60l` | not yet | — | — |
 | `avitech-titan-9000` | not yet | — | — |
 | `avmatrix-shark` | not yet | — | — |
-| `avmatrix-switcher` | not yet | — | — |
+| `avmatrix-switcher` | implemented | avmatrix-switcher | https://www.vuetec.de/SW53/media/pdf/39/26/f6/API-Guide-for-MSS0811-V1-0.pdf |
 | `avmatrix-ts3019` | not yet | — | — |
 | `avmediatools-protimer` | not yet | — | — |
 | `avocet-landscape` | not yet | — | — |
@@ -356,12 +372,12 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `bitfocus-snapshot` | not yet | — | — |
 | `bitfocus-voice` | not yet | — | — |
 | `bitfocusas-listener` | not yet | — | — |
-| `blackbird-hdmimatrix` | not yet | — | — |
+| `blackbird-hdmimatrix` | implemented | blackbird-matrix | https://downloads.monoprice.com/files/manuals/27841_Manual_180419.pdf |
 | `blackbox-boxilla` | not yet | — | — |
 | `blackdiamondvideo-phantom800` | not yet | — | — |
 | `bluebottle-leaguebroadcast` | not yet | — | — |
 | `blustream-acm200` | not yet | — | — |
-| `blustream-hdmimatrix` | not yet | — | — |
+| `blustream-hdmimatrix` | implemented | blustream-matrix | https://www.blustream.co.uk/Attachment/DownloadFile?downloadId=1250 |
 | `bmd-atem` | implemented | atem | https://www.blackmagicdesign.com/developer |
 | `bmd-audiomonitor` | not yet | bmd-open | https://www.blackmagicdesign.com/developer |
 | `bmd-cameras` | implemented | bmd-cameras | https://documents.blackmagicdesign.com/DeveloperManuals/BlackmagicCameraControl.pdf |
@@ -438,7 +454,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `codirect-codirect` | not yet | — | — |
 | `colorlight-grandshow` | not yet | colorlight-grandshow | https://developer.colorlightcloud.com/CLTServer/en/api-reference/sender-device/screen-group/brightness-and-color-temperature/set-screen-brightness.html |
 | `colorlight-processor` | implemented | colorlight-processor | https://developer.colorlightcloud.com/CLTServer/en/api-reference/sender-device/screen-group/brightness-and-color-temperature/set-screen-brightness.html |
-| `combitech-vidblasterx` | not yet | — | — |
+| `combitech-vidblasterx` | implemented | vidblaster | https://vidblaster.com/help/x6/API.html |
 | `companion-satellite` | not yet | — | — |
 | `connect-webcaster` | not yet | — | — |
 | `cooclaprotocol-http` | not yet | — | — |
@@ -462,7 +478,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `cuevacontrol-relo-io8` | not yet | — | — |
 | `cvmeventi-countdown` | not yet | — | — |
 | `cyberpower-pdu` | not yet | cyberpower-eaton | https://eaton.my.site.com/publicknowledge/s/article/API-documentation-for-G4-PDUs |
-| `cyp-matrix` | not yet | — | — |
+| `cyp-matrix` | implemented | cyp-matrix | https://cypeurope.com/wp-content/uploads/2023/04/EL-42M-PIP_PDF-Manual_v1.02_Web.pdf |
 | `dahuasecurity-ptz` | not yet | dahua-ptz | https://www.dahuasecurity.com/ |
 | `dalite-scb` | not yet | — | — |
 | `dan-dugan-automixer` | not yet | — | — |
@@ -498,7 +514,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `digitalloggers-powercontroller` | not yet | — | — |
 | `digitalprojection-highlight` | not yet | — | — |
 | `digitalprojection-projectors` | implemented | digital-projection | https://pjlink.jbmia.or.jp/english/data_cl2.html |
-| `directout-audioprocessors` | not yet | — | — |
+| `directout-audioprocessors` | implemented | directout | https://www.directout.eu/wp-content/uploads/m1k2/www_ship/en/help/telnet.html |
 | `discord-api` | not yet | — | — |
 | `disguise-liveupdate` | not yet | disguise-open | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
 | `disguise-mtc` | not yet | disguise-open | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
@@ -592,7 +608,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `gallery-virtualvtrpro` | not yet | — | — |
 | `gammacontrol-gmaestro` | not yet | — | — |
 | `gdsys-muxkvmswitch` | not yet | — | — |
-| `gefen-dvimatrix` | not yet | — | — |
+| `gefen-dvimatrix` | implemented | gefen-matrix | https://www.fullcompass.com/common/files/28025-GefenIncGEFDVI16416PBManual.pdf |
 | `genelec-smart-ip` | not yet | — | — |
 | `generic-aes70` | not yet | — | — |
 | `generic-artnet` | implemented | artnet | https://art-net.org.uk/how-it-works/streaming-packets/art-dmx-packet-definition/ |
@@ -701,7 +717,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `integ-jnior` | not yet | — | — |
 | `intel-ipmi` | not yet | — | — |
 | `intelix-matrix` | not yet | — | — |
-| `interactivetechnologies-cueserver` | not yet | — | — |
+| `interactivetechnologies-cueserver` | implemented | cueserver | https://www.interactive-online.com/manuals/cueserver/cuescript-via-udp |
 | `internetclicker-internetclickerremote` | not yet | — | — |
 | `interspace-cueether` | not yet | — | — |
 | `interspace-globalcue-live` | not yet | — | — |
@@ -936,7 +952,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `panasonic-p2` | not yet | — | — |
 | `panasonic-projector` | implemented | panasonic-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `panasonic-ptz` | implemented | ptz | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/AW-UE150/HD/HD_OperationManual_English.pdf |
-| `panasonic-tv-th` | not yet | — | — |
+| `panasonic-tv-th` | implemented | panasonic-th | https://docs.connect.panasonic.com/prodisplays/support/download/pdf/BQ1_SerialCommandList.pdf |
 | `pangolin-beyond` | not yet | — | — |
 | `pastebin-api` | not yet | — | — |
 | `pavonine-teleprompter` | not yet | — | — |
@@ -1092,7 +1108,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `smartptz-remotecontrol` | not yet | — | — |
 | `smodetech-smodelive` | not yet | — | — |
 | `smokotnin-opensoundmeter` | not yet | — | — |
-| `snapav-wattbox` | not yet | — | — |
+| `snapav-wattbox` | implemented | wattbox | https://www.snapav.com/wcsstore/ExtendedSitesCatalogAssetStore/attachments/documents/PowerManagement/SupportDocuments/Wattbox%20API%20v2.0.pdf |
 | `snellwilcox-kahuna` | not yet | — | — |
 | `socialstream-ninja` | not yet | — | — |
 | `softouch-easyworship` | not yet | — | — |
@@ -1188,7 +1204,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `teradek-vidiu` | not yet | teradek | https://www.teradek.com/ |
 | `teradek-vidiux` | not yet | teradek | https://www.teradek.com/ |
 | `tesla-smart` | not yet | — | — |
-| `tesmart-hdmimatrix` | not yet | — | — |
+| `tesmart-hdmimatrix` | implemented | tesmart-matrix | https://support.tesmart.com/hc/en-us/articles/10270214101913-LAN-RS232-Control-Protocols |
 | `testbildmedia-stgtime` | not yet | — | — |
 | `textmebot-whatsappapi` | not yet | — | — |
 | `theatrixx-xpresscue` | not yet | — | — |
@@ -1289,7 +1305,7 @@ Companion connection types: **1098**. Implemented: **162**. Partial: **0**. Not 
 | `wordnik-api` | not yet | — | — |
 | `workflownetwork-livetime` | not yet | — | — |
 | `wtav-watchout-director-control` | not yet | — | — |
-| `wyrestorm-matrix` | not yet | — | — |
+| `wyrestorm-matrix` | implemented | wyrestorm-matrix | https://downloads.wyrestorm.cloud/switchers/matrix-switchers/documents/MX-0404-SCL%20API%20092225.pdf |
 | `wyrestorm-sw0402mv` | not yet | — | — |
 | `xiamen-sprolink-vd-series` | not yet | — | — |
 | `yamaha-ad8hr` | not yet | yamaha-open | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |

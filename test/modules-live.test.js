@@ -791,3 +791,73 @@ test('the PDU, camera, graphics and timer systems send their published commands'
     await new Promise((resolve) => web.close(resolve));
   }
 });
+
+test('the matrix, display, router and show-control systems send their published commands', async () => {
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(tcp);
+  const seen = [];
+  const web = http.createServer((req, res) => {
+    req.on('data', () => {});
+    req.on('end', () => { seen.push(`${req.method} ${req.url}`); res.writeHead(204); res.end(); });
+  });
+  const webPort = await listen(web);
+  const dgram = require('dgram');
+  const sink = dgram.createSocket('udp4');
+  const packets = [];
+  sink.on('message', (msg) => packets.push(msg));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const udp = sink.address().port;
+  const desk = new ModuleDesk();
+  try {
+    const tcpConn = { host: '127.0.0.1', port, reconnect: false };
+    const pairs = [
+      ['wyrestorm-matrix', 'route', { input: 4, output: 1 }],
+      ['blustream-matrix', 'route', { output: '01', input: '04' }],
+      ['tesmart-matrix', 'route', { input: '01', output: '02' }],
+      ['gefen-matrix', 'route', { input: 7, output: 3 }],
+      ['directout', 'route', { dest: 65, src: 66 }],
+      ['panasonic-th', 'on', {}],
+      ['atlona-omega', 'input', { input: 2 }],
+      ['atlona-clso', 'hdmi', { input: 2 }],
+      ['atnd1061', 'mute', {}],
+      ['vidblaster', 'record', { recorder: 1 }],
+      ['blackbird-matrix', 'route', { input: 1, output: 2 }],
+      ['cyp-matrix', 'route', { output: 'A', input: 1 }],
+    ];
+    for (const [system, action, options] of pairs) {
+      const row = desk.create(system, { connection: tcpConn });
+      await desk.connect(row.id);
+      await desk.run(row.id, action, options);
+      if (action === 'record') await desk.run(row.id, action, options);
+    }
+    const box = desk.create('wattbox', { connection: { host: '127.0.0.1', port: webPort, https: false, authType: 'basic' } });
+    await desk.run(box.id, 'on', { outlet: 1 });
+    const cue = desk.create('cueserver', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(cue.id, 'go', { cue: 1 });
+    const avm = desk.create('avmatrix-switcher', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(avm.id, 'route', { input: 1, output: 2 });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const text = Buffer.concat(lines);
+    assert.ok(text.includes(Buffer.from('SET SW in4 out1\n')));
+    assert.ok(text.includes(Buffer.from('OUT01FR04\r')));
+    assert.ok(text.includes(Buffer.from('MT00SW0102NT\r')));
+    assert.ok(text.includes(Buffer.from('r 7 3\r')));
+    assert.ok(text.includes(Buffer.from('audioxp 1 65 66\r')));
+    assert.ok(text.includes(Buffer.from('\x02PON\x03')));
+    assert.ok(text.includes(Buffer.from('x2AVx1\r')));
+    assert.ok(text.includes(Buffer.from('Input HDMI 2\r')));
+    assert.ok(text.includes(Buffer.from('s_output_mute S 0000 00 NC 0,1\r')));
+    assert.ok(text.includes(Buffer.from('apiwrite recorder 1, record, true\r\n')));
+    assert.ok(text.includes(Buffer.from('1V2.\r')));
+    assert.ok(text.includes(Buffer.from('set out A route 1\r')));
+    assert.ok(seen.includes('GET /control.cgi?outlet=1&command=1'));
+    assert.ok(packets.some((p) => p.toString() === 'Cue 1 Go'));
+    assert.ok(packets.some((p) => p.toString() === '1v2.'));
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => tcp.close(resolve));
+    await new Promise((resolve) => web.close(resolve));
+  }
+});
