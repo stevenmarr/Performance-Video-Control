@@ -211,3 +211,59 @@ test('every PTZ page names the camera the deck is controlling', () => {
   const dials = [{ widget: 'iris' }, { widget: 'zoom' }];
   assert.notEqual(dialSignature(dials, snap), dialSignature(dials, switched));
 });
+
+
+function e2Desk(presets) {
+  return { armed: ['e2'], byKey: { e2: { view: { presets: presets || [] } } } };
+}
+
+function mem(face, n) {
+  return face.keys.find((k) => k.absolute && k.action && String(k.action.path).endsWith(`/presets/${n}/recall`));
+}
+
+test('E2 preset keys show only the number until listPresets supplies a live name, and never keep a fixed red or green', () => {
+  const face = show(SURFACES.plusxl, { armed: ['e2'] }, { system: 'e2', page: 0 });
+  assert.equal(face.designId, 'e2-panel');
+  const two = mem(face, 2);
+  const three = mem(face, 3);
+  assert.ok(two && three, 'the E2 home page has presets 2 and 3');
+  assert.equal(two.label, '2');
+  assert.equal(three.label, '3');
+  assert.equal(two.caption, '');
+  assert.equal(three.caption, '');
+  assert.equal(two.tone, 'memory');
+  assert.equal(three.tone, 'memory');
+  const svg = keySvg(keyModel(two));
+  assert.match(svg, />2</);
+  assert.doesNotMatch(svg, /Keynote/);
+});
+
+test('E2 preset keys show the live Event Master name under the number and follow program / preview tally', () => {
+  const presets = [
+    { key: 'e2:0', tile: 1, number: 1, name: 'Walk-in', tally: { pvw: 'none', pgm: 'none' } },
+    { key: 'e2:1', tile: 2, number: 2, name: 'Keynote Full', tally: { pvw: 'none', pgm: 'full' } },
+    { key: 'e2:2', tile: 3, number: 3, name: 'IMAG Pair', tally: { pvw: 'full', pgm: 'none' } },
+    { key: 'e2:3', tile: 4, number: 4, name: 'Preset 4', tally: { pvw: 'none', pgm: 'none' } },
+  ];
+  const face = show(SURFACES.plusxl, e2Desk(presets), { system: 'e2', page: 0 });
+  assert.equal(mem(face, 1).label, '1\nWalk-in');
+  assert.equal(mem(face, 1).tone, 'memory');
+  assert.equal(mem(face, 2).label, '2\nKeynote Full');
+  assert.equal(mem(face, 2).tone, 'stop');
+  assert.equal(mem(face, 3).label, '3\nIMAG Pair');
+  assert.equal(mem(face, 3).tone, 'pvw');
+  assert.equal(mem(face, 4).label, '4', 'a generic Preset N name falls back to the number alone');
+  // After a take, preset 2 leaves program and 3 is on program — shading must follow, not stay on 2 red / 3 green.
+  const after = presets.map((p) => {
+    if (p.tile === 2) return { ...p, tally: { pvw: 'none', pgm: 'none' } };
+    if (p.tile === 3) return { ...p, tally: { pvw: 'none', pgm: 'full' } };
+    return p;
+  });
+  const next = show(SURFACES.plusxl, e2Desk(after), { system: 'e2', page: 0 });
+  assert.equal(mem(next, 2).tone, 'memory');
+  assert.equal(mem(next, 3).tone, 'stop');
+  assert.equal(mem(next, 2).label, '2\nKeynote Full');
+  const art = keySvg(keyModel(mem(face, 2)));
+  assert.match(art, /2/);
+  assert.match(art, /Keynote Full/);
+});
