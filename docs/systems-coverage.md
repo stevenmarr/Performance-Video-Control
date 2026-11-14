@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not yet: **904**.
+Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not yet: **895**.
 
 ## Systems in this build
 
@@ -176,6 +176,15 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | Obsidian ONYX (`onyx-osc`) | implemented | 3 | 2 | 1 | official | https://files.obsidiancontrol.com/s/yndNn7FsaB9Fyay/download |
 | Dan Dugan automixer (`dugan-automixer`) | implemented | 3 | 2 | 1 | official | https://www.dandugan.com/Assets/manuals/Model-E-User-Guide.pdf |
 | Bosch HD camera (`bosch-hd-camera`) | implemented | 1 | 2 | 1 | official | https://media.boschsecurity.com/fs/media/pb/media/partners_1/integration_tools_1/developer/absolute-positioning-ip-1-9.pdf |
+| Matrox Monarch (`matrox-monarch`) | implemented | 2 | 2 | 1 | official | https://video.matrox.com/wp-content/uploads/2026/08/en_monarch_hd_dev_tools_reference_guide.pdf |
+| tvONE CORIOmaster (`tvone-corio`) | implemented | 2 | 2 | 1 | official | https://tvone.com/filestore/downloads/tvONE-CORIOmaster-Commands-v1.7.0.pdf |
+| NETIO PowerBOX (`netio-powerbox`) | implemented | 2 | 2 | 1 | official | https://www.netio-products.com/files/NETIO-M2M-API-Protocol-JSON.pdf |
+| iiyama ProLite (`iiyama-prolite`) | implemented | 2 | 2 | 1 | official | https://iiyama.com/f/2745ee2456421dcc5459a549095c2d11_rs232-lan-commands-2026-08-txx29as-lhxx66-lhxx81.pdf |
+| VLC (`vlc-http`) | implemented | 2 | 2 | 1 | official | https://wiki.videolan.org/VLC_HTTP_requests |
+| Cisco RoomOS (`cisco-roomos`) | implemented | 1 | 2 | 1 | official | https://www.cisco.com/c/dam/en/us/td/docs/telepresence/endpoint/api/collaboration-endpoint-software-api-transport.pdf |
+| QLC+ (`qlcplus`) | implemented | 2 | 2 | 1 | official | https://docs.qlcplus.org/v5/advanced/web-interface/web-api |
+| Visual Productions Cuety (`cuety`) | implemented | 2 | 2 | 1 | official | https://ltb.no/media/multicase/documents/visual%20productions/manual%20visual%20cuety_en_11.pdf |
+| Middle Atlantic RackLink (`racklink`) | implemented | 3 | 2 | 1 | official | https://assets.grandandtoy.com/assets/Additional-pdf4/10/35/1035249455.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -227,6 +236,17 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | Calrec CSCP (`calrec-cscp`) | not yet | 0 | 0 | 0 | official | https://calrec.com/wp-content/themes/calrec/pdf/Artemis%20Installation%20Manual%20(926-149%20Iss27%20Lo).pdf |
 | Optimal Audio Zone (`optimalaudio-zone`) | not yet | 0 | 0 | 0 | official | https://optimal-audio.co.uk/downloads/userguides/OptimalAudio-WebApp-UserGuide.pdf |
 | Chroma-Q Vista (`chromaq-vista`) | not yet | 0 | 0 | 0 | official | https://chroma-q.com/news/vista-3-release-5 |
+| Grass Valley AMP (`grassvalley-amp`) | not yet | 0 | 0 | 0 | official | https://wwwapps.grassvalley.com/docs/Application_Notes/media_workflow/gv_io/GVIO_VDCP_AMP_AN-PUB-2-0975B-EN.pdf |
+| Grass Valley AMPP (`grassvalley-ampp`) | not yet | 0 | 0 | 0 | official | https://wwwapps.grassvalley.com/docs/Application_Notes/media_workflow/gv_io/GVIO_VDCP_AMP_AN-PUB-2-0975B-EN.pdf |
+| RME TotalMix (`rme-totalmix`) | not yet | 0 | 0 | 0 | official | https://docs.rme-audio.com/aoxd/816-1c_settings/ |
+| Pharos Designer (`pharos-designer`) | not yet | 0 | 0 | 0 | official | https://dl.pharoscontrols.com/software_help/designer2/content/help/reference/web%20interface/command%20line.htm |
+| RED RCP2 (`red-rcp2`) | not yet | 0 | 0 | 0 | official | https://www.reddigitalcinema.com/download/rcp2-documentation |
+| Marshall IP camera (`marshall-ipcamera`) | not yet | 0 | 0 | 0 | official | https://marshall-usa.com/pdf/CV630-IP_Manual.pdf |
+| Marshall mini camera (`marshall-minicam`) | not yet | 0 | 0 | 0 | official | https://marshall-usa.com/discontinued/cameras/CV500-MB-2.php |
+| Datapath Fx4 (`datapath-fx4`) | not yet | 0 | 0 | 0 | official | https://www.datapathsoftware.com/downloads/fx4-hdr-fx4-sdi-and-fx4-rest-api-v3-0-1-2/ |
+| OpenLP (`openlp-http`) | not yet | 0 | 0 | 0 | official | https://discuss.openlp.org/d/7012-api-documentation-31 |
+| Obsidian ONYX (`onyx-other`) | not yet | 0 | 0 | 0 | official | https://files.obsidiancontrol.com/s/yndNn7FsaB9Fyay/download |
+| tvONE Calico (`tvone-calico`) | not yet | 0 | 0 | 0 | official | https://tvone.com/filestore/downloads/tvONE-CORIOmaster-Commands-v1.7.0.pdf |
 
 ## Notes on sources
 
@@ -249,6 +269,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 - Audac MTX `#|X001|web|SR1|3|U|`, AtlasIED Atmosphere `ZoneGain_0`, Axia `DST 1 ADDR:"239.190.1.1"`, Titan `FirePlaybackAtLevel`, Hog 4 `/hog/playback/go/0`, WATCHOUT HTTP `POST /v0/play/1` and 7thSense `PLAY TL=1` are separate systems. ArKaos does not print its Telnet command, and Ai is not given the Titan call.
 - MagicQ UDP `1G`, mimoLive `setLive`, ATEN `sw i02 o05`, SCS `scsGo("0")`, Aximmetry `ComposerCtrBoardPressButtonAction`, Capture `/ping` and Lampy `/lampy/pbf/1/flash` are separate systems. BrightSign does not print a playback string.
 - ONYX `/Mx/playback/page1/0/go`, Dugan `CM 2, 1` and Bosch `rcp.xml` command `0x09A5` are separate systems. Calrec CSCP, Optimal Audio Zone and Chroma-Q Vista did not print a complete command.
+- Monarch `StartRecording`, CORIOmaster `Preset.Take = 1`, NETIO `Action` 1, iiyama `A60100000004011802B8`, VLC `pl_next`, Cisco `xCommand/Presentation/Start`, QLC+ `setFunctionStatus`, Cuety `pb21/go+` and RackLink `fe090020010101303030306aff` are separate systems. AMP, AMPP, TotalMix, Pharos, RED RCP2, Marshall, Fx4, OpenLP, the non-OSC ONYX id and Calico did not yield a complete command.
 
 ## Every Companion connection
 
@@ -466,7 +487,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `cisco-cbs-350` | not yet | — | — |
 | `cisco-cms` | not yet | — | — |
 | `cisco-collaboration-endpoints` | not yet | — | — |
-| `cisco-roomos` | not yet | — | — |
+| `cisco-roomos` | implemented | cisco-roomos | https://www.cisco.com/c/dam/en/us/td/docs/telepresence/endpoint/api/collaboration-endpoint-software-api-transport.pdf |
 | `cisco-webex-prototype` | not yet | — | — |
 | `classx-liveboard` | not yet | — | — |
 | `classx-mixboard` | not yet | — | — |
@@ -513,7 +534,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `dashare-multiplay` | not yet | — | — |
 | `dashare-multiplay3` | not yet | — | — |
 | `dashmaster-2k` | not yet | — | — |
-| `datapath-fx4` | not yet | — | — |
+| `datapath-fx4` | not yet | datapath-fx4 | https://www.datapathsoftware.com/downloads/fx4-hdr-fx4-sdi-and-fx4-rest-api-v3-0-1-2/ |
 | `dataprobe-iboot-pdu` | implemented | dataprobe-iboot | https://44852427.fs1.hubspotusercontent-na1.net/hubfs/44852427/Dataprobe_February_2024/Pdf/iboot-pdu_restful_api.pdf |
 | `dataton-watchout` | implemented | dataton-watchout | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
 | `dataton-watchout-json` | implemented | dataton-watchout-json | https://docs.dataton.com/watchout-7-new/watchout/external-control/http-rest-api.html |
@@ -690,8 +711,8 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `google-sheets` | not yet | — | — |
 | `google-slidescontroller` | not yet | — | — |
 | `govee-lights` | not yet | — | — |
-| `grassvalley-amp` | not yet | — | — |
-| `grassvalley-ampp` | not yet | — | — |
+| `grassvalley-amp` | not yet | grassvalley-amp | https://wwwapps.grassvalley.com/docs/Application_Notes/media_workflow/gv_io/GVIO_VDCP_AMP_AN-PUB-2-0975B-EN.pdf |
+| `grassvalley-ampp` | not yet | grassvalley-ampp | https://wwwapps.grassvalley.com/docs/Application_Notes/media_workflow/gv_io/GVIO_VDCP_AMP_AN-PUB-2-0975B-EN.pdf |
 | `grassvalley-kaleido-solo` | not yet | — | — |
 | `grassvalley-kframe` | not yet | — | — |
 | `gravitycurrent-synesthesia` | not yet | — | — |
@@ -734,7 +755,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `idk-ninjar` | not yet | — | — |
 | `ifelseware-avkey` | not yet | — | — |
 | `ifelseware-avplayback` | not yet | — | — |
-| `iiyama-prolite` | not yet | — | — |
+| `iiyama-prolite` | implemented | iiyama-prolite | https://iiyama.com/f/2745ee2456421dcc5459a549095c2d11_rs232-lan-commands-2026-08-txx29as-lhxx66-lhxx81.pdf |
 | `ikan-lyrapoe` | not yet | — | — |
 | `imagine-lrc` | not yet | — | — |
 | `imimot-mitti` | implemented | mitti | https://imimot.com/mitti/ |
@@ -843,12 +864,12 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `malighting-grandma3` | implemented | grandma3 | https://help.malighting.com/grandMA3/2.5/HTML/osc_advanced_examples.html |
 | `malighting-msc` | implemented | midi-show-control | https://www.midi.org/specifications/midi1-specifications/midi-show-control-1-0 |
 | `manhattanbeachstudios-streamgraphicspro` | not yet | — | — |
-| `marshall-cv-minicam` | not yet | — | — |
-| `marshall-ipcamera` | not yet | — | — |
+| `marshall-cv-minicam` | not yet | marshall-minicam | https://marshall-usa.com/discontinued/cameras/CV500-MB-2.php |
+| `marshall-ipcamera` | not yet | marshall-ipcamera | https://marshall-usa.com/pdf/CV630-IP_Manual.pdf |
 | `marshall-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
-| `massimo-callegari-qlcplus` | not yet | — | — |
+| `massimo-callegari-qlcplus` | implemented | qlcplus | https://docs.qlcplus.org/v5/advanced/web-interface/web-api |
 | `matrox-conductip` | not yet | — | — |
-| `matrox-monarch` | not yet | — | — |
+| `matrox-monarch` | implemented | matrox-monarch | https://video.matrox.com/wp-content/uploads/2026/08/en_monarch_hd_dev_tools_reference_guide.pdf |
 | `mds-otobako-pro` | not yet | — | — |
 | `media-player-classic` | not yet | — | — |
 | `mediakind-rx1` | not yet | — | — |
@@ -862,7 +883,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `microfilms-gpio` | not yet | — | — |
 | `microsoft-teams` | not yet | — | — |
 | `microsoft-vscode` | not yet | — | — |
-| `middleatlantic-racklink` | not yet | — | — |
+| `middleatlantic-racklink` | implemented | racklink | https://assets.grandandtoy.com/assets/Additional-pdf4/10/35/1035249455.pdf |
 | `middleman-adit` | not yet | — | — |
 | `middleman-breaktime` | not yet | — | — |
 | `middleman-scte104proxy` | not yet | — | — |
@@ -898,7 +919,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `neol-epowerswitch` | implemented | neol-epowerswitch | https://www.kvm-concepts.de/wp-content/uploads/neol_epowerswitch_4iec_manual.pdf |
 | `netgear-avline` | not yet | — | — |
 | `netinsight-nimbraedge` | not yet | — | — |
-| `netio-powerbox` | not yet | — | — |
+| `netio-powerbox` | implemented | netio-powerbox | https://www.netio-products.com/files/NETIO-M2M-API-Protocol-JSON.pdf |
 | `netron-en` | not yet | — | — |
 | `neumannmueller-stageflow` | not yet | — | — |
 | `neutrik-dpro` | not yet | — | — |
@@ -940,14 +961,14 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `nws-api` | not yet | — | — |
 | `obs-studio` | implemented | obs | https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md |
 | `obsbot-osc` | not yet | obsbot-osc | https://www.obsbot.com/explore/obsbot-center/osc |
-| `obsidiancontrol-onyx` | not yet | — | — |
+| `obsidiancontrol-onyx` | not yet | onyx-other | https://files.obsidiancontrol.com/s/yndNn7FsaB9Fyay/download |
 | `obsidiancontrol-onyx-osc` | implemented | onyx-osc | https://files.obsidiancontrol.com/s/yndNn7FsaB9Fyay/download |
 | `octava-pro-dsx` | not yet | — | — |
 | `octocue-clicker` | not yet | — | — |
 | `odyssey-insight` | not yet | — | — |
 | `olzzon-ndicontroller` | not yet | — | — |
 | `oncue-oncue` | not yet | — | — |
-| `openlp-http` | not yet | — | — |
+| `openlp-http` | not yet | openlp-http | https://discuss.openlp.org/d/7012-api-documentation-31 |
 | `openrgb-sdk` | not yet | — | — |
 | `opensong-api` | not yet | — | — |
 | `openweather-rest` | not yet | — | — |
@@ -984,7 +1005,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `pavonine-teleprompter` | not yet | — | — |
 | `peavy-ratc` | not yet | — | — |
 | `phabrix-qx` | not yet | — | — |
-| `pharos-designer` | not yet | — | — |
+| `pharos-designer` | not yet | pharos-designer | https://dl.pharoscontrols.com/software_help/designer2/content/help/reference/web%20interface/command%20line.htm |
 | `philips-hue` | not yet | — | — |
 | `philips-sicp` | not yet | — | — |
 | `philips-wiz-bulbs` | not yet | — | — |
@@ -1029,7 +1050,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `raspberry-gpio` | not yet | — | — |
 | `rationalacoustics-smaart3` | not yet | — | — |
 | `rationalacoustics-smaart4` | not yet | — | — |
-| `red-rcp2` | not yet | — | — |
+| `red-rcp2` | not yet | red-rcp2 | https://www.reddigitalcinema.com/download/rcp2-documentation |
 | `reddotlogics-hdmimatrix` | not yet | — | — |
 | `renewedvision-propresenter` | implemented | propresenter | https://openapi.propresenter.com/ |
 | `renewedvision-propresenter-api` | implemented | propresenter | https://openapi.propresenter.com/ |
@@ -1051,7 +1072,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `riotgames-leagueoflegends` | not yet | — | — |
 | `riotgames-replay` | not yet | — | — |
 | `rm-tallylights` | not yet | — | — |
-| `rme-totalmix` | not yet | — | — |
+| `rme-totalmix` | not yet | rme-totalmix | https://docs.rme-audio.com/aoxd/816-1c_settings/ |
 | `rocosoft-ptzjoy` | not yet | — | — |
 | `rode-rcv` | not yet | — | — |
 | `rogueamoeba-farrago` | not yet | — | — |
@@ -1261,8 +1282,8 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `tslproducts-usp3` | not yet | — | — |
 | `turtleav-chazy-control` | not yet | — | — |
 | `turtleav-mineola` | not yet | — | — |
-| `tvone-calico` | not yet | — | — |
-| `tvone-corio` | not yet | — | — |
+| `tvone-calico` | not yet | tvone-calico | https://tvone.com/filestore/downloads/tvONE-CORIOmaster-Commands-v1.7.0.pdf |
+| `tvone-corio` | implemented | tvone-corio | https://tvone.com/filestore/downloads/tvONE-CORIOmaster-Commands-v1.7.0.pdf |
 | `twitch-api` | not yet | — | — |
 | `twoloox-pandorasbox` | not yet | — | — |
 | `ubiquiti-unifi` | not yet | — | — |
@@ -1289,7 +1310,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `vicreo-variablelistener` | not yet | — | — |
 | `videobridgesolutions-vbs-overlay` | not yet | — | — |
 | `videocom-zoom-bridge` | not yet | — | — |
-| `videolan-vlc` | not yet | — | — |
+| `videolan-vlc` | implemented | vlc-http | https://wiki.videolan.org/VLC_HTTP_requests |
 | `videopathe-qmapper` | not yet | — | — |
 | `videopathe-qmonitor` | not yet | — | — |
 | `videopathe-qplayer` | not yet | — | — |
@@ -1305,7 +1326,7 @@ Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not 
 | `vislink-ulrx-ld` | not yet | — | — |
 | `vistream-online` | not yet | — | — |
 | `visualproductions-bstation2` | not yet | — | — |
-| `visualproductions-cuety` | not yet | — | — |
+| `visualproductions-cuety` | implemented | cuety | https://ltb.no/media/multicase/documents/visual%20productions/manual%20visual%20cuety_en_11.pdf |
 | `visualproductions-iocore` | not yet | — | — |
 | `visualproductions-timecore` | not yet | — | — |
 | `vitec-avediaplayer9300-series` | not yet | — | — |

@@ -993,3 +993,100 @@ test('ONYX, Dugan and Bosch send the commands printed in their manuals', async (
     await new Promise((resolve) => web.close(resolve));
   }
 });
+
+test('the recorder, router, display and console systems send their published commands', async () => {
+  const { wsAcceptKey } = require('../lib/modules/transports');
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(tcp);
+  const seen = [];
+  const web = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => { seen.push(`${req.method} ${req.url} ${body}`); res.writeHead(204); res.end(); });
+  });
+  const webPort = await listen(web);
+  const dgram = require('dgram');
+  const sink = dgram.createSocket('udp4');
+  const packets = [];
+  sink.on('message', (msg) => packets.push(msg));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const udp = sink.address().port;
+  const frames = [];
+  const ws = net.createServer((sock) => {
+    let buf = Buffer.alloc(0);
+    let open = false;
+    sock.on('data', (chunk) => {
+      buf = Buffer.concat([buf, chunk]);
+      if (!open) {
+        const at = buf.indexOf('\r\n\r\n');
+        if (at < 0) return;
+        const key = /Sec-WebSocket-Key:\s*(\S+)/i.exec(buf.subarray(0, at).toString());
+        sock.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${wsAcceptKey(key[1])}\r\n\r\n`);
+        buf = buf.subarray(at + 4);
+        open = true;
+      }
+      if (buf.length >= 2 && (buf[1] & 0x80)) {
+        let len = buf[1] & 0x7f;
+        let maskAt = 2;
+        if (len === 126) {
+          if (buf.length < 4) return;
+          len = buf.readUInt16BE(2);
+          maskAt = 4;
+        }
+        const start = maskAt + 4;
+        if (buf.length >= start + len) {
+          const mask = buf.subarray(maskAt, maskAt + 4);
+          const payload = Buffer.alloc(len);
+          for (let i = 0; i < len; i++) payload[i] = buf[start + i] ^ mask[i % 4];
+          frames.push(payload.toString('utf8'));
+          buf = buf.subarray(start + len);
+        }
+      }
+    });
+  });
+  const wsPort = await listen(ws);
+  const desk = new ModuleDesk();
+  try {
+    const tcpConn = { host: '127.0.0.1', port, reconnect: false };
+    for (const [system, action, options] of [
+      ['tvone-corio', 'preset', { preset: 1 }],
+      ['iiyama-prolite', 'on', {}],
+      ['racklink', 'on', {}],
+    ]) {
+      const row = desk.create(system, { connection: tcpConn });
+      await desk.connect(row.id);
+      await desk.run(row.id, action, options);
+    }
+    const monarch = desk.create('matrox-monarch', { connection: { host: '127.0.0.1', port: webPort, https: false, authType: 'basic', username: 'admin', password: 'admin' } });
+    await desk.run(monarch.id, 'record', {});
+    await desk.run(monarch.id, 'record', {});
+    const box = desk.create('netio-powerbox', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(box.id, 'on', { output: 1 });
+    const vlc = desk.create('vlc-http', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(vlc.id, 'next', {});
+    const cue = desk.create('cuety', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(cue.id, 'go', { playback: '21' });
+    const qlc = desk.create('qlcplus', { connection: { host: '127.0.0.1', port: wsPort, path: '/qlcplusWS' } });
+    await desk.run(qlc.id, 'start', { fn: 1 });
+    const cisco = desk.create('cisco-roomos', { connection: { host: '127.0.0.1', port: wsPort, path: '/ws' } });
+    await desk.run(cisco.id, 'present', {});
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const text = Buffer.concat(lines);
+    assert.ok(text.includes(Buffer.from('Preset.Take = 1\r')));
+    assert.ok(text.includes(Buffer.from('A60100000004011802B8', 'hex')));
+    assert.ok(text.includes(Buffer.from('fe090020010101303030306aff', 'hex')));
+    assert.ok(seen.some((line) => line.startsWith('GET /Monarch/syncconnect/sdk.aspx?command=StartRecording')));
+    assert.ok(seen.some((line) => line.startsWith('POST /netio.json') && line.includes('"Action":1')));
+    assert.ok(seen.some((line) => line.startsWith('GET /requests/status.xml?command=pl_next')));
+    assert.ok(packets.some((p) => p.toString() === 'pb21/go+'));
+    assert.ok(frames.includes('QLC+API|setFunctionStatus|1|1'));
+    assert.ok(frames.some((frame) => frame.includes('xCommand/Presentation/Start') && frame.includes('"ConnectorId":[2,3]')));
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => tcp.close(resolve));
+    await new Promise((resolve) => web.close(resolve));
+    await new Promise((resolve) => ws.close(resolve));
+  }
+});
