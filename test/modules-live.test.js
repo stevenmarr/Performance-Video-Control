@@ -1003,7 +1003,7 @@ test('the recorder, router, display and console systems send their published com
   const web = http.createServer((req, res) => {
     let body = '';
     req.on('data', (chunk) => { body += chunk; });
-    req.on('end', () => { seen.push(`${req.method} ${req.url} ${body}`); res.writeHead(204); res.end(); });
+    req.on('end', () => { seen.push(`${req.method} ${req.url} ${body} ua=${req.headers['user-agent'] || ''} uuid=${req.headers['ecammlive-uuid'] || ''}`); res.writeHead(204); res.end(); });
   });
   const webPort = await listen(web);
   const dgram = require('dgram');
@@ -1114,6 +1114,29 @@ test('the recorder, router, display and console systems send their published com
     const osc = require('../lib/drivers/osc');
     assert.ok(packets.some((p) => { const m = osc.decode(p); return m && m.address === '/beyond/master/brightness' && m.args[0] && m.args[0].value === 100; }));
     assert.ok(packets.some((p) => { const m = osc.decode(p); return m && m.address === '/LS/Go/PB/1' && m.args[0] && m.args[0].value === 0; }));
+    const idk = desk.create('idk-msd', { connection: tcpConn });
+    await desk.connect(idk.id);
+    await desk.run(idk.id, 'route', { input: 1, window: 1 });
+    const wyre = desk.create('wyrestorm-sw0402', { connection: tcpConn });
+    await desk.connect(wyre.id);
+    await desk.run(wyre.id, 'in1', {});
+    const ulxd = desk.create('shure-ulxd', { connection: tcpConn });
+    await desk.connect(ulxd.id);
+    await desk.run(ulxd.id, 'mute', { channel: '1' });
+    const ecamm = desk.create('ecamm-live', { connection: { host: '127.0.0.1', port: webPort, https: false, uuid: '11111111-2222-3333-4444-555555555555', client: 'Performance Video Control' } });
+    await desk.run(ecamm.id, 'next', {});
+    const genelec = desk.create('genelec-smart-ip', { connection: { host: '127.0.0.1', port: webPort, https: false, username: 'admin', password: 'admin', authType: 'basic' } });
+    await desk.run(genelec.id, 'level', {});
+    const play = desk.create('playbackpro', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(play.id, 'take', {});
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const last = Buffer.concat(lines);
+    assert.ok(last.includes(Buffer.from('@SSW,1,1\r\n')));
+    assert.ok(last.includes(Buffer.from('AA020007000000001001003C', 'hex')));
+    assert.ok(last.includes(Buffer.from('< SET 1 AUDIO_MUTE ON >\r')));
+    assert.ok(seen.some((line) => line.startsWith('GET /setNext') && line.includes('ua=PerformanceVideoControl') && line.includes('uuid=11111111-2222-3333-4444-555555555555')));
+    assert.ok(seen.some((line) => line.startsWith('PUT /public/v1/audio/volume') && line.includes('"level":-5.2')));
+    assert.ok(packets.some((p) => p.toString() === 'TA'));
   } finally {
     desk.close();
     sink.close();

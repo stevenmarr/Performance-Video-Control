@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not yet: **887**.
+Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not yet: **881**.
 
 ## Systems in this build
 
@@ -193,6 +193,12 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | LightShark (`lightshark`) | implemented | 1 | 2 | 1 | official | https://media.equipson.es/Docs/Manuales/LightShark_v1_4_EN.pdf |
 | Adder CCS-PRO (`adder-ccs`) | implemented | 1 | 2 | 1 | official | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
 | The Lighting Controller (`tlc-live`) | implemented | 3 | 2 | 1 | official | http://download.thelightingcontroller.com/software/External_Application/Protocol.pdf |
+| Ecamm Live (`ecamm-live`) | implemented | 3 | 2 | 1 | official | https://zip.ecammdownloads.com/Ecamm%20Live%20Control.pdf |
+| PlaybackPro Plus (`playbackpro`) | implemented | 3 | 2 | 1 | official | https://www.dtvideolabs.com/user-guide-playbackproplus-x/ |
+| IDK MSD-V6 (`idk-msd`) | implemented | 1 | 2 | 1 | official | https://adeogroup.it/sites/default/files/prodotti_allegati_pubblici/idk_command_guide_msd-v6.pdf |
+| Genelec Smart IP (`genelec-smart-ip`) | implemented | 2 | 2 | 1 | official | https://applicationmarket.crestron.com/content/Help/Genelec/Smart_IP_API_Documentation.pdf |
+| WyreStorm SW-0402 (`wyrestorm-sw0402`) | implemented | 2 | 2 | 1 | official | https://www.ambertech.com.au/Documents/brochures/WY-SW0402MVHDMI.pdf |
+| Shure ULX-D (`shure-ulxd`) | implemented | 2 | 2 | 1 | official | https://www.shure.com/en-US/docs/commandstrings/ULXD |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -255,14 +261,25 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | OpenLP (`openlp-http`) | not yet | 0 | 0 | 0 | official | https://discuss.openlp.org/d/7012-api-documentation-31 |
 | Obsidian ONYX (`onyx-other`) | not yet | 0 | 0 | 0 | official | https://files.obsidiancontrol.com/s/yndNn7FsaB9Fyay/download |
 | tvONE Calico (`tvone-calico`) | not yet | 0 | 0 | 0 | official | https://tvone.com/filestore/downloads/tvONE-CORIOmaster-Commands-v1.7.0.pdf |
-| RGBLink TAO (`rgblink-tao`) | not yet | 0 | 0 | 0 | official | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| RGBLink TAO (`rgblink-tao`) | not yet | 0 | 0 | 0 | official | https://www.rgblink.com/prostream/tao-pro.html |
 | RGBLink VSP628 (`rgblink-vsp`) | not yet | 0 | 0 | 0 | official | https://www.rgblink.com/proav/vsp628-pro.html |
-| RGBLink X3 (`rgblink-x3`) | not yet | 0 | 0 | 0 | official | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| RGBLink X3 (`rgblink-x3`) | not yet | 0 | 0 | 0 | official | https://www.rgblink.com/uppic/file/202302150732192736.pdf |
 | Telestream Wirecast (`telestream-wirecast`) | not yet | 0 | 0 | 0 | official | https://www.telestream.net/pdfs/user-guides/wirecast/Wirecast-16-User-Guide-Windows.pdf |
 | Nexo NXAMP (`nexo-nxamp`) | not yet | 0 | 0 | 0 | official | https://www.nexo-sa.com/wp-content/uploads/NXAMPmk2-User-Manual-Rev02b-EN.pdf |
-| Ecamm Live (`ecamm-live`) | not yet | 0 | 0 | 0 | official | https://support.ecamm.com/en/articles/17683976-automating-ecamm |
 | Modulo Player (`modulo-player`) | not yet | 0 | 0 | 0 | official | https://support.modulo-pi.com/modulo-kinetic-manual/1/en/topic/tcp-ip-external-control-protocol |
 | Adder Infinity, XDIP and AVM (`adder-other`) | not yet | 0 | 0 | 0 | official | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
+| IDK FDX and NINJAR (`idk-other`) | not yet | 0 | 0 | 0 | official | https://adeogroup.it/sites/default/files/prodotti_allegati_pubblici/idk_command_guide_msd-v6.pdf |
+| MADRIX AURA (`madrix-aura`) | not yet | 0 | 0 | 0 | official | https://help.madrix.com/m5/httpremote/HttpRemoteControl.html |
+| Sony PXW (`sony-pxw`) | not yet | 0 | 0 | 0 | official | https://pro.sony/s3/2022/09/05154443/CGI-Command-List-Version-1.00.pdf |
+| Shure PSM1000 (`shure-psm1000`) | not yet | 0 | 0 | 0 | official | https://www.shure.com/en-US/docs/commandstrings/PSM1000 |
+| Shure ANI4IN (`shure-ani4in`) | not yet | 0 | 0 | 0 | official | https://www.shure.com/en-US/docs/commandstrings/ANI4IN |
+| Shure MXW (`shure-mxw`) | not yet | 0 | 0 | 0 | official | https://www.shure.com/en-US/docs/commandstrings/MXW |
+| Hynamic media server (`hynamic-mediaserver`) | not yet | 0 | 0 | 0 | official | https://www.hynamic.com/ |
+| AVMatrix Shark (`avmatrix-shark`) | not yet | 0 | 0 | 0 | official | https://www.avmatrix.net/ |
+| Magnimage processors (`magnimage`) | not yet | 0 | 0 | 0 | official | https://www.magnimage.com/ |
+| LightFactory (`lightfactory`) | not yet | 0 | 0 | 0 | official | https://www.lightfactory.net/ |
+| BirdDog Central (`birddog-central`) | not yet | 0 | 0 | 0 | official | https://birddog.tv/central/ |
+| Videohub Control (`bmd-videohub-panel`) | not yet | 0 | 0 | 0 | official | https://www.blackmagicdesign.com/developer |
 
 ## Notes on sources
 
@@ -286,7 +303,8 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 - MagicQ UDP `1G`, mimoLive `setLive`, ATEN `sw i02 o05`, SCS `scsGo("0")`, Aximmetry `ComposerCtrBoardPressButtonAction`, Capture `/ping` and Lampy `/lampy/pbf/1/flash` are separate systems. BrightSign does not print a playback string.
 - ONYX `/Mx/playback/page1/0/go`, Dugan `CM 2, 1` and Bosch `rcp.xml` command `0x09A5` are separate systems. Calrec CSCP, Optimal Audio Zone and Chroma-Q Vista did not print a complete command.
 - Monarch `StartRecording`, CORIOmaster `Preset.Take = 1`, NETIO `Action` 1, iiyama `A60100000004011802B8`, VLC `pl_next`, Cisco `xCommand/Presentation/Start`, QLC+ `setFunctionStatus`, Cuety `pb21/go+` and RackLink `fe090020010101303030306aff` are separate systems. AMP, AMPP, TotalMix, Pharos, RED RCP2, Marshall, Fx4, OpenLP, the non-OSC ONYX id and Calico did not yield a complete command.
-- Philips SICP `06 01 00 18 01 1E`, Digital Loggers `/outlet?1=ON`, Tascam `012`, RGBLink `TOVC0200000072000009007b`, BEYOND `/beyond/master/brightness`, LightShark `/LS/Go/PB/1`, Adder CCS `/cgi-bin/channel` and The Lighting Controller `SEQUENTIAL_GO` are separate systems. RGBLink TAO, VSP628 and X3, Wirecast, NXAMP, Ecamm, Modulo Player, and Adder Infinity, XDIP and AVM did not get a command copied from a different product.
+- Philips SICP `06 01 00 18 01 1E`, Digital Loggers `/outlet?1=ON`, Tascam `012`, RGBLink `TOVC0200000072000009007b`, BEYOND `/beyond/master/brightness`, LightShark `/LS/Go/PB/1`, Adder CCS `/cgi-bin/channel` and The Lighting Controller `SEQUENTIAL_GO` are separate systems. RGBLink TAO, VSP628 and X3, Wirecast, NXAMP, Modulo Player, and Adder Infinity, XDIP and AVM did not get a command copied from a different product.
+- Ecamm `GET /setNext`, PlaybackPro `TA`, IDK `@SSW,1,1`, Genelec `PUT /public/v1/audio/volume`, WyreStorm SW-0402 `AA020007000000001001003C` and ULX-D `< SET 1 AUDIO_MUTE ON >` are separate systems. IDK FDX and NINJAR, MADRIX AURA, Sony PXW, PSM1000, ANI4IN, MXW, Hynamic, AVMatrix Shark, Magnimage, LightFactory, BirdDog Central and the Videohub control panel did not yield a command that was safe to send.
 
 ## Every Companion connection
 
@@ -376,7 +394,7 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `avitech-pacificms1plus` | not yet | — | — |
 | `avitech-sequoia4k60-sequoia4k60l` | not yet | — | — |
 | `avitech-titan-9000` | not yet | — | — |
-| `avmatrix-shark` | not yet | — | — |
+| `avmatrix-shark` | not yet | avmatrix-shark | https://www.avmatrix.net/ |
 | `avmatrix-switcher` | implemented | avmatrix-switcher | https://www.vuetec.de/SW53/media/pdf/39/26/f6/API-Guide-for-MSS0811-V1-0.pdf |
 | `avmatrix-ts3019` | not yet | — | — |
 | `avmediatools-protimer` | not yet | — | — |
@@ -426,7 +444,7 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `bigrig-tuneit` | not yet | — | — |
 | `binary-moipcontroller` | not yet | — | — |
 | `binwiederhier-ntfy` | not yet | — | — |
-| `birddog-central` | not yet | — | — |
+| `birddog-central` | not yet | birddog-central | https://birddog.tv/central/ |
 | `birddog-connect` | not yet | — | — |
 | `birddog-converters` | not yet | — | — |
 | `birddog-ptz` | implemented | birddog-ptz | https://birddog.tv/ |
@@ -455,7 +473,7 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `bmd-teranex-mini` | not yet | bmd-open | https://www.blackmagicdesign.com/developer |
 | `bmd-ultimatte` | implemented | bmd-ultimatte | https://documents.blackmagicdesign.com/DeveloperManuals/UltimatteEthernetProtocol.pdf |
 | `bmd-videohub` | implemented | videohub | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |
-| `bmd-videohub-controlpanel` | not yet | — | — |
+| `bmd-videohub-controlpanel` | not yet | bmd-videohub-panel | https://www.blackmagicdesign.com/developer |
 | `bmd-webpresenter` | implemented | bmd-streaming | https://documents.blackmagicdesign.com/DeveloperManuals/WebPresenterEthernetProtocol.pdf |
 | `boinx-mimolive` | implemented | mimolive | https://mimolive.com/user-manual/remote-control-automation/http-api/examples-of-api-usage/ |
 | `bolin-ptz` | not yet | ptz-open | https://docs.ptzoptics.com/resources/guides/choosing-a-control-protocol/ |
@@ -593,16 +611,16 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `dpa-wireless` | not yet | — | — |
 | `draco-tera` | not yet | — | — |
 | `dreamchip-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
-| `dreamsolutions-lightfactory` | not yet | — | — |
+| `dreamsolutions-lightfactory` | not yet | lightfactory | https://www.lightfactory.net/ |
 | `dsan-limitimer` | not yet | — | — |
 | `dsan-perfectcue` | not yet | — | — |
-| `dtvideolabs-playbackproplus` | not yet | — | — |
+| `dtvideolabs-playbackproplus` | implemented | playbackpro | https://www.dtvideolabs.com/user-guide-playbackproplus-x/ |
 | `duonn-atrium20` | not yet | — | — |
 | `dylanmaudio-apps` | not yet | — | — |
 | `easyprompter-remote` | not yet | — | — |
 | `easyrecord-cgcontrol` | not yet | — | — |
 | `eaton-epdu` | not yet | cyberpower-eaton | https://eaton.my.site.com/publicknowledge/s/article/API-documentation-for-G4-PDUs |
-| `ecamm-live` | not yet | ecamm-live | https://support.ecamm.com/en/articles/17683976-automating-ecamm |
+| `ecamm-live` | implemented | ecamm-live | https://zip.ecammdownloads.com/Ecamm%20Live%20Control.pdf |
 | `ecclesialab-worshiplive` | not yet | — | — |
 | `eidsystems-kaleoai` | not yet | — | — |
 | `eiki-wspprojector` | implemented | eiki-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
@@ -673,7 +691,7 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `gammacontrol-gmaestro` | not yet | — | — |
 | `gdsys-muxkvmswitch` | not yet | — | — |
 | `gefen-dvimatrix` | implemented | gefen-matrix | https://www.fullcompass.com/common/files/28025-GefenIncGEFDVI16416PBManual.pdf |
-| `genelec-smart-ip` | not yet | — | — |
+| `genelec-smart-ip` | implemented | genelec-smart-ip | https://applicationmarket.crestron.com/content/Help/Genelec/Smart_IP_API_Documentation.pdf |
 | `generic-aes70` | not yet | — | — |
 | `generic-artnet` | implemented | artnet | https://art-net.org.uk/how-it-works/streaming-packets/art-dmx-packet-definition/ |
 | `generic-blink` | not yet | — | — |
@@ -761,15 +779,15 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `homeassistant-server` | not yet | — | — |
 | `hoobs-api` | not yet | — | — |
 | `hopla-powerstudio` | not yet | — | — |
-| `hynamic-mediaserver` | not yet | — | — |
+| `hynamic-mediaserver` | not yet | hynamic-mediaserver | https://www.hynamic.com/ |
 | `ibm-watson` | not yet | — | — |
 | `iccms-sib` | not yet | — | — |
 | `iconnectivity-interfaces` | not yet | — | — |
 | `ictag-easyvideo` | not yet | — | — |
 | `icue-nexus` | not yet | — | — |
-| `idk-fdx` | not yet | — | — |
-| `idk-msd` | not yet | — | — |
-| `idk-ninjar` | not yet | — | — |
+| `idk-fdx` | not yet | idk-other | https://adeogroup.it/sites/default/files/prodotti_allegati_pubblici/idk_command_guide_msd-v6.pdf |
+| `idk-msd` | implemented | idk-msd | https://adeogroup.it/sites/default/files/prodotti_allegati_pubblici/idk_command_guide_msd-v6.pdf |
+| `idk-ninjar` | not yet | idk-other | https://adeogroup.it/sites/default/files/prodotti_allegati_pubblici/idk_command_guide_msd-v6.pdf |
 | `ifelseware-avkey` | not yet | — | — |
 | `ifelseware-avplayback` | not yet | — | — |
 | `iiyama-prolite` | implemented | iiyama-prolite | https://iiyama.com/f/2745ee2456421dcc5459a549095c2d11_rs232-lan-commands-2026-08-txx29as-lhxx66-lhxx81.pdf |
@@ -868,14 +886,14 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `lutron-caseta` | not yet | — | — |
 | `lyntec-rpc-breaker` | not yet | — | — |
 | `mackie-dlzcreator` | not yet | — | — |
-| `madrix-aura` | not yet | — | — |
+| `madrix-aura` | not yet | madrix-aura | https://help.madrix.com/m5/httpremote/HttpRemoteControl.html |
 | `magewell-director` | not yet | magewell | https://www.magewell.com/developer/27/detail |
 | `magewell-proconvert-decoder` | not yet | magewell | https://www.magewell.com/developer/27/detail |
 | `magewell-ultrastream` | not yet | magewell | https://www.magewell.com/developer/27/detail |
 | `magichome-bulb` | not yet | — | — |
 | `magicsoft-recorder` | not yet | — | — |
-| `magnimage-fseries` | not yet | — | — |
-| `magnimage-mig-ec` | not yet | — | — |
+| `magnimage-fseries` | not yet | magnimage | https://www.magnimage.com/ |
+| `magnimage-mig-ec` | not yet | magnimage | https://www.magnimage.com/ |
 | `makeprox-glue` | not yet | — | — |
 | `malighting-grandma2` | implemented | grandma2 | https://help.malighting.com/Page/grandMA2/remote_command/en/3.9 |
 | `malighting-grandma3` | implemented | grandma3 | https://help.malighting.com/grandMA3/2.5/HTML/osc_advanced_examples.html |
@@ -1079,9 +1097,9 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `resolume-arena` | implemented | resolume | https://resolume.com/support/en/osc |
 | `restream-api` | not yet | — | — |
 | `rgblink-mini` | implemented | rgblink-rs232 | https://www.rgblink.com/newsdetail.aspx?id=151 |
-| `rgblink-tao1pro` | not yet | rgblink-tao | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| `rgblink-tao1pro` | not yet | rgblink-tao | https://www.rgblink.com/prostream/tao-pro.html |
 | `rgblink-vsp628pro` | not yet | rgblink-vsp | https://www.rgblink.com/proav/vsp628-pro.html |
-| `rgblink-x3` | not yet | rgblink-x3 | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| `rgblink-x3` | not yet | rgblink-x3 | https://www.rgblink.com/uppic/file/202302150732192736.pdf |
 | `riedel-medianetworks` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
 | `riedel-mediornet` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
 | `riedel-rrcs` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
@@ -1145,7 +1163,7 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `showsign-signage` | not yet | — | — |
 | `showtec-lampy` | implemented | showtec-lampy | https://www.showtec-lights.com/en/mwdownloads/download/link/id/17455196 |
 | `showtrak-server` | not yet | — | — |
-| `shure-ani4in` | not yet | — | — |
+| `shure-ani4in` | not yet | shure-ani4in | https://www.shure.com/en-US/docs/commandstrings/ANI4IN |
 | `shure-chargers` | not yet | — | — |
 | `shure-dca901` | not yet | — | — |
 | `shure-dis-ccu` | not yet | — | — |
@@ -1153,11 +1171,11 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `shure-mxa910` | implemented | shure-mxa910 | https://www.shure.com/en-US/docs/commandstrings/MXA910 |
 | `shure-mxcw` | not yet | — | — |
 | `shure-mxn5` | not yet | — | — |
-| `shure-mxw` | not yet | — | — |
+| `shure-mxw` | not yet | shure-mxw | https://www.shure.com/en-US/docs/commandstrings/MXW |
 | `shure-p300` | not yet | shure-p300 | https://www.shure.com/en-US/docs/commandstrings/P300 |
-| `shure-psm1000` | not yet | — | — |
+| `shure-psm1000` | not yet | shure-psm1000 | https://www.shure.com/en-US/docs/commandstrings/PSM1000 |
 | `shure-scm820` | not yet | — | — |
-| `shure-wireless` | not yet | — | — |
+| `shure-wireless` | implemented | shure-ulxd | https://www.shure.com/en-US/docs/commandstrings/ULXD |
 | `sienna-ndimonitor` | not yet | — | — |
 | `sikn-kerkomroep` | not yet | — | — |
 | `simedia-yesapi` | not yet | — | — |
@@ -1193,7 +1211,7 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `sony-broadcastmonitor` | not yet | — | — |
 | `sony-cled` | not yet | — | — |
 | `sony-ptz` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
-| `sony-pxw` | not yet | — | — |
+| `sony-pxw` | not yet | sony-pxw | https://pro.sony/s3/2022/09/05154443/CGI-Command-List-Version-1.00.pdf |
 | `sony-serialtally` | not yet | — | — |
 | `sony-srg-a12` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `sony-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
@@ -1370,7 +1388,7 @@ Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not 
 | `workflownetwork-livetime` | not yet | — | — |
 | `wtav-watchout-director-control` | not yet | — | — |
 | `wyrestorm-matrix` | implemented | wyrestorm-matrix | https://downloads.wyrestorm.cloud/switchers/matrix-switchers/documents/MX-0404-SCL%20API%20092225.pdf |
-| `wyrestorm-sw0402mv` | not yet | — | — |
+| `wyrestorm-sw0402mv` | implemented | wyrestorm-sw0402 | https://www.ambertech.com.au/Documents/brochures/WY-SW0402MVHDMI.pdf |
 | `xiamen-sprolink-vd-series` | not yet | — | — |
 | `yamaha-ad8hr` | not yet | yamaha-open | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
 | `yamaha-adecia` | not yet | yamaha-open | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
