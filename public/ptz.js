@@ -31,7 +31,7 @@
   let kaTimer = null; let motionCam = null; const held = { pt: false, zoom: false, focus: false };
   const anyHeld = () => held.pt || held.zoom || held.focus;
   function keepAlive() {
-    if (anyHeld() && !kaTimer) kaTimer = setInterval(() => { if (motionCam) api('POST', `${ptzId()}/cmd/keepalive`, { cam: motionCam }).catch(() => {}); }, 400);
+    if (anyHeld() && !kaTimer) kaTimer = setInterval(() => { if (motionCam) api('POST', `/api/sys/${ptzId()}/cmd/keepalive`, { cam: motionCam }).catch(() => {}); }, 400);
     if (!anyHeld() && kaTimer) { clearInterval(kaTimer); kaTimer = null; }
     document.body.classList.toggle('ptz-moving', anyHeld());
   }
@@ -42,7 +42,7 @@
       if (st.inflight) return;
       if (st.stop) {
         st.stop = false; st.inflight = true;
-        api('POST', `${ptzId()}/cmd/stop`, { cam: st.cam, axes: [name] }).catch((e) => toast(e.message, true)).finally(() => { st.inflight = false; pump(); });
+        api('POST', `/api/sys/${ptzId()}/cmd/stop`, { cam: st.cam, axes: [name] }).catch((e) => toast(e.message, true)).finally(() => { st.inflight = false; pump(); });
         return;
       }
       if (!st.pending) return;
@@ -66,7 +66,7 @@
   function releaseAll(reason) {
     const cam = motionCam; const was = anyHeld();
     for (const k of Object.keys(AX)) release(k);
-    if (was && cam) api('POST', `${ptzId()}/cmd/stop`, { cam }).catch(() => {});
+    if (was && cam) api('POST', `/api/sys/${ptzId()}/cmd/stop`, { cam }).catch(() => {});
     if (was && reason) console.info(`PTZ stop: ${reason}`);
   }
   const canMove = () => { const c = sel(); return !!(c && c.connected && c.power !== 'standby'); };
@@ -109,7 +109,7 @@
   window.addEventListener('blur', () => releaseAll('window blur'));
   document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll('page hidden'); });
   window.addEventListener('cc:tab', () => releaseAll('tab change'));
-  window.addEventListener('pagehide', () => { if (anyHeld() && motionCam && navigator.sendBeacon) navigator.sendBeacon(`${ptzId()}/cmd/stop`, new Blob([JSON.stringify({ cam: motionCam })], { type: 'application/json' })); });
+  window.addEventListener('pagehide', () => { if (anyHeld() && motionCam && navigator.sendBeacon) navigator.sendBeacon(`/api/sys/${ptzId()}/cmd/stop`, new Blob([JSON.stringify({ cam: motionCam })], { type: 'application/json' })); });
   document.addEventListener('contextmenu', (e) => { if (e.target.closest('#pane-pctl .joy, #pane-pctl .rock')) e.preventDefault(); });
   // keys: arrows pan / tilt at max speed, + / - zoom, Esc = all stop
   const KEYS = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }; const down = new Set();
@@ -466,18 +466,29 @@
     const n = b.dataset.mload; if (!confirm(`Load paint memory ${n} ("${m[n].name}") into ${c.name}? This changes white balance, paint, detail, gamma, knee, matrix and chroma.`)) return undefined;
     return run(cmd('paintLoad', { slot: Number(n) }).then((r) => toast(`Loaded MEM ${n}: ${r.applied} values${r.failed.length ? `, ${r.failed.length} refused` : ''}`, !!r.failed.length)));
   });
+  function modelOptions(selected) {
+    const list = V.modelList || [];
+    const cur = selected || '';
+    const opts = list.map((m) => { const id = m.id === 'Auto' ? '' : m.id; return `<option value="${esc(id)}" ${cur === id ? 'selected' : ''}>${esc(m.label)}</option>`; }).join('');
+    return opts || `<option value="">Auto (detect from camera)</option>`;
+  }
+  function fillAddModel() {
+    const sel = $('#ptzAdd') && $('#ptzAdd').elements.model; if (!sel) return;
+    const keep = sel.value; sel.innerHTML = modelOptions(keep);
+  }
   function renderCams() {
     S.set($('#ptzCamList'), 'ptz-cams', (V.cameras || []).map((c) => `<div class="row cam-line ${c.connected ? '' : 'off'}" data-cam="${esc(c.id)}">
       <span class="led ${c.connected ? 'ok' : 'off'}"></span><span class="lbl">${esc(c.name)}<small>${esc(c.model || 'unknown model')} · series ${esc(c.series)}${c.title ? ` · ${esc(c.title)}` : ''} · ${esc(c.host)}:${esc(c.port)}${c.sim ? ' · simulator' : ''}${c.connected ? '' : ` · ${esc(c.error || 'offline')}`}</small></span>
       <span class="chip">${c.power ? esc(c.power.toUpperCase()) : '—'}</span>${c.tally ? '<span class="chip pgmc">TALLY</span>' : ''}${c.sim ? '<span class="chip">SIM</span>' : ''}<span class="spacer"></span>
       <span class="chip login ${c.authError ? 'bad' : ''}" title="${c.authError ? 'The camera refused the login' : c.authScheme ? `The camera asked for a login (HTTP ${c.authScheme})` : 'Sent only if the camera asks for a login'}">${c.authError ? 'LOGIN REFUSED' : `LOGIN ${esc(c.user || 'admin')}${c.loginDefault ? ' · FACTORY' : ''}`}</span>
+      <label class="ctl-sel mini" title="Camera type used for the command set. Auto uses the model the camera reports."><select data-camera-type="${esc(c.id)}" aria-label="Camera type">${modelOptions(c.cameraType || '')}</select></label>
       <label class="ctl-sel mini" title="Model series used for the command set ('auto' = from the camera's model)"><select data-series="${esc(c.id)}"><option value="">series: auto</option>${(V.seriesList || []).map((s) => `<option value="${esc(s)}" ${c.series === s && c.seriesOverride ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
       <button class="btn mini ${c.id === V.selected ? 'primary' : ''}" data-selcam="${esc(c.id)}" type="button">${c.id === V.selected ? 'SELECTED' : 'SELECT'}</button>
       <button class="btn mini" data-edit="${esc(c.id)}" type="button">EDIT</button><button class="btn mini" data-login="${esc(c.id)}" type="button" title="User / password the camera asks for (factory: admin / 12345)">LOGIN</button><button class="btn mini" data-camsim="${esc(c.id)}" data-on="${c.sim ? '0' : '1'}" type="button">${c.sim ? 'USE SAVED ADDRESS' : 'ASSIGN AS SIM'}</button><button class="btn mini danger" data-rm="${esc(c.id)}" type="button">REMOVE</button></div>`).join('') || '<div class="note">No cameras yet. Add one below.</div>');
   }
   S.onRender((v, tab) => {
     V = v; if (!V || V.kind !== 'ptz') { releaseAll(); return; }
-    if (tab === 'pctl') renderCtl(); else if (tab === 'pcams') renderCams();
+    if (tab === 'pctl') renderCtl(); else if (tab === 'pcams') { fillAddModel(); renderCams(); }
   });
   // fast readouts for the camera being driven: every 500 ms while moving, every 2 s otherwise
   let lastRead = 0; let reading = false;
@@ -509,7 +520,7 @@
     const name = prompt(`Name for ${c.name} preset ${n} (empty clears it)`, nm || ''); if (name === null) return undefined;
     return run(cmd('rename', { preset: n, name: name.trim() }));
   });
-  $('#ptzCamList').addEventListener('change', (ev) => { const s = ev.target.closest('[data-series]'); if (!s) return; run(api('POST', `/api/sys/${ptzId()}/cameras/${s.dataset.series}`, { series: s.value }).then(() => { cats.clear(); built = ''; toast('Camera series saved'); })); });
+  $('#ptzCamList').addEventListener('change', (ev) => { const t = ev.target.closest('[data-camera-type]'); if (t) return run(api('POST', `/api/sys/${ptzId()}/cameras/${t.dataset.cameraType}`, { model: t.value }).then(() => { cats.clear(); built = ''; toast('Camera type saved'); })); const s = ev.target.closest('[data-series]'); if (!s) return; run(api('POST', `/api/sys/${ptzId()}/cameras/${s.dataset.series}`, { series: s.value }).then(() => { cats.clear(); built = ''; toast('Camera series saved'); })); });
   $('#ptzCamList').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return; const d = b.dataset;
     const c = d.selcam || d.edit || d.rm || d.login || d.camsim; const cam = (V.cameras || []).find((x) => x.id === c);
@@ -533,7 +544,7 @@
     run(api('POST', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(id)}`, body).then(() => toast(dlg.returnValue === 'factory' ? 'Camera login back to the factory default' : 'Camera login saved')).finally(S.refetch));
   });
   $('#ptzAdd').addEventListener('submit', (ev) => {
-    ev.preventDefault(); const fm = ev.target; const body = { name: fm.elements.name.value.trim(), host: fm.elements.host.value.trim(), port: Number(fm.elements.port.value) || 80 };
+    ev.preventDefault(); const fm = ev.target; const body = { name: fm.elements.name.value.trim(), host: fm.elements.host.value.trim(), port: Number(fm.elements.port.value) || 80, ...(fm.elements.model && fm.elements.model.value ? { model: fm.elements.model.value } : {}) };
     run(api('POST', `/api/sys/${ptzId()}/cameras`, body).then(() => { fm.reset(); toast(`Added ${body.name || 'camera'}`); }).finally(S.refetch));
   });
   // ---------- 0.11.1 dockable dashboard (public/dock.js) ----------

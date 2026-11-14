@@ -465,6 +465,7 @@
     <div id="ptzCamList" class="rows"></div>
     <form id="ptzAdd" class="row add-cam"><span class="lbl">Add a camera<small>Panasonic AW-UE / AW-HE, HTTP (CGI) control</small></span>
       <input name="name" placeholder="Name" maxlength="40"><input name="host" placeholder="IP address" autocomplete="off" spellcheck="false"><input name="port" type="number" min="1" max="65535" placeholder="80" class="slot-in">
+      <label class="ctl-sel mini" title="Camera type used for the command set. Auto uses the model the camera reports."><select name="model" aria-label="Camera type"><option value="">Auto (detect from camera)</option></select></label>
       <button class="btn mini primary">ADD CAMERA</button></form>
   </section>
   <!-- SCOPES: persistent engineering tab. Lightning is a mode inside the scope strip. Desktop Video is the live input. public/scopes-tab.js -->
