@@ -1,4 +1,5 @@
 node_modules/
+.build/
 tools/native/decklink-recv/build/
 presets.json
 settings.json
