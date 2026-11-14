@@ -526,10 +526,13 @@
     const g = `grid mode-${mode === 'program' ? 'recall' : mode}${moveSrc != null ? ' has-src' : ''}`; if ($('#xgrid').className !== g) $('#xgrid').className = g;
     $('#xmodeHint').innerHTML = HINTS[mode] + (V.capabilities.armDestinations ? ' <span class="small">E2: the selected destinations are <b>armed</b> on the processor; TAKE / CUT run on the armed ones.</span>' : '');
     document.querySelectorAll('[data-xmode]').forEach((b) => b.classList.toggle('active', b.dataset.xmode === mode));
-    const tg = V.selection; const txt = tg.length ? tg.join(' · ') : 'nothing selected';
+    const picked = V.selection || [];
+    const tg = (V.takeTargets && V.takeTargets.length) ? V.takeTargets : [];
+    const warn = V.takeWarning || 'Nothing armed: select destinations or recall a preset first';
+    const txt = picked.length ? picked.join(' · ') : (tg.length ? tg.join(' · ') : warn);
     for (const [id, w] of [['#xTake', 'TAKE'], ['#xCut', 'CUT']]) { const b = $(id); b.disabled = !tg.length || !V.status.connected; if (b.dataset.tg !== txt) { b.dataset.tg = txt; b.innerHTML = `${w}<small>${esc(txt)}</small>`; } }
     const a = $('#xAuto'); a.classList.toggle('on', V.autoTake); a.innerHTML = `AUTO TAKE<br><b>${V.autoTake ? 'ON' : 'OFF'}</b>`;
-    const xt = $('#xtargetsX'); xt.textContent = tg.length ? `TAKE / CUT → ${tg.join(', ')}` : 'TAKE / CUT → nothing selected'; xt.classList.toggle('none', !tg.length);
+    const xt = $('#xtargetsX'); xt.textContent = tg.length ? `TAKE / CUT → ${txt}` : `TAKE / CUT → ${warn}`; xt.classList.toggle('none', !tg.length);
   }
   $('#xdestRow').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b || !V) return;
