@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not yet: **921**.
+Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not yet: **914**.
 
 ## Systems in this build
 
@@ -159,6 +159,13 @@ Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not 
 | VidBlasterX (`vidblaster`) | implemented | 3 | 2 | 1 | official | https://vidblaster.com/help/x6/API.html |
 | Blackbird matrix (`blackbird-matrix`) | implemented | 2 | 2 | 1 | official | https://downloads.monoprice.com/files/manuals/27841_Manual_180419.pdf |
 | CYP matrix (`cyp-matrix`) | implemented | 3 | 2 | 1 | official | https://cypeurope.com/wp-content/uploads/2023/04/EL-42M-PIP_PDF-Manual_v1.02_Web.pdf |
+| Audac MTX (`audac-mtx`) | implemented | 4 | 2 | 1 | official | https://downloads.pvs.global/downloads/audac/products/manuals/MTX_Commands_Manual.pdf |
+| AtlasIED Atmosphere (`atlasied-atmosphere`) | implemented | 2 | 2 | 1 | official | https://www.atlasied.com/ATS006993-B-AZM4-AZM8-3rd-Party-Control.pdf |
+| Axia Livewire (`axia-livewire`) | implemented | 2 | 2 | 1 | official | https://docs.telosalliance.com/docs/axia-ip-driver-and-aes67 |
+| Avolites Titan (`avolites-titan`) | implemented | 2 | 2 | 1 | official | https://api.avolites.com/12.0/Playbacks.FirePlaybackAtLevel.html |
+| High End Hog 4 (`highend-hog4`) | implemented | 3 | 2 | 1 | official | https://www.etcconnect.com/webdocs/Controls/HOG/HTML/en/sect-osc_mappings.htm |
+| Dataton WATCHOUT HTTP (`dataton-watchout-json`) | implemented | 3 | 2 | 1 | official | https://docs.dataton.com/watchout-7-new/watchout/external-control/http-rest-api.html |
+| 7thSense Delta (`delta-media`) | implemented | 3 | 2 | 1 | official | https://portal.7thsense.one/user-guides/MC255-managing-servers/deltagui_external_control.html |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -204,6 +211,8 @@ Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not 
 | Panasonic Lumix (`panasonic-lumix`) | not yet | 0 | 0 | 0 | official | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/CX350_CX4000_Command_for_PTZ_Control_Protocol.pdf |
 | Voicemeeter (`voicemeeter`) | not yet | 0 | 0 | 0 | official | https://download.vb-audio.com/Download_CABLE/VoicemeeterRemoteAPI.pdf |
 | LG display (`lgtv-display`) | not yet | 0 | 0 | 0 | official | https://gscs-b2c.lge.com/open/downloadFile?fileId=KROWM000594321.pdf |
+| ArKaos MediaMaster (`arkaos-mediamaster`) | not yet | 0 | 0 | 0 | official | https://cdn.arkaos.com/arkaos/downloads/ArKaos_MediaMaster_6_User_Guide.pdf |
+| Avolites Ai (`avolites-ai`) | not yet | 0 | 0 | 0 | official | https://api.avolites.com/12.0/Playbacks.FirePlaybackAtLevel.html |
 
 ## Notes on sources
 
@@ -223,13 +232,14 @@ Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not 
 - Avantis mute, CQ mute, MultiView routing, Blackmagic camera record, SMP 351 record, PCS4 receptacles, Vaddio presets, AVer VISCA, DM3 OSC, Sennheiser SSC, RossTalk server and Caprica, Viz Trio, Picturall, disguise OSC, SPX, Flowics reads and WLED are separate systems. AJA FS, Datavideo DVIP, OBSBOT, Clear-Com, Kairos, Encore, the SuperJoy, and the other ids named in the blocker rows did not yield a command line that was safe to send.
 - APC switched-rack `on 1`, Gude `cmd=1`, Neol `M0:O1=ON`, Dataprobe outlet control, ATEN `/api/outlet/relay`, ATDM mute, Audia `RECALL 0 PRESET`, Bravia `setPlayContent`, DN-500BD `@0PW00`, Foscam CGI, ZoneMinder alarm, Lilliput `1v2.`, H2R `/run`, Mosart `start-continue`, CueTimer `/global/fire` and Irisdown `GO` are separate systems. A zero-button row is a recorded blocker, not a command system. APC UPS, CyberPower, Eaton, Crestron NVX, Dahua, d&b, Christie WD, Barco DCS/DP/MatrixPRO, Biamp QTX, the other Denon ids and Lumix did not get a command copied from a different product.
 - WyreStorm `SET SW in4 out1`, Blustream `OUT01FR04`, TESmart `MT00SW0102NT`, Gefen `r 7 3`, DirectOut `audioxp 1 65 66`, Panasonic TH `PON` in an STX/ETX frame, CueServer `Cue 1 Go`, AVMatrix `1v2.`, Atlona Omega `x2AVx1`, Atlona CLSO `Input HDMI 2`, WattBox `command=1`, ATND1061 mute, VidBlaster `apiwrite`, Blackbird `1V2.` and CYP `set out A route 1` are separate systems. MT-VIKI and OREI route lines were only found outside the manufacturer, so they are not sent.
+- Audac MTX `#|X001|web|SR1|3|U|`, AtlasIED Atmosphere `ZoneGain_0`, Axia `DST 1 ADDR:"239.190.1.1"`, Titan `FirePlaybackAtLevel`, Hog 4 `/hog/playback/go/0`, WATCHOUT HTTP `POST /v0/play/1` and 7thSense `PLAY TL=1` are separate systems. ArKaos does not print its Telnet command, and Ai is not given the Titan call.
 
 ## Every Companion connection
 
 | Companion module | Status | Control Center system | Source |
 |---|---|---|---|
 | `1stpass-1stpass` | not yet | — | — |
-| `7thsensedesign-delta` | not yet | — | — |
+| `7thsensedesign-delta` | implemented | delta-media | https://portal.7thsense.one/user-guides/MC255-managing-servers/deltagui_external_control.html |
 | `PosiStageNet-protocol` | not yet | — | — |
 | `ablesign-digitalsignage` | not yet | — | — |
 | `ableton-osc` | not yet | — | — |
@@ -280,18 +290,18 @@ Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not 
 | `apc-rackpdu` | implemented | apc-rackpdu | https://www.se.com/us/en/faqs/FA156163/ |
 | `apc-ups` | not yet | apc-ups | https://www.se.com/us/en/faqs/FA156163/ |
 | `apple-tv` | not yet | — | — |
-| `arkaos-mediamaster` | not yet | — | — |
+| `arkaos-mediamaster` | not yet | arkaos-mediamaster | https://cdn.arkaos.com/arkaos/downloads/ArKaos_MediaMaster_6_User_Guide.pdf |
 | `arkona-bladerunner` | not yet | — | — |
 | `arri-tally` | not yet | — | — |
 | `astrastudio-onairscreen` | not yet | — | — |
 | `aten-matrix` | not yet | — | — |
 | `aten-pdu` | implemented | aten-pdu | https://assets.aten.com/product/manual/Restful-API-Guide-for-PDU_2022-11-18.pdf |
-| `atlasied-atmosphere` | not yet | — | — |
+| `atlasied-atmosphere` | implemented | atlasied-atmosphere | https://www.atlasied.com/ATS006993-B-AZM4-AZM8-3rd-Party-Control.pdf |
 | `atlona-camera-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `atlona-clso` | implemented | atlona-clso | https://ts.atlona.com/pdf/AT-UHD-CLSO-601_API.pdf |
 | `atlona-omega` | implemented | atlona-omega | https://ts.atlona.com/pdf/AT-OME-RX21_API.pdf |
 | `attend2it-speakertimer` | not yet | — | — |
-| `audac-mtx` | not yet | — | — |
+| `audac-mtx` | implemented | audac-mtx | https://downloads.pvs.global/downloads/audac/products/manuals/MTX_Commands_Manual.pdf |
 | `audinate-dante-ddm` | not yet | — | — |
 | `audinate-dantecontroller` | not yet | — | — |
 | `audiostrom-liveprofessor` | not yet | — | — |
@@ -317,8 +327,8 @@ Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not 
 | `avmatrix-ts3019` | not yet | — | — |
 | `avmediatools-protimer` | not yet | — | — |
 | `avocet-landscape` | not yet | — | — |
-| `avolites-ai` | not yet | — | — |
-| `avolites-titan` | not yet | — | — |
+| `avolites-ai` | not yet | avolites-ai | https://api.avolites.com/12.0/Playbacks.FirePlaybackAtLevel.html |
+| `avolites-titan` | implemented | avolites-titan | https://api.avolites.com/12.0/Playbacks.FirePlaybackAtLevel.html |
 | `avproconnect-acmx1616-auhd` | not yet | — | — |
 | `avproedge-mxnet` | not yet | — | — |
 | `avstumpfl-pixera` | implemented | pixera | https://help.pixera.one/api/ |
@@ -331,7 +341,7 @@ Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not 
 | `axeltechnology-xplayout` | not yet | — | — |
 | `axeltechnology-xradio` | not yet | — | — |
 | `axeltechnology-youplay` | not yet | — | — |
-| `axia-livewire-lwrp` | not yet | — | — |
+| `axia-livewire-lwrp` | implemented | axia-livewire | https://docs.telosalliance.com/docs/axia-ip-driver-and-aes67 |
 | `aximmetry-composer` | not yet | — | — |
 | `axis-ptz` | implemented | axis-ptz | https://developer.axis.com/vapix/network-video/pantiltzoom-api/ |
 | `badgermedia-trustabel` | not yet | — | — |
@@ -490,7 +500,7 @@ Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not 
 | `datapath-fx4` | not yet | — | — |
 | `dataprobe-iboot-pdu` | implemented | dataprobe-iboot | https://44852427.fs1.hubspotusercontent-na1.net/hubfs/44852427/Dataprobe_February_2024/Pdf/iboot-pdu_restful_api.pdf |
 | `dataton-watchout` | implemented | dataton-watchout | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
-| `dataton-watchout-json` | not yet | — | — |
+| `dataton-watchout-json` | implemented | dataton-watchout-json | https://docs.dataton.com/watchout-7-new/watchout/external-control/http-rest-api.html |
 | `datavideo-dvip` | not yet | datavideo-dvip | https://datavideo.com/us/protocol/36/datavideo-dvip-ethernet-control-protocol |
 | `datavideo-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `dbaudiotechnik-amps` | not yet | db-audio | https://www.dbaudio.com/assets/products/downloads/ti/dbaudio-technical-information-ti313-1.0-en.pdf |
@@ -684,7 +694,7 @@ Companion connection types: **1098**. Implemented: **177**. Partial: **0**. Not 
 | `hdkatov-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `hdtv-wolfpackgreen` | not yet | — | — |
 | `highcriteria-lhs` | not yet | — | — |
-| `highend-hog4` | not yet | — | — |
+| `highend-hog4` | implemented | highend-hog4 | https://www.etcconnect.com/webdocs/Controls/HOG/HTML/en/sect-osc_mappings.htm |
 | `highpass-accompaniment` | not yet | — | — |
 | `highpass-countdown` | not yet | — | — |
 | `highpass-pptimer` | not yet | — | — |

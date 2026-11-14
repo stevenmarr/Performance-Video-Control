@@ -861,3 +861,63 @@ test('the matrix, display, router and show-control systems send their published 
     await new Promise((resolve) => web.close(resolve));
   }
 });
+
+test('the audio, lighting and playback systems send their published commands', async () => {
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(tcp);
+  const seen = [];
+  const web = http.createServer((req, res) => {
+    req.on('data', () => {});
+    req.on('end', () => { seen.push(`${req.method} ${req.url}`); res.writeHead(204); res.end(); });
+  });
+  const webPort = await listen(web);
+  const dgram = require('dgram');
+  const osc = require('../lib/drivers/osc');
+  const sink = dgram.createSocket('udp4');
+  const packets = [];
+  sink.on('message', (msg) => packets.push(msg));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const udp = sink.address().port;
+  const desk = new ModuleDesk();
+  try {
+    const tcpConn = { host: '127.0.0.1', port, reconnect: false };
+    for (const [system, action, options] of [
+      ['audac-mtx', 'route', { zone: 1, input: 3 }],
+      ['audac-mtx', 'mute', { zone: 1 }],
+      ['atlasied-atmosphere', 'gain', {}],
+      ['axia-livewire', 'login', {}],
+      ['axia-livewire', 'route', { destination: 1, address: '239.190.1.1' }],
+      ['delta-media', 'play', { timeline: 1 }],
+    ]) {
+      const row = desk.create(system, { connection: tcpConn });
+      await desk.connect(row.id);
+      await desk.run(row.id, action, options);
+    }
+    const titan = desk.create('avolites-titan', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(titan.id, 'fire', { user: 6, level: 1 });
+    const watchout = desk.create('dataton-watchout-json', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(watchout.id, 'play', { timeline: 1 });
+    const hog = desk.create('highend-hog4', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(hog.id, 'go', { list: 1 });
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const text = Buffer.concat(lines);
+    assert.ok(text.includes(Buffer.from('#|X001|web|SR1|3|U|\r\n')));
+    assert.ok(text.includes(Buffer.from('#|X001|web|SM01|1|U|\r\n')));
+    assert.ok(text.includes(Buffer.from('{"jsonrpc":"2.0","method":"set","params":[{"param":"ZoneGain_0","pct":50},{"param":"ZoneGain_1","val":-20}]}\n')));
+    assert.ok(text.includes(Buffer.from('LOGIN\r\n')));
+    assert.ok(text.includes(Buffer.from('DST 1 ADDR:"239.190.1.1"\r\n')));
+    assert.ok(text.includes(Buffer.from('PLAY TL=1\r')));
+    assert.ok(seen.includes('GET /titan/script/2/Playbacks/FirePlaybackAtLevel?handle_userNumber=6&level_level=1&alwaysRefire=true'));
+    assert.ok(seen.includes('POST /v0/play/1'));
+    assert.ok(packets.some((p) => {
+      const m = osc.decode(p);
+      return m && m.address === '/hog/playback/go/0' && m.args[0] && m.args[0].type === 'i' && m.args[0].value === 1;
+    }));
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => tcp.close(resolve));
+    await new Promise((resolve) => web.close(resolve));
+  }
+});
