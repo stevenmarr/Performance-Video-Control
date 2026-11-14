@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not yet: **872**.
+Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not yet: **864**.
 
 ## Systems in this build
 
@@ -208,6 +208,14 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | Shure P300 (`shure-p300`) | implemented | 2 | 2 | 1 | official | https://pubs2-api.prod.shureweb.eu/documents/public/render/7171.html.twig |
 | Meyer Sound GALAXY (`meyer-galaxy`) | implemented | 1 | 2 | 1 | official | https://docs.meyersound.com/products/en/programming-guide---galileo-galaxy.html |
 | BirdDog converters (`birddog-converters`) | implemented | 1 | 2 | 1 | official | https://birddog.tv/AV/API/ |
+| Global Caché iTach IR (`globalcache-ir`) | implemented | 2 | 2 | 1 | official | https://www.globalcache.com/files/docs/api-gc-unifiedtcp.pdf |
+| Global Caché iTach CC (`globalcache-cc`) | implemented | 2 | 2 | 1 | official | https://www.globalcache.com/files/docs/api-gc-unifiedtcp.pdf |
+| Global Caché iTach SL (`globalcache-sl`) | implemented | 1 | 2 | 1 | official | https://www.globalcache.com/files/docs/api-gc-unifiedtcp.pdf |
+| Shelly Gen1 (`shelly-gen1`) | implemented | 2 | 2 | 1 | official | https://shelly-api-docs.shelly.cloud/gen1/ |
+| Tasmota HTTP (`tasmota-http`) | implemented | 2 | 2 | 1 | official | https://tasmota.github.io/docs/Commands/ |
+| Tasmota MQTT (`tasmota-mqtt`) | implemented | 1 | 2 | 1 | official | https://tasmota.github.io/docs/Commands/ |
+| Visual Productions TimeCore (`vp-timecore`) | implemented | 2 | 2 | 1 | official | https://api.visualproductions.nl/api/download/6762f3e65aaf91d36672e771 |
+| Moxa ioLogik E1200 (`moxa-e1200`) | implemented | 2 | 2 | 1 | official | https://moxa.com/getmedia/451bb28e-7e07-4bd7-b8e8-260e093ad73b/moxa-iologik-e1200-series-manual-v16.2.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -294,6 +302,19 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | Tascam BD-MP1 (`tascam-bdmp1`) | not yet | 0 | 0 | 0 | official | https://tascam.com/wp-content/uploads/downloads/products/tascam/bd-mp1/rs232c_ethernet_protocol_bd-mp1_v0104_en.pdf |
 | Tascam CD players (`tascam-cd-players`) | not yet | 0 | 0 | 0 | official | https://cf.tascam.com/wp-content/uploads/downloads/products/tascam/cd-400u/rs-232c_protocol_cd400u_v1.21_e.pdf |
 | Videohub Control (`bmd-videohub-panel`) | not yet | 0 | 0 | 0 | official | https://www.blackmagicdesign.com/developer |
+| Philips Hue (`philips-hue`) | not yet | 0 | 0 | 0 | official | https://developers.meethue.com/develop/hue-api/lights-api/ |
+| Shelly WebSocket (`shelly-ws`) | not yet | 0 | 0 | 0 | official | https://shelly-api-docs.shelly.cloud/gen1/ |
+| Moxa E2200 (`moxa-e2200`) | not yet | 0 | 0 | 0 | official | https://moxa.com/getmedia/451bb28e-7e07-4bd7-b8e8-260e093ad73b/moxa-iologik-e1200-series-manual-v16.2.pdf |
+| Visual Productions panels (`vp-panels`) | not yet | 0 | 0 | 0 | official | https://www.visualproductions.nl/products/b-station2 |
+| PosiStageNet (`posistage`) | not yet | 0 | 0 | 0 | official | https://posistage.net/wp-content/uploads/2018/07/PosiStageNetprotocolv1.7.pdf |
+| Luminex GigaCore and LumiNode (`luminex-open`) | not yet | 0 | 0 | 0 | official | https://www.luminex.be/products/luminode/ |
+| DSAN PerfectCue (`dsan-perfectcue`) | not yet | 0 | 0 | 0 | official | https://www.dsan.com/products/perfectcue/ |
+| KLANG (`klang-open`) | not yet | 0 | 0 | 0 | official | https://www.klang.com/ |
+| ClassX (`classx-open`) | not yet | 0 | 0 | 0 | official | https://www.classx.it/ |
+| Dexon (`dexon-open`) | not yet | 0 | 0 | 0 | official | https://dexonsystems.com/ |
+| Softron playback (`softron-open`) | not yet | 0 | 0 | 0 | official | https://www.softron.tv/products/movierecorder |
+| PixelHue F series and media server (`pixelhue-open`) | not yet | 0 | 0 | 0 | official | https://www.pixelhue.com/ |
+| Stage Tec (`stagetec-open`) | not yet | 0 | 0 | 0 | official | https://www.stagetec.com/ |
 
 ## Notes on sources
 
@@ -320,6 +341,7 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 - Philips SICP `06 01 00 18 01 1E`, Digital Loggers `/outlet?1=ON`, Tascam `012`, RGBLink `TOVC0200000072000009007b`, BEYOND `/beyond/master/brightness`, LightShark `/LS/Go/PB/1`, Adder CCS `/cgi-bin/channel` and The Lighting Controller `SEQUENTIAL_GO` are separate systems. RGBLink TAO, VSP628 and X3, Wirecast, NXAMP, Modulo Player, and Adder Infinity, XDIP and AVM did not get a command copied from a different product.
 - Ecamm `GET /setNext`, PlaybackPro `TA`, IDK `@SSW,1,1`, Genelec `PUT /public/v1/audio/volume`, WyreStorm SW-0402 `AA020007000000001001003C` and ULX-D `< SET 1 AUDIO_MUTE ON >` are separate systems. IDK FDX and NINJAR, MADRIX AURA, Sony PXW, Hynamic, AVMatrix Shark, Magnimage, LightFactory and the Videohub control panel did not yield a command that was safe to send.
 - ANI4IN `< SET 1 AUDIO_MUTE ON >`, MXW `< SET 1 TX_STATUS MUTE >`, PSM1000 `< SET 1 RF_MUTE 1 >`, SCM820, MXCW `GLOBAL_MUTE`, DCA901, P300, GALAXY `:recall_snapshot 3` and BirdDog `POST /connectTo` are separate systems. BirdDog Central and Connect, the AK-HRP1000, Powersoft, L-Acoustics, Samsung LED, V__pro8, ConductIP, and the Tascam BD-MP1 and CD protocols did not yield a command that was safe to copy.
+- Global Caché `sendir`, `setstate,1:3,1` and `getstate,2:3`, Shelly `GET /relay/0?turn=on`, Tasmota `Power%20On` and `cmnd/%topic%/Power`, TimeCore `core-tc-start` and Moxa `doStatus` 1 are separate systems. Hue, Shelly WebSocket, the Moxa E2200, B-Station, IOCore, PosiStageNet, Luminex, PerfectCue, KLANG, ClassX, Dexon, Softron, PixelHue F and the media server, and Stage Tec did not yield a command that was safe to send.
 
 ## Every Companion connection
 
@@ -327,7 +349,7 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 |---|---|---|---|
 | `1stpass-1stpass` | not yet | — | — |
 | `7thsensedesign-delta` | implemented | delta-media | https://portal.7thsense.one/user-guides/MC255-managing-servers/deltagui_external_control.html |
-| `PosiStageNet-protocol` | not yet | — | — |
+| `PosiStageNet-protocol` | not yet | posistage | https://posistage.net/wp-content/uploads/2018/07/PosiStageNetprotocolv1.7.pdf |
 | `ablesign-digitalsignage` | not yet | — | — |
 | `ableton-osc` | not yet | — | — |
 | `adder-avm` | not yet | adder-other | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
@@ -539,8 +561,8 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `cisco-collaboration-endpoints` | not yet | — | — |
 | `cisco-roomos` | implemented | cisco-roomos | https://www.cisco.com/c/dam/en/us/td/docs/telepresence/endpoint/api/collaboration-endpoint-software-api-transport.pdf |
 | `cisco-webex-prototype` | not yet | — | — |
-| `classx-liveboard` | not yet | — | — |
-| `classx-mixboard` | not yet | — | — |
+| `classx-liveboard` | not yet | classx-open | https://www.classx.it/ |
+| `classx-mixboard` | not yet | classx-open | https://www.classx.it/ |
 | `clearcom-freespeakii` | not yet | clearcom | https://www.clearcom.com/ |
 | `clearcom-rest` | not yet | clearcom | https://www.clearcom.com/ |
 | `clearcom-station-ic` | not yet | clearcom | https://www.clearcom.com/ |
@@ -601,9 +623,9 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `derhamproductions-presenteringest` | not yet | — | — |
 | `devantech-ds` | not yet | — | — |
 | `devcore-mixingstation` | not yet | — | — |
-| `dexon-dimax` | not yet | — | — |
-| `dexon-divip` | not yet | — | — |
-| `dexon-matrix` | not yet | — | — |
+| `dexon-dimax` | not yet | dexon-open | https://dexonsystems.com/ |
+| `dexon-divip` | not yet | dexon-open | https://dexonsystems.com/ |
+| `dexon-matrix` | not yet | dexon-open | https://dexonsystems.com/ |
 | `dhdaudio-control-api` | not yet | — | — |
 | `dhdaudio-ecp` | not yet | — | — |
 | `digico-osc` | implemented | digico | https://digico.biz/digico-opens-up-the-sd-range-with-generic-osc-control/ |
@@ -628,7 +650,7 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `dreamchip-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `dreamsolutions-lightfactory` | not yet | lightfactory | https://www.lightfactory.net/ |
 | `dsan-limitimer` | not yet | — | — |
-| `dsan-perfectcue` | not yet | — | — |
+| `dsan-perfectcue` | not yet | dsan-perfectcue | https://www.dsan.com/products/perfectcue/ |
 | `dtvideolabs-playbackproplus` | implemented | playbackpro | https://www.dtvideolabs.com/user-guide-playbackproplus-x/ |
 | `duonn-atrium20` | not yet | — | — |
 | `dylanmaudio-apps` | not yet | — | — |
@@ -750,9 +772,9 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `glensound-gtmmobile` | not yet | — | — |
 | `glensound-minferno` | not yet | — | — |
 | `globalaudiosolutions-rita` | not yet | — | — |
-| `globalcache-itac-cc` | not yet | — | — |
-| `globalcache-itac-ir` | not yet | — | — |
-| `globalcache-itac-sl` | not yet | — | — |
+| `globalcache-itac-cc` | implemented | globalcache-cc | https://www.globalcache.com/files/docs/api-gc-unifiedtcp.pdf |
+| `globalcache-itac-ir` | implemented | globalcache-ir | https://www.globalcache.com/files/docs/api-gc-unifiedtcp.pdf |
+| `globalcache-itac-sl` | implemented | globalcache-sl | https://www.globalcache.com/files/docs/api-gc-unifiedtcp.pdf |
 | `glypheo-subtitle` | not yet | — | — |
 | `gnuralnet-livetoair` | not yet | — | — |
 | `goalake-switch` | not yet | — | — |
@@ -849,8 +871,8 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `kinetra-graphics` | not yet | — | — |
 | `kissbox-gpio` | not yet | — | — |
 | `kkt-visioncontrol` | not yet | — | — |
-| `klang-app` | not yet | — | — |
-| `klang-immersive` | not yet | — | — |
+| `klang-app` | not yet | klang-open | https://www.klang.com/ |
+| `klang-immersive` | not yet | klang-open | https://www.klang.com/ |
 | `klvr-chargerpro` | not yet | — | — |
 | `knowcore-checkin` | not yet | — | — |
 | `knx-ip` | not yet | — | — |
@@ -896,8 +918,8 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `ltn-schedule` | not yet | — | — |
 | `lumens-mediaprocessor` | not yet | — | — |
 | `lumens-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
-| `luminex-gigacore` | not yet | — | — |
-| `luminex-luminode` | not yet | — | — |
+| `luminex-gigacore` | not yet | luminex-open | https://www.luminex.be/products/luminode/ |
+| `luminex-luminode` | not yet | luminex-open | https://www.luminex.be/products/luminode/ |
 | `lutron-caseta` | not yet | — | — |
 | `lyntec-rpc-breaker` | not yet | — | — |
 | `mackie-dlzcreator` | not yet | — | — |
@@ -951,8 +973,8 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `monteiro-cronosdown` | not yet | — | — |
 | `monteiro-pptvideo` | not yet | — | — |
 | `motu-avb` | not yet | — | — |
-| `moxa-e2200series` | not yet | — | — |
-| `moxa-iologik-e1200` | not yet | — | — |
+| `moxa-e2200series` | not yet | moxa-e2200 | https://moxa.com/getmedia/451bb28e-7e07-4bd7-b8e8-260e093ad73b/moxa-iologik-e1200-series-manual-v16.2.pdf |
+| `moxa-iologik-e1200` | implemented | moxa-e1200 | https://moxa.com/getmedia/451bb28e-7e07-4bd7-b8e8-260e093ad73b/moxa-iologik-e1200-series-manual-v16.2.pdf |
 | `mrmoco-mhc` | not yet | — | — |
 | `msc-router` | not yet | — | — |
 | `mt-viki-matrix` | not yet | — | — |
@@ -1056,15 +1078,15 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `peavy-ratc` | not yet | — | — |
 | `phabrix-qx` | not yet | — | — |
 | `pharos-designer` | not yet | pharos-designer | https://dl.pharoscontrols.com/software_help/designer2/content/help/reference/web%20interface/command%20line.htm |
-| `philips-hue` | not yet | — | — |
+| `philips-hue` | not yet | philips-hue | https://developers.meethue.com/develop/hue-api/lights-api/ |
 | `philips-sicp` | implemented | philips-sicp | https://community.xibo.org.uk/uploads/short-url/vwVq2nPyhJKL4kTCYpa6VYhQUa8.pdf |
 | `philips-wiz-bulbs` | not yet | — | — |
 | `pideck-player` | not yet | — | — |
 | `pikvm-kvmdapi` | not yet | — | — |
 | `pixap-pixtimerpro` | not yet | — | — |
-| `pixelhue-f-series` | not yet | — | — |
+| `pixelhue-f-series` | not yet | pixelhue-open | https://www.pixelhue.com/ |
 | `pixelhue-liveproductionswitcher` | implemented | pixelhue | https://www.pixelhue.com/ |
-| `pixelhue-mediaserver` | not yet | — | — |
+| `pixelhue-mediaserver` | not yet | pixelhue-open | https://www.pixelhue.com/ |
 | `pixelhue-switcher` | implemented | pixelhue | https://www.pixelhue.com/ |
 | `pixelmosaic-smartpreso` | not yet | — | — |
 | `pixotope-gateway` | not yet | — | — |
@@ -1171,8 +1193,8 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `sgl-dct` | not yet | — | — |
 | `sharp-tv` | implemented | sharp-ascii | https://sharp-displays.jp.sharp/support/webdl/dl_service/data/projector/manual/common_ascii/common_ascii_e.pdf |
 | `sharun-pdfpresenter` | not yet | — | — |
-| `shelly-http` | not yet | — | — |
-| `shelly-ws` | not yet | — | — |
+| `shelly-http` | implemented | shelly-gen1 | https://shelly-api-docs.shelly.cloud/gen1/ |
+| `shelly-ws` | not yet | shelly-ws | https://shelly-api-docs.shelly.cloud/gen1/ |
 | `showcuesystems-scs` | implemented | scs-show | https://showcuesystems.com/scs11help/topics/prod-cc-network.htm |
 | `showrevue-showrevue` | not yet | — | — |
 | `showsign-signage` | not yet | — | — |
@@ -1209,11 +1231,11 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `snellwilcox-kahuna` | not yet | — | — |
 | `socialstream-ninja` | not yet | — | — |
 | `softouch-easyworship` | not yet | — | — |
-| `softron-movierecorder` | not yet | — | — |
-| `softron-mreplay` | not yet | — | — |
-| `softron-multicamlogger` | not yet | — | — |
-| `softron-ontheaircg` | not yet | — | — |
-| `softron-ontheairvideo` | not yet | — | — |
+| `softron-movierecorder` | not yet | softron-open | https://www.softron.tv/products/movierecorder |
+| `softron-mreplay` | not yet | softron-open | https://www.softron.tv/products/movierecorder |
+| `softron-multicamlogger` | not yet | softron-open | https://www.softron.tv/products/movierecorder |
+| `softron-ontheaircg` | not yet | softron-open | https://www.softron.tv/products/movierecorder |
+| `softron-ontheairvideo` | not yet | softron-open | https://www.softron.tv/products/movierecorder |
 | `softvelum-nimble-streamer` | not yet | — | — |
 | `softvelum-wmspanel` | not yet | — | — |
 | `songbeamer-osc` | not yet | — | — |
@@ -1242,12 +1264,12 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `squared-powerlink` | not yet | — | — |
 | `stageaudioworks-obs-multisite` | not yet | — | — |
 | `stagepoint-rundown` | not yet | — | — |
-| `stagetec-emberplus-avatus` | not yet | — | — |
-| `stagetec-emberplus-generic` | not yet | — | — |
-| `stagetec-emberplus-nxct` | not yet | — | — |
-| `stagetec-nexus` | not yet | — | — |
-| `stagetec-rcp` | not yet | — | — |
-| `stagetec-xci` | not yet | — | — |
+| `stagetec-emberplus-avatus` | not yet | stagetec-open | https://www.stagetec.com/ |
+| `stagetec-emberplus-generic` | not yet | stagetec-open | https://www.stagetec.com/ |
+| `stagetec-emberplus-nxct` | not yet | stagetec-open | https://www.stagetec.com/ |
+| `stagetec-nexus` | not yet | stagetec-open | https://www.stagetec.com/ |
+| `stagetec-rcp` | not yet | stagetec-open | https://www.stagetec.com/ |
+| `stagetec-xci` | not yet | stagetec-open | https://www.stagetec.com/ |
 | `stagetimerio-api` | implemented | stagetimer | https://stagetimer.io/docs/api-v1/ |
 | `storz-bickel-crafty` | not yet | — | — |
 | `stramatel-slvideosystem` | not yet | — | — |
@@ -1272,8 +1294,8 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `tascam-cd` | not yet | tascam-cd-players | https://cf.tascam.com/wp-content/uploads/downloads/products/tascam/cd-400u/rs-232c_protocol_cd400u_v1.21_e.pdf |
 | `tascam-cd400u` | not yet | tascam-cd-players | https://cf.tascam.com/wp-content/uploads/downloads/products/tascam/cd-400u/rs-232c_protocol_cd400u_v1.21_e.pdf |
 | `tascam-da-6400` | implemented | tascam-da6400 | https://www.tascam.eu/en/docs/DA-6400_telnet_prot_v100_en.pdf |
-| `tasmota-http` | not yet | — | — |
-| `tasmota-mqtt` | not yet | — | — |
+| `tasmota-http` | implemented | tasmota-http | https://tasmota.github.io/docs/Commands/ |
+| `tasmota-mqtt` | implemented | tasmota-mqtt | https://tasmota.github.io/docs/Commands/ |
 | `tcast-tcast` | not yet | — | — |
 | `tchelicon-goxlr` | not yet | — | — |
 | `teamspeak-v5` | not yet | — | — |
@@ -1375,10 +1397,10 @@ Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not 
 | `vislink-l2074` | not yet | — | — |
 | `vislink-ulrx-ld` | not yet | — | — |
 | `vistream-online` | not yet | — | — |
-| `visualproductions-bstation2` | not yet | — | — |
+| `visualproductions-bstation2` | not yet | vp-panels | https://www.visualproductions.nl/products/b-station2 |
 | `visualproductions-cuety` | implemented | cuety | https://ltb.no/media/multicase/documents/visual%20productions/manual%20visual%20cuety_en_11.pdf |
-| `visualproductions-iocore` | not yet | — | — |
-| `visualproductions-timecore` | not yet | — | — |
+| `visualproductions-iocore` | not yet | vp-panels | https://www.visualproductions.nl/products/b-station2 |
+| `visualproductions-timecore` | implemented | vp-timecore | https://api.visualproductions.nl/api/download/6762f3e65aaf91d36672e771 |
 | `vitec-avediaplayer9300-series` | not yet | — | — |
 | `vivitek-projector` | implemented | vivitek-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `vizio-smartcast` | not yet | — | — |
