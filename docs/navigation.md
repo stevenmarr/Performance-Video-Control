@@ -11,7 +11,7 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
 ## Row 1: home, system groups, and Scopes
 
 ```
-[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [SCOPES] [CUES] [PRESETS] [Control Devices]
+[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [MODULES] [SCOPES] [CUES] [PRESETS] [Control Devices]
 ```
 
 * **⌂ SYSTEMS** is always first. It is the home page: a palette of every system type on the left, and one card per instance on the desk.
@@ -26,6 +26,7 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
   see each system's status.
 * E2 and PixelHue share one group because they share the preset pages. The button shows whichever of the
   two are on the desk, for example `E2 / PIXELHUE`.
+* **MODULES** is always shown. It is connection modules (setup, status, buttons, variables, feedbacks), not a device to ADD TO DESK and not a Stream Deck page.
 * **SCOPES** is always shown. It is the engineering scopes for the whole app (waveform, parade,
   vectorscope, Lightning, false colour), not a device to ADD TO DESK and not a PTZ page. **Lightning**
   is a mode inside that tab, not a tab of its own. A `/#lightning` link from 0.20.0 opens SCOPES.

@@ -12,18 +12,25 @@ const read = (rel) => fs.readFileSync(path.join(__dirname, '..', rel), 'utf8');
 test('SCOPES is the persistent top tab; LIGHTNING is not a nav group', () => {
   const html = read('public/index.html');
   const nav = read('public/sys.js');
+  const tab = read('public/scopes-tab.js');
+  const page = read('public/scopes.html');
   assert.match(html, /class="tab tab-scopes" data-tab="scopes"/);
   assert.match(html, />SCOPES</);
   assert.doesNotMatch(html, /data-tabgrp="lightning"/);
   assert.doesNotMatch(html, /data-tab="lightning"/);
   assert.doesNotMatch(html, /id="pane-lightning"/);
   assert.match(html, /id="pane-scopes"/);
-  assert.doesNotMatch(html, /id="ccPages"/, 'Companion page export is not on SYSTEMS');
-  assert.doesNotMatch(html, /MOCK FIXTURES/);
-  assert.doesNotMatch(html, /id="ndiMock"/);
-  const scopesPage = read('public/scopes.html');
-  assert.match(scopesPage, /DESKTOP VIDEO/);
+  assert.match(html, /id="scopesFrame"/);
+  // The tab is an iframe of the scopes page. Sidecar commands live in the ingest doc.
+  // The page itself is a Desktop Video picker, not a typed source name.
+  assert.match(tab, /scopesFrame/);
+  assert.match(tab, /scopes\.html/);
+  assert.match(page, /DESKTOP VIDEO/);
+  assert.match(page, /<select id="src"/);
   assert.match(read('docs/scopes.md'), /cannot type a new source/i);
+  assert.doesNotMatch(html + page, /MOCK FIXTURES/);
+  assert.doesNotMatch(html + page, /id="ndiMock"/);
+  assert.doesNotMatch(html, /id="ccPages"/, 'Companion page export is not on SYSTEMS');
   assert.match(read('docs/decklink-ingest.md'), /decklink-sidecar\.js --list/);
   assert.match(read('docs/decklink-ingest.md'), /--device 0/);
   const atem = html.slice(html.indexOf('id="pane-atem"'), html.indexOf('id="pane-arouter"'));

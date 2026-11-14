@@ -133,6 +133,8 @@ The pictures follow the console surface rules:
 | Amber dashed | a guarded key (ALL STOP, and anything you have to hold) |
 | Slate, light bar, inner frame | a Control Center key |
 
+The same rules have a light rendering. Preview stays green, on-air stays red, a guarded key stays an amber dashed border, and an OS key stays slate with an inner frame. In light mode the fill is light and the text is dark. Dark mode is unchanged. A button stores `theme: "light"` or the screen asks `resolveKey` for `"light"`.
+
 Control Center keys are the home page, the HOME key, the console page (shows, status, reconnect, alerts, lockout, power), and the system switcher. They use a slate fill (`#243044`), a light bar, and a second inner frame. Device keys do not. HOME is the word HOME. On a PTZ page that same key also shows the camera the deck is controlling, and the LCD strip shows that name. Both update when the camera changes.
 
 A stepped key (ND, D.EXT, gain, shutter, white balance, and every other list) wraps. The step past the last value comes back to the first. A long press steps the other way. A plain number, such as iris, still stops at the end of its range.
