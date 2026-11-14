@@ -1137,6 +1137,23 @@ test('the recorder, router, display and console systems send their published com
     assert.ok(seen.some((line) => line.startsWith('GET /setNext') && line.includes('ua=PerformanceVideoControl') && line.includes('uuid=11111111-2222-3333-4444-555555555555')));
     assert.ok(seen.some((line) => line.startsWith('PUT /public/v1/audio/volume') && line.includes('"level":-5.2')));
     assert.ok(packets.some((p) => p.toString() === 'TA'));
+    const ani = desk.create('shure-ani4in', { connection: tcpConn });
+    await desk.connect(ani.id);
+    await desk.run(ani.id, 'mute', { channel: '2' });
+    const psm = desk.create('shure-psm1000', { connection: tcpConn });
+    await desk.connect(psm.id);
+    await desk.run(psm.id, 'mute', { channel: '1' });
+    const galaxy = desk.create('meyer-galaxy', { connection: tcpConn });
+    await desk.connect(galaxy.id);
+    await desk.run(galaxy.id, 'recall', { snapshot: 3 });
+    const bird = desk.create('birddog-converters', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(bird.id, 'connect', { source: 'None' });
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const batch = Buffer.concat(lines);
+    assert.ok(batch.includes(Buffer.from('< SET 2 AUDIO_MUTE ON >\r')));
+    assert.ok(batch.includes(Buffer.from('< SET 1 RF_MUTE 1 >\r\n')));
+    assert.ok(batch.includes(Buffer.from(':recall_snapshot 3\n')));
+    assert.ok(seen.some((line) => line.startsWith('POST /connectTo') && line.includes('"sourceName":"None"')));
   } finally {
     desk.close();
     sink.close();

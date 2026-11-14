@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not yet: **881**.
+Companion connection types: **1098**. Implemented: **226**. Partial: **0**. Not yet: **872**.
 
 ## Systems in this build
 
@@ -199,6 +199,15 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | Genelec Smart IP (`genelec-smart-ip`) | implemented | 2 | 2 | 1 | official | https://applicationmarket.crestron.com/content/Help/Genelec/Smart_IP_API_Documentation.pdf |
 | WyreStorm SW-0402 (`wyrestorm-sw0402`) | implemented | 2 | 2 | 1 | official | https://www.ambertech.com.au/Documents/brochures/WY-SW0402MVHDMI.pdf |
 | Shure ULX-D (`shure-ulxd`) | implemented | 2 | 2 | 1 | official | https://www.shure.com/en-US/docs/commandstrings/ULXD |
+| Shure ANI4IN (`shure-ani4in`) | implemented | 2 | 2 | 1 | official | https://pubs2-api.prod.shureweb.eu/documents/public/render/7317.html.twig |
+| Shure MXW (`shure-mxw`) | implemented | 2 | 2 | 1 | official | https://pubs2-api.prod.shureweb.eu/documents/public/render/7282.html.twig |
+| Shure PSM1000 (`shure-psm1000`) | implemented | 2 | 2 | 1 | official | https://pubs2-api.prod.shureweb.eu/documents/public/render/7356.html.twig |
+| Shure SCM820 (`shure-scm820`) | implemented | 2 | 2 | 1 | official | https://pubs2-api.prod.shureweb.eu/documents/public/render/7369.html.twig |
+| Shure MXCW (`shure-mxcw`) | implemented | 2 | 2 | 1 | official | https://pubs2-api.prod.shureweb.eu/documents/public/render/6944.html.twig |
+| Shure DCA901 (`shure-dca901`) | implemented | 2 | 2 | 1 | official | https://pubs2-api.prod.shureweb.eu/documents/public/render/11539.html.twig |
+| Shure P300 (`shure-p300`) | implemented | 2 | 2 | 1 | official | https://pubs2-api.prod.shureweb.eu/documents/public/render/7171.html.twig |
+| Meyer Sound GALAXY (`meyer-galaxy`) | implemented | 1 | 2 | 1 | official | https://docs.meyersound.com/products/en/programming-guide---galileo-galaxy.html |
+| BirdDog converters (`birddog-converters`) | implemented | 1 | 2 | 1 | official | https://birddog.tv/AV/API/ |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -227,7 +236,6 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | Extron products outside the verified guides (`extron-open`) | not yet | 0 | 0 | 0 | official | https://media.extron.com/public/download/files/userman/68-738-07_C_IPL_T_PCS4_UG.pdf |
 | disguise products outside OSC transport (`disguise-open`) | not yet | 0 | 0 | 0 | official | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
 | Sennheiser products outside the verified SSC guides (`sennheiser-open`) | not yet | 0 | 0 | 0 | official | https://docs.cloud.sennheiser.com/en-us/api-docs/sound-control-protocol.html |
-| Shure P300 (`shure-p300`) | not yet | 0 | 0 | 0 | official | https://www.shure.com/en-US/docs/commandstrings/P300 |
 | Yamaha AD8HR and ADECIA (`yamaha-open`) | not yet | 0 | 0 | 0 | official | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
 | Allen & Heath iLive and DT168 (`allenheath-open`) | not yet | 0 | 0 | 0 | official | https://www.allen-heath.com/content/uploads/2023/05/Avantis-MIDI-TCP-Protocol-V1.0.pdf |
 | VICREO Timer (`vicreo-timer`) | not yet | 0 | 0 | 0 | official | https://www.vicreo-timer.com/help |
@@ -271,14 +279,20 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | IDK FDX and NINJAR (`idk-other`) | not yet | 0 | 0 | 0 | official | https://adeogroup.it/sites/default/files/prodotti_allegati_pubblici/idk_command_guide_msd-v6.pdf |
 | MADRIX AURA (`madrix-aura`) | not yet | 0 | 0 | 0 | official | https://help.madrix.com/m5/httpremote/HttpRemoteControl.html |
 | Sony PXW (`sony-pxw`) | not yet | 0 | 0 | 0 | official | https://pro.sony/s3/2022/09/05154443/CGI-Command-List-Version-1.00.pdf |
-| Shure PSM1000 (`shure-psm1000`) | not yet | 0 | 0 | 0 | official | https://www.shure.com/en-US/docs/commandstrings/PSM1000 |
-| Shure ANI4IN (`shure-ani4in`) | not yet | 0 | 0 | 0 | official | https://www.shure.com/en-US/docs/commandstrings/ANI4IN |
-| Shure MXW (`shure-mxw`) | not yet | 0 | 0 | 0 | official | https://www.shure.com/en-US/docs/commandstrings/MXW |
 | Hynamic media server (`hynamic-mediaserver`) | not yet | 0 | 0 | 0 | official | https://www.hynamic.com/ |
 | AVMatrix Shark (`avmatrix-shark`) | not yet | 0 | 0 | 0 | official | https://www.avmatrix.net/ |
 | Magnimage processors (`magnimage`) | not yet | 0 | 0 | 0 | official | https://www.magnimage.com/ |
 | LightFactory (`lightfactory`) | not yet | 0 | 0 | 0 | official | https://www.lightfactory.net/ |
-| BirdDog Central (`birddog-central`) | not yet | 0 | 0 | 0 | official | https://birddog.tv/central/ |
+| BirdDog Central (`birddog-central`) | not yet | 0 | 0 | 0 | official | https://birddog.tv/wp-content/uploads/2022/11/BirdDog-Central-2.0_User-Guide_221103.pdf |
+| BirdDog Connect (`birddog-connect`) | not yet | 0 | 0 | 0 | official | https://birddog.tv/AV/API/ |
+| Panasonic AK-HRP1000 (`panasonic-ak-hrp1000`) | not yet | 0 | 0 | 0 | official | https://pro-av.panasonic.net/en/products/ak-hrp1000gj/ |
+| Powersoft amplifiers (`powersoft-amplifiers`) | not yet | 0 | 0 | 0 | official | https://www.powersoft.com/api/media/file/powersoft_armonia_uguide_en_v1.3.pdf?v=ms9fkcpg |
+| L-Acoustics amplifiers (`lacoustics-amplifiers`) | not yet | 0 | 0 | 0 | official | https://prdstglaxxwe001.blob.core.windows.net/webapp-lacoustics/documentation/ELECTRONICS/LA7.16i/EN/Owner%27s%20Manual/LA7.16i_OM_EN.pdf |
+| Samsung LED (`samsung-led-vp`) | not yet | 0 | 0 | 0 | official | https://displaysolutions.samsung.com/led-signage/indoor/the-wall |
+| LAWO V__pro8 (`lawo-vpro8`) | not yet | 0 | 0 | 0 | official | https://lawo.com/products/v__pro8-video-processing-toolkit/ |
+| Matrox ConductIP (`matrox-conductip`) | not yet | 0 | 0 | 0 | official | https://video.matrox.com/en/product/nmos-routers/conductip/ |
+| Tascam BD-MP1 (`tascam-bdmp1`) | not yet | 0 | 0 | 0 | official | https://tascam.com/wp-content/uploads/downloads/products/tascam/bd-mp1/rs232c_ethernet_protocol_bd-mp1_v0104_en.pdf |
+| Tascam CD players (`tascam-cd-players`) | not yet | 0 | 0 | 0 | official | https://cf.tascam.com/wp-content/uploads/downloads/products/tascam/cd-400u/rs-232c_protocol_cd400u_v1.21_e.pdf |
 | Videohub Control (`bmd-videohub-panel`) | not yet | 0 | 0 | 0 | official | https://www.blackmagicdesign.com/developer |
 
 ## Notes on sources
@@ -304,7 +318,8 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 - ONYX `/Mx/playback/page1/0/go`, Dugan `CM 2, 1` and Bosch `rcp.xml` command `0x09A5` are separate systems. Calrec CSCP, Optimal Audio Zone and Chroma-Q Vista did not print a complete command.
 - Monarch `StartRecording`, CORIOmaster `Preset.Take = 1`, NETIO `Action` 1, iiyama `A60100000004011802B8`, VLC `pl_next`, Cisco `xCommand/Presentation/Start`, QLC+ `setFunctionStatus`, Cuety `pb21/go+` and RackLink `fe090020010101303030306aff` are separate systems. AMP, AMPP, TotalMix, Pharos, RED RCP2, Marshall, Fx4, OpenLP, the non-OSC ONYX id and Calico did not yield a complete command.
 - Philips SICP `06 01 00 18 01 1E`, Digital Loggers `/outlet?1=ON`, Tascam `012`, RGBLink `TOVC0200000072000009007b`, BEYOND `/beyond/master/brightness`, LightShark `/LS/Go/PB/1`, Adder CCS `/cgi-bin/channel` and The Lighting Controller `SEQUENTIAL_GO` are separate systems. RGBLink TAO, VSP628 and X3, Wirecast, NXAMP, Modulo Player, and Adder Infinity, XDIP and AVM did not get a command copied from a different product.
-- Ecamm `GET /setNext`, PlaybackPro `TA`, IDK `@SSW,1,1`, Genelec `PUT /public/v1/audio/volume`, WyreStorm SW-0402 `AA020007000000001001003C` and ULX-D `< SET 1 AUDIO_MUTE ON >` are separate systems. IDK FDX and NINJAR, MADRIX AURA, Sony PXW, PSM1000, ANI4IN, MXW, Hynamic, AVMatrix Shark, Magnimage, LightFactory, BirdDog Central and the Videohub control panel did not yield a command that was safe to send.
+- Ecamm `GET /setNext`, PlaybackPro `TA`, IDK `@SSW,1,1`, Genelec `PUT /public/v1/audio/volume`, WyreStorm SW-0402 `AA020007000000001001003C` and ULX-D `< SET 1 AUDIO_MUTE ON >` are separate systems. IDK FDX and NINJAR, MADRIX AURA, Sony PXW, Hynamic, AVMatrix Shark, Magnimage, LightFactory and the Videohub control panel did not yield a command that was safe to send.
+- ANI4IN `< SET 1 AUDIO_MUTE ON >`, MXW `< SET 1 TX_STATUS MUTE >`, PSM1000 `< SET 1 RF_MUTE 1 >`, SCM820, MXCW `GLOBAL_MUTE`, DCA901, P300, GALAXY `:recall_snapshot 3` and BirdDog `POST /connectTo` are separate systems. BirdDog Central and Connect, the AK-HRP1000, Powersoft, L-Acoustics, Samsung LED, V__pro8, ConductIP, and the Tascam BD-MP1 and CD protocols did not yield a command that was safe to copy.
 
 ## Every Companion connection
 
@@ -444,9 +459,9 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `bigrig-tuneit` | not yet | — | — |
 | `binary-moipcontroller` | not yet | — | — |
 | `binwiederhier-ntfy` | not yet | — | — |
-| `birddog-central` | not yet | birddog-central | https://birddog.tv/central/ |
-| `birddog-connect` | not yet | — | — |
-| `birddog-converters` | not yet | — | — |
+| `birddog-central` | not yet | birddog-central | https://birddog.tv/wp-content/uploads/2022/11/BirdDog-Central-2.0_User-Guide_221103.pdf |
+| `birddog-connect` | not yet | birddog-connect | https://birddog.tv/AV/API/ |
+| `birddog-converters` | implemented | birddog-converters | https://birddog.tv/AV/API/ |
 | `birddog-ptz` | implemented | birddog-ptz | https://birddog.tv/ |
 | `bitfire-api` | not yet | — | — |
 | `bitfocus-cloud` | not yet | — | — |
@@ -847,9 +862,9 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `kramer-vp773a` | not yet | — | — |
 | `kramer-vs41h` | implemented | kramer-p2000 | https://cdn.kramerav.com/web/downloads/manuals/protocol_2000_rev0_51.pdf |
 | `kxwell-ptz` | not yet | — | — |
-| `lacoustics-amplifiers` | not yet | — | — |
+| `lacoustics-amplifiers` | not yet | lacoustics-amplifiers | https://prdstglaxxwe001.blob.core.windows.net/webapp-lacoustics/documentation/ELECTRONICS/LA7.16i/EN/Owner%27s%20Manual/LA7.16i_OM_EN.pdf |
 | `lanternbird-cuecapture` | not yet | — | — |
-| `lawo-vpro8` | not yet | — | — |
+| `lawo-vpro8` | not yet | lawo-vpro8 | https://lawo.com/products/v__pro8-video-processing-toolkit/ |
 | `lea-amplifier` | not yet | — | — |
 | `leader-zen` | not yet | — | — |
 | `leaderphabrix-lpx-qx` | not yet | — | — |
@@ -903,7 +918,7 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `marshall-ipcamera` | not yet | marshall-ipcamera | https://marshall-usa.com/pdf/CV630-IP_Manual.pdf |
 | `marshall-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `massimo-callegari-qlcplus` | implemented | qlcplus | https://docs.qlcplus.org/v5/advanced/web-interface/web-api |
-| `matrox-conductip` | not yet | — | — |
+| `matrox-conductip` | not yet | matrox-conductip | https://video.matrox.com/en/product/nmos-routers/conductip/ |
 | `matrox-monarch` | implemented | matrox-monarch | https://video.matrox.com/wp-content/uploads/2026/08/en_monarch_hd_dev_tools_reference_guide.pdf |
 | `mds-otobako-pro` | not yet | — | — |
 | `media-player-classic` | not yet | — | — |
@@ -912,7 +927,7 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `meld-studio` | not yet | — | — |
 | `metus-ingest` | not yet | — | — |
 | `metus-player` | not yet | — | — |
-| `meyersound-galaxy` | not yet | — | — |
+| `meyersound-galaxy` | implemented | meyer-galaxy | https://docs.meyersound.com/products/en/programming-guide---galileo-galaxy.html |
 | `micassign-consolesync` | not yet | — | — |
 | `micorp-gabin` | not yet | — | — |
 | `microfilms-gpio` | not yet | — | — |
@@ -1021,7 +1036,7 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `outline-et` | not yet | — | — |
 | `outline-newton` | not yet | — | — |
 | `overlaysuno-control` | not yet | — | — |
-| `panasonic-ak-hrp1000` | not yet | — | — |
+| `panasonic-ak-hrp1000` | not yet | panasonic-ak-hrp1000 | https://pro-av.panasonic.net/en/products/ak-hrp1000gj/ |
 | `panasonic-atss` | not yet | — | — |
 | `panasonic-av-hs6000` | implemented | panasonic-hs6000 | https://eww.pass.panasonic.co.jp/pro-av/support/dload/hs6000_3ext/AV-HS6000%20external%20IF_protocol-E.pdf |
 | `panasonic-av-hsw10` | not yet | panasonic-open | https://pro-av.panasonic.net/manual/pdf/Kairos_guide(DVQP2366YA)_E.pdf |
@@ -1060,7 +1075,7 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `pnh-soundr` | not yet | — | — |
 | `polecam-autopod` | not yet | — | — |
 | `pomfort-livegradepro` | not yet | — | — |
-| `powersoft-amplifiers` | not yet | — | — |
+| `powersoft-amplifiers` | not yet | powersoft-amplifiers | https://www.powersoft.com/api/media/file/powersoft_armonia_uguide_en_v1.3.pdf?v=ms9fkcpg |
 | `presentationtools-aps` | not yet | — | — |
 | `presentationtools-cuetimer` | implemented | cuetimer | https://cuetimer.com/userguide/ |
 | `prinsvision-server` | not yet | — | — |
@@ -1138,7 +1153,7 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `sain-smart-relay` | not yet | — | — |
 | `samsung-business-tv` | implemented | samsung-mdc | https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf |
 | `samsung-display` | implemented | samsung-mdc | https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf |
-| `samsung-led-vp` | not yet | — | — |
+| `samsung-led-vp` | not yet | samsung-led-vp | https://displaysolutions.samsung.com/led-signage/indoor/the-wall |
 | `samsung-smarttv` | not yet | — | — |
 | `samsung-tizenos` | not yet | — | — |
 | `sanyo-projector` | implemented | sanyo-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
@@ -1163,18 +1178,18 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `showsign-signage` | not yet | — | — |
 | `showtec-lampy` | implemented | showtec-lampy | https://www.showtec-lights.com/en/mwdownloads/download/link/id/17455196 |
 | `showtrak-server` | not yet | — | — |
-| `shure-ani4in` | not yet | shure-ani4in | https://www.shure.com/en-US/docs/commandstrings/ANI4IN |
+| `shure-ani4in` | implemented | shure-ani4in | https://pubs2-api.prod.shureweb.eu/documents/public/render/7317.html.twig |
 | `shure-chargers` | not yet | — | — |
-| `shure-dca901` | not yet | — | — |
+| `shure-dca901` | implemented | shure-dca901 | https://pubs2-api.prod.shureweb.eu/documents/public/render/11539.html.twig |
 | `shure-dis-ccu` | not yet | — | — |
 | `shure-dsp` | not yet | — | — |
 | `shure-mxa910` | implemented | shure-mxa910 | https://www.shure.com/en-US/docs/commandstrings/MXA910 |
-| `shure-mxcw` | not yet | — | — |
+| `shure-mxcw` | implemented | shure-mxcw | https://pubs2-api.prod.shureweb.eu/documents/public/render/6944.html.twig |
 | `shure-mxn5` | not yet | — | — |
-| `shure-mxw` | not yet | shure-mxw | https://www.shure.com/en-US/docs/commandstrings/MXW |
-| `shure-p300` | not yet | shure-p300 | https://www.shure.com/en-US/docs/commandstrings/P300 |
-| `shure-psm1000` | not yet | shure-psm1000 | https://www.shure.com/en-US/docs/commandstrings/PSM1000 |
-| `shure-scm820` | not yet | — | — |
+| `shure-mxw` | implemented | shure-mxw | https://pubs2-api.prod.shureweb.eu/documents/public/render/7282.html.twig |
+| `shure-p300` | implemented | shure-p300 | https://pubs2-api.prod.shureweb.eu/documents/public/render/7171.html.twig |
+| `shure-psm1000` | implemented | shure-psm1000 | https://pubs2-api.prod.shureweb.eu/documents/public/render/7356.html.twig |
+| `shure-scm820` | implemented | shure-scm820 | https://pubs2-api.prod.shureweb.eu/documents/public/render/7369.html.twig |
 | `shure-wireless` | implemented | shure-ulxd | https://www.shure.com/en-US/docs/commandstrings/ULXD |
 | `sienna-ndimonitor` | not yet | — | — |
 | `sikn-kerkomroep` | not yet | — | — |
@@ -1253,9 +1268,9 @@ Companion connection types: **1098**. Implemented: **217**. Partial: **0**. Not 
 | `talkboardai-api` | not yet | — | — |
 | `talktome-intercom` | not yet | — | — |
 | `tallyma-wirelesstally` | not yet | — | — |
-| `tascam-bdmp1` | not yet | — | — |
-| `tascam-cd` | not yet | — | — |
-| `tascam-cd400u` | not yet | — | — |
+| `tascam-bdmp1` | not yet | tascam-bdmp1 | https://tascam.com/wp-content/uploads/downloads/products/tascam/bd-mp1/rs232c_ethernet_protocol_bd-mp1_v0104_en.pdf |
+| `tascam-cd` | not yet | tascam-cd-players | https://cf.tascam.com/wp-content/uploads/downloads/products/tascam/cd-400u/rs-232c_protocol_cd400u_v1.21_e.pdf |
+| `tascam-cd400u` | not yet | tascam-cd-players | https://cf.tascam.com/wp-content/uploads/downloads/products/tascam/cd-400u/rs-232c_protocol_cd400u_v1.21_e.pdf |
 | `tascam-da-6400` | implemented | tascam-da6400 | https://www.tascam.eu/en/docs/DA-6400_telnet_prot_v100_en.pdf |
 | `tasmota-http` | not yet | — | — |
 | `tasmota-mqtt` | not yet | — | — |
