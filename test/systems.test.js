@@ -181,7 +181,7 @@ test('manager: selection, recall, TAKE tally, dim filter, MOVE / swap, persisten
     await sm.take('e2');
     v = sm.view('e2');
     const imag = v.presets.find((p) => p.key === 'e2:2');
-    assert.equal(imag.tally.pgm, 'full'); assert.equal(v.destinations.find((x) => x.key === 'S2').pgmPreset.name, 'IMAG Pair');
+    assert.equal(imag.tally.pgm, 'full'); assert.equal(imag.tally.pvw, 'none', 'TAKE clears preview'); assert.equal(v.destinations.find((x) => x.key === 'S2').pgmPreset.name, 'IMAG Pair');
     assert.equal(imag.tile, 3);
     sm.swapTiles('e2', 3, 30);
     assert.equal(sm.view('e2').presets.find((p) => p.key === 'e2:2').tile, 30);
@@ -189,7 +189,7 @@ test('manager: selection, recall, TAKE tally, dim filter, MOVE / swap, persisten
     const sm2 = new SystemManager({ dataDir: dir, engine: fakeEngine(), autoStart: false });
     assert.equal(sm2.cfg.active, 'e2'); assert.deepEqual(sm2.cfg.armed, ['e2']); assert.deepEqual(sm2.cfg.sessions.e2.selection, ['S2', 'S3']); assert.equal(sm2.cfg.sessions.e2.layout['e2:2'], 30);
     sm2.close();
-    await assert.rejects(sm.take('pixelhue'), /no destinations selected/);
+    await assert.rejects(sm.take('pixelhue'), /Nothing armed: select destinations or recall a preset first/);
   } finally { await stop(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
