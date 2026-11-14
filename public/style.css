@@ -521,8 +521,8 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .sys-cards.planned .mono{color:#ffd35c}
 
 /* ---------- 0.7.0: SYSTEMS home that scales, ATEM, Panasonic PTZ ---------- */
-body:not(.tab-xpresets):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-ppresets):not(.tab-pcams) #xlast{display:none}
-body.tab-atem #xlast,body.tab-arouter #xlast,body.tab-aaudio #xlast,body.tab-akeys #xlast,body.tab-amacros #xlast,body.tab-pctl #xlast,body.tab-ppresets #xlast,body.tab-pcams #xlast{display:block}
+body:not(.tab-xpresets):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-ptrack):not(.tab-ppresets):not(.tab-pcams) #xlast{display:none}
+body.tab-atem #xlast,body.tab-arouter #xlast,body.tab-aaudio #xlast,body.tab-akeys #xlast,body.tab-amacros #xlast,body.tab-pctl #xlast,body.tab-ptrack #xlast,body.tab-ppresets #xlast,body.tab-pcams #xlast{display:block}
 .led.warn{background:#f0a500;box-shadow:0 0 8px #f0a500}
 .sys-card.warn::before{background:#f0a500}
 .dash-tools{display:flex;flex-direction:column;align-items:flex-end;gap:8px}
@@ -1439,3 +1439,29 @@ nav.tabs{padding:0 6px}
 .pages-slot .pages-hit:first-child .pages-empty{aspect-ratio:1;max-height:64px;border-radius:999px;width:72%;margin:0 auto}
 .pages-slot .pages-hit:last-child .pages-empty{min-height:28px;width:100%;border-radius:8px}
 .pages-hit.on .pages-empty,.pages-board button.deck-key.on{box-shadow:inset 0 0 0 2px #e8eef6}
+
+/* PTZ tracking. The still and the boxes share one frame so a tap lands on the person. */
+.track-layout{display:grid;grid-template-columns:minmax(280px,420px) minmax(0,1fr);gap:12px;align-items:start}
+.track-side{gap:8px}
+.track-link{display:flex;gap:6px;align-items:center}
+.track-link input{flex:1;min-width:0;background:#0f1318;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.track-link input[type=number]{flex:0 0 88px}
+.track-run{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.track-run b{letter-spacing:.08em;font-size:13px}
+.track-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
+.track-field{display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--dim)}
+.track-field input{background:#0f1318;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:600 13px/1.2 ui-monospace,SFMono-Regular,Menlo,monospace}
+.track-stage{position:relative;background:#000;border-radius:10px;overflow:hidden;min-height:180px}
+.track-stage img{display:block;width:100%;height:auto}
+#trackBoxes{position:absolute;inset:0}
+.track-box{position:absolute;border:2px solid #3b8cff;background:rgba(59,140,255,.12);color:#fff;padding:0}
+.track-box.locked{border-color:#18c35a;background:rgba(24,195,90,.15)}
+.track-box span{position:absolute;left:0;top:0;font:700 11px/1.2 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.55);padding:1px 4px}
+.track-field small{font-weight:500;letter-spacing:0;line-height:1.25}
+#trackGuides{position:absolute;inset:0;pointer-events:none}
+.track-guide{position:absolute;box-sizing:border-box}
+.track-guide.frame{border:1px solid rgba(255,255,255,.85)}
+.track-guide.dead{border:1px dashed #f0a500;background:rgba(240,165,0,.08)}
+.track-stage .snap-na{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--dim);font-weight:700}
+.track-stage .snap-na[hidden]{display:none}
+@media (max-width:900px){.track-layout{grid-template-columns:1fr}}

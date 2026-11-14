@@ -16,7 +16,7 @@
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS ? kindOf(SYS.active) : 'rs6');
   const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML', videohub: 'VH', hyperdeck: 'HD', mitti: 'MI' };
-  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amv', 'amacros'], ptz: ['pctl', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], cues: ['cues'], decks: ['decks', 'buttons', 'pages'] };
+  const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amv', 'amacros'], ptz: ['pctl', 'ptrack', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], scopes: ['scopes'], looks: ['looks'], cues: ['cues'], decks: ['decks', 'buttons', 'pages'] };
   const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', scopes: 'scopes', looks: 'looks', cues: 'cues', decks: 'decks' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
   const XTABS = KIND_TABS.preset;
@@ -519,7 +519,7 @@
       ['atem', ['#pane-atem', '#pane-arouter', '#pane-aaudio', '#pane-akeys', '#pane-alayout', '#pane-amacros']],
       ['rs6', ['#pane-presets', '#pane-inputs', '#pane-backup', '#pane-audio', '#pane-webrcs']],
       ['preset', ['#pane-xpresets', '#pane-xcues', '#pane-xsources', '#pane-xstills', '#pane-xbackup']],
-      ['ptz', ['#pane-pctl', '#pane-pcams']],
+      ['ptz', ['#pane-pctl', '#pane-ptrack', '#pane-pcams']],
       ['pixera', ['#pane-pxplay', '#pane-pxcues']],
       ['millumin', ['#pane-mlcol', '#pane-mllayer']],
     ];
