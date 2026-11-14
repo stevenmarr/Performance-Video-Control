@@ -1185,6 +1185,27 @@ test('the recorder, router, display and console systems send their published com
     assert.ok(seen.some((line) => line.startsWith('GET /cm?cmnd=Power%20On')));
     assert.ok(seen.some((line) => line.startsWith('PUT /api/slot/0/io/do/0/doStatus') && line.includes('"doStatus":1')));
     assert.ok(packets.some((p) => p.toString() === 'core-tc-start'));
+    const roku = desk.create('roku-tv', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(roku.id, 'home', {});
+    const kinetic = desk.create('modulo-kinetic', { connection: tcpConn });
+    await desk.connect(kinetic.id);
+    await desk.run(kinetic.id, 'take', {});
+    const tera = desk.create('teracom-tcw181', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(tera.id, 'on', {});
+    const nano = desk.create('nanoleaf', { connection: { host: '127.0.0.1', port: webPort, https: false, token: 'abc' } });
+    await desk.run(nano.id, 'on', {});
+    const reaper = desk.create('reaper', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(reaper.id, 'mute', {});
+    const pdu = desk.create('synaccess-pdu', { connection: { host: '127.0.0.1', port: webPort, https: false, authType: 'none' } });
+    await desk.run(pdu.id, 'on', {});
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    const pub = Buffer.concat(lines);
+    assert.ok(pub.includes(Buffer.from('launchTask?take\n')));
+    assert.ok(seen.some((line) => line.startsWith('POST /keypress/home')));
+    assert.ok(seen.some((line) => line.startsWith('GET /?r1=1')));
+    assert.ok(seen.some((line) => line.startsWith('PUT /api/v1/abc/state') && line.includes('"value":true')));
+    assert.ok(seen.some((line) => line.startsWith('GET /_/SET/TRACK/1/MUTE/1')));
+    assert.ok(seen.some((line) => line.startsWith('GET /cmd.cgi?$A3%201%201')));
   } finally {
     desk.close();
     sink.close();

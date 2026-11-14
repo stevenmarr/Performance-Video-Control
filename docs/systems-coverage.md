@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not yet: **864**.
+Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not yet: **856**.
 
 ## Systems in this build
 
@@ -216,6 +216,14 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | Tasmota MQTT (`tasmota-mqtt`) | implemented | 1 | 2 | 1 | official | https://tasmota.github.io/docs/Commands/ |
 | Visual Productions TimeCore (`vp-timecore`) | implemented | 2 | 2 | 1 | official | https://api.visualproductions.nl/api/download/6762f3e65aaf91d36672e771 |
 | Moxa ioLogik E1200 (`moxa-e1200`) | implemented | 2 | 2 | 1 | official | https://moxa.com/getmedia/451bb28e-7e07-4bd7-b8e8-260e093ad73b/moxa-iologik-e1200-series-manual-v16.2.pdf |
+| Roku (`roku-tv`) | implemented | 1 | 2 | 1 | official | https://developer.roku.com/docs/developer-program/dev-tools/external-control-api.md |
+| ESPHome (`esphome`) | implemented | 1 | 2 | 1 | official | https://esphome.io/web-api/index.html |
+| Home Assistant (`homeassistant`) | implemented | 1 | 2 | 1 | official | https://developers.home-assistant.io/docs/api/rest/ |
+| Modulo Kinetic (`modulo-kinetic`) | implemented | 1 | 2 | 1 | official | https://support.modulo-pi.com/modulo-kinetic-manual/1/en/topic/tcp-ip-external-control-protocol |
+| Teracom TCW181B (`teracom-tcw181`) | implemented | 2 | 2 | 1 | official | http://www.teracom-bg.com/docs/TCW181B/TCW181B-CM_R1.pdf |
+| Nanoleaf (`nanoleaf`) | implemented | 2 | 2 | 1 | official | https://support.nanoleaf.me/hc/en-us/articles/41105798500628-API-Quick-Start-Guide |
+| REAPER (`reaper`) | implemented | 1 | 2 | 1 | official | https://github.com/ReaTeam/Doc/blob/master/web_interface_modding.md |
+| Synaccess netBooter (`synaccess-pdu`) | implemented | 2 | 2 | 1 | official | https://synaccess-pdus.readme.io/reference/http-api |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -315,6 +323,11 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | Softron playback (`softron-open`) | not yet | 0 | 0 | 0 | official | https://www.softron.tv/products/movierecorder |
 | PixelHue F series and media server (`pixelhue-open`) | not yet | 0 | 0 | 0 | official | https://www.pixelhue.com/ |
 | Stage Tec (`stagetec-open`) | not yet | 0 | 0 | 0 | official | https://www.stagetec.com/ |
+| Philips WiZ (`philips-wiz`) | not yet | 0 | 0 | 0 | official | https://docs.pro.wizconnected.com/ |
+| Ontime (`ontime`) | not yet | 0 | 0 | 0 | official | https://docs.getontime.no/ |
+| JNIOR (`jnior`) | not yet | 0 | 0 | 0 | official | https://jnior.com/jnior-protocol/ |
+| Fully Kiosk (`fully-kiosk`) | not yet | 0 | 0 | 0 | official | https://www.fully-kiosk.com/en/ |
+| Pages opened without a command (`likely-open`) | not yet | 0 | 0 | 0 | official | https://www.lectrosonics.com/ |
 
 ## Notes on sources
 
@@ -342,6 +355,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 - Ecamm `GET /setNext`, PlaybackPro `TA`, IDK `@SSW,1,1`, Genelec `PUT /public/v1/audio/volume`, WyreStorm SW-0402 `AA020007000000001001003C` and ULX-D `< SET 1 AUDIO_MUTE ON >` are separate systems. IDK FDX and NINJAR, MADRIX AURA, Sony PXW, Hynamic, AVMatrix Shark, Magnimage, LightFactory and the Videohub control panel did not yield a command that was safe to send.
 - ANI4IN `< SET 1 AUDIO_MUTE ON >`, MXW `< SET 1 TX_STATUS MUTE >`, PSM1000 `< SET 1 RF_MUTE 1 >`, SCM820, MXCW `GLOBAL_MUTE`, DCA901, P300, GALAXY `:recall_snapshot 3` and BirdDog `POST /connectTo` are separate systems. BirdDog Central and Connect, the AK-HRP1000, Powersoft, L-Acoustics, Samsung LED, V__pro8, ConductIP, and the Tascam BD-MP1 and CD protocols did not yield a command that was safe to copy.
 - Global Caché `sendir`, `setstate,1:3,1` and `getstate,2:3`, Shelly `GET /relay/0?turn=on`, Tasmota `Power%20On` and `cmnd/%topic%/Power`, TimeCore `core-tc-start` and Moxa `doStatus` 1 are separate systems. Hue, Shelly WebSocket, the Moxa E2200, B-Station, IOCore, PosiStageNet, Luminex, PerfectCue, KLANG, ClassX, Dexon, Softron, PixelHue F and the media server, and Stage Tec did not yield a command that was safe to send.
+- Roku `POST /keypress/home`, ESPHome `POST /switch/Living Room Light/turn_on`, Home Assistant `light/turn_on`, Kinetic `launchTask?take`, Teracom `/?r1=1`, Nanoleaf `PUT /state`, REAPER `/_/SET/TRACK/1/MUTE/1` and Synaccess `$A3 1 1` are separate systems. WiZ, Ontime, JNIOR, Fully Kiosk, and the Lectrosonics, Sonifex, Dolby, Imagine, Elgato, Apple TV, Wisycom, NTP, Dicentis, Android TV, Focusrite, MOTU, CEDAR, Innosonix, AV Stumpfl and Samsung TV pages did not print a request.
 
 ## Every Companion connection
 
@@ -394,11 +408,11 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `analogway-pls300` | not yet | — | — |
 | `analogway-vertige` | not yet | — | — |
 | `analogway-vio` | not yet | — | — |
-| `android-tv` | not yet | — | — |
+| `android-tv` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `anomes-millumin` | implemented | millumin | https://www.millumin.com/documentation/ |
 | `apc-rackpdu` | implemented | apc-rackpdu | https://www.se.com/us/en/faqs/FA156163/ |
 | `apc-ups` | not yet | apc-ups | https://www.se.com/us/en/faqs/FA156163/ |
-| `apple-tv` | not yet | — | — |
+| `apple-tv` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `arkaos-mediamaster` | not yet | arkaos-mediamaster | https://cdn.arkaos.com/arkaos/downloads/ArKaos_MediaMaster_6_User_Guide.pdf |
 | `arkona-bladerunner` | not yet | — | — |
 | `arri-tally` | not yet | — | — |
@@ -441,7 +455,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `avproconnect-acmx1616-auhd` | not yet | — | — |
 | `avproedge-mxnet` | not yet | — | — |
 | `avstumpfl-pixera` | implemented | pixera | https://help.pixera.one/api/ |
-| `avstumpfl-wingsviosorx` | not yet | — | — |
+| `avstumpfl-wingsviosorx` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `aws-ec2` | not yet | — | — |
 | `aws-elementallive` | not yet | — | — |
 | `aws-medialive` | not yet | — | — |
@@ -517,7 +531,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `bom-api` | not yet | — | — |
 | `borealis-vor` | not yet | — | — |
 | `borealsystems-director` | not yet | — | — |
-| `bosch-dicentis` | not yet | — | — |
+| `bosch-dicentis` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `bosch-hd-cameracontrol` | implemented | bosch-hd-camera | https://media.boschsecurity.com/fs/media/pb/media/partners_1/integration_tools_1/developer/absolute-positioning-ip-1-9.pdf |
 | `boxcast-api` | not yet | — | — |
 | `brainsalt-backstage` | not yet | — | — |
@@ -542,7 +556,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `carousel-signage` | not yet | — | — |
 | `casparcg-server` | implemented | casparcg | https://github.com/CasparCG/help/wiki/AMCP-Protocol |
 | `castr-api` | not yet | — | — |
-| `cedar-dns8d` | not yet | — | — |
+| `cedar-dns8d` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `chamsys-magicq-osc` | implemented | chamsys-magicq | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/OSC.html |
 | `chamsys-magicq-udp` | implemented | magicq-udp | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/remote_control_commands.html |
 | `chamsys-quickq` | implemented | chamsys-quickq | https://docs.chamsys.co.uk/quickq/13.0/manual/touchosc.html |
@@ -568,7 +582,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `clearcom-station-ic` | not yet | clearcom | https://www.clearcom.com/ |
 | `cleartouch-ippctrl` | not yet | — | — |
 | `clockworks-viewer` | not yet | — | — |
-| `cockos-reaper` | not yet | — | — |
+| `cockos-reaper` | implemented | reaper | https://github.com/ReaTeam/Doc/blob/master/web_interface_modding.md |
 | `coda-linus` | not yet | — | — |
 | `codirect-codirect` | not yet | — | — |
 | `colorlight-grandshow` | not yet | colorlight-grandshow | https://developer.colorlightcloud.com/CLTServer/en/api-reference/sender-device/screen-group/brightness-and-color-temperature/set-screen-brightness.html |
@@ -644,7 +658,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `djsoft-radioboss` | not yet | — | — |
 | `dmxcontrolprojects-dmxcontrol3` | not yet | — | — |
 | `dmxcore-dmxcore100` | not yet | — | — |
-| `dolby-cinemaprocessor` | not yet | — | — |
+| `dolby-cinemaprocessor` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `dpa-wireless` | not yet | — | — |
 | `draco-tera` | not yet | — | — |
 | `dreamchip-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
@@ -661,13 +675,13 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `ecclesialab-worshiplive` | not yet | — | — |
 | `eidsystems-kaleoai` | not yet | — | — |
 | `eiki-wspprojector` | implemented | eiki-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
-| `elgato-keylight` | not yet | — | — |
+| `elgato-keylight` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `emotimo-st4` | not yet | — | — |
 | `epiphan-pearl` | implemented | epiphan-pearl | https://www.epiphan.com/userguides/pdfs/Epiphan-Pearl-API-Guide.pdf |
 | `epson-businesspj` | implemented | epson-projector | https://files.support.epson.com/docid/cpd6/cpd65860/EN/Monitoring/Reference/esc_vp21_command_list.html |
 | `equipson-lightshark` | implemented | lightshark | https://media.equipson.es/Docs/Manuales/LightShark_v1_4_EN.pdf |
 | `ereca-stageracer` | not yet | — | — |
-| `esphome-api` | not yet | — | — |
+| `esphome-api` | implemented | esphome | https://esphome.io/web-api/index.html |
 | `etc-echo` | not yet | — | — |
 | `etc-eos` | implemented | etc-eos | https://www.etcconnect.com/WebDocs/Controls/EosFamilyOnlineHelp/en/Content/ShowControl/OSC/OSC_Intro.htm |
 | `etc-paradigm` | implemented | etc-paradigm | https://www.etcconnect.com/WorkArea/DownloadAsset.aspx?id=10737514967 |
@@ -710,8 +724,8 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `fivem-console` | not yet | — | — |
 | `fiverecords-tallyccupro` | not yet | — | — |
 | `flamingosoftware-toucantype` | not yet | — | — |
-| `focusrite-clarett` | not yet | — | — |
-| `focusrite-mp8r` | not yet | — | — |
+| `focusrite-clarett` | not yet | likely-open | https://www.lectrosonics.com/ |
+| `focusrite-mp8r` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `folivora-btt` | not yet | — | — |
 | `fomako-camera-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | `foobar2000-foobar2000` | not yet | — | — |
@@ -722,7 +736,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `fourkay-matrix` | not yet | — | — |
 | `fritz-fritzbox` | not yet | — | — |
 | `fulldomepro-server` | not yet | — | — |
-| `fullyfactory-fullykiosk` | not yet | — | — |
+| `fullyfactory-fullykiosk` | not yet | fully-kiosk | https://www.fully-kiosk.com/en/ |
 | `fursyt12-notgt` | not yet | — | — |
 | `gallery-virtualvtrpro` | not yet | — | — |
 | `gammacontrol-gmaestro` | not yet | — | — |
@@ -767,7 +781,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `generic-wakeonlan` | implemented | wake-on-lan | https://www.amd.com/content/dam/amd/en/documents/archived-tech-docs/white-papers/20213.pdf |
 | `generic-websocket` | implemented | generic-websocket | https://www.rfc-editor.org/rfc/rfc6455 |
 | `generic-webtable` | not yet | — | — |
-| `getontime-ontime` | not yet | — | — |
+| `getontime-ontime` | not yet | ontime | https://docs.getontime.no/ |
 | `glensound-divine` | not yet | — | — |
 | `glensound-gtmmobile` | not yet | — | — |
 | `glensound-minferno` | not yet | — | — |
@@ -813,7 +827,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `hollyland-solidcom` | not yet | — | — |
 | `hologfx-holographics` | not yet | — | — |
 | `holophonix-processor` | not yet | — | — |
-| `homeassistant-server` | not yet | — | — |
+| `homeassistant-server` | implemented | homeassistant | https://developers.home-assistant.io/docs/api/rest/ |
 | `hoobs-api` | not yet | — | — |
 | `hopla-powerstudio` | not yet | — | — |
 | `hynamic-mediaserver` | not yet | hynamic-mediaserver | https://www.hynamic.com/ |
@@ -829,11 +843,11 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `ifelseware-avplayback` | not yet | — | — |
 | `iiyama-prolite` | implemented | iiyama-prolite | https://iiyama.com/f/2745ee2456421dcc5459a549095c2d11_rs232-lan-commands-2026-08-txx29as-lhxx66-lhxx81.pdf |
 | `ikan-lyrapoe` | not yet | — | — |
-| `imagine-lrc` | not yet | — | — |
+| `imagine-lrc` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `imimot-mitti` | implemented | mitti | https://imimot.com/mitti/ |
 | `influxdb-apiv2` | not yet | — | — |
-| `innosonix-maxx` | not yet | — | — |
-| `integ-jnior` | not yet | — | — |
+| `innosonix-maxx` | not yet | likely-open | https://www.lectrosonics.com/ |
+| `integ-jnior` | not yet | jnior | https://jnior.com/jnior-protocol/ |
 | `intel-ipmi` | not yet | — | — |
 | `intelix-matrix` | not yet | — | — |
 | `interactivetechnologies-cueserver` | implemented | cueserver | https://www.interactive-online.com/manuals/cueserver/cuescript-via-udp |
@@ -892,7 +906,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `leaderphabrix-lpx-qx` | not yet | — | — |
 | `leadled-clockotron` | not yet | — | — |
 | `leafcoders-titler` | not yet | — | — |
-| `lectrosonics-aspen` | not yet | — | — |
+| `lectrosonics-aspen` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `leolabs-ableset` | not yet | — | — |
 | `leonreucher-vstopowerpoint` | not yet | — | — |
 | `lgtv-display` | not yet | lgtv-display | https://gscs-b2c.lge.com/open/downloadFile?fileId=KROWM000594321.pdf |
@@ -966,13 +980,13 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `mix16-pro` | not yet | — | — |
 | `mixtech-theatremix` | not yet | — | — |
 | `modelighting-edin` | not yet | — | — |
-| `modulopi-kinetic` | not yet | — | — |
+| `modulopi-kinetic` | implemented | modulo-kinetic | https://support.modulo-pi.com/modulo-kinetic-manual/1/en/topic/tcp-ip-external-control-protocol |
 | `modulopi-moduloplayer` | not yet | modulo-player | https://support.modulo-pi.com/modulo-kinetic-manual/1/en/topic/tcp-ip-external-control-protocol |
 | `monnit-sensors` | not yet | — | — |
 | `monospace-lightkey` | not yet | — | — |
 | `monteiro-cronosdown` | not yet | — | — |
 | `monteiro-pptvideo` | not yet | — | — |
-| `motu-avb` | not yet | — | — |
+| `motu-avb` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `moxa-e2200series` | not yet | moxa-e2200 | https://moxa.com/getmedia/451bb28e-7e07-4bd7-b8e8-260e093ad73b/moxa-iologik-e1200-series-manual-v16.2.pdf |
 | `moxa-iologik-e1200` | implemented | moxa-e1200 | https://moxa.com/getmedia/451bb28e-7e07-4bd7-b8e8-260e093ad73b/moxa-iologik-e1200-series-manual-v16.2.pdf |
 | `mrmoco-mhc` | not yet | — | — |
@@ -984,7 +998,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `muxlab-kvm` | not yet | — | — |
 | `mvr-helios` | implemented | helios | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
 | `myapplause-control` | not yet | — | — |
-| `nanoleaf-shapes` | not yet | — | — |
+| `nanoleaf-shapes` | implemented | nanoleaf | https://support.nanoleaf.me/hc/en-us/articles/41105798500628-API-Quick-Start-Guide |
 | `nec-display` | implemented | nec-display | https://www.sharpnecdisplays.com/p/download/v/bce9d82928fe8cec24a1e81f0b0ad44a/cp/Products/LargeFormatDisplays/Products/CurrentProducts/Shared/Command_Lists/External_Control_Rev1.8%28G4%29.pdf?fn=External_Control_Rev1.8%28G4%29.pdf |
 | `nec-projectors` | implemented | nec-projector-ascii | https://business.sharpusa.com/Portals/0/downloads/Manuals/sharp-pj-control-command-codes.pdf |
 | `neodarque-stagetimer2` | not yet | — | — |
@@ -1029,7 +1043,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `novastar-t-series` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
 | `novastar-vx4s` | not yet | novastar-other | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
 | `nrk-sofie-chef` | not yet | — | — |
-| `ntp-technology-dot` | not yet | — | — |
+| `ntp-technology-dot` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `nws-api` | not yet | — | — |
 | `obs-studio` | implemented | obs | https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md |
 | `obsbot-osc` | not yet | obsbot-osc | https://www.obsbot.com/explore/obsbot-center/osc |
@@ -1080,7 +1094,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `pharos-designer` | not yet | pharos-designer | https://dl.pharoscontrols.com/software_help/designer2/content/help/reference/web%20interface/command%20line.htm |
 | `philips-hue` | not yet | philips-hue | https://developers.meethue.com/develop/hue-api/lights-api/ |
 | `philips-sicp` | implemented | philips-sicp | https://community.xibo.org.uk/uploads/short-url/vwVq2nPyhJKL4kTCYpa6VYhQUa8.pdf |
-| `philips-wiz-bulbs` | not yet | — | — |
+| `philips-wiz-bulbs` | not yet | philips-wiz | https://docs.pro.wizconnected.com/ |
 | `pideck-player` | not yet | — | — |
 | `pikvm-kvmdapi` | not yet | — | — |
 | `pixap-pixtimerpro` | not yet | — | — |
@@ -1148,7 +1162,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `rocosoft-ptzjoy` | not yet | — | — |
 | `rode-rcv` | not yet | — | — |
 | `rogueamoeba-farrago` | not yet | — | — |
-| `roku-tv` | not yet | — | — |
+| `roku-tv` | implemented | roku-tv | https://developer.roku.com/docs/developer-program/dev-tools/external-control-api.md |
 | `roland-m5000` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | `roland-p20hd` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | `roland-v1-4k` | implemented | roland-basic | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
@@ -1176,8 +1190,8 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `samsung-business-tv` | implemented | samsung-mdc | https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf |
 | `samsung-display` | implemented | samsung-mdc | https://vgavro.github.io/samsung-mdc/MDC-Protocol.pdf |
 | `samsung-led-vp` | not yet | samsung-led-vp | https://displaysolutions.samsung.com/led-signage/indoor/the-wall |
-| `samsung-smarttv` | not yet | — | — |
-| `samsung-tizenos` | not yet | — | — |
+| `samsung-smarttv` | not yet | likely-open | https://www.lectrosonics.com/ |
+| `samsung-tizenos` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `sanyo-projector` | implemented | sanyo-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `sardiusmedia-sardiuslive` | not yet | — | — |
 | `screenbird-signage` | not yet | — | — |
@@ -1239,7 +1253,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `softvelum-nimble-streamer` | not yet | — | — |
 | `softvelum-wmspanel` | not yet | — | — |
 | `songbeamer-osc` | not yet | — | — |
-| `sonifex-avn-m8r` | not yet | — | — |
+| `sonifex-avn-m8r` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `sononum-horae` | not yet | — | — |
 | `sonoran-coyote` | not yet | — | — |
 | `sonos-speakers` | not yet | — | — |
@@ -1282,7 +1296,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `svt-bridge` | not yet | — | — |
 | `svt-neo` | not yet | — | — |
 | `symetrix-dsp` | implemented | symetrix-dsp | https://www.symetrix.co/tech-tips/basic-remote-terminal-commands |
-| `synaccess-netbooter-bseries` | not yet | — | — |
+| `synaccess-netbooter-bseries` | implemented | synaccess-pdu | https://synaccess-pdus.readme.io/reference/http-api |
 | `syncer-live` | not yet | — | — |
 | `syncthingfoundation-syncthing` | not yet | — | — |
 | `synq-dbt44` | not yet | — | — |
@@ -1318,7 +1332,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `template-js` | not yet | — | — |
 | `template-ts` | not yet | — | — |
 | `tenveo-ptz` | not yet | ptz-open | https://docs.ptzoptics.com/resources/guides/choosing-a-control-protocol/ |
-| `teracom-tcw181b` | not yet | — | — |
+| `teracom-tcw181b` | implemented | teracom-tcw181 | http://www.teracom-bg.com/docs/TCW181B/TCW181B-CM_R1.pdf |
 | `teradek-prism` | not yet | teradek | https://www.teradek.com/ |
 | `teradek-vidiu` | not yet | teradek | https://www.teradek.com/ |
 | `teradek-vidiux` | not yet | teradek | https://www.teradek.com/ |
@@ -1419,7 +1433,7 @@ Companion connection types: **1098**. Implemented: **234**. Partial: **0**. Not 
 | `wearefalcon-falconplay` | not yet | — | — |
 | `webcomms-panel` | not yet | — | — |
 | `wheatstone-wheatnet` | not yet | — | — |
-| `wisycom-mat` | not yet | — | — |
+| `wisycom-mat` | not yet | likely-open | https://www.lectrosonics.com/ |
 | `wled-websocket` | implemented | wled | https://kno.wled.ge/interfaces/json-api/ |
 | `wordnik-api` | not yet | — | — |
 | `workflownetwork-livetime` | not yet | — | — |
