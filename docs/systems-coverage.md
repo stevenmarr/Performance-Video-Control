@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not yet: **914**.
+Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not yet: **907**.
 
 ## Systems in this build
 
@@ -166,6 +166,13 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | High End Hog 4 (`highend-hog4`) | implemented | 3 | 2 | 1 | official | https://www.etcconnect.com/webdocs/Controls/HOG/HTML/en/sect-osc_mappings.htm |
 | Dataton WATCHOUT HTTP (`dataton-watchout-json`) | implemented | 3 | 2 | 1 | official | https://docs.dataton.com/watchout-7-new/watchout/external-control/http-rest-api.html |
 | 7thSense Delta (`delta-media`) | implemented | 3 | 2 | 1 | official | https://portal.7thsense.one/user-guides/MC255-managing-servers/deltagui_external_control.html |
+| ChamSys MagicQ UDP (`magicq-udp`) | implemented | 2 | 2 | 1 | official | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/remote_control_commands.html |
+| mimoLive (`mimolive`) | implemented | 2 | 2 | 1 | official | https://mimolive.com/user-manual/remote-control-automation/http-api/examples-of-api-usage/ |
+| ATEN matrix (`aten-matrix`) | implemented | 2 | 2 | 1 | official | https://assets.aten.com/product/manual/vm0404hb-vm0808hb_um_w_2021-06-18.pdf |
+| Show Cue Systems (`scs-show`) | implemented | 2 | 2 | 1 | official | https://showcuesystems.com/scs11help/topics/prod-cc-network.htm |
+| Aximmetry Composer (`aximmetry`) | implemented | 1 | 2 | 1 | official | https://aximmetry.com/learn/virtual-production-workflow/setting-up-inputs-outputs-for-virtual-production/external-controllers/external-control-of-aximmetry-via-http/network-setup-and-sending-actions/ |
+| Capture (`capture-visualiser`) | implemented | 2 | 2 | 1 | official | https://www.capture.se/Manual/en-UK/2026/Appendix.html |
+| Showtec Lampy (`showtec-lampy`) | implemented | 2 | 2 | 1 | official | https://www.showtec-lights.com/en/mwdownloads/download/link/id/17455196 |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -213,6 +220,8 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | LG display (`lgtv-display`) | not yet | 0 | 0 | 0 | official | https://gscs-b2c.lge.com/open/downloadFile?fileId=KROWM000594321.pdf |
 | ArKaos MediaMaster (`arkaos-mediamaster`) | not yet | 0 | 0 | 0 | official | https://cdn.arkaos.com/arkaos/downloads/ArKaos_MediaMaster_6_User_Guide.pdf |
 | Avolites Ai (`avolites-ai`) | not yet | 0 | 0 | 0 | official | https://api.avolites.com/12.0/Playbacks.FirePlaybackAtLevel.html |
+| BrightSign player (`brightsign-player`) | not yet | 0 | 0 | 0 | official | https://docs.brightsign.biz/hardware/use-serial-udp-commands |
+| Obsidian ONYX OSC (`obsidian-onyx-osc`) | not yet | 0 | 0 | 0 | official | https://support.obsidiancontrol.com/Content/Onyx_Manual/Networking/OSC.htm |
 
 ## Notes on sources
 
@@ -233,6 +242,7 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 - APC switched-rack `on 1`, Gude `cmd=1`, Neol `M0:O1=ON`, Dataprobe outlet control, ATEN `/api/outlet/relay`, ATDM mute, Audia `RECALL 0 PRESET`, Bravia `setPlayContent`, DN-500BD `@0PW00`, Foscam CGI, ZoneMinder alarm, Lilliput `1v2.`, H2R `/run`, Mosart `start-continue`, CueTimer `/global/fire` and Irisdown `GO` are separate systems. A zero-button row is a recorded blocker, not a command system. APC UPS, CyberPower, Eaton, Crestron NVX, Dahua, d&b, Christie WD, Barco DCS/DP/MatrixPRO, Biamp QTX, the other Denon ids and Lumix did not get a command copied from a different product.
 - WyreStorm `SET SW in4 out1`, Blustream `OUT01FR04`, TESmart `MT00SW0102NT`, Gefen `r 7 3`, DirectOut `audioxp 1 65 66`, Panasonic TH `PON` in an STX/ETX frame, CueServer `Cue 1 Go`, AVMatrix `1v2.`, Atlona Omega `x2AVx1`, Atlona CLSO `Input HDMI 2`, WattBox `command=1`, ATND1061 mute, VidBlaster `apiwrite`, Blackbird `1V2.` and CYP `set out A route 1` are separate systems. MT-VIKI and OREI route lines were only found outside the manufacturer, so they are not sent.
 - Audac MTX `#|X001|web|SR1|3|U|`, AtlasIED Atmosphere `ZoneGain_0`, Axia `DST 1 ADDR:"239.190.1.1"`, Titan `FirePlaybackAtLevel`, Hog 4 `/hog/playback/go/0`, WATCHOUT HTTP `POST /v0/play/1` and 7thSense `PLAY TL=1` are separate systems. ArKaos does not print its Telnet command, and Ai is not given the Titan call.
+- MagicQ UDP `1G`, mimoLive `setLive`, ATEN `sw i02 o05`, SCS `scsGo("0")`, Aximmetry `ComposerCtrBoardPressButtonAction`, Capture `/ping` and Lampy `/lampy/pbf/1/flash` are separate systems. BrightSign does not print a playback string, and the ONYX OSC page points at a PDF that was not read here.
 
 ## Every Companion connection
 
@@ -294,7 +304,7 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | `arkona-bladerunner` | not yet | — | — |
 | `arri-tally` | not yet | — | — |
 | `astrastudio-onairscreen` | not yet | — | — |
-| `aten-matrix` | not yet | — | — |
+| `aten-matrix` | implemented | aten-matrix | https://assets.aten.com/product/manual/vm0404hb-vm0808hb_um_w_2021-06-18.pdf |
 | `aten-pdu` | implemented | aten-pdu | https://assets.aten.com/product/manual/Restful-API-Guide-for-PDU_2022-11-18.pdf |
 | `atlasied-atmosphere` | implemented | atlasied-atmosphere | https://www.atlasied.com/ATS006993-B-AZM4-AZM8-3rd-Party-Control.pdf |
 | `atlona-camera-visca` | implemented | sony-visca | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
@@ -342,7 +352,7 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | `axeltechnology-xradio` | not yet | — | — |
 | `axeltechnology-youplay` | not yet | — | — |
 | `axia-livewire-lwrp` | implemented | axia-livewire | https://docs.telosalliance.com/docs/axia-ip-driver-and-aes67 |
-| `aximmetry-composer` | not yet | — | — |
+| `aximmetry-composer` | implemented | aximmetry | https://aximmetry.com/learn/virtual-production-workflow/setting-up-inputs-outputs-for-virtual-production/external-controllers/external-control-of-aximmetry-via-http/network-setup-and-sending-actions/ |
 | `axis-ptz` | implemented | axis-ptz | https://developer.axis.com/vapix/network-video/pantiltzoom-api/ |
 | `badgermedia-trustabel` | not yet | — | — |
 | `ballscore-broadcast` | not yet | — | — |
@@ -403,7 +413,7 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | `bmd-videohub` | implemented | videohub | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |
 | `bmd-videohub-controlpanel` | not yet | — | — |
 | `bmd-webpresenter` | implemented | bmd-streaming | https://documents.blackmagicdesign.com/DeveloperManuals/WebPresenterEthernetProtocol.pdf |
-| `boinx-mimolive` | not yet | — | — |
+| `boinx-mimolive` | implemented | mimolive | https://mimolive.com/user-manual/remote-control-automation/http-api/examples-of-api-usage/ |
 | `bolin-ptz` | not yet | ptz-open | https://docs.ptzoptics.com/resources/guides/choosing-a-control-protocol/ |
 | `bom-api` | not yet | — | — |
 | `borealis-vor` | not yet | — | — |
@@ -415,7 +425,7 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | `brainstorm-suite` | not yet | — | — |
 | `breeze-overlay` | not yet | — | — |
 | `brightlink-bl-8x8-hdbt-hd20` | not yet | — | — |
-| `brightsign-player` | not yet | — | — |
+| `brightsign-player` | not yet | brightsign-player | https://docs.brightsign.biz/hardware/use-serial-udp-commands |
 | `broadcastapps-soundbyte` | not yet | — | — |
 | `broadlink-remote` | not yet | — | — |
 | `brompton-tessera` | implemented | brompton-tessera | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
@@ -429,13 +439,13 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | `canon-ptz` | implemented | canon-xc | https://output.nl/u/images/canon-xc-control-protocol-specifications-005.pdf |
 | `canon-xf` | not yet | — | — |
 | `captionkit-api` | not yet | — | — |
-| `capture-visualiser` | not yet | — | — |
+| `capture-visualiser` | implemented | capture-visualiser | https://www.capture.se/Manual/en-UK/2026/Appendix.html |
 | `carousel-signage` | not yet | — | — |
 | `casparcg-server` | implemented | casparcg | https://github.com/CasparCG/help/wiki/AMCP-Protocol |
 | `castr-api` | not yet | — | — |
 | `cedar-dns8d` | not yet | — | — |
 | `chamsys-magicq-osc` | implemented | chamsys-magicq | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/OSC.html |
-| `chamsys-magicq-udp` | not yet | — | — |
+| `chamsys-magicq-udp` | implemented | magicq-udp | https://docs.chamsys.co.uk/magicq/1.9.9.x/manual/remote_control_commands.html |
 | `chamsys-quickq` | implemented | chamsys-quickq | https://docs.chamsys.co.uk/quickq/13.0/manual/touchosc.html |
 | `chilibytes-pdfosc` | not yet | — | — |
 | `christie-projector` | implemented | christie-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
@@ -925,7 +935,7 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | `obs-studio` | implemented | obs | https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md |
 | `obsbot-osc` | not yet | obsbot-osc | https://www.obsbot.com/explore/obsbot-center/osc |
 | `obsidiancontrol-onyx` | not yet | — | — |
-| `obsidiancontrol-onyx-osc` | not yet | — | — |
+| `obsidiancontrol-onyx-osc` | not yet | obsidian-onyx-osc | https://support.obsidiancontrol.com/Content/Onyx_Manual/Networking/OSC.htm |
 | `octava-pro-dsx` | not yet | — | — |
 | `octocue-clicker` | not yet | — | — |
 | `odyssey-insight` | not yet | — | — |
@@ -1086,10 +1096,10 @@ Companion connection types: **1098**. Implemented: **184**. Partial: **0**. Not 
 | `sharun-pdfpresenter` | not yet | — | — |
 | `shelly-http` | not yet | — | — |
 | `shelly-ws` | not yet | — | — |
-| `showcuesystems-scs` | not yet | — | — |
+| `showcuesystems-scs` | implemented | scs-show | https://showcuesystems.com/scs11help/topics/prod-cc-network.htm |
 | `showrevue-showrevue` | not yet | — | — |
 | `showsign-signage` | not yet | — | — |
-| `showtec-lampy` | not yet | — | — |
+| `showtec-lampy` | implemented | showtec-lampy | https://www.showtec-lights.com/en/mwdownloads/download/link/id/17455196 |
 | `showtrak-server` | not yet | — | — |
 | `shure-ani4in` | not yet | — | — |
 | `shure-chargers` | not yet | — | — |

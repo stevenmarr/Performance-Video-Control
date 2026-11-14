@@ -868,8 +868,9 @@ test('the audio, lighting and playback systems send their published commands', a
   const port = await listen(tcp);
   const seen = [];
   const web = http.createServer((req, res) => {
-    req.on('data', () => {});
-    req.on('end', () => { seen.push(`${req.method} ${req.url}`); res.writeHead(204); res.end(); });
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => { seen.push(`${req.method} ${req.url} ${body}`); res.writeHead(204); res.end(); });
   });
   const webPort = await listen(web);
   const dgram = require('dgram');
@@ -908,12 +909,39 @@ test('the audio, lighting and playback systems send their published commands', a
     assert.ok(text.includes(Buffer.from('LOGIN\r\n')));
     assert.ok(text.includes(Buffer.from('DST 1 ADDR:"239.190.1.1"\r\n')));
     assert.ok(text.includes(Buffer.from('PLAY TL=1\r')));
-    assert.ok(seen.includes('GET /titan/script/2/Playbacks/FirePlaybackAtLevel?handle_userNumber=6&level_level=1&alwaysRefire=true'));
-    assert.ok(seen.includes('POST /v0/play/1'));
+    assert.ok(seen.some((line) => line.startsWith('GET /titan/script/2/Playbacks/FirePlaybackAtLevel?handle_userNumber=6&level_level=1&alwaysRefire=true')));
+    assert.ok(seen.some((line) => line.startsWith('POST /v0/play/1')));
     assert.ok(packets.some((p) => {
       const m = osc.decode(p);
       return m && m.address === '/hog/playback/go/0' && m.args[0] && m.args[0].type === 'i' && m.args[0].value === 1;
     }));
+    const mq = desk.create('magicq-udp', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(mq.id, 'go', { playback: 1 });
+    const scs = desk.create('scs-show', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(scs.id, 'go', { cue: '0' });
+    const cap = desk.create('capture-visualiser', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(cap.id, 'ping', {});
+    const lampy = desk.create('showtec-lampy', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(lampy.id, 'press', { fader: 1 });
+    const aten = desk.create('aten-matrix', { connection: tcpConn });
+    await desk.connect(aten.id);
+    await desk.run(aten.id, 'route', { input: '02', output: '05' });
+    const mimo = desk.create('mimolive', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(mimo.id, 'live', { document: '458706932', layer: 'BA868701-8131-49CB-8EDD-8C7E6E7CD60B' });
+    const axi = desk.create('aximmetry', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(axi.id, 'camera', {});
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const more = Buffer.concat(lines);
+    assert.ok(more.includes(Buffer.from('sw i02 o05\r')));
+    assert.ok(packets.some((p) => p.toString() === '1G'));
+    assert.ok(packets.some((p) => p.toString() === 'scsGo("0")\r'));
+    assert.ok(packets.some((p) => { const m = osc.decode(p); return m && m.address === '/ping'; }));
+    assert.ok(packets.some((p) => {
+      const m = osc.decode(p);
+      return m && m.address === '/lampy/pbf/1/flash' && m.args[0] && m.args[0].type === 'i' && m.args[0].value === 1;
+    }));
+    assert.ok(seen.some((line) => line.startsWith('GET /api/v1/documents/458706932/layers/BA868701-8131-49CB-8EDD-8C7E6E7CD60B/setLive')));
+    assert.ok(seen.some((line) => line.startsWith('POST / ') && line.includes('ComposerCtrBoardPressButtonAction') && line.includes('Button="CAM 2"')));
   } finally {
     desk.close();
     sink.close();
