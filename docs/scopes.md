@@ -4,9 +4,9 @@ Waveform, RGB parade, vectorscope, Lightning and false colour from an **H.264** 
 re-encoded on the way; the browser decodes it and the scopes are drawn on the GPU (WebGL2) from the decoded
 Y′CbCr values.
 
-Open it from the persistent top-row **SCOPES** tab, from **PTZ → SCOPES** (a shortcut into the same pane,
-aimed at a camera), or on its own page at **`/scopes.html`**. **`/lightning.html`** is an old alias of that
-page. The page also works in a separate window (the **⤢ WINDOW** button).
+Open it from the persistent top-row **SCOPES** tab, or on its own page at **`/scopes.html`**.
+`/#pscopes` and **`/lightning.html`** are old aliases of that tab. The page also works in a separate
+window (the **⤢ WINDOW** button). Pick a camera from the INPUT list on the scopes page.
 
 **SCOPES** is the tab. **Lightning** is one mode in the scope strip: a component vectorscope with luminance
 (Y) vertical, B−Y on the left half and R−Y on the right half. It is not stage lighting, not NewTek CG, and

@@ -109,37 +109,7 @@
     }
     const act = document.querySelector('#tabsSub .tab.active:not(.grp-off)') ; const top = document.querySelector('#tabsTop .active');
     for (const el of [act, top]) if (el && el.scrollIntoView && el.parentElement.scrollWidth > el.parentElement.clientWidth) el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    syncCamTabs();
   }
-  function syncCamTabs() {
-    const host = document.querySelector('.tgrp[data-tabgrp="ptz"]');
-    if (!host) return;
-    let box = document.getElementById('ptzCamTabs');
-    if (!box) { box = document.createElement('span'); box.id = 'ptzCamTabs'; host.after(box); }
-    const on = armedOf('ptz').length > 0;
-    const rec = recOf(familyTarget('ptz'));
-    const saved = (rec.connection && rec.connection.cameras) || [];
-    const live = rec.cameras || [];
-    const view = V && kindOf(V.system) === 'ptz' ? V : null;
-    const sel = view ? view.selected : null;
-    box.hidden = !on || !saved.length;
-    const html = on ? saved.map((c) => {
-      const st = live.find((y) => y.id === c.id) || {};
-      const sim = !!c.simulator;
-      return `<button type="button" class="tgrp cam${sel === c.id ? ' active' : ''}" data-camtab="${esc(c.id)}" title="${esc(c.name || c.id)} · ${sim ? 'simulator' : (c.host || '')}"><i class="led ${st.connected ? 'ok' : 'off'}"></i>${esc(c.name || c.id)}${sim ? '<span class="mock">SIM</span>' : ''}</button>`;
-    }).join('') : '';
-    if (box.dataset.h !== html) { box.dataset.h = html; box.innerHTML = html; }
-  }
-  function openCamera(id) {
-    const pid = familyTarget('ptz');
-    const focus = SYS.active === pid ? Promise.resolve(SYS) : api('POST', '/api/sys/active', { system: pid }).then((st) => { onSys(st); return st; });
-    return focus.then(() => api('POST', `/api/sys/${pid}/cmd/select`, { cam: id })).then(() => CC.setTab('pctl'));
-  }
-  $('#tabsTop').addEventListener('click', (ev) => {
-    const cam = ev.target.closest('[data-camtab]');
-    if (!cam) return;
-    run(openCamera(cam.dataset.camtab));
-  });
   $('#tabsTop').addEventListener('click', (ev) => {
     const b = ev.target.closest('.tgrp[data-tabgrp]'); if (!b) return;
     const k = b.dataset.tabgrp;
@@ -259,8 +229,8 @@
         <button type="button" class="btn mini" data-rs6set="1">ALL RS6 SETTINGS…</button></div></form>`;
     }
     if (s.key === 'ptz') {
-      return `<div class="conn-form"><div class="note small">Each camera is its own card on the right, with its own address. ASSIGN AS SIM puts that camera on a local simulator and leaves the others alone.</div>
-        <form class="cam-row add" data-camadd="1"><span class="led idle"></span><input name="name" placeholder="Name" maxlength="40"><input name="host" placeholder="IP address" spellcheck="false" autocomplete="off"><input name="port" type="number" placeholder="80" class="slot-in"><button class="btn mini primary">ADD</button></form></div>`;
+      const n = ((s.connection && s.connection.cameras) || []).length;
+      return `<div class="conn-form"><div class="note small">${n} camera${n === 1 ? '' : 's'} on this PTZ. Add, edit, log in, or assign a simulator on <b>PTZ → CAMERAS</b>. The chips on this card are status only.</div></div>`;
     }
     const extra = s.key === 'e2'
       ? f('operatorId', 'Operator (multi-op)', 'text', shown.operatorId, 'none', dis, 'inputmode="numeric"') + f('transTime', 'TAKE time (frames)', 'text', shown.transTime, 'device default', dis, 'inputmode="numeric"')
@@ -352,42 +322,17 @@
       ? `<div class="sys-cards cards avail">${offKeys.map((k) => palRow(SYS.systems[k])).join('')}</div>`
       : '<p class="note small">Nothing matches this filter. The list is every system type — dragging one does not remove it.</p>';
     const rightHtml = desk.length
-      ? `<div class="sys-cards cards" data-desk="1">${desk.map(instRow).join('')}${desk.filter((i) => i.type === 'ptz').map((i) => camCards(i)).join('')}</div>`
+      ? `<div class="sys-cards cards" data-desk="1">${desk.map(instRow).join('')}</div>`
       : '<div class="sys-cards cards" data-desk="1"><p class="note small">Nothing on the desk. Drag a system from the left, or ADD it. You can add the same type more than once.</p></div>';
     const cards = `<div class="sys-cols">${block('AVAILABLE', 'Every type stays here. Drag one onto the desk to add another instance.', leftHtml)}${block('ON THE DESK', 'Each card is its own device: name, address, and connection.', `<div class="sys-desk" data-desk="1">${rightHtml}</div>`)}</div>`;
     // keep a focused connection form from being replaced while typing
     const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && document.activeElement.closest && document.activeElement.closest('#sysCards');
     if (!typing) set($('#sysCards'), 'cards', cards);
-    $('#sysPlannedWrap').hidden = !(SYS.planned || []).length;
-    set($('#sysPlanned'), 'planned', (SYS.planned || []).map((p) => `<article class="sys-card planned"><header><div class="mono">${MONO[p.key] || '?'}</div><div class="ttl"><div class="nm">${esc(p.label)}</div><div class="st"><span class="led idle"></span>${esc(p.kind)} · NOT BUILT</div></div><span class="badge-stub">STUB</span></header><div class="note small">${esc(p.note)}</div></article>`).join(''));
-  }
-  function camCards(s) {
-    if (!s) return '';
-    const cams = (s.connection && s.connection.cameras) || [];
-    const live = s.cameras || [];
-    if (!cams.length) return '<article class="sys-card on-desk"><div class="note small">No cameras yet. Add one on the PTZ card.</div></article>';
-    return cams.map((x) => {
-      const st = live.find((y) => y.id === x.id) || {};
-      const sim = !!x.simulator;
-      return `<article class="sys-card on-desk" data-card="cam-${esc(x.id)}">
-        <header><div class="mono">PTZ</div><div class="ttl"><div class="sys-grp">CAMERA</div><div class="nm">${esc(x.name)}</div>
-          <div class="st"><span class="led ${st.connected ? 'ok' : 'off'}"></span>${st.connected ? 'ONLINE' : 'OFFLINE'}${sim ? ' <span class="mock">SIM</span>' : ''}</div></div></header>
-        <form class="form conn-form" data-camform="${esc(x.id)}">
-          <div class="row2">${f('name', 'Name', 'text', x.name, 'Camera', '', 'maxlength="40"')}${f('host', 'IP address', 'text', x.host, 'Camera IP', '', 'autocomplete="off" spellcheck="false"')}</div>
-          <div class="row2">${f('port', 'Port', 'number', x.port, '80', '', 'min="1" max="65535"')}<span></span></div>
-          ${sim ? '<div class="note small">This camera is on a local simulator. The address above is the saved one, not the simulator.</div>' : ''}
-          <div class="actions left"><button class="btn mini primary" value="save">SAVE</button>
-            <button type="button" class="btn mini" data-camsim="${esc(x.id)}" data-on="${sim ? '0' : '1'}">${sim ? 'USE SAVED ADDRESS' : 'ASSIGN AS SIM'}</button>
-            <button type="button" class="btn mini" data-camopen="${esc(x.id)}">OPEN</button>
-            <button type="button" class="btn mini danger" data-camdel="${esc(x.id)}">REMOVE</button></div>
-        </form></article>`;
-    }).join('');
   }
   $('#sysCards').addEventListener('toggle', (ev) => { const d = ev.target; if (!d.dataset || !d.dataset.det) return; if (d.open) openDet.add(d.dataset.det); else openDet.delete(d.dataset.det); localStorage.setItem('cc.conn', JSON.stringify([...openDet])); }, true);
   $('#dashSearch').addEventListener('input', () => { dashQ = $('#dashSearch').value; renderDash(); });
   $('#dashStatus').addEventListener('click', (ev) => { const b = ev.target.closest('[data-dashst]'); if (!b) return; dashSt = b.dataset.dashst; localStorage.setItem('cc.dashSt', dashSt); renderDash(); });
   $('#dashGroups').addEventListener('click', (ev) => { const b = ev.target.closest('[data-group]'); if (!b) return; groupSel = b.dataset.group; localStorage.setItem('cc.group', groupSel); renderDash(); });
-  const camRow = (el) => ({ name: el.querySelector('[name=name]').value.trim(), host: el.querySelector('[name=host]').value.trim(), port: Number(el.querySelector('[name=port]').value) || 80 });
   $('#sysCards').addEventListener('click', (ev) => {
     const b = ev.target.closest('button'); if (!b) return;
     if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); const r = (st.instances || []).find((i) => i.id === b.dataset.armoff); toast(`${(r && r.name) || b.dataset.armoff} left the desk`); }).catch((e) => toast(e.message, true)));
@@ -413,18 +358,10 @@
     }
     if (b.dataset.rs6set) return $('#btnSettings').click();
     if (b.dataset.reconnect) return run(api('POST', `/api/sys/${b.dataset.reconnect}/connect`).then(() => toast('Connected')));
-    const ptzCard = (el) => { const card = el && el.closest && el.closest('[data-instance]'); return (card && typeOf(card.dataset.instance) === 'ptz' && card.dataset.instance) || familyTarget('ptz'); };
-    if (b.dataset.camsave) { b.blur(); return run(api('POST', `/api/sys/${ptzCard(b)}/cameras/${b.dataset.camsave}`, camRow(b.closest('.cam-row'))).then(() => toast('Camera saved')).finally(refetch)); }
-    if (b.dataset.camdel) { const fm = b.closest('form') || b.closest('.cam-row'); const name = fm && fm.querySelector('[name=name]') ? fm.querySelector('[name=name]').value : 'this camera'; if (!confirm(`Remove camera "${name}"?`)) return; return run(api('DELETE', `/api/sys/${ptzCard(b)}/cameras/${b.dataset.camdel}`).then(() => toast('Camera removed')).finally(refetch)); }
-    if (b.dataset.camsim) { const on = b.dataset.on !== '0'; return run(api('POST', `/api/sys/${ptzCard(b)}/cameras/${b.dataset.camsim}/sim`, { on }).then(() => toast(on ? 'Camera assigned as a simulator' : 'Camera using its saved address')).finally(refetch)); }
-    if (b.dataset.camopen) return run(openCamera(b.dataset.camopen));
   });
   $('#sysCards').addEventListener('submit', (ev) => {
     ev.preventDefault();
     const fm = ev.target;
-    const ptzCard = (el) => { const card = el && el.closest && el.closest('[data-instance]'); return (card && typeOf(card.dataset.instance) === 'ptz' && card.dataset.instance) || familyTarget('ptz'); };
-    if (fm.dataset.camadd) { const c = camRow(fm); if (document.activeElement) document.activeElement.blur(); return run(api('POST', `/api/sys/${ptzCard(fm)}/cameras`, c).then(() => { fm.reset(); toast(`Added ${c.name || 'camera'}`); }).finally(refetch)); }
-    if (fm.dataset.camform) { const c = camRow(fm); if (document.activeElement) document.activeElement.blur(); return run(api('POST', `/api/sys/${ptzCard(fm)}/cameras/${fm.dataset.camform}`, c).then(() => toast('Camera saved')).finally(refetch)); }
     const k = fm.dataset.sys; const b = {};
     if (document.activeElement) document.activeElement.blur();
     if (typeOf(k) === 'rs6') {

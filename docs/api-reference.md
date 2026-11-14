@@ -918,20 +918,6 @@ Path C plugin poll of the app's PTZ view, formatted for the deck. Long-poll with
 
 ---
 
-## Companion page export
-
-Separate from Path C and from USB. Source: `lib/companion/index.js`. The SYSTEMS page section “STREAM DECK PAGES” uses these routes.
-
-### GET /api/companion/pages
-
-`{ surfaces, systems, connection }`. `surfaces` lists XL, MK.2, +, + XL (Companion surface ids; Mini is not in this export order — see `lib/companion/surfaces.js`). Each has `pages` and `warnings` for the configured systems. Default connection is `{ id: "pv_control_center", label: "rs6presets", host: "127.0.0.1", port: 8080 }`. The generate path itself 409s when no system is configured; `describe` still returns the surface list with empty pages in that case.
-
-### GET /api/companion/pages/file
-
-Downloads a `.companionconfig` JSON file. Query: `surfaces` or `surface` (for example `xl,plus`), `combined=1` required if more than one surface, optional `host`, `port`, `label`. Invalid host or label is 400. Multiple surfaces without `combined=1` is 400.
-
----
-
 ## TSL tally
 
 Source: `lib/tsl.js`. 404 `{ error: "TSL not available" }` if `systems.tsl` is missing.
@@ -1036,4 +1022,3 @@ Body `{ deviceId, pages }`. Both required (`deviceId` is in the body because Elg
 | RS6 engine | `lib/engine.js`, `lib/live.js`, `lib/shows.js`, `lib/store.js` |
 | Decks | `lib/decks/service.js`, `lib/decks/pages.js`, `lib/decks/surfaces.js`, `lib/decks/plugin-client.js`, `lib/decks/plugin-server.js`, `lib/decks/diag.js` |
 | Scopes | `lib/scopes/service.js`, `lib/stream-relay.js`, `lib/scopes/ws.js`, `lib/scopes/ndi-ingest.js` |
-| Companion export | `lib/companion/index.js` |

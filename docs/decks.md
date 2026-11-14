@@ -59,8 +59,8 @@ list Control Center shows is always a fresh `GET /v1/devices`, not the hello bod
 
 **Scan USB** on Control Devices posts `POST /api/decks/refresh`. That rescans USB once (`pollUsb`) and refreshes the plugin device list once. The response is the usual deck view: plugin decks in `devices`, USB decks in `control.devices`.
 
-The Companion file under **SYSTEMS → STREAM DECK PAGES** is a separate export. **DECKS** does not
-build it and does not deploy through Companion.
+The old Companion `.companionconfig` export is gone. **PAGES** pushes through the Path C plugin
+(`POST /api/decks/deploy`). It does not build a Companion file.
 
 A mock deck exists only in `test/decks.test.js`, as a stand-in for hardware the test machine does
 not have. The server path in production is the plugin HTTP API above.

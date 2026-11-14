@@ -105,8 +105,7 @@ Group chips (Presentation switchers, Production switchers, Cameras, Media server
 box filter the cards. The look matches the rest of Control Center: dark panels, red for the system
 you are in.
 
-**STREAM DECK PAGES** at the bottom of SYSTEMS is the Companion page download for other surfaces.
-It is not the system cards, and it is not the PTZ deck. Path C is below.
+Stream Deck pages are **Control Devices → PAGES**. That push goes to the Path C plugin. SYSTEMS does not export a Companion page file.
 
 ---
 
@@ -114,12 +113,10 @@ It is not the system cards, and it is not the PTZ deck. Path C is below.
 
 **SCOPES** stays on the top row. Waveform, RGB parade, vectorscope, Lightning, false colour, and
 zebra run on the selected feed. Lightning is a scope mode (Y vertical, B−Y left, R−Y right), not
-its own tab. **PTZ → SCOPES** is a shortcut into the same pane, aimed at a camera.
-
-Live video is **Blackmagic Desktop Video** (a DeckLink input). The Pi and the app process never
+its own tab. Live video is **Blackmagic Desktop Video** (a DeckLink input). The Pi and the app process never
 open the card. A Mac sidecar captures, encodes H.264, and pushes it into the same WebSocket relay
 the camera RTSP path already uses. Browsers decode with WebCodecs (or MSE) and draw the scopes
-in WebGL2.
+in WebGL2. Pick the feed on the scopes page. There is no separate PTZ → SCOPES tab. `/#pscopes` opens SCOPES.
 
 ```bash
 # Mac, once: build the helper. The DeckLink SDK is not in this repo.
@@ -175,15 +172,13 @@ Details and the hardware limits: [docs/atem-layout.md](docs/atem-layout.md).
 
 ---
 
-## Stream Deck (older Path C plugin)
+## Stream Deck
 
-Control Devices, above, is how a deck is driven now: this app owns the USB
-device, including on a Pi. The Elgato plugin below is the previous path. Leave
-the Elgato app quit if Control Center should draw the keys.
+Two paths stay. They do not share a device.
 
-Path C is the show deck for Panasonic AW-UE150 cameras. The Elgato plugin
-`com.performancevideo.control` calls this app over HTTP. This app calls the camera. The Stream Deck
-does not open a camera connection. Companion is not in that path.
+**Control Devices → DEVICES** owns the deck over USB, including on a Pi. Quit the Elgato app so this app can open the keys.
+
+**Control Devices → PAGES** pushes a saved page to the Elgato plugin (Path C). The plugin `com.performancevideo.control` calls this app over HTTP. This app calls the camera. The Stream Deck does not open a camera connection. Companion is not in that path. Leave the Elgato app running for a push.
 
 | | |
 |---|---|
@@ -234,15 +229,12 @@ Function keys (auto iris, detail, DRS, white balance, gain, shutter, and the res
 
 When the camera being painted is on program, every camera function on the deck (keys, dial strip, LCD) takes a red frame. Preview is a green frame. Program wins if both are true. The source is the camera's tally lamps, which TSL follow-PTZ writes from the ATEM program / preview bus, plus the TSL address map itself (`busTally`) so the deck still shows tally if the lamp write has not landed. The web paint page uses the same red or green frame.
 
-The Companion page export only places preset references (`ptz_<cam>_enc_*`). Those rotary actions are filled in by the external `rs6-presets` module, which does not forward dial timing, so this curve is not applied there. A client that calls `POST /api/sys/ptz/cmd/step` with an explicit `steps` count still moves that many native steps. The Elgato plugin and the USB Control Devices path both measure time and apply the curve before that call.
+A client that calls `POST /api/sys/ptz/cmd/step` with an explicit `steps` count still moves that many native steps. The Elgato plugin and the USB Control Devices path both measure time and apply the curve before that call. The old Companion page file did not. That export is gone.
 
 HOME on every page opens Control Center. It does not recall a shot. Red is program / live only.
 ALL STOP is the bottom-right key on every page.
 
-The Companion page file under **SYSTEMS → STREAM DECK PAGES** is a separate export for other
-surfaces (the older Companion module). It does not build these four PTZ profiles.
-
-The same plugin listens on `127.0.0.1:9721`. That is the old push path. Control Devices does not use it.
+The same plugin listens on `127.0.0.1:9721`. **Control Devices → PAGES** pushes through that path. The USB view on DEVICES does not.
 
 ---
 

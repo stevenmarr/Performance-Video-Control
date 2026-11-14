@@ -18,12 +18,14 @@ test('SCOPES is the persistent top tab; LIGHTNING is not a nav group', () => {
   assert.doesNotMatch(html, /data-tab="lightning"/);
   assert.doesNotMatch(html, /id="pane-lightning"/);
   assert.match(html, /id="pane-scopes"/);
-  assert.match(html, /decklink-sidecar\.js --list/);
-  assert.match(html, /--device 0/);
-  assert.match(html, /DESKTOP VIDEO/);
-  assert.match(html, /cannot type a new name/i);
+  assert.doesNotMatch(html, /id="ccPages"/, 'Companion page export is not on SYSTEMS');
   assert.doesNotMatch(html, /MOCK FIXTURES/);
   assert.doesNotMatch(html, /id="ndiMock"/);
+  const scopesPage = read('public/scopes.html');
+  assert.match(scopesPage, /DESKTOP VIDEO/);
+  assert.match(read('docs/scopes.md'), /cannot type a new source/i);
+  assert.match(read('docs/decklink-ingest.md'), /decklink-sidecar\.js --list/);
+  assert.match(read('docs/decklink-ingest.md'), /--device 0/);
   const atem = html.slice(html.indexOf('id="pane-atem"'), html.indexOf('id="pane-arouter"'));
   const system = html.slice(html.indexOf('id="pane-system"'), html.indexOf('id="pane-xpresets"'));
   assert.match(atem, /id="tslPanel"/);
