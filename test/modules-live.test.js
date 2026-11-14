@@ -949,3 +949,47 @@ test('the audio, lighting and playback systems send their published commands', a
     await new Promise((resolve) => web.close(resolve));
   }
 });
+
+test('ONYX, Dugan and Bosch send the commands printed in their manuals', async () => {
+  const lines = [];
+  const tcp = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf)));
+  const port = await listen(tcp);
+  const seen = [];
+  const web = http.createServer((req, res) => {
+    req.on('data', () => {});
+    req.on('end', () => { seen.push(`${req.method} ${req.url}`); res.writeHead(204); res.end(); });
+  });
+  const webPort = await listen(web);
+  const dgram = require('dgram');
+  const osc = require('../lib/drivers/osc');
+  const sink = dgram.createSocket('udp4');
+  const packets = [];
+  sink.on('message', (msg) => packets.push(msg));
+  await new Promise((resolve) => sink.bind(0, '127.0.0.1', resolve));
+  const udp = sink.address().port;
+  const desk = new ModuleDesk();
+  try {
+    const onyx = desk.create('onyx-osc', { connection: { host: '127.0.0.1', port: udp } });
+    await desk.run(onyx.id, 'go', { page: 1, button: 0 });
+    const dugan = desk.create('dugan-automixer', { connection: { host: '127.0.0.1', port, reconnect: false } });
+    await desk.connect(dugan.id);
+    await desk.run(dugan.id, 'auto', { channel: 2 });
+    await desk.run(dugan.id, 'mute', { channel: 2 });
+    const bosch = desk.create('bosch-hd-camera', { connection: { host: '127.0.0.1', port: webPort, https: false } });
+    await desk.run(bosch.id, 'wide', {});
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const text = Buffer.concat(lines);
+    assert.ok(packets.some((p) => {
+      const m = osc.decode(p);
+      return m && m.address === '/Mx/playback/page1/0/go' && m.args[0] && m.args[0].type === 'i' && m.args[0].value === 1;
+    }));
+    assert.ok(text.includes(Buffer.from('CM 2, 1\r')));
+    assert.ok(text.includes(Buffer.from('CM 2, 2\r')));
+    assert.ok(seen.includes('GET /rcp.xml?command=0x09A5&type=P_OCTET&direction=WRITE&num=1&payload=0x80000601d0022328232801ae0000'));
+  } finally {
+    desk.close();
+    sink.close();
+    await new Promise((resolve) => tcp.close(resolve));
+    await new Promise((resolve) => web.close(resolve));
+  }
+});

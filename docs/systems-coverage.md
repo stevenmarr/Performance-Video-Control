@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not yet: **907**.
+Companion connection types: **1098**. Implemented: **194**. Partial: **0**. Not yet: **904**.
 
 ## Systems in this build
 
@@ -173,6 +173,9 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 | Aximmetry Composer (`aximmetry`) | implemented | 1 | 2 | 1 | official | https://aximmetry.com/learn/virtual-production-workflow/setting-up-inputs-outputs-for-virtual-production/external-controllers/external-control-of-aximmetry-via-http/network-setup-and-sending-actions/ |
 | Capture (`capture-visualiser`) | implemented | 2 | 2 | 1 | official | https://www.capture.se/Manual/en-UK/2026/Appendix.html |
 | Showtec Lampy (`showtec-lampy`) | implemented | 2 | 2 | 1 | official | https://www.showtec-lights.com/en/mwdownloads/download/link/id/17455196 |
+| Obsidian ONYX (`onyx-osc`) | implemented | 3 | 2 | 1 | official | https://files.obsidiancontrol.com/s/yndNn7FsaB9Fyay/download |
+| Dan Dugan automixer (`dugan-automixer`) | implemented | 3 | 2 | 1 | official | https://www.dandugan.com/Assets/manuals/Model-E-User-Guide.pdf |
+| Bosch HD camera (`bosch-hd-camera`) | implemented | 1 | 2 | 1 | official | https://media.boschsecurity.com/fs/media/pb/media/partners_1/integration_tools_1/developer/absolute-positioning-ip-1-9.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -221,7 +224,9 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 | ArKaos MediaMaster (`arkaos-mediamaster`) | not yet | 0 | 0 | 0 | official | https://cdn.arkaos.com/arkaos/downloads/ArKaos_MediaMaster_6_User_Guide.pdf |
 | Avolites Ai (`avolites-ai`) | not yet | 0 | 0 | 0 | official | https://api.avolites.com/12.0/Playbacks.FirePlaybackAtLevel.html |
 | BrightSign player (`brightsign-player`) | not yet | 0 | 0 | 0 | official | https://docs.brightsign.biz/hardware/use-serial-udp-commands |
-| Obsidian ONYX OSC (`obsidian-onyx-osc`) | not yet | 0 | 0 | 0 | official | https://support.obsidiancontrol.com/Content/Onyx_Manual/Networking/OSC.htm |
+| Calrec CSCP (`calrec-cscp`) | not yet | 0 | 0 | 0 | official | https://calrec.com/wp-content/themes/calrec/pdf/Artemis%20Installation%20Manual%20(926-149%20Iss27%20Lo).pdf |
+| Optimal Audio Zone (`optimalaudio-zone`) | not yet | 0 | 0 | 0 | official | https://optimal-audio.co.uk/downloads/userguides/OptimalAudio-WebApp-UserGuide.pdf |
+| Chroma-Q Vista (`chromaq-vista`) | not yet | 0 | 0 | 0 | official | https://chroma-q.com/news/vista-3-release-5 |
 
 ## Notes on sources
 
@@ -242,7 +247,8 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 - APC switched-rack `on 1`, Gude `cmd=1`, Neol `M0:O1=ON`, Dataprobe outlet control, ATEN `/api/outlet/relay`, ATDM mute, Audia `RECALL 0 PRESET`, Bravia `setPlayContent`, DN-500BD `@0PW00`, Foscam CGI, ZoneMinder alarm, Lilliput `1v2.`, H2R `/run`, Mosart `start-continue`, CueTimer `/global/fire` and Irisdown `GO` are separate systems. A zero-button row is a recorded blocker, not a command system. APC UPS, CyberPower, Eaton, Crestron NVX, Dahua, d&b, Christie WD, Barco DCS/DP/MatrixPRO, Biamp QTX, the other Denon ids and Lumix did not get a command copied from a different product.
 - WyreStorm `SET SW in4 out1`, Blustream `OUT01FR04`, TESmart `MT00SW0102NT`, Gefen `r 7 3`, DirectOut `audioxp 1 65 66`, Panasonic TH `PON` in an STX/ETX frame, CueServer `Cue 1 Go`, AVMatrix `1v2.`, Atlona Omega `x2AVx1`, Atlona CLSO `Input HDMI 2`, WattBox `command=1`, ATND1061 mute, VidBlaster `apiwrite`, Blackbird `1V2.` and CYP `set out A route 1` are separate systems. MT-VIKI and OREI route lines were only found outside the manufacturer, so they are not sent.
 - Audac MTX `#|X001|web|SR1|3|U|`, AtlasIED Atmosphere `ZoneGain_0`, Axia `DST 1 ADDR:"239.190.1.1"`, Titan `FirePlaybackAtLevel`, Hog 4 `/hog/playback/go/0`, WATCHOUT HTTP `POST /v0/play/1` and 7thSense `PLAY TL=1` are separate systems. ArKaos does not print its Telnet command, and Ai is not given the Titan call.
-- MagicQ UDP `1G`, mimoLive `setLive`, ATEN `sw i02 o05`, SCS `scsGo("0")`, Aximmetry `ComposerCtrBoardPressButtonAction`, Capture `/ping` and Lampy `/lampy/pbf/1/flash` are separate systems. BrightSign does not print a playback string, and the ONYX OSC page points at a PDF that was not read here.
+- MagicQ UDP `1G`, mimoLive `setLive`, ATEN `sw i02 o05`, SCS `scsGo("0")`, Aximmetry `ComposerCtrBoardPressButtonAction`, Capture `/ping` and Lampy `/lampy/pbf/1/flash` are separate systems. BrightSign does not print a playback string.
+- ONYX `/Mx/playback/page1/0/go`, Dugan `CM 2, 1` and Bosch `rcp.xml` command `0x09A5` are separate systems. Calrec CSCP, Optimal Audio Zone and Chroma-Q Vista did not print a complete command.
 
 ## Every Companion connection
 
@@ -419,7 +425,7 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 | `borealis-vor` | not yet | — | — |
 | `borealsystems-director` | not yet | — | — |
 | `bosch-dicentis` | not yet | — | — |
-| `bosch-hd-cameracontrol` | not yet | — | — |
+| `bosch-hd-cameracontrol` | implemented | bosch-hd-camera | https://media.boschsecurity.com/fs/media/pb/media/partners_1/integration_tools_1/developer/absolute-positioning-ip-1-9.pdf |
 | `boxcast-api` | not yet | — | — |
 | `brainsalt-backstage` | not yet | — | — |
 | `brainstorm-suite` | not yet | — | — |
@@ -433,7 +439,7 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 | `bytehive-playoutbee` | not yet | — | — |
 | `c4-clock` | not yet | — | — |
 | `cablematters-matrix` | not yet | — | — |
-| `calrec-cscp` | not yet | — | — |
+| `calrec-cscp` | not yet | calrec-cscp | https://calrec.com/wp-content/themes/calrec/pdf/Artemis%20Installation%20Manual%20(926-149%20Iss27%20Lo).pdf |
 | `camstreamer-camstreamer` | not yet | — | — |
 | `canon-controller` | not yet | — | — |
 | `canon-ptz` | implemented | canon-xc | https://output.nl/u/images/canon-xc-control-protocol-specifications-005.pdf |
@@ -451,7 +457,7 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 | `christie-projector` | implemented | christie-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `christie-spyder` | implemented | christie-spyder | https://www.christiedigital.com/globalassets/resources/public/spyder-s-api-commands-version-6.1.3.pdf |
 | `christie-wd` | not yet | christie-wd | https://www.christiedigital.com/globalassets/resources/public/020-100291-03-christie-3-dlp-sxga-hd-xenon-rs232-serial-communications.pdf |
-| `chromaq-vista` | not yet | — | — |
+| `chromaq-vista` | not yet | chromaq-vista | https://chroma-q.com/news/vista-3-release-5 |
 | `churchapps-freeshow` | not yet | — | — |
 | `churchtranslator-api` | not yet | — | — |
 | `chyronhego-lyric` | not yet | — | — |
@@ -501,7 +507,7 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 | `cyp-matrix` | implemented | cyp-matrix | https://cypeurope.com/wp-content/uploads/2023/04/EL-42M-PIP_PDF-Manual_v1.02_Web.pdf |
 | `dahuasecurity-ptz` | not yet | dahua-ptz | https://www.dahuasecurity.com/ |
 | `dalite-scb` | not yet | — | — |
-| `dan-dugan-automixer` | not yet | — | — |
+| `dan-dugan-automixer` | implemented | dugan-automixer | https://www.dandugan.com/Assets/manuals/Model-E-User-Guide.pdf |
 | `danielnoethen-butt` | not yet | — | — |
 | `dashare-lanchat` | not yet | — | — |
 | `dashare-multiplay` | not yet | — | — |
@@ -935,7 +941,7 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 | `obs-studio` | implemented | obs | https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md |
 | `obsbot-osc` | not yet | obsbot-osc | https://www.obsbot.com/explore/obsbot-center/osc |
 | `obsidiancontrol-onyx` | not yet | — | — |
-| `obsidiancontrol-onyx-osc` | not yet | obsidian-onyx-osc | https://support.obsidiancontrol.com/Content/Onyx_Manual/Networking/OSC.htm |
+| `obsidiancontrol-onyx-osc` | implemented | onyx-osc | https://files.obsidiancontrol.com/s/yndNn7FsaB9Fyay/download |
 | `octava-pro-dsx` | not yet | — | — |
 | `octocue-clicker` | not yet | — | — |
 | `odyssey-insight` | not yet | — | — |
@@ -947,7 +953,7 @@ Companion connection types: **1098**. Implemented: **191**. Partial: **0**. Not 
 | `openweather-rest` | not yet | — | — |
 | `opps-productiontimer` | not yet | — | — |
 | `opticis-omm-1000` | not yet | — | — |
-| `optimalaudio-zone` | not yet | — | — |
+| `optimalaudio-zone` | not yet | optimalaudio-zone | https://optimal-audio.co.uk/downloads/userguides/OptimalAudio-WebApp-UserGuide.pdf |
 | `optisigns-digitalsignage` | not yet | — | — |
 | `optoma-z28s` | implemented | optoma-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `orei-matrix` | not yet | — | — |
