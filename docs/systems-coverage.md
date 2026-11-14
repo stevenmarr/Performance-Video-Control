@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not yet: **895**.
+Companion connection types: **1098**. Implemented: **211**. Partial: **0**. Not yet: **887**.
 
 ## Systems in this build
 
@@ -185,6 +185,14 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | QLC+ (`qlcplus`) | implemented | 2 | 2 | 1 | official | https://docs.qlcplus.org/v5/advanced/web-interface/web-api |
 | Visual Productions Cuety (`cuety`) | implemented | 2 | 2 | 1 | official | https://ltb.no/media/multicase/documents/visual%20productions/manual%20visual%20cuety_en_11.pdf |
 | Middle Atlantic RackLink (`racklink`) | implemented | 3 | 2 | 1 | official | https://assets.grandandtoy.com/assets/Additional-pdf4/10/35/1035249455.pdf |
+| Philips signage (`philips-sicp`) | implemented | 2 | 2 | 1 | official | https://community.xibo.org.uk/uploads/short-url/vwVq2nPyhJKL4kTCYpa6VYhQUa8.pdf |
+| Digital Loggers power (`dli-power`) | implemented | 2 | 2 | 1 | official | http://www.digital-loggers.com/http.html |
+| Tascam DA-6400 (`tascam-da6400`) | implemented | 4 | 2 | 1 | official | https://www.tascam.eu/en/docs/DA-6400_telnet_prot_v100_en.pdf |
+| RGBLink RS232 (`rgblink-rs232`) | implemented | 1 | 2 | 1 | official | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| Pangolin BEYOND (`pangolin-beyond`) | implemented | 1 | 2 | 1 | official | https://wiki.pangolin.com/doku.php?id=beyond%3Aosc_in_beyond |
+| LightShark (`lightshark`) | implemented | 1 | 2 | 1 | official | https://media.equipson.es/Docs/Manuales/LightShark_v1_4_EN.pdf |
+| Adder CCS-PRO (`adder-ccs`) | implemented | 1 | 2 | 1 | official | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
+| The Lighting Controller (`tlc-live`) | implemented | 3 | 2 | 1 | official | http://download.thelightingcontroller.com/software/External_Application/Protocol.pdf |
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
@@ -247,6 +255,14 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | OpenLP (`openlp-http`) | not yet | 0 | 0 | 0 | official | https://discuss.openlp.org/d/7012-api-documentation-31 |
 | Obsidian ONYX (`onyx-other`) | not yet | 0 | 0 | 0 | official | https://files.obsidiancontrol.com/s/yndNn7FsaB9Fyay/download |
 | tvONE Calico (`tvone-calico`) | not yet | 0 | 0 | 0 | official | https://tvone.com/filestore/downloads/tvONE-CORIOmaster-Commands-v1.7.0.pdf |
+| RGBLink TAO (`rgblink-tao`) | not yet | 0 | 0 | 0 | official | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| RGBLink VSP628 (`rgblink-vsp`) | not yet | 0 | 0 | 0 | official | https://www.rgblink.com/proav/vsp628-pro.html |
+| RGBLink X3 (`rgblink-x3`) | not yet | 0 | 0 | 0 | official | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| Telestream Wirecast (`telestream-wirecast`) | not yet | 0 | 0 | 0 | official | https://www.telestream.net/pdfs/user-guides/wirecast/Wirecast-16-User-Guide-Windows.pdf |
+| Nexo NXAMP (`nexo-nxamp`) | not yet | 0 | 0 | 0 | official | https://www.nexo-sa.com/wp-content/uploads/NXAMPmk2-User-Manual-Rev02b-EN.pdf |
+| Ecamm Live (`ecamm-live`) | not yet | 0 | 0 | 0 | official | https://support.ecamm.com/en/articles/17683976-automating-ecamm |
+| Modulo Player (`modulo-player`) | not yet | 0 | 0 | 0 | official | https://support.modulo-pi.com/modulo-kinetic-manual/1/en/topic/tcp-ip-external-control-protocol |
+| Adder Infinity, XDIP and AVM (`adder-other`) | not yet | 0 | 0 | 0 | official | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
 
 ## Notes on sources
 
@@ -270,6 +286,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 - MagicQ UDP `1G`, mimoLive `setLive`, ATEN `sw i02 o05`, SCS `scsGo("0")`, Aximmetry `ComposerCtrBoardPressButtonAction`, Capture `/ping` and Lampy `/lampy/pbf/1/flash` are separate systems. BrightSign does not print a playback string.
 - ONYX `/Mx/playback/page1/0/go`, Dugan `CM 2, 1` and Bosch `rcp.xml` command `0x09A5` are separate systems. Calrec CSCP, Optimal Audio Zone and Chroma-Q Vista did not print a complete command.
 - Monarch `StartRecording`, CORIOmaster `Preset.Take = 1`, NETIO `Action` 1, iiyama `A60100000004011802B8`, VLC `pl_next`, Cisco `xCommand/Presentation/Start`, QLC+ `setFunctionStatus`, Cuety `pb21/go+` and RackLink `fe090020010101303030306aff` are separate systems. AMP, AMPP, TotalMix, Pharos, RED RCP2, Marshall, Fx4, OpenLP, the non-OSC ONYX id and Calico did not yield a complete command.
+- Philips SICP `06 01 00 18 01 1E`, Digital Loggers `/outlet?1=ON`, Tascam `012`, RGBLink `TOVC0200000072000009007b`, BEYOND `/beyond/master/brightness`, LightShark `/LS/Go/PB/1`, Adder CCS `/cgi-bin/channel` and The Lighting Controller `SEQUENTIAL_GO` are separate systems. RGBLink TAO, VSP628 and X3, Wirecast, NXAMP, Ecamm, Modulo Player, and Adder Infinity, XDIP and AVM did not get a command copied from a different product.
 
 ## Every Companion connection
 
@@ -280,12 +297,12 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `PosiStageNet-protocol` | not yet | — | — |
 | `ablesign-digitalsignage` | not yet | — | — |
 | `ableton-osc` | not yet | — | — |
-| `adder-avm` | not yet | — | — |
-| `adder-ccs-pro` | not yet | — | — |
-| `adder-infinity-aim` | not yet | — | — |
-| `adder-infinity-alif` | not yet | — | — |
-| `adder-infinity100xseries` | not yet | — | — |
-| `adder-xdip` | not yet | — | — |
+| `adder-avm` | not yet | adder-other | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
+| `adder-ccs-pro` | implemented | adder-ccs | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
+| `adder-infinity-aim` | not yet | adder-other | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
+| `adder-infinity-alif` | not yet | adder-other | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
+| `adder-infinity100xseries` | not yet | adder-other | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
+| `adder-xdip` | not yet | adder-other | https://www.adder.com/sites/default/files/2023-05/MAN-CCSPROx-ADDER%20v2.8.pdf |
 | `adlerluiz-ytmdesktop` | not yet | — | — |
 | `advatek-pixlite-mk3` | not yet | — | — |
 | `aetaaudio-codecs` | not yet | — | — |
@@ -558,7 +575,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `dhdaudio-ecp` | not yet | — | — |
 | `digico-osc` | implemented | digico | https://digico.biz/digico-opens-up-the-sd-range-with-generic-osc-control/ |
 | `digital-projection` | implemented | digital-projection | https://pjlink.jbmia.or.jp/english/data_cl2.html |
-| `digitalloggers-powercontroller` | not yet | — | — |
+| `digitalloggers-powercontroller` | implemented | dli-power | http://www.digital-loggers.com/http.html |
 | `digitalprojection-highlight` | not yet | — | — |
 | `digitalprojection-projectors` | implemented | digital-projection | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `directout-audioprocessors` | implemented | directout | https://www.directout.eu/wp-content/uploads/m1k2/www_ship/en/help/telnet.html |
@@ -585,7 +602,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `easyprompter-remote` | not yet | — | — |
 | `easyrecord-cgcontrol` | not yet | — | — |
 | `eaton-epdu` | not yet | cyberpower-eaton | https://eaton.my.site.com/publicknowledge/s/article/API-documentation-for-G4-PDUs |
-| `ecamm-live` | not yet | — | — |
+| `ecamm-live` | not yet | ecamm-live | https://support.ecamm.com/en/articles/17683976-automating-ecamm |
 | `ecclesialab-worshiplive` | not yet | — | — |
 | `eidsystems-kaleoai` | not yet | — | — |
 | `eiki-wspprojector` | implemented | eiki-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
@@ -593,7 +610,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `emotimo-st4` | not yet | — | — |
 | `epiphan-pearl` | implemented | epiphan-pearl | https://www.epiphan.com/userguides/pdfs/Epiphan-Pearl-API-Guide.pdf |
 | `epson-businesspj` | implemented | epson-projector | https://files.support.epson.com/docid/cpd6/cpd65860/EN/Monitoring/Reference/esc_vp21_command_list.html |
-| `equipson-lightshark` | not yet | — | — |
+| `equipson-lightshark` | implemented | lightshark | https://media.equipson.es/Docs/Manuales/LightShark_v1_4_EN.pdf |
 | `ereca-stageracer` | not yet | — | — |
 | `esphome-api` | not yet | — | — |
 | `etc-echo` | not yet | — | — |
@@ -895,7 +912,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `mixtech-theatremix` | not yet | — | — |
 | `modelighting-edin` | not yet | — | — |
 | `modulopi-kinetic` | not yet | — | — |
-| `modulopi-moduloplayer` | not yet | — | — |
+| `modulopi-moduloplayer` | not yet | modulo-player | https://support.modulo-pi.com/modulo-kinetic-manual/1/en/topic/tcp-ip-external-control-protocol |
 | `monnit-sensors` | not yet | — | — |
 | `monospace-lightkey` | not yet | — | — |
 | `monteiro-cronosdown` | not yet | — | — |
@@ -931,7 +948,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `neworange-encoder` | not yet | — | — |
 | `newtek-ndistudiomonitor` | not yet | ndi | https://ndi.video/for-developers/ndi-sdk/ |
 | `newtek-tricaster` | not yet | tricaster | https://vizrt.my.site.com/knowledgebase/s/article/TriCaster-remote-control-port |
-| `nexo-nxamp` | not yet | — | — |
+| `nexo-nxamp` | not yet | nexo-nxamp | https://www.nexo-sa.com/wp-content/uploads/NXAMPmk2-User-Manual-Rev02b-EN.pdf |
 | `nextkon-screen` | not yet | — | — |
 | `nextologies-nextotalk` | not yet | — | — |
 | `ninja-timer` | not yet | — | — |
@@ -1000,14 +1017,14 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `panasonic-projector` | implemented | panasonic-projector | https://pjlink.jbmia.or.jp/english/data_cl2.html |
 | `panasonic-ptz` | implemented | ptz | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/AW-UE150/HD/HD_OperationManual_English.pdf |
 | `panasonic-tv-th` | implemented | panasonic-th | https://docs.connect.panasonic.com/prodisplays/support/download/pdf/BQ1_SerialCommandList.pdf |
-| `pangolin-beyond` | not yet | — | — |
+| `pangolin-beyond` | implemented | pangolin-beyond | https://wiki.pangolin.com/doku.php?id=beyond%3Aosc_in_beyond |
 | `pastebin-api` | not yet | — | — |
 | `pavonine-teleprompter` | not yet | — | — |
 | `peavy-ratc` | not yet | — | — |
 | `phabrix-qx` | not yet | — | — |
 | `pharos-designer` | not yet | pharos-designer | https://dl.pharoscontrols.com/software_help/designer2/content/help/reference/web%20interface/command%20line.htm |
 | `philips-hue` | not yet | — | — |
-| `philips-sicp` | not yet | — | — |
+| `philips-sicp` | implemented | philips-sicp | https://community.xibo.org.uk/uploads/short-url/vwVq2nPyhJKL4kTCYpa6VYhQUa8.pdf |
 | `philips-wiz-bulbs` | not yet | — | — |
 | `pideck-player` | not yet | — | — |
 | `pikvm-kvmdapi` | not yet | — | — |
@@ -1061,10 +1078,10 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `resi-studio` | not yet | — | — |
 | `resolume-arena` | implemented | resolume | https://resolume.com/support/en/osc |
 | `restream-api` | not yet | — | — |
-| `rgblink-mini` | not yet | — | — |
-| `rgblink-tao1pro` | not yet | — | — |
-| `rgblink-vsp628pro` | not yet | — | — |
-| `rgblink-x3` | not yet | — | — |
+| `rgblink-mini` | implemented | rgblink-rs232 | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| `rgblink-tao1pro` | not yet | rgblink-tao | https://www.rgblink.com/newsdetail.aspx?id=151 |
+| `rgblink-vsp628pro` | not yet | rgblink-vsp | https://www.rgblink.com/proav/vsp628-pro.html |
+| `rgblink-x3` | not yet | rgblink-x3 | https://www.rgblink.com/newsdetail.aspx?id=151 |
 | `riedel-medianetworks` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
 | `riedel-mediornet` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
 | `riedel-rrcs` | not yet | riedel | https://www.riedel.net/produkt/intercom/intercom-software/rrcs/ |
@@ -1221,7 +1238,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `tascam-bdmp1` | not yet | — | — |
 | `tascam-cd` | not yet | — | — |
 | `tascam-cd400u` | not yet | — | — |
-| `tascam-da-6400` | not yet | — | — |
+| `tascam-da-6400` | implemented | tascam-da6400 | https://www.tascam.eu/en/docs/DA-6400_telnet_prot_v100_en.pdf |
 | `tasmota-http` | not yet | — | — |
 | `tasmota-mqtt` | not yet | — | — |
 | `tcast-tcast` | not yet | — | — |
@@ -1236,7 +1253,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `tecnopoint-tunings` | not yet | — | — |
 | `telegram-bot` | not yet | — | — |
 | `telestream-prism` | not yet | — | — |
-| `telestream-wirecast` | not yet | — | — |
+| `telestream-wirecast` | not yet | telestream-wirecast | https://www.telestream.net/pdfs/user-guides/wirecast/Wirecast-16-User-Guide-Windows.pdf |
 | `televic-confero` | not yet | — | — |
 | `televic-dcerno` | not yet | — | — |
 | `tellyo-streamstudio` | not yet | — | — |
@@ -1255,7 +1272,7 @@ Companion connection types: **1098**. Implemented: **203**. Partial: **0**. Not 
 | `testbildmedia-stgtime` | not yet | — | — |
 | `textmebot-whatsappapi` | not yet | — | — |
 | `theatrixx-xpresscue` | not yet | — | — |
-| `thelightingcontroller` | not yet | — | — |
+| `thelightingcontroller` | implemented | tlc-live | http://download.thelightingcontroller.com/software/External_Application/Protocol.pdf |
 | `thenoteslist-thenoteslist` | not yet | — | — |
 | `thingm-blink1` | not yet | — | — |
 | `threesixty-nextcue` | not yet | — | — |
