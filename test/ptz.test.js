@@ -65,6 +65,163 @@ test('PTZ catalog: every Companion module action maps to an app command; series 
   assert.throws(() => PC.build('UE150', 'nope'), (e) => e.status === 404);
 });
 
+test('PTZ: AW-UE160 / UE163 use the UE150 command set; AW-UE4 is not a prefix of AW-UE40', async () => {
+  for (const m of ['AW-UE160', 'AW-UE160W', 'AW-UE160KMC', 'AW-UE163', 'AW-UE163WMC', 'AW-UE150A']) {
+    assert.equal(PC.seriesFor(m), 'UE150', m);
+  }
+  assert.equal(PC.seriesFor('AW-UE4'), 'AW-UE4');
+  assert.equal(PC.seriesFor('AW-UE4WG'), 'AW-UE4');
+  assert.notEqual(PC.seriesFor('AW-UE40'), 'AW-UE4', 'a longer numeric model must not inherit AW-UE4');
+  assert.equal(PC.seriesFor('AW-UE40'), 'Other');
+  assert.equal(PC.seriesFor('AW-UE80'), 'Other');
+  assert.equal(PC.seriesFor('AW-UE50'), 'Other');
+  assert.equal(PC.seriesFor('AW-UE20'), 'Other');
+  const ids = new Set(PC.catalogFor(PC.seriesFor('AW-UE160')).ops.map((o) => o.id));
+  for (const k of ['rGain', 'awb', 'abb', 'menu', 'gamma', 'kneePoint', 'chromaLevel', 'focusPos', 'zoomPos', 'focus', 'focusMode', 'oneTouchAF', 'tallyRed', 'tallyGreen', 'tallyEnable']) {
+    assert.ok(ids.has(k), `UE160 catalog has ${k}`);
+  }
+  const axf = PC.build(PC.seriesFor('AW-UE160'), 'focusPos', 0);
+  assert.equal(axf.path, 'ptz');
+  assert.equal(axf.cmd, 'AXF555');
+  const src = fs.readFileSync(path.join(__dirname, '../public/ptz.js'), 'utf8');
+  assert.doesNotMatch(src, /api\('POST', `\$\{ptzId\(\)\}\/cmd\//, 'stop and keepalive must go to /api/sys/${ptzId()}/cmd/...');
+  assert.doesNotMatch(src, /sendBeacon\(`\$\{ptzId\(\)\}\/cmd\//);
+  assert.match(src, /\/api\/sys\/\$\{ptzId\(\)\}\/cmd\/stop/);
+  assert.match(src, /\/api\/sys\/\$\{ptzId\(\)\}\/cmd\/keepalive/);
+  const m = new MockPTZ({ model: 'AW-UE160', title: 'UE160' });
+  const d = new PTZDriver({ cameras: [{ id: 'cam1', name: 'UE160', host: '127.0.0.1', port: await m.start(0) }] });
+  try {
+    await d.connect();
+    const cam = d.cameraList()[0];
+    assert.equal(cam.model, 'AW-UE160');
+    assert.equal(cam.series, 'UE150');
+    await d.focus('cam1', { speed: -15 });
+    assert.ok(cmds(m).some((c) => c.startsWith('aw_ptz:F') && c !== 'aw_ptz:F50'), `focus speed went out as #Fxx, got ${cmds(m).join(',')}`);
+    await d.op('cam1', 'focusMode', false);
+    await d.op('cam1', 'focusPos', 40);
+    assert.ok(cmds(m).some((c) => c.startsWith('aw_ptz:AXF')), 'focus position went out as #AXF');
+    await d.oneTouchAF('cam1');
+    assert.ok(cmds(m).some((c) => c.includes('OSE:69')), 'push AF went out as OSE:69');
+    const sn = await d.snapshot('cam1');
+    assert.match(sn.type, /^image\//);
+    assert.ok(sn.body.length > 200);
+  } finally { d.close && d.close(); await m.stop(); }
+});
+
+test('PTZ: camera-type list includes AW-UE160; selecting it uses UE150 series with the UE160 command set', async () => {
+  const list = PC.modelList();
+  const byId = Object.fromEntries(list.map((m) => [m.id, m]));
+  for (const id of ['AW-UE160', 'AW-UE163', 'AW-UE150', 'AW-UE150A']) {
+    assert.ok(byId[id], `model list includes ${id}`);
+  }
+  assert.match(byId['AW-UE160'].label, /Panasonic AW-UE160/);
+  assert.equal(byId['AW-UE160'].series, 'UE150');
+  assert.ok(PC.isKnownModel('AW-UE160'));
+  assert.equal(PC.isKnownModel('Auto'), false);
+  assert.equal(PC.isKnownModel('not-a-cam'), false);
+
+  // Selecting AW-UE160 (no live report yet) drives series UE150 with paint / focus / tally / preview.
+  const offline = new PTZDriver({ cameras: [{ id: 'cam1', name: 'Studio', host: '127.0.0.1', port: 1, model: 'AW-UE160' }] });
+  try {
+    assert.equal(offline.series('cam1'), 'UE150');
+    assert.equal(offline.cameraList()[0].cameraType, 'AW-UE160');
+    const cat = offline.catalog('cam1');
+    assert.equal(cat.series, 'UE150');
+    const ids = new Set(cat.ops.map((o) => o.id));
+    for (const k of ['rGain', 'bGain', 'rPed', 'bPed', 'masterPed', 'focus', 'focusMode', 'focusPos', 'oneTouchAF', 'tallyRed', 'tallyGreen', 'menu', 'snapshot']) {
+      assert.ok(ids.has(k), `UE160 catalog has ${k}`);
+    }
+    assert.equal(cat.ops.find((o) => o.id === 'rGain').range.max, 400);
+    assert.equal(cat.ops.find((o) => o.id === 'rPed').range.max, 800);
+  } finally { offline.close && offline.close(); }
+
+  // A saved camera with no model field still starts as UE150 (auto) and is not forced to Other.
+  const legacy = new PTZDriver({ cameras: [{ id: 'cam1', name: 'Old', host: '127.0.0.1', port: 1 }] });
+  try { assert.equal(legacy.series('cam1'), 'UE150'); assert.equal(legacy.cameraList()[0].cameraType, ''); }
+  finally { legacy.close && legacy.close(); }
+
+  // Official UE160 CGI (IF Mar. 1, 2025 / Web Control supplement Ver. 1.09), generated from the table.
+  const sid = PC.seriesFor('AW-UE160');
+  assert.equal(sid, 'UE150');
+  const cmd = (op, v) => PC.build(sid, op, v, 'AW-UE160');
+  assert.equal(cmd('focusMode', true).cmd, 'D11');
+  assert.equal(cmd('focusMode', false).cmd, 'D10');
+  assert.equal(cmd('oneTouchAF').cmd, 'OSE:69:1');
+  assert.equal(cmd('focusPos', 0).path, 'ptz');
+  assert.equal(cmd('focusPos', 0).cmd, 'AXF555');
+  assert.equal(cmd('irisMode', true).cmd, 'D31');
+  assert.equal(cmd('iris', 50).cmd, 'I50');
+  assert.equal(cmd('tallyRed', true).path, 'cam');
+  assert.equal(cmd('tallyRed', true).cmd, 'TLR:1');
+  assert.equal(cmd('tallyRed', false).cmd, 'TLR:0');
+  assert.equal(cmd('tallyGreen', true).cmd, 'TLG:1');
+  assert.equal(cmd('power', true).cmd, 'O1');
+  assert.equal(cmd('power', false).cmd, 'O0');
+  assert.equal(cmd('wbMode', '0').cmd, 'OAW:0');
+  assert.equal(cmd('rGain', 0).cmd, 'OSJ:4B:800');
+  assert.equal(cmd('bGain', 0).cmd, 'OSJ:4C:800');
+  assert.equal(cmd('rPed', 0).cmd, 'OSG:4C:800');
+  assert.equal(cmd('gPed', 0).cmd, 'OSG:4D:800');
+  assert.equal(cmd('bPed', 0).cmd, 'OSG:4E:800');
+  assert.equal(cmd('masterPed', 0).cmd, 'OSJ:0F:800');
+  assert.equal(cmd('rGain', -400).cmd, 'OSJ:4B:670');
+  assert.equal(cmd('rGain', 400).cmd, 'OSJ:4B:990');
+  assert.throws(() => cmd('rGain', 401), (e) => e.status === 400);
+  // UE150 paint encodings stay on an AW-UE150 (and when no model is given).
+  assert.equal(PC.build(sid, 'rGain', 0).cmd, 'OSG:39:800');
+  assert.equal(PC.build(sid, 'rGain', 0, 'AW-UE150').cmd, 'OSG:39:800');
+  assert.equal(PC.build(sid, 'rPed', 0, 'AW-UE150').cmd, 'ORP:096');
+  assert.equal(PC.UE160_COMMANDS.source, PC.UE160_SOURCE);
+  assert.equal(PC.UE160_COMMANDS.tallyRed.cgi, 'TLR');
+  assert.equal(PC.UE160_COMMANDS.focusSpeed.cgi, '#F');
+  assert.equal(PC.UE160_COMMANDS.snapshot.cgi, '/cgi-bin/camera');
+  assert.match(PC.UE160_SOURCE, /Mar\. 1, 2025/);
+
+  const ui = fs.readFileSync(path.join(__dirname, '../public/ptz.js'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
+  assert.match(html, /name="model"/, 'Add a camera form has a camera-type select');
+  assert.match(ui, /data-camera-type/, 'CAMERAS tab has a camera-type select on each row');
+  assert.match(ui, /modelList/);
+  assert.match(ui, /Camera type saved/);
+
+  // HTTP: the view lists UE160, and POSTing that type on a live camera enables the UE160 paint CGI.
+  const ctx = await setup({});
+  const m = new MockPTZ({ model: 'AW-UE160', title: 'Studio' });
+  const systems = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, overrides: { ptz: { cameras: [{ id: 'cam1', name: 'Studio', host: '127.0.0.1', port: await m.start(0) }] } }, autoStart: false });
+  const { createServer } = require('../lib/server');
+  const server = createServer(ctx.engine, systems);
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const call = async (method, p, body) => { const r = await fetch(base + p, { method, headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined }); return { status: r.status, json: r.headers.get('content-type') && r.headers.get('content-type').includes('json') ? await r.json() : null }; };
+  try {
+    await systems.connect('ptz');
+    await call('POST', '/api/sys/active', { system: 'ptz' });
+    const view = (await call('GET', '/api/sys')).json.view;
+    assert.ok(view.modelList.some((x) => x.id === 'AW-UE160' && x.series === 'UE150' && /Panasonic AW-UE160/.test(x.label)));
+    assert.ok(view.modelList.some((x) => x.id === 'AW-UE163'));
+    assert.ok(view.modelList.some((x) => x.id === 'AW-UE150'));
+    assert.ok(view.modelList.some((x) => x.id === 'AW-UE150A'));
+    const saved = (await call('POST', '/api/sys/ptz/cameras/cam1', { model: 'AW-UE160' })).json;
+    assert.equal(saved.model, 'AW-UE160');
+    const live = (await call('GET', '/api/sys/ptz/cameras/cam1/status')).json;
+    assert.equal(live.series, 'UE150');
+    assert.equal(live.cameraType, 'AW-UE160');
+    assert.equal(live.model, 'AW-UE160');
+    const cat = (await call('GET', '/api/sys/ptz/cameras/cam1/catalog')).json;
+    assert.equal(cat.series, 'UE150');
+    assert.equal(cat.ops.find((o) => o.id === 'rGain').range.max, 400);
+    const paint = await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'rGain', value: 0 });
+    assert.equal(paint.status, 200, JSON.stringify(paint.json));
+    assert.equal(paint.json.cmd, 'OSJ:4B:800');
+    const tally = await call('POST', '/api/sys/ptz/cmd/op', { cam: 'cam1', op: 'tallyRed', value: true });
+    assert.equal(tally.status, 200, JSON.stringify(tally.json));
+    assert.equal(tally.json.cmd, 'TLR:1');
+    // Clearing the type leaves auto-detect; a config with no model field still works.
+    const cleared = (await call('POST', '/api/sys/ptz/cameras/cam1', { model: '' })).json;
+    assert.equal(cleared.model, undefined);
+  } finally { server.closeClients(); await new Promise((r) => server.close(r)); systems.close(); await m.stop(); await ctx.teardown(); }
+});
+
 test('PTZ: every command is the module\'s / spec\'s CGI: aw_ptz cmd=%23... and aw_cam cmd=...; res=1', async () => {
   const { mocks: [m, he], list, stop } = await cams(2);
   const d = new PTZDriver({ cameras: list });
