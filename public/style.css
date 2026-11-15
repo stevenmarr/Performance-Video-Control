@@ -989,8 +989,6 @@ nav.tabs{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:4p
 .tabs-top>*,.tabs-sub>*{flex:0 0 auto}
 .tabs-top .tab.tab-home{border-radius:8px;border-bottom:1px solid var(--line);padding:8px 16px}
 .tabs-top .tab.tab-home.active{box-shadow:inset 0 -3px 0 var(--accent)}
-.tabs-top .tab.tab-scopes{margin-left:8px;border-radius:8px;border:1px solid var(--line);padding:8px 16px;min-height:38px;letter-spacing:.12em;font-size:12px;font-weight:900}
-.tabs-top .tab.tab-scopes.active{color:#F5F5F5;background:var(--panel2);border-color:#C42020;box-shadow:inset 0 -3px 0 #C42020}
 .tabs-top .tab.tab-decks{margin-left:8px;border-radius:8px;border:1px solid var(--line);padding:8px 16px;min-height:38px;letter-spacing:.12em;font-size:12px;font-weight:900}
 .tabs-top .tab.tab-decks.active{color:#F5F5F5;background:var(--panel2);border-color:#C42020;box-shadow:inset 0 -3px 0 #C42020}
 .deck-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 12px}
@@ -1126,9 +1124,6 @@ body.dk-busy-rz-e *,body.dk-busy-rz-w *{cursor:ew-resize!important}body.dk-busy-
 .pv-tools .mode[aria-pressed=true]{background:var(--accent);color:#fff;border-color:transparent}
 .snap canvas{position:absolute;inset:0;width:100%;height:100%}
 .snap img{opacity:0;pointer-events:none}
-.scopes-pane{display:flex;flex-direction:column;min-height:0;height:100%;overflow:hidden}
-body.tab-scopes #pane-scopes{display:flex}
-body.tab-scopes #scopesFrame{flex:1 1 auto;width:100%;height:100%;min-height:0}
 @container dk (max-width: 220px){
   .sys-cols{grid-template-columns:1fr}.pmem{grid-template-columns:1fr}
   .joy-foot{grid-template-columns:1fr}.joy-foot .rcp-home{width:100%}
@@ -1141,7 +1136,7 @@ body.tab-scopes #scopesFrame{flex:1 1 auto;width:100%;height:100%;min-height:0}
 #formPtzLogin h2 small{font-size:12px;color:var(--dim);font-weight:600;margin-left:6px}
 
 
-/* SCOPES tab. Desktop Video is the live input. Lightning is a scope mode. */
+/* Shared head row (Control Devices, buttons, pages). */
 .scopes-head { display: flex; align-items: center; gap: 8px; padding: 8px 12px 4px; background: #121212; border-bottom: 1px solid #262626; }
 .scopes-ndi { margin: 8px 12px; padding: 10px 12px; background: #121212; border: 1px solid #2a2a2a; border-radius: 8px; color: #F5F5F5; }
 .ndi-block { margin: 8px 0 2px; }
@@ -1152,8 +1147,7 @@ body.tab-scopes #scopesFrame{flex:1 1 auto;width:100%;height:100%;min-height:0}
 .ndi-src[data-ok="0"] { opacity: .55; }
 .ndi-how { margin-top: 8px; }
 .ndi-cmd { margin: 6px 0; padding: 8px 10px; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 6px; font: 12px ui-monospace, Menlo, monospace; color: #F5F5F5; overflow: auto; white-space: pre-wrap; }
-#pane-scopes { background: #121212; }
-/* ATEM page: TSL tally map. Not part of Scopes. */
+/* ATEM page: TSL tally map. Not part of the Scopes app. */
 .tsl-panel { margin: 18px 0; padding: 12px 14px; background: #121212; border: 1px solid #2a2a2a; border-radius: 10px; }
 .tsl-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; margin: 8px 0; }
 .tsl-row label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #a8a8a8; }
@@ -1358,11 +1352,10 @@ nav.tabs{padding:0 6px}
 .tab{padding:4px 10px;font-size:12px;letter-spacing:.05em}
 .tgrp{padding:3px 10px;min-height:0;font-size:11px;letter-spacing:.08em;gap:6px;border-radius:6px}
 .tabs-top .tab.tab-home,
-.tabs-top .tab.tab-scopes,
 .tabs-top .tab.tab-cues,
 .tabs-top .tab.tab-looks,
 .tabs-top .tab.tab-decks{padding:4px 10px;min-height:0}
-.tabs-top .tab.tab-scopes,.tabs-top .tab.tab-decks,.tabs-top .tab.tab-cues,.tabs-top .tab.tab-looks{margin-left:4px}
+.tabs-top .tab.tab-decks,.tabs-top .tab.tab-cues,.tabs-top .tab.tab-looks{margin-left:4px}
 .tabs-home-note{font-size:11px;line-height:1.25;padding:2px 4px}
 .main{padding:4px 6px 6px;gap:8px}
 

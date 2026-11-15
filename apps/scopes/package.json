@@ -1,0 +1,17 @@
+{
+  "name": "pvllc-scopes",
+  "version": "0.29.3",
+  "private": true,
+  "description": "Standalone video scopes for a Mac with Blackmagic Desktop Video.",
+  "engines": { "node": ">=16" },
+  "scripts": {
+    "start": "node server.js",
+    "mock": "node server.js --mock",
+    "test": "node --test test/*.test.js",
+    "build": "make -C tools/native/decklink-recv",
+    "decklink-sidecar": "node tools/decklink-sidecar.js",
+    "ndi-sidecar": "node tools/ndi-sidecar.js",
+    "install-agent": "bash scripts/install-launchagent.sh",
+    "uninstall-agent": "bash scripts/uninstall-launchagent.sh"
+  }
+}

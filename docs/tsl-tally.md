@@ -1,7 +1,7 @@
 # TSL tally
 
-TSL is a function of the **ATEM** page. It is not a SYSTEMS home, and it is not part of Scopes.
-Lightning is a scope mode on the SCOPES tab.
+TSL is a function of the **ATEM** page. It is not a SYSTEMS home, and it is not part of the Scopes app.
+Lightning is a scope mode in the standalone Scopes app (`apps/scopes`), not a Control Center tab.
 
 Control Center is a **TSL 5.0 UDP sender**. On the ATEM switcher page, map ATEM inputs to a receiver
 address: **PGM → red**, **PVW → green**. The map is stored with the show file and in `<dataDir>/tsl.json`

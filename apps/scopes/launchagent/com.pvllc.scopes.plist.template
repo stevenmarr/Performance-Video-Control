@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.pvllc.scopes</string>
+  <key>WorkingDirectory</key>
+  <string>__APP_DIR__</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__NODE__</string>
+    <string>__APP_DIR__/server.js</string>
+    <string>--host</string>
+    <string>0.0.0.0</string>
+    <string>--port</string>
+    <string>8092</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/PVLLC Scopes/scopes.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/PVLLC Scopes/scopes.err.log</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>__NODE_DIR__:/usr/bin:/bin</string>
+    <key>SCOPES_DATA_DIR</key>
+    <string>__HOME__/Library/Application Support/PVLLC Scopes</string>
+  </dict>
+</dict>
+</plist>

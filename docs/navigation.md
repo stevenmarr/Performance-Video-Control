@@ -8,14 +8,14 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
 
 **SHOW** is the show file. **APP LINK** is this browser's connection to the app, which is separate from the switcher.
 
-## Row 1: home, system groups, and Scopes
+## Row 1: home and system groups
 
 ```
-[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [MODULES] [SCOPES] [CUES] [PRESETS] [Control Devices]
+[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [MODULES] [CUES] [PRESETS] [Control Devices]
 ```
 
 * **⌂ SYSTEMS** is always first. It is the home page: a palette of every system type on the left, and one card per instance on the desk.
-  The app opens here unless the URL has a deep link (`/#arouter`, `/#xpresets`, `/#scopes`, ...).
+  The app opens here unless the URL has a deep link (`/#arouter`, `/#xpresets`, ...).
   Drag a type onto the desk to add an instance. The palette row stays. Two ATEMs are two cards, two IPs, one ATEM group.
 * After it comes **one button per system group on the desk**. The order is always the same, no matter
   what order the systems were added in: RS6, E2 / PIXELHUE, ATEM, PTZ, PIXERA, MILLUMIN. A group that is
@@ -27,12 +27,8 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
 * E2 and PixelHue share one group because they share the preset pages. The button shows whichever of the
   two are on the desk, for example `E2 / PIXELHUE`.
 * **MODULES** is always shown. It is connection modules (setup, status, buttons, variables, feedbacks), not a device to ADD TO DESK and not a Stream Deck page.
-* **SCOPES** is always shown. It is the engineering scopes for the whole app (waveform, parade,
-  vectorscope, Lightning, false colour), not a device to ADD TO DESK and not a PTZ page. **Lightning**
-  is a mode inside that tab, not a tab of its own. A `/#lightning` link from 0.20.0 opens SCOPES.
-  `/#pscopes` does the same. There is no PTZ → SCOPES tab.
-  **TALLIES** (TSL) are on **ATEM → SWITCHER**, not a SYSTEMS card and not a scope mode.
-* **Control Devices** is always shown, the same way SCOPES is. `/#decks` opens DEVICES. The second row is DEVICES, BUTTONS, and PAGES. DEVICES is the USB assign view (quit the Elgato app so this app can open the deck). BUTTONS creates library keys. PAGES lays out a surface and pushes it to an online Path C deck (the Elgato plugin has to be running for that push).
+* **TALLIES** (TSL) are on **ATEM → SWITCHER**, not a SYSTEMS card. Scopes is not a tab in this app. The waveform, parade, vectorscope, Lightning and Desktop Video page is the standalone app in `apps/scopes` (port 8092). `/#scopes`, `/#lightning` and `/#pscopes` do not open a pane here.
+* **Control Devices** is always shown. `/#decks` opens DEVICES. The second row is DEVICES, BUTTONS, and PAGES. DEVICES is the USB assign view (quit the Elgato app so this app can open the deck). BUTTONS creates library keys. PAGES lays out a surface and pushes it to an online Path C deck (the Elgato plugin has to be running for that push).
 * Tapping a group button opens **the page you last used in that group**. The first time, it opens the
   group's main page (PRESETS, SWITCHER, CAMERA CONTROL, TIMELINES, COLUMNS). The last page is remembered
   in this browser.
@@ -49,9 +45,6 @@ Only the pages of the selected group are shown, always in the same order:
 | PTZ | CAMERA CONTROL · TRACKING · CAMERAS |
 | PIXERA | TIMELINES · CUES |
 | MILLUMIN | COLUMNS · LAYER |
-
-**SCOPES** has no second-row page of its own. The top-row button opens the pane. The second row shows a
-one-line hint (modes, and that live video is Desktop Video from a Mac sidecar).
 
 **Control Devices** has a second row:
 
@@ -77,7 +70,7 @@ sideways with a swipe or the trackpad, and the selected tab is scrolled into vie
 
 Page tabs keep their `data-tab` attributes (`.tab[data-tab=arouter]`), and group buttons are
 `.tgrp[data-tabgrp=atem]`. A page tab is only visible while its group is selected, so a script should
-click the group first. **SCOPES** and **DECKS** are the exceptions: `.tab[data-tab=scopes]` and
-`.tab[data-tab=decks]` are always on the top row.
+click the group first. **DECKS** is the exception: `.tab[data-tab=decks]` is always on the top row.
 `test/ui-helpers.js` has `openTab(page, tab)`, which does that.
-`body[data-tabgrp]` holds the selected group (`home` on SYSTEMS, `scopes` on SCOPES, `decks` on Control Devices).
+`body[data-tabgrp]` holds the selected group (`home` on SYSTEMS, `decks` on Control Devices).
+There is no `.tab[data-tab=scopes]`, no `#pane-scopes`, and no `#scopesFrame`.

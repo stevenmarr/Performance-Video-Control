@@ -1,0 +1,37 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { spawnSync } = require('child_process');
+
+test('install-launchagent writes a plist for port 8092 and uninstall leaves logs', () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'scopes-agent-'));
+  const bin = path.join(home, 'bin');
+  fs.mkdirSync(bin);
+  const node = path.join(bin, 'node');
+  fs.writeFileSync(node, '#!/bin/sh\necho fake-node\n');
+  fs.chmodSync(node, 0o755);
+  const env = { ...process.env, HOME: home, PATH: `${bin}:${process.env.PATH || ''}` };
+  const install = spawnSync('bash', [path.join(__dirname, '..', 'scripts', 'install-launchagent.sh')], { encoding: 'utf8', env });
+  assert.equal(install.status, 0, install.stderr);
+  const dest = path.join(home, 'Library', 'LaunchAgents', 'com.pvllc.scopes.plist');
+  const plist = fs.readFileSync(dest, 'utf8');
+  const nodePath = fs.realpathSync(node);
+  assert.match(plist, new RegExp(nodePath.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  assert.match(plist, /<string>8092<\/string>/);
+  assert.match(plist, /<key>KeepAlive<\/key>\s*<true\/>/);
+  assert.match(plist, /<key>RunAtLoad<\/key>\s*<true\/>/);
+  assert.match(plist, /Library\/Logs\/PVLLC Scopes\/scopes\.out\.log/);
+  assert.match(plist, /Library\/Logs\/PVLLC Scopes\/scopes\.err\.log/);
+  assert.match(plist, /--host/);
+  assert.match(plist, /0\.0\.0\.0/);
+  if (process.platform !== 'darwin') assert.match(install.stdout, /skipped/);
+  const logDir = path.join(home, 'Library', 'Logs', 'PVLLC Scopes');
+  assert.equal(fs.existsSync(logDir), true);
+  const uninstall = spawnSync('bash', [path.join(__dirname, '..', 'scripts', 'uninstall-launchagent.sh')], { encoding: 'utf8', env });
+  assert.equal(uninstall.status, 0, uninstall.stderr);
+  assert.equal(fs.existsSync(dest), false);
+  assert.equal(fs.existsSync(logDir), true, 'uninstall does not delete logs');
+});

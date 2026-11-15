@@ -27,7 +27,9 @@ test('navigation 0.11.0: group row, page row, deep link, last page per group, ov
   assert.equal(await page.locator('.tgrp[data-tabgrp=atem].active').count(), 1);
   const order = await page.$$eval('#tabsTop .tgrp:not([hidden])', (b) => b.map((x) => x.dataset.tabgrp));
   assert.deepEqual(order, ['rs6', 'atem', 'ptz', 'pixera'], 'groups in the fixed order');
-  assert.equal(await page.locator('.tab[data-tab=scopes]').count(), 1, 'SCOPES is a persistent top tab');
+  assert.equal(await page.locator('.tab[data-tab=scopes]').count(), 0, 'SCOPES is not a Control Center tab');
+  assert.equal(await page.locator('#pane-scopes').count(), 0);
+  assert.equal(await page.locator('#scopesFrame').count(), 0);
   assert.equal(await page.locator('.tgrp[data-tabgrp=lightning]').count(), 0, 'LIGHTNING is not a top tab');
   const sub = await page.$$eval('#tabsSub .tab', (b) => b.filter((x) => x.offsetParent).map((x) => x.dataset.tab));
   assert.deepEqual(sub, ['atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amv', 'amacros'], 'second row = ATEM pages only');
@@ -53,17 +55,16 @@ test('navigation 0.11.0: group row, page row, deep link, last page per group, ov
   });
   const m = await page.evaluate(() => { const r = document.querySelector('#tabsSub'); const a = document.querySelector('#tabsSub .tab.active'); const rb = r.getBoundingClientRect(); const ab = a.getBoundingClientRect(); return { over: r.scrollWidth > r.clientWidth, h: rb.height, inView: ab.left >= rb.left - 2 && ab.right <= rb.right + 2 }; });
   assert.ok(m.over, 'the page row overflows at 420 px'); assert.ok(m.h < 70, `one line (${m.h}px)`); assert.ok(m.inView, 'active tab scrolled into view');
-  // SCOPES is always on the top row, including on a narrow viewport. Lightning is not a tab.
-  await page.click('.tab[data-tab=scopes]'); await page.waitForFunction(() => document.body.classList.contains('tab-scopes'));
-  assert.equal(await page.locator('#pane-scopes').isVisible(), true);
-  assert.equal(await page.locator('#ndiMock').count(), 0);
-  const fr = page.frameLocator('#scopesFrame');
-  await fr.locator('[data-show="ltng"]').waitFor({ timeout: 10000 });
-  assert.equal(await fr.locator('[data-show="wfm"]').count(), 1);
-  assert.equal(await fr.locator('[data-show="parade"]').count(), 1);
-  assert.equal(await fr.locator('[data-show="vec"]').count(), 1);
-  assert.equal(await fr.locator('[data-view="1"]').count(), 1);
   await page.goto(B + '/#lightning');
-  await page.waitForFunction(() => document.body.classList.contains('tab-scopes'));
+  await page.waitForFunction(() => !document.body.classList.contains('tab-scopes'));
+  assert.equal(await page.locator('#pane-scopes').count(), 0);
+  assert.equal(await page.locator('#scopesFrame').count(), 0);
+  assert.equal((await fetch(B + '/api/scopes/sources')).status, 404);
+  assert.equal((await fetch(B + '/scopes.html')).status, 404);
+  assert.equal((await fetch(B + '/lightning.html')).status, 404);
+  const atem = await page.goto(B + '/#atem');
+  assert.ok(atem);
+  await page.waitForFunction(() => document.body.classList.contains('tab-atem'));
+  assert.equal(await page.locator('#tslPanel').count(), 1);
   assert.deepEqual(errors, []);
 });

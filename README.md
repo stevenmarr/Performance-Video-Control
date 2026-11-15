@@ -5,7 +5,7 @@
 One desk for the show. The app runs on a Mac (or a Pi that only relays video) and serves a dark,
 touch-friendly UI. An iPad or phone on the same network opens it in a browser.
 
-The top row is **SYSTEMS**, the systems you have put on the desk, **SCOPES**, and **Control Devices**. Each system you add
+The top row is **SYSTEMS**, the systems you have put on the desk, and **Control Devices**. Each system you add
 gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green. **Control Devices** draws those pages on Stream Decks over USB.
 
 | On the desk | What it drives |
@@ -53,7 +53,7 @@ Settings → Network → Firewall → Options, and allow `node`.
 
 ### Where your show lives
 
-Presets, connections, the show library, scopes settings, and the TSL map live **outside** the app
+Presets, connections, the show library, and the TSL map live **outside** the app
 folder, so replacing the app does not wipe the show.
 
 | System | Folder |
@@ -68,7 +68,7 @@ folder, so replacing the app does not wipe the show.
 
 `node server.js --mock` starts built-in simulators (RS6, E2, ATEM, PTZ, Pixera, Millumin) and writes
 under `<app>/mock-data`, so a demo cannot mix with a real show. Unit tests and the Playwright UI
-tests use it. It does **not** put a live picture on SCOPES, and it does not add NDI sources.
+tests use it. It does not add NDI sources. Scopes is a separate app and is not started by `--mock` here.
 
 On a show, run `node server.js` and connect each system from **SYSTEMS → CONFIGURE**, or use
 **ADD TO DESK AS SIMULATOR** on a card when you want a fixture that is not saved.
@@ -109,38 +109,9 @@ Stream Deck pages are **Control Devices → PAGES**. That push goes to the Path 
 
 ---
 
-## SCOPES
+## Scopes
 
-**SCOPES** stays on the top row. Waveform, RGB parade, vectorscope, Lightning, false colour, and
-zebra run on the selected feed. Lightning is a scope mode (Y vertical, B−Y left, R−Y right), not
-its own tab. Live video is **Blackmagic Desktop Video** (a DeckLink input). The Pi and the app process never
-open the card. A Mac sidecar captures, encodes H.264, and pushes it into the same WebSocket relay
-the camera RTSP path already uses. Browsers decode with WebCodecs (or MSE) and draw the scopes
-in WebGL2. Pick the feed on the scopes page. There is no separate PTZ → SCOPES tab. `/#pscopes` opens SCOPES.
-
-```bash
-# Mac, once: build the helper. The DeckLink SDK is not in this repo.
-cd tools/native/decklink-recv
-make
-
-# Control Center already running:
-node tools/decklink-sidecar.js --list
-node tools/decklink-sidecar.js --device 0 --app http://127.0.0.1:8080
-```
-
-The SOURCE list does not invent a device. **Desktop Video** is the first group and stays empty
-until that sidecar is connected. Cameras and test clips stay available. **NDI (advanced)** is
-hidden until a legacy sidecar is actually pushing. There is no mock-fixture group.
-
-`make` on Linux stops before it tries to link Desktop Video. `--device` on Linux or on a Pi exits
-before it looks for a binary. If the helper is missing on a Mac, the sidecar says so and exits.
-Details: [docs/decklink-ingest.md](docs/decklink-ingest.md). Scopes controls:
-[docs/scopes.md](docs/scopes.md). Legacy NDI: [docs/ndi-ingest.md](docs/ndi-ingest.md).
-
-Ingest accepts loopback only unless you set `RS6_NDI_INGEST_LAN=1` yourself. Do not commit a show IP.
-
-A DeckLink input can be open in one process. If another app already has that input, stop it before
-the sidecar.
+Scopes is a separate app on the Mac, not a tab in this Control Center. See [apps/scopes/README.md](apps/scopes/README.md) and [docs/scopes.md](docs/scopes.md). It listens on port **8092**. This process does not serve `/api/scopes` or a SCOPES tab.
 
 ---
 
@@ -300,11 +271,9 @@ The server still starts without it and logs that the USB library is missing.
 Open **http://localhost:8080**. Put the systems you need on the desk, then **CONFIGURE** each
 address and **SAVE & CONNECT**.
 
-For the Stream Deck plugin, use the steps above (Node.js 24, inside `streamdeck/`). For live
-scopes, build `tools/native/decklink-recv` on the Mac that has Desktop Video, then run
-`tools/decklink-sidecar.js`.
+For the Stream Deck plugin, use the steps above (Node.js 24, inside `streamdeck/`).
 
-`node server.js` on a Mac listens on **8080**. The Pi service listens on **8088**.
+`node server.js` on a Mac listens on **8080**. The Pi service listens on **8088**. Scopes, if you run it on this Mac, is a different process on **8092** (`apps/scopes`).
 
 ---
 
