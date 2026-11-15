@@ -21,6 +21,10 @@ function seriesOf(model) {
   return best ? 'UE150' : 'Other';
 }
 function rtspOk(model) { return seriesOf(model) === 'UE150'; }
+// Camera-type choices for the SCOPE INPUTS table: '' (auto, treated as UE150-class), each UE150-class id, Other.
+function modelChoices() {
+  return [{ id: '', label: 'Auto (UE150-class)' }, ...[...UE150_MODELS].sort().map((id) => ({ id, label: `Panasonic ${id}` })), { id: 'Other', label: 'Other (JPEG only)' }];
+}
 function isId(id) { return /^[\w-]{1,40}$/.test(String(id || '')); }
 
 function loginOf(cam) {
@@ -184,6 +188,6 @@ async function importViews(cfg, baseUrl, fetchImpl = global.fetch) {
 }
 
 module.exports = {
-  CAMERA_DEFAULTS, UE150_PATH, UE150_MODELS, seriesOf, rtspOk, isId, loginOf, list, get, apply, remove,
+  CAMERA_DEFAULTS, UE150_PATH, UE150_MODELS, modelChoices, seriesOf, rtspOk, isId, loginOf, list, get, apply, remove,
   rtspUrl, publicOne, fillFromSystems, importViews, normalize,
 };

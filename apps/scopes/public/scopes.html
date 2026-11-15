@@ -152,10 +152,10 @@
 <dialog id="dlg">
   <form method="dialog" id="dlgForm">
     <h3 style="margin:0 0 8px">SCOPE INPUTS</h3>
-    <p class="hint">Add a camera here (name, host, stream, path, ports, login). The factory login is admin / 12345 until you change it. Passwords stay on this Mac and are never shown again. Import copies name, host, port and model from a Control Center URL. It does not copy passwords.</p>
+    <p class="hint">Add a camera here (name, host, stream, path, ports, login). The factory login is admin / 12345 until you change it. Passwords stay on this Mac and are never shown again. Import copies name, host, port and camera type from a Control Center URL. It does not copy passwords.</p>
     <p><label>Control Center URL (optional, import only)<br><input id="ccUrl" placeholder="http://127.0.0.1:8080" autocomplete="off" spellcheck="false"></label></p>
     <p style="display:flex;gap:8px"><button type="button" id="camImport">IMPORT CAMERAS</button><button type="button" id="camAdd">ADD CAMERA</button></p>
-    <table id="camTbl"><thead><tr><th>NAME</th><th>HOST</th><th>STREAM</th><th>PATH</th><th>RTSP</th><th>HTTP</th><th>USER</th><th>PASSWORD</th><th></th></tr></thead><tbody></tbody></table>
+    <table id="camTbl"><thead><tr><th>NAME</th><th>HOST</th><th>TYPE</th><th>STREAM</th><th>PATH</th><th>RTSP</th><th>HTTP</th><th>USER</th><th>PASSWORD</th><th></th></tr></thead><tbody></tbody></table>
     <p><label>Test video folder<br><input id="testDir" placeholder="folder with .h264 / .mp4 files"></label></p>
     <p><label>Custom input (a .h264 / .264 / .mp4 / .mov file on this Mac, or an rtsp:// URL)<br><input id="custom" placeholder="/Users/me/test.mp4 or rtsp://host/path"></label></p>
     <p style="display:flex;gap:8px"><label style="flex:1">Custom RTSP user<br><input id="customUser" autocomplete="off"></label><label style="flex:1">Custom RTSP password<br><input id="customPassword" type="password" autocomplete="new-password" placeholder="unchanged"></label></p>

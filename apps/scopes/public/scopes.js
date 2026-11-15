@@ -422,9 +422,17 @@
   }
 
   // ---------- settings dialog ----------
+  // camera types come from the server (lib/cameras.js modelChoices), so a new model needs no UI change
+  let modelChoices = [];
+  function modelSel(cur) {
+    const list = modelChoices.length ? modelChoices : [{ id: '', label: 'Auto (UE150-class)' }];
+    const known = list.some((m) => m.id === (cur || ''));
+    return `<select data-f="model" aria-label="Camera type">${list.map((m) => `<option value="${esc(m.id)}" ${(cur || '') === m.id ? 'selected' : ''}>${esc(m.label)}</option>`).join('')}${known ? '' : `<option value="${esc(cur)}" selected>${esc(cur)}</option>`}</select>`;
+  }
   function camRow(id, c) {
     const sel = [1, 2, 3, 4].map((n) => `<option ${Number(c.stream) === n ? 'selected' : ''}>${n}</option>`).join('');
     return `<tr data-cam="${esc(id)}"><td><input data-f="name" value="${esc(c.name || id)}"></td><td><input data-f="host" value="${esc(c.host || '')}" placeholder="192.0.2.20"></td>
+      <td>${modelSel(c.model)}</td>
       <td><select data-f="stream">${sel}</select></td>
       <td><input data-f="path" value="${esc(c.path || '')}" placeholder="/MediaInput/h264/stream_N"></td>
       <td><input data-f="port" value="${esc(c.port || 554)}" style="width:64px"></td>
@@ -435,9 +443,9 @@
   }
   let camSeq = 1;
   $('#btnSettings').addEventListener('click', async () => {
-    const r = await loadSources(); const set = r.settings; const cams = set.cameras || {};
+    const r = await loadSources(); const set = r.settings; const cams = set.cameras || {}; modelChoices = Array.isArray(set.models) ? set.models : modelChoices;
     $('#ccUrl').value = set.controlCenterUrl || '';
-    $('#camTbl tbody').innerHTML = Object.entries(cams).map(([id, c]) => camRow(id, c)).join('') || '<tr class="hint-row"><td colspan="9" class="hint">No cameras yet. Add one, or import from Control Center.</td></tr>';
+    $('#camTbl tbody').innerHTML = Object.entries(cams).map(([id, c]) => camRow(id, c)).join('') || '<tr class="hint-row"><td colspan="10" class="hint">No cameras yet. Add one, or import from Control Center.</td></tr>';
     $('#testDir').value = set.testDir || ''; $('#custom').value = set.custom || ''; $('#customUser').value = set.customUser || ''; $('#customPassword').value = '';
     $('#dlg').showModal();
   });
@@ -454,8 +462,8 @@
     const url = $('#ccUrl').value.trim();
     const r = await fetch('/api/scopes/cameras/import', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) }).then((x) => x.json());
     if (r.error) { showMsg('Import failed', esc(r.error)); return; }
-    const set = r.settings || {}; const cams = set.cameras || {};
-    $('#camTbl tbody').innerHTML = Object.entries(cams).map(([id, c]) => camRow(id, c)).join('') || '<tr class="hint-row"><td colspan="9" class="hint">No cameras came back from that URL.</td></tr>';
+    const set = r.settings || {}; const cams = set.cameras || {}; if (Array.isArray(set.models)) modelChoices = set.models;
+    $('#camTbl tbody').innerHTML = Object.entries(cams).map(([id, c]) => camRow(id, c)).join('') || '<tr class="hint-row"><td colspan="10" class="hint">No cameras came back from that URL.</td></tr>';
   });
   $('#dlg').addEventListener('close', async () => {
     if ($('#dlg').returnValue !== 'save') return;

@@ -24,7 +24,10 @@
   const sel = () => (V && V.cameras ? V.cameras.find((c) => c.id === V.selected) : null);
   const ptzId = () => (window.CCSYS && window.CCSYS.familyTarget && window.CCSYS.familyTarget('ptz')) || 'ptz';
   const cmd = (name, body = {}) => api('POST', `/api/sys/${ptzId()}/cmd/${name}`, { cam: camId(), ...body });
-  const catOf = (c) => (c ? cats.get(c.series) : null);
+  // the command catalog depends on the series AND the camera type (an AW-UE160 overlays the UE150 table), so the
+  // cache key is both: a UE150 and a UE160 in the same show must not share one catalog
+  const catKey = (c) => (c ? `${c.series}|${String(c.cameraType || c.model || '').toUpperCase()}` : '');
+  const catOf = (c) => (c ? cats.get(catKey(c)) : null);
   const has = (id) => { const k = catOf(sel()); return !!(k && k.ops.some((o) => o.id === id)); };
 
   // ---------- motion: one controller per axis ----------
@@ -144,8 +147,10 @@
     iris: ['autoIrisSpeed', 'autoIrisWindow', 'autoIrisLimit', 'pictureLevel'],
     exposure: ['superGain', 'synchroDown', 'synchro', 'synchroUp', 'elcLimit'],
     bars: ['colorBarsSetup', 'colorBarsTitle'],
+    // AW-UE160: no global chroma phase; hue is per axis in COLOR CORRECTION (only listed when the catalog has them)
+    chroma: ['colorCorrect', 'ccPhaseR', 'ccPhaseRYe', 'ccPhaseYe', 'ccPhaseYeG', 'ccPhaseG', 'ccPhaseGCy', 'ccPhaseCy', 'ccPhaseCyB', 'ccPhaseB', 'ccPhaseBMg', 'ccPhaseMg', 'ccPhaseMgR'],
   };
-  const ADV_T = { iris: 'AUTO IRIS SETUP', exposure: 'MORE EXPOSURE', detail: 'SKIN DETAIL', knee: 'SLOPE', matrix: 'LINEAR MATRIX', chroma: 'PHASE', bars: 'BARS SETUP' };
+  const ADV_T = { iris: 'AUTO IRIS SETUP', exposure: 'MORE EXPOSURE', detail: 'SKIN DETAIL', knee: 'SLOPE', matrix: 'LINEAR MATRIX', chroma: 'PHASE', bars: 'BARS SETUP', chromaCC: 'COLOR CORRECT · PHASE' };
   // 0.11.0 compact R / G / B gain + pedestal matrix (one row each, master pedestal last) instead of five knobs
   const RGB = [['GAIN', ['rGain', null, 'bGain', null]], ['PED', ['rPed', 'gPed', 'bPed', 'masterPed']]];
   const xpOpen = (n) => localStorage.getItem(`cc.ptzXp.${n}`) === '1';
@@ -156,7 +161,7 @@
     ['gamma', 'GAMMA', ['gammaMode', 'gamma']],
     ['knee', 'KNEE', ['kneeMode', 'kneePoint', 'kneeSlope']],
     ['matrix', 'MATRIX', ['matrixType', 'adaptiveMatrix', 'matrixRG', 'matrixRB', 'matrixGR', 'matrixGB', 'matrixBR', 'matrixBG']],
-    ['chroma', 'CHROMA', ['chromaLevel', 'chromaPhase']],
+    ['chroma', 'CHROMA', ['chromaSwitch', 'chromaLevel', 'chromaPhase']],
     ['bars', 'BARS', ['colorBars', 'colorBarsTone', 'colorBarsType']],
   ];
   const NOT_CTL = new Set(['move', 'zoom', 'focus', 'stop', 'recall', 'store', 'presetName', 'thumbnail', 'speeds', 'keepalive', 'home', 'snapshot', 'streamInfo']);
@@ -164,14 +169,15 @@
     synchro: 'SYNCHRO', synchroUp: 'SYN +', synchroDown: 'SYN −', masterPed: 'M.PED', pedestal: 'M.PED', wbMode: 'WB', awb: 'AWB ▶', abb: 'ABB ▶', varTemp: 'VAR K', varTempUp: 'K +', varTempDown: 'K −', colorTemp: 'COLOR TEMP',
     rGain: 'R GAIN', bGain: 'B GAIN', rPed: 'R PED', gPed: 'G PED', bPed: 'B PED', detail: 'DETAIL', masterDetail: 'M.DTL', skinDetail: 'SKIN DTL', skinEffect: 'SKIN EFF', gammaMode: 'GAMMA MODE', gamma: 'GAMMA',
     kneeMode: 'KNEE', kneePoint: 'K.POINT', kneeSlope: 'K.SLOPE', matrixType: 'MATRIX', adaptiveMatrix: 'ADAPTIVE', matrixRG: 'R-G', matrixRB: 'R-B', matrixGR: 'G-R', matrixGB: 'G-B', matrixBR: 'B-R', matrixBG: 'B-G',
-    chromaLevel: 'CHROMA', chromaPhase: 'PHASE', presetScope: 'RECALL SCOPE', presetSpeedMode: 'SPEED / TIME', presetSpeed: 'SPEED', presetTime: 'TIME', power: 'POWER', tallyRed: 'RED TALLY', tallyGreen: 'GREEN TALLY',
+    chromaLevel: 'CHROMA', chromaPhase: 'PHASE', chromaSwitch: 'CHROMA SW', colorCorrect: 'COLOR CORRECT',
+    ccPhaseR: 'R', ccPhaseRYe: 'R-Ye', ccPhaseYe: 'Ye', ccPhaseYeG: 'Ye-G', ccPhaseG: 'G', ccPhaseGCy: 'G-Cy', ccPhaseCy: 'Cy', ccPhaseCyB: 'Cy-B', ccPhaseB: 'B', ccPhaseBMg: 'B-Mg', ccPhaseMg: 'Mg', ccPhaseMgR: 'Mg-R', presetScope: 'RECALL SCOPE', presetSpeedMode: 'SPEED / TIME', presetSpeed: 'SPEED', presetTime: 'TIME', power: 'POWER', tallyRed: 'RED TALLY', tallyGreen: 'GREEN TALLY',
     scene: 'SCENE', install: 'INSTALL', sdRec: 'SD REC', colorBars: 'BARS', colorBarsSetup: 'SETUP', colorBarsTitle: 'TITLE', colorBarsTone: 'TONE', colorBarsType: 'TYPE', menu: 'MENU',
     menuUp: '▲', menuDown: '▼', menuLeft: '◀', menuRight: '▶', menuEnter: 'ENTER', menuCancel: 'CANCEL',
     zoomPos: 'ZOOM', focusPos: 'FOCUS', dExtender: 'D.EXT', digitalZoom: 'D.ZOOM', ois: 'O.I.S.', presetDExt: 'PRESET D.EXT', limitUp: 'UP', limitDown: 'DOWN', limitLeft: 'LEFT', limitRight: 'RIGHT',
     tallyEnable: 'TALLY', tallyBright: 'BRIGHTNESS', tallyLimitR: 'R LIMIT', tallyLimitG: 'G LIMIT', trackSerial: 'SERIAL OUT', trackIP: 'IP OUT', autoIrisSpeed: 'A.IRIS SPEED', autoIrisWindow: 'A.IRIS WINDOW', autoIrisLimit: 'CLOSE LIMIT', pictureLevel: 'PIC LEVEL', elcLimit: 'ELC LIMIT' };
   const TG = { focusMode: ['AF', 'MF'], irisMode: ['AUTO', 'MANUAL'], power: ['ON', 'STANDBY'], limitUp: ['SET', 'OFF'], limitDown: ['SET', 'OFF'], limitLeft: ['SET', 'OFF'], limitRight: ['SET', 'OFF'], tallyLimitR: ['LIMITED', 'FULL'], tallyLimitG: ['LIMITED', 'FULL'] };
-  const FMT = { varTemp: (v) => `${Math.round(v)}K`, gamma: (v) => (v / 100).toFixed(2), kneePoint: (v) => `${Number(v).toFixed(2)}%`, chromaLevel: (v) => (v <= -100 ? 'OFF' : `${v > 0 ? '+' : ''}${v}%`), synchro: (v) => `${Number(v).toFixed(1)}`, iris: (v) => String(v), zoomPos: (v) => `${Number(v).toFixed(1)}%`, focusPos: (v) => `${Number(v).toFixed(1)}%` };
-  const fmt = (o, v) => (v === undefined || v === null || Number.isNaN(v) ? '—' : FMT[o.id] ? FMT[o.id](v) : (o.range && o.range.min < 0 && v > 0 ? `+${v}` : String(v)));
+  const FMT = { varTemp: (v) => `${Math.round(v)}K`, gamma: (v) => (v / 100).toFixed(2), kneePoint: (v) => `${Number(v).toFixed(2)}%`, chromaLevel: (v, o) => (o && o.range && o.range.off !== undefined && v <= o.range.off ? 'OFF' : `${v > 0 ? '+' : ''}${v}%`), synchro: (v) => `${Number(v).toFixed(1)}`, iris: (v) => String(v), zoomPos: (v) => `${Number(v).toFixed(1)}%`, focusPos: (v) => `${Number(v).toFixed(1)}%` };
+  const fmt = (o, v) => (v === undefined || v === null || Number.isNaN(v) ? '—' : FMT[o.id] ? FMT[o.id](v, o) : (o.range && o.range.min < 0 && v > 0 ? `+${v}` : String(v)));
   const ARC = (f) => { const a0 = 135; const a = a0 + 270 * Math.max(0, Math.min(1, f)); const p = (deg) => { const r = (deg * Math.PI) / 180; return `${50 + 40 * Math.cos(r)} ${50 + 40 * Math.sin(r)}`; }; return `M ${p(a0)} A 40 40 0 ${a - a0 > 180 ? 1 : 0} 1 ${p(a)}`; };
   function ctlHtml(o, cell = false) {
     const lbl = SHORT[o.id] || o.label.toUpperCase(); const t = `title="${esc(`${o.label} · ${o.src === 'spec' ? 'Panasonic spec' : 'Companion module'}: ${o.ref}`)}"`;
@@ -190,9 +196,9 @@
   const opsOf = (ids, k) => ids.map((id) => k.ops.find((o) => o.id === id)).filter(Boolean);
   function xp(name, k) {
     const ops = opsOf(ADV[name] || [], k); if (!ops.length) return '';
-    const cells = name === 'matrix';
+    const cells = name === 'matrix' || name === 'chroma';
     const body = cells ? `<div class="lm-grid">${ops.map((o) => `<label class="lm"><span>${esc(SHORT[o.id] || o.label)}</span>${ctlHtml(o, true)}</label>`).join('')}</div>` : ops.map((o) => ctlHtml(o)).join('');
-    return `<details class="xp" data-xp="${name}" ${xpOpen(name) ? 'open' : ''}><summary>${ADV_T[name] || 'MORE'} <small>${ops.length}</small></summary><div class="xp-b">${body}</div></details>`;
+    return `<details class="xp" data-xp="${name}" ${xpOpen(name) ? 'open' : ''}><summary>${(name === 'chroma' ? ADV_T.chromaCC : ADV_T[name]) || 'MORE'} <small>${ops.length}</small></summary><div class="xp-b">${body}</div></details>`;
   }
   function rgbMatrix(k) {
     const has = (id) => id && k.ops.find((o) => o.id === id);
@@ -257,8 +263,20 @@
   const stepBtns = () => document.querySelectorAll('[data-stepmul]').forEach((b) => b.classList.toggle('active', Number(b.dataset.stepmul) === stepMul));
   document.querySelectorAll('[data-stepmul]').forEach((b) => b.addEventListener('click', () => { stepMul = Number(b.dataset.stepmul); localStorage.setItem('cc.ptzStep', String(stepMul)); stepBtns(); })); stepBtns();
 
+  // Knob / slider writes: public/paint-send.js keeps one request in flight per camera + parameter, sends at most
+  // 12.5 per second while dragging (latest value wins), and always sends the final value on release.
+  const paintSend = window.CCPaintSend.createPaintSender({
+    intervalMs: 80,
+    send: (value, ctx) => cmd('op', { cam: ctx.cam, op: ctx.op, value }),
+    onError: (e, value, ctx, key) => {
+      toast(e.message, true);
+      // while the knob is still held, keep showing the operator's value; otherwise fall back to the camera's
+      const l = local[key]; if (!(l && l.drag)) { delete local[key]; renderCtl(); }
+    },
+  });
   // value of one op: a value just set here wins for 2.5 s (the camera's echo arrives with the next status read)
-  const valOf = (c, id) => { const l = local[`${c.id}:${id}`]; if (l && (l.drag || Date.now() - l.at < 2500)) return l.v; return (c.values || {})[id]; };
+  // (and for as long as a write for it is still queued or in flight), so a status read never snaps a knob back
+  const valOf = (c, id) => { const key = `${c.id}:${id}`; const l = local[key]; if (l && (l.drag || Date.now() - l.at < 2500 || paintSend.busy(key))) return l.v; return (c.values || {})[id]; };
   function update(c, k) {
     const off = !c.connected;
     for (const el of document.querySelectorAll('#pane-pctl [data-op]')) {
@@ -287,14 +305,9 @@
       el.classList.toggle('dis', !!lock); el.classList.toggle('plock', !!pl); if ('disabled' in el) el.disabled = !!lock; el.querySelectorAll('button,select,input').forEach((b) => { b.disabled = !!lock; });
     }
   }
-  const pend = {};
   function send(id, value, { now = false } = {}) {
     const c = sel(); if (!c) return; const key = `${c.id}:${id}`;
-    const p = pend[key] || (pend[key] = { t: null, last: 0 });
-    p.value = value;
-    const go = () => { p.t = null; p.last = Date.now(); cmd('op', { cam: c.id, op: id, value: p.value }).catch((e) => { toast(e.message, true); delete local[key]; renderCtl(); }); };
-    const wait = 130 - (Date.now() - p.last);
-    if (now || wait <= 0) { clearTimeout(p.t); go(); } else if (!p.t) p.t = setTimeout(go, wait);
+    paintSend.submit(key, value, { cam: c.id, op: id }, { now });
   }
   const setLocal = (id, v, drag = false) => { const c = sel(); if (c) local[`${c.id}:${id}`] = { v, at: Date.now(), drag }; };
   const opDef = (id) => { const k = catOf(sel()); return k && k.ops.find((o) => o.id === id); };
@@ -379,8 +392,8 @@
     if (!c) { S.set($('#ptzRead'), 'ptzRead', ''); return; }
     readout(c);
     const k = catOf(c);
-    if (!k) { if (!catLoading.has(c.series)) { catLoading.add(c.series); api('GET', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c.id)}/catalog`).then((x) => { cats.set(x.series, x); }).catch((e) => toast(e.message, true)).finally(() => { catLoading.delete(c.series); renderCtl(); }); } return; }
-    const key = `${c.id}|${c.series}|${k.ops.length}`;
+    if (!k) { const ck = catKey(c); if (!catLoading.has(ck)) { catLoading.add(ck); api('GET', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c.id)}/catalog`).then((x) => { cats.set(ck, x); }).catch((e) => toast(e.message, true)).finally(() => { catLoading.delete(ck); renderCtl(); }); } return; }
+    const key = `${c.id}|${catKey(c)}|${k.ops.length}`;
     if (built !== key) { build(c, k); built = key; }
     update(c, k);
     renderPresets(c, k);
