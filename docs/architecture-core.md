@@ -1,6 +1,6 @@
 # Control Center OS
 
-This is the core the desk sits on. The pages you already use (RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin, scopes, TSL, Stream Deck) stay. Phase 1 puts one connection machine, one action path, and one snapshot under them. PTZ and ATEM run on that path. The other drivers are wrapped so they use the same connection machine without a rewrite.
+This is the core the desk sits on. The pages you already use (RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin, TSL, Stream Deck) stay. Phase 1 puts one connection machine, one action path, and one snapshot under them. PTZ and ATEM run on that path. The other drivers are wrapped so they use the same connection machine without a rewrite.
 
 The app still has no control-path dependencies and no build step. Node 16 or later.
 

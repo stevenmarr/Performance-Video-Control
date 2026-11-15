@@ -76,5 +76,5 @@ test('live recall guard: deck recalls on a red-tally camera need a hold (HOLD) o
   await sm.drivers.ptz.poll('cam1'); const v = sm.view('ptz').cameras[0].values;
   assert.equal(v.drs, '2'); assert.equal(v.dayNight, true); assert.equal(v.freezePreset, true);
   assert.ok(m.history.some((h) => h.path === 'aw_ptz' && h.cmd === 'PRF1') && m.history.some((h) => h.path === 'aw_cam' && h.cmd === 'OSE:33:2'));
-  const ver = await (await fetch(`${B}/api/version`)).json(); for (const f of ['ptzLiveGuard', 'ptzDeckFunctions', 'scopes']) assert.ok(ver.features.includes(f), f);
+  const ver = await (await fetch(`${B}/api/version`)).json(); for (const f of ['ptzLiveGuard', 'ptzDeckFunctions']) assert.ok(ver.features.includes(f), f); assert.equal(ver.features.includes('scopes'), false);
 });

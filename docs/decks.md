@@ -1,6 +1,6 @@
 # DECKS
 
-**DECKS** is a top-row tab, next to **SCOPES**. It maps pages from the systems currently on the desk
+**DECKS** is a top-row tab. It maps pages from the systems currently on the desk
 onto Stream Decks that are plugged in.
 
 The list of decks comes from the Path C plugin (`com.performancevideo.control`). Control Center

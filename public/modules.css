@@ -2,7 +2,6 @@
    This is not a surface page. */
 body.tab-modsys .main { display: none !important; }
 body.tab-modsys #tabsHomeNote,
-body.tab-modsys #tabsScopesNote,
 body.tab-modsys #tabsLooksNote,
 body.tab-modsys #tabsCuesNote,
 body.tab-modsys #tabsDecksNote { display: none !important; }

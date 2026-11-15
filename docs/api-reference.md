@@ -4,7 +4,7 @@ Documented from the code on the default branch `performance-video-control`, v0.2
 
 The app listens with `node server.js`. Default port is 8080 (`--port` or `PORT`). Default bind is `0.0.0.0` (`--host` or `HOST`). Data lives in the directory from `lib/datadir.js` (`--data` or `RS6_DATA_DIR`). `--mock` starts in-process simulators.
 
-Most JSON routes are registered in `lib/server.js` (`createServer`) and `lib/core/routes.js`. Scopes routes are mounted later by `lib/scopes/service.js` (`attachScopes` in `server.js`). The Path C plugin API is a separate HTTP server, usually on `127.0.0.1:9721`.
+Most JSON routes are registered in `lib/server.js` (`createServer`) and `lib/core/routes.js`. The Path C plugin API is a separate HTTP server, usually on `127.0.0.1:9721`. Scopes is not mounted on this process; see `apps/scopes`.
 
 ## Conventions
 
@@ -16,7 +16,7 @@ Most JSON routes are registered in `lib/server.js` (`createServer`) and `lib/cor
 - Many `/api/sys/*`, `/api/decks/*`, cues, looks, ATEM desk, TSL, and core routes are registered only when a `SystemManager` is passed to `createServer`. That is the normal app start. A server created without `systems` does not have those routes (404).
 - `:sys` in paths below is an instance id: family key, or family plus a suffix, matching `((?:rs6|e2|pixelhue|atem|ptz|pixera|millumin|videohub|hyperdeck|mitti)(?:-[a-z0-9]{4,12})?)`. `:atem` and `:ptz` are the same pattern limited to those families. `:id`, `:n`, and similar are as written in the regex.
 
-Route counts from this tree: **209** `route()` registrations in `lib/server.js` and `lib/core/routes.js`, plus **GET /api/health** and **GET /api/events** handled in the request function, plus **4** scopes HTTP routes and **2** WebSocket upgrades mounted by `attachScopes`. The Path C plugin adds **3** routes on its own port. Long-poll uses the same paths as the matching GET routes when `?since=` is present; those are not extra path registrations.
+Route counts from this tree: **209** `route()` registrations in `lib/server.js` and `lib/core/routes.js`, plus **GET /api/health** and **GET /api/events** handled in the request function. The Path C plugin adds **3** routes on its own port. Long-poll uses the same paths as the matching GET routes when `?since=` is present; those are not extra path registrations. Scopes routes are not part of this process.
 
 ---
 
@@ -936,57 +936,13 @@ Sends one tick. Returns `{ ...tickResult, status }`.
 
 ---
 
-## Scopes (HTTP and WebSocket)
-
-Mounted by `attachScopes` in `server.js`. Source: `lib/scopes/service.js`, `lib/stream-relay.js`, `lib/scopes/ndi-ingest.js`. Settings file: `<dataDir>/scopes.json`. Passwords are never returned (only `hasPassword` / `customHasPassword`).
-
-### GET /api/scopes/sources
-
-`{ sources, settings, mock, ndi, decklinkError }`. Source keys: `decklink:<index>`, `ndi:<id>`, `builtin:<file>`, `test:<file>`, `cam:<id>` or `cam:<instance>:<id>`, `custom`. Live video is Desktop Video (or a legacy NDI sidecar), not an in-process NDI receiver.
-
-### GET /api/scopes/ndi
-
-`{ ...ndiStatus, sources, decklinkError }` where `sources` is the `kind: "ndi"` subset (Desktop Video and sidecar).
-
-### GET /api/scopes/status
-
-`{ relays }` — `relay.stats()` per running source.
-
-### POST /api/scopes/settings
-
-Body `{ testDir?, custom?, customUser?, customPassword?, cameras?: { <camId>: { stream, path, port, user, password } } }`. `stream` is 1–4. `custom` is an `rtsp://` URL or a `.h264` / `.264` / `.mp4` / `.mov` / `.m4v` path. Returns the public settings object. Running relays for changed sources are reopened.
-
-### WebSocket /api/scopes/ws?src=<key>
-
-H.264 relay to the browser. Source: `lib/stream-relay.js`.
-
-Server → browser:
-
-- text `{ "type": "config", codec, description, width, height, fps, fullRange, colour, label }` (`description` is base64 avcC)
-- text `{ "type": "status", state, error? }` — `state` is `connecting` | `playing` | `error` | `ended`
-- text `{ "type": "pong", t, server }`
-- binary: 20-byte header then an AVCC access unit. Byte 0 is 1. Byte 1 flags: 1 = key, 2 = catch-up (decode, do not draw), 4 = replayed from the GOP cache. Then two little-endian float64s: server receive ms, PTS in microseconds.
-
-Browser → server: text `{ "type": "ping", t }`.
-
-A new viewer gets config, then the current GOP with the catch-up flag. Unknown `src` is a 400/404 handshake error, not a JSON route. Loopback vs LAN is not restricted on this socket (unlike ingest).
-
-### WebSocket /api/scopes/ndi/ingest
-
-Mac sidecar (or DeckLink sidecar) push of Annex-B H.264 into the hub. Query: `id` (required, NDI id pattern; `mock-` prefix refused), `name`, `fps`, `kind=decklink`, `device`, `mode`. Default accept is loopback only; `RS6_NDI_INGEST_LAN=1` allows other hosts. 403/400 are plain-text HTTP errors before the upgrade. Source: `lib/scopes/service.js` `ingestUpgrade`, `lib/ndi/ingest-client.js` (client).
-
-Optional HTTPS: if `RS6_TLS_CERT` and `RS6_TLS_KEY` are set, the same HTTP and WebSocket handlers are also served on `RS6_TLS_PORT` (default 8443).
-
----
-
 ## Static pages
 
 Served from `public/` by `lib/server.js`:
 
 - `GET /` → `public/index.html`
 - `GET /settings` → `public/index.html`
-- `GET /lightning.html` and `GET /lightning` → `public/scopes.html` (old alias; the tab is SCOPES)
-- Other paths under `public/` (scripts, CSS, images, `scopes.html`)
+- Other paths under `public/` (scripts, CSS, images)
 
 Unknown files are 404. Path escape outside `public/` is 403.
 
@@ -1021,4 +977,3 @@ Body `{ deviceId, pages }`. Both required (`deviceId` is in the body because Elg
 | Systems | `lib/systems.js`, `lib/drivers/*` |
 | RS6 engine | `lib/engine.js`, `lib/live.js`, `lib/shows.js`, `lib/store.js` |
 | Decks | `lib/decks/service.js`, `lib/decks/pages.js`, `lib/decks/surfaces.js`, `lib/decks/plugin-client.js`, `lib/decks/plugin-server.js`, `lib/decks/diag.js` |
-| Scopes | `lib/scopes/service.js`, `lib/stream-relay.js`, `lib/scopes/ws.js`, `lib/scopes/ndi-ingest.js` |

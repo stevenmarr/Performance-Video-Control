@@ -19,7 +19,6 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 | Blackmagic HyperDeck (`hyperdeck`) | implemented | 9 | 5 | 3 | official | https://documents.blackmagicdesign.com/DeveloperManuals/HyperDeckEthernetProtocol.pdf |
 | Mitti (`mitti`) | implemented | 8 | 3 | 3 | official | https://imimot.com/mitti/ |
 | TSL tally (`tsl`) | implemented | 2 | 3 | 2 | official | https://tslproducts.com/ |
-| Scopes (`scopes`) | implemented | 2 | 2 | 1 | official | https://www.blackmagicdesign.com/developer |
 | Control Center (`console`) | implemented | 21 | 4 | 3 | official | — |
 | Generic HTTP (`generic-http`) | implemented | 1 | 4 | 2 | official | https://www.rfc-editor.org/rfc/rfc9110 |
 | Generic UDP (`generic-udp`) | implemented | 1 | 3 | 2 | official | https://www.rfc-editor.org/rfc/rfc768 |
@@ -335,6 +334,7 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 - Yamaha CL/QL commands are the published remote-control lines (`set MIXER:Current/...`, `ssrecall_ex`). The command list ships in Yamaha's setup package. https://github.com/BrenekH/yamaha-rcp-docs/ is a public transcription of that list, not a second protocol.
 - DiGiCo addresses are the console's own OSC paths. The Companion CSV is only a cross-reference.
 - NDI routing is not implemented. The NDI SDK is a licensed binary and there is no open wire protocol in this build.
+- Scopes is not an in-process Control Center system. Waveform, parade, vectorscope, Lightning and Desktop Video capture live in the standalone app at apps/scopes (port 8092).
 - grandMA3 control addresses are `/Page/Fader` and `/Page/Key`. Sequence feedback is the console's `/13.13.1.6.<n>` message (function, handle, percent).
 - Barco Pulse is JSON-RPC 2.0 on TCP 9090 (`system.poweron`, `system.poweroff`, `optics.shutter.target`, `image.window.main.source`). Christie stays on PJLink.
 - BirdDog uses the VISCA-over-IP command set its cameras document. Model-specific REST bodies are not guessed.

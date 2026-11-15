@@ -76,11 +76,6 @@ async function main() {
   }
   const systems = new SystemManager({ dataDir, engine, overrides: sysOverrides });
   const server = createServer(engine, systems);
-  // Video scopes: H.264 relay (WebSocket /api/scopes/ws) + /api/scopes/*.
-  // This process never receives DeckLink or NDI (not on a Pi, not in-process).
-  // A Mac sidecar pushes H.264 to /api/scopes/ndi/ingest. Live video is Desktop Video.
-  // --mock does not add NDI fixture sources.
-  const scopes = require('./lib/scopes/service').attachScopes(server, { systems, dataDir, mock, log: (lv, m) => engine.log(lv, m) });
   require('./lib/listen').listen(server, port, bind, async () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
     console.log(`Control Center: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
@@ -96,7 +91,7 @@ async function main() {
       server.decks.stopUsb();
       try { await server.decks.usb.close(); } catch { /* already closed */ }
     }
-    await scopes.close(); server.closeClients(); server.close(); await systems.close(); for (const m of sysMocks) await m.stop(); engine.close(); if (device) await device.stop(); process.exit(0);
+    server.closeClients(); server.close(); await systems.close(); for (const m of sysMocks) await m.stop(); engine.close(); if (device) await device.stop(); process.exit(0);
   };
   process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
 }
