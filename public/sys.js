@@ -491,7 +491,7 @@
     const cols = `repeat(${1 + nd}, minmax(var(--colmin), 1fr))`;
     if ($('#xdestRow').style.getPropertyValue('--cols') !== cols) { $('#xdestRow').style.setProperty('--cols', cols); $('#xdestRow').style.gridTemplateColumns = cols; }
     set($('#xdestRow'), 'dest', `<div class="dest ctlcell"><button class="ctl" data-ctl="all">ALL</button><button class="ctl" data-ctl="none">CLEAR</button></div>` + V.destinations.map((d) => `
-      <button class="dest ${d.selected ? 'on' : ''}" data-dest="${d.key}" title="${esc(d.label)}${d.size ? ' · ' + d.size : ''}">
+      <button class="dest ${d.selected || d.armed ? 'on' : ''} ${d.armed && !d.selected ? 'armed' : ''}" data-dest="${d.key}" title="${esc(d.label)}${d.size ? ' · ' + d.size : ''}${d.armed && !d.selected ? ' · armed by the last recall (TAKE / CUT target)' : ''}">
         <span class="k">${d.kind === 'screen' ? 'SCREEN' : 'AUX'} ${d.key.slice(1)}</span><span class="l">${esc(d.label)}</span>
         <span class="tl">${d.pgmPreset ? `<span class="p">PGM ${esc(d.pgmPreset.number)}</span>` : ''}${d.pvwPreset ? `<span class="v">PVW ${esc(d.pvwPreset.number)}</span>` : ''}</span></button>`).join('')
       + (nd ? '' : `<div class="note" style="grid-column:2 / -1">${V.status.connected ? 'The device reports no destinations.' : 'Not connected. Set the connection on ⌂ SYSTEMS.'}</div>`));

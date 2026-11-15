@@ -145,6 +145,7 @@ function attachScopes(server, { dataDir, appDir = path.join(__dirname, '..'), mo
   }
   const publicSettings = () => ({ testDir: testFolder(), custom: cfg.custom.replace(/\/\/[^@/]*@/, '//***@'), customUser: cfg.customUser, customHasPassword: !!cfg.customPassword,
     controlCenterUrl: cfg.controlCenterUrl || '',
+    models: Cameras.modelChoices(),
     cameraDefaults: { stream: Cameras.CAMERA_DEFAULTS.stream, port: Cameras.CAMERA_DEFAULTS.port, user: Cameras.CAMERA_DEFAULTS.user, path: Cameras.UE150_PATH('<n>') },
     cameras: Object.fromEntries(Cameras.list(cfg).map((c) => [c.id, Cameras.publicOne(c, camUrl(c))])) });
   function updateSettings(b) {
