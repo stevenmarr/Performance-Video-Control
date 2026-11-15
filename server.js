@@ -82,7 +82,7 @@ async function main() {
     console.log(`Data dir: ${dataDir}`);
     if (server.decks) server.decks.startUsb();
     if (systems.os) systems.os.ready();
-    await engine.connect();
+    if (engine.settings.mock || systems.configured('rs6')) await engine.connect();
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);
   });
 

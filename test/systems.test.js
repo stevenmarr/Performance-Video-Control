@@ -11,6 +11,7 @@ const { createServer } = require('../lib/server');
 const { E2Driver } = require('../lib/drivers/e2');
 const { PixelHueDriver, makeToken, verifyToken } = require('../lib/drivers/pixelhue');
 const { SystemManager } = require('../lib/systems');
+const { Engine } = require('../lib/engine');
 const { MockE2 } = require('../lib/mocks/e2');
 const { MockPixelHue, SN, START } = require('../lib/mocks/pixelhue');
 const SH = require('../lib/shows');
@@ -309,4 +310,38 @@ test('safety: E2 / PixelHue code, mocks and tests name no private-network device
   assert.match(srv, /new MockAtem\([^;]*\); sysOverrides\.atem = \{ host: '127\.0\.0\.1'/); assert.match(srv, /host: '127\.0\.0\.1', port: await m\.start\(0\)/);
   assert.match(fs.readFileSync(path.join(root, 'lib/mocks/atem.js'), 'utf8'), /start\(port = 0, host = '127\.0\.0\.1'\)/);
   assert.match(fs.readFileSync(path.join(root, 'lib/mocks/ptz.js'), 'utf8'), /start\(port = 0, host = '127\.0\.0\.1'\)/);
+});
+
+test('AVAILABLE RS6 is NOT CONFIGURED when the user never added one, and a stale default-only RS6 is dropped from the desk', () => {
+  const dir = tmp();
+  try {
+    fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify({ host: '127.0.0.1', restPort: 3001, awjPort: 10606, protocol: 'rest' }));
+    fs.writeFileSync(path.join(dir, 'systems.json'), JSON.stringify({ version: 1, active: 'rs6', armed: ['rs6'], connections: {}, sessions: {}, instances: [] }));
+    const engine = new Engine({ dataDir: dir });
+    const sm = new SystemManager({ dataDir: dir, engine, autoStart: false });
+    const st = sm.getState();
+    assert.equal(st.systems.rs6.configured, false, 'the AVAILABLE row is not a configured, offline RS6');
+    assert.equal(st.armed.includes('rs6'), false, 'the leftover default-only RS6 leaves the desk');
+    assert.equal(engine.settings.host, '');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'systems.json'), 'utf8')).armed.includes('rs6'), false);
+    sm.close();
+    engine.close();
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a user-configured RS6 stays on the desk and stays configured', () => {
+  const dir = tmp();
+  try {
+    fs.writeFileSync(path.join(dir, 'systems.json'), JSON.stringify({ version: 1, active: 'rs6', armed: ['rs6'], connections: {}, sessions: {}, instances: [] }));
+    const sm = new SystemManager({ dataDir: dir, engine: fakeEngine({ host: '192.0.2.10', restPort: 80 }), autoStart: false });
+    const st = sm.getState();
+    assert.equal(st.systems.rs6.configured, true);
+    assert.deepEqual(st.armed, ['rs6']);
+    sm.close();
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('boot does not connect the original RS6 unless it is configured or in mock mode', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
+  assert.match(src, /if \(engine\.settings\.mock \|\| systems\.configured\('rs6'\)\) await engine\.connect\(\)/);
 });

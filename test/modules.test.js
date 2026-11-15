@@ -373,3 +373,17 @@ test('the coverage manifest lists every Companion module and matches the catalog
   assert.ok(sum.implemented > 20);
   assert.equal(sum.implemented + sum.partial + sum['not yet'], sum.total);
 });
+
+test('MODULES pane fills the leftover window and scrolls when the catalog is taller than the view', () => {
+  const css = fs.readFileSync(path.join(__dirname, '..', 'public', 'modules.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rules = [];
+  const re = /([^{}]+)\{([^{}]*)\}/g;
+  let m;
+  while ((m = re.exec(css))) rules.push({ sel: m[1].trim(), body: m[2] });
+  const pane = rules.find((r) => /#pane-modsys:not\(\[hidden\]\)/.test(r.sel) || r.sel === '#pane-modsys');
+  assert.ok(pane, 'the MODULES pane has a layout rule');
+  assert.match(pane.body, /overflow-y\s*:\s*auto/);
+  assert.match(pane.body, /min-height\s*:\s*0/);
+  assert.match(pane.body, /flex\s*:\s*1/);
+  assert.match(css, /body\.tab-modsys \.main/);
+});

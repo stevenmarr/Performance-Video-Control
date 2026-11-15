@@ -8,7 +8,19 @@ body.tab-modsys #tabsDecksNote { display: none !important; }
 .mod-sub { display: none; }
 body.tab-modsys .mod-sub { display: inline-flex; }
 .tgrp.mod-inst { display: inline-flex; }
-#pane-modsys { padding: 14px 18px 48px; max-width: 1280px; }
+#pane-modsys:not([hidden]) {
+  flex: 1 1 auto;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 18px 48px;
+  box-sizing: border-box;
+}
+#pane-modsys > * { max-width: 1280px; }
 .mod-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
 .mod-cats { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
 .mod-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }

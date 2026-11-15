@@ -215,3 +215,62 @@ test('recall on a destination with nothing stored is reported, others still load
     assert.ok(engine.logs.some((l) => l.level === 'error' && /S2/.test(l.msg)));
   } finally { await teardown(); }
 });
+
+test('a fresh Engine has no RS6 address and connect does not log a refused simulator', async () => {
+  const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'rs6none-'));
+  try {
+    const engine = new Engine({ dataDir: dir });
+    assert.equal(engine.settings.host, '');
+    assert.equal(engine.rs6Configured(), false);
+    await engine.connect();
+    assert.equal(engine.connected, false);
+    assert.equal(engine.lastError, null);
+    assert.equal(engine.logs.some((l) => /RS6 Engine refused/.test(l.msg)), false);
+    engine.close();
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('a leftover factory default 127.0.0.1:3001 is forgotten, and a user-saved or preset-backed RS6 is kept', async () => {
+  const os = require('os');
+  const stale = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6stale-'));
+  const claimed = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6claim-'));
+  const preset = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6preset-'));
+  try {
+    fs.writeFileSync(path.join(stale, 'settings.json'), JSON.stringify({ host: '127.0.0.1', restPort: 3001, awjPort: 10606, protocol: 'rest' }));
+    const forgotten = new Engine({ dataDir: stale });
+    assert.equal(forgotten.settings.host, '');
+    assert.equal(forgotten.rs6Configured(), false);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(stale, 'settings.json'), 'utf8')).host, '');
+    forgotten.close();
+
+    fs.writeFileSync(path.join(claimed, 'settings.json'), JSON.stringify({ host: '127.0.0.1', restPort: 3001, awjPort: 10606, protocol: 'rest', rs6Configured: true }));
+    const kept = new Engine({ dataDir: claimed });
+    assert.equal(kept.settings.host, '127.0.0.1');
+    assert.equal(kept.settings.restPort, 3001);
+    assert.equal(kept.rs6Configured(), true);
+    kept.close();
+
+    fs.writeFileSync(path.join(preset, 'settings.json'), JSON.stringify({ host: '127.0.0.1', restPort: 3001, awjPort: 10606, protocol: 'rest' }));
+    fs.writeFileSync(path.join(preset, 'presets.json'), JSON.stringify({ version: 2, presets: [{ number: 1, name: 'Walk-in', destinations: ['S1'], memories: { S1: 1 } }] }));
+    const used = new Engine({ dataDir: preset });
+    assert.equal(used.settings.host, '127.0.0.1');
+    assert.equal(used.rs6Configured(), true);
+    used.close();
+  } finally {
+    fs.rmSync(stale, { recursive: true, force: true });
+    fs.rmSync(claimed, { recursive: true, force: true });
+    fs.rmSync(preset, { recursive: true, force: true });
+  }
+});
+
+test('saving an RS6 address marks it configured, including the Mac simulator', async () => {
+  const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'rs6save-'));
+  try {
+    const engine = new Engine({ dataDir: dir });
+    assert.equal(engine.rs6Configured(), false);
+    engine.updateSettings({ host: '127.0.0.1', restPort: 3001 });
+    assert.equal(engine.rs6Configured(), true);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'settings.json'), 'utf8')).rs6Configured, true);
+    engine.close();
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
