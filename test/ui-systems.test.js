@@ -198,7 +198,7 @@ test('Control Center 0.8.0: CAMERA CONTROL dashboard: proportional joystick, roc
   assert.deepEqual(errors, []);
 });
 
-test('Control Center 0.9.8: CAMERA CONTROL fills 1280 / 1440 / 1920 (no dead zones, no sideways scroll); paint cards, lock, notes, memories, preview, keys 1-9 (Playwright)', { skip: pw ? false : 'playwright not installed' }, async (t) => {
+test('Control Center 0.9.8: CAMERA CONTROL at 1280 / 1440 / 1920 (no sideways scroll, fixed dock row, vertical scroll allowed); paint cards, lock, notes, memories, preview, keys 1-9 (Playwright)', { skip: pw ? false : 'playwright not installed' }, async (t) => {
   const port = 22000 + Math.floor(Math.random() * 1000); const B = `http://127.0.0.1:${port}`;
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6cc91-'));
   const srv = spawn(process.execPath, [path.join(__dirname, '..', 'server.js'), '--mock', '--port', String(port), '--host', '127.0.0.1', '--data', data], { stdio: 'ignore' });
@@ -213,15 +213,25 @@ test('Control Center 0.9.8: CAMERA CONTROL fills 1280 / 1440 / 1920 (no dead zon
   await page.locator('#pane-pctl [data-op=rGain]').first().waitFor({ timeout: 10000 });
   const cam = async (id = 'cam1') => (await api('/api/sys/ptz')).cameras.find((c) => c.id === id);
   const until = async (fn, what) => { for (let i = 0; i < 80; i++) { const v = await fn(); if (v) return v; await new Promise((r) => setTimeout(r, 50)); } throw new Error(`timed out: ${what}`); };
-  const metrics = () => page.evaluate(() => ({ sw: document.documentElement.scrollWidth, w: innerWidth,
-    gaps: [...document.querySelectorAll('#pane-pctl .rcp>.panel')].map((p) => { const r = p.getBoundingClientRect(); const bot = Math.max(...[...p.children].filter((k) => k.offsetParent !== null).map((k) => k.getBoundingClientRect().bottom)); return [p.className, r.bottom - bot]; }),
-    cards: [...document.querySelectorAll('#pane-pctl .pcard:not(.hide)')].length, tabs: getComputedStyle(document.querySelector('#ptzPaintTabs .ptab')).display !== 'none' }));
-  // 0.11.1 dock defaults: 1200–1599 px gives PAINT a full-width row (as 1280 did), so 1440 also shows every group
+  const metrics = () => page.evaluate(() => {
+    const rcp = document.querySelector('#pane-pctl .rcp');
+    return {
+      sw: document.documentElement.scrollWidth, w: innerWidth,
+      row: getComputedStyle(rcp).getPropertyValue('--dk-row').trim(),
+      overflowY: getComputedStyle(rcp).overflowY,
+      canScrollY: rcp.scrollHeight - rcp.clientHeight,
+      cards: [...document.querySelectorAll('#pane-pctl .pcard:not(.hide)')].length,
+      tabs: getComputedStyle(document.querySelector('#ptzPaintTabs .ptab')).display !== 'none',
+    };
+  });
+  // 0.11.1 dock defaults: 1200–1599 px gives PAINT a full-width row (as 1280 did), so 1440 also shows every group.
+  // The dock row stays 30 px (no fit-to-viewport). Vertical scrolling is allowed; sideways is not.
   for (const [w, h, allCards] of [[1920, 1080, true], [1440, 900, true], [1280, 800, true]]) {
     await page.setViewportSize({ width: w, height: h }); await page.waitForTimeout(500);
     const m = await metrics();
     assert.ok(m.sw <= m.w, `${w}: no sideways scroll (${m.sw})`);
-    for (const [cls, gap] of m.gaps) assert.ok(gap < 40, `${w}: ${cls} has ${Math.round(gap)} px empty at the bottom`);
+    assert.equal(m.row, '30px', `${w}: dock row stays 30 px (was ${m.row})`);
+    assert.equal(m.overflowY, 'auto', `${w}: camera grid scrolls vertically`);
     if (allCards) { assert.equal(m.cards, 8, `${w}: every paint group side by side`); assert.equal(m.tabs, false); } else { assert.ok(m.cards >= 4, `${w}: ${m.cards} paint cards`); assert.equal(m.tabs, true); }
   }
   await page.setViewportSize({ width: 1920, height: 1080 });

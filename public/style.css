@@ -2,9 +2,23 @@
   --bg:#0b0d10; --panel:#14181d; --panel2:#1b2027; --line:#2a313b; --text:#d9dee5; --dim:#7d8794;
   --pgm:#e5262e; --pgm-bg:#3a0d10; --pvw:#18c35a; --pvw-bg:#0b3019; --sel:#f0a500; --sel-bg:#3a2a05;
   --accent:#3b8cff; --danger:#c0392b; --r:10px;
+  --input-bg:#171c23; --input-ink:var(--text);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{height:100%;overflow:hidden}
+html{height:100%;overflow:hidden;color-scheme:dark}
+html[data-theme=light]{
+  color-scheme:light;
+  --bg:#f3f5f7; --panel:#ffffff; --panel2:#e8edf3; --line:#c5ccd6; --text:#1a1f26; --dim:#5a6570;
+  --pgm:#c01b22; --pgm-bg:#f8d4d6; --pvw:#0f8f42; --pvw-bg:#d4f0df; --sel:#c48400; --sel-bg:#f7e7c2;
+  --accent:#1563d6; --danger:#b3261e;
+  --input-bg:#ffffff; --input-ink:#1a1f26;
+}
+html[data-theme=light] .pvlogo{background:#0b0d10;padding:3px 6px;border-radius:4px}
+html[data-theme=light] .pill.ok{background:#dff6e8;color:#157a3e;border-color:#8ad4a6}
+html[data-theme=light] .pill.off{background:#fde3e4;color:#9b1c24;border-color:#f0a8ac}
+html[data-theme=light] .pill .mock{background:#f7e7c2;color:#7a5a00}
+html[data-theme=light] .bl-preview{background:#d9dee5}
+html[data-theme=light] .pages-board .deck-key.empty,html[data-theme=light] .pages-empty{background:#e8edf3;color:#5a6570;box-shadow:inset 0 0 0 1px var(--line)}
 html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.3 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
 body{display:flex;flex-direction:column;height:100%;height:100dvh;max-height:100dvh;min-height:0;overflow:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left)}
 button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
@@ -135,8 +149,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .empty-note{color:var(--dim);font-size:13px;padding:6px 2px}
 
 /* ---------- 0.3.0: branding ---------- */
-/* The logo is white on transparent. The UI has no light theme, so it sits straight on the dark header.
-   If a light theme is ever added, give .pvlogo a dark backing (background:#0b0d10;padding:3px 6px). */
+/* The logo is white on transparent. In light appearance it gets a dark backing (html[data-theme=light] .pvlogo). */
 .pvlogo{height:30px;width:auto;max-width:22vw;object-fit:contain;object-position:left center;display:block;flex:0 1 auto;min-width:0}
 /* 0.3.2: the Settings button is pinned to the end of the first header row at every width; the logo
    and status items shrink or wrap below it instead. */
@@ -1261,14 +1274,16 @@ body.dk-busy-rz-e *,body.dk-busy-rz-w *{cursor:ew-resize!important}body.dk-busy-
 @media (max-width:900px){.cc-cues{grid-template-columns:1fr;grid-template-rows:auto auto auto 220px}.#ccSystems,.cc-board,.cc-stack,.cc-time-wrap,.cc-run-corner{grid-column:1;grid-row:auto}.cc-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* 1920×1080, browser zoom 100%, window fills the screen. The page is the window.
-   Panes scroll inside the leftover area. Scope and camera panels scale their row unit to that area. */
+   Panes scroll inside the leftover area. The PTZ camera dock (and the standalone Scopes app)
+   keep a fixed 30 px row unit — the dock grid contract — and scroll vertically instead of
+   shrinking every panel to fit the viewport. */
 .main > .grid-wrap{height:100%;max-height:100%;min-height:0;overflow:auto}
 .mix{align-items:stretch;height:100%;min-height:0;overflow:hidden}
 .mix .mixmain{min-height:0;max-height:100%;overflow:auto}
 .palette{max-height:100%;overflow:auto}
 #pane-pctl:not([hidden]){display:flex;flex-direction:column;overflow:hidden;height:100%;min-height:0}
 #pane-pctl .rcp-bus,#pane-pctl .rcp-read{flex:none}
-#pane-pctl .rcp{flex:1 1 auto;min-height:0;overflow:hidden;align-content:start}
+#pane-pctl .rcp{flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;scrollbar-gutter:stable;-webkit-overflow-scrolling:touch;align-content:start}
 
 /* ATEM LAYOUT: properties, every M/E or SuperSource canvas, resource pool */
 .lay{display:grid;grid-template-columns:minmax(200px,250px) minmax(0,1fr) minmax(260px,320px);gap:12px;align-items:start}
@@ -1354,12 +1369,14 @@ nav.tabs{padding:0 6px}
 .tabs-top .tab.tab-home,
 .tabs-top .tab.tab-cues,
 .tabs-top .tab.tab-looks,
-.tabs-top .tab.tab-decks{padding:4px 10px;min-height:0}
+.tabs-top .tab.tab-decks,
+.tabs-top .tab.tab-buttons,
+.tabs-top .tab.tab-pages{padding:4px 10px;min-height:0}
 .tabs-top .tab.tab-decks,.tabs-top .tab.tab-cues,.tabs-top .tab.tab-looks{margin-left:4px}
 .tabs-home-note{font-size:11px;line-height:1.25;padding:2px 4px}
 .main{padding:4px 6px 6px;gap:8px}
 
-/* Button library and surface pages (Control Devices second row). */
+/* Button library and surface pages (top-level BUTTONS and PAGES tabs). */
 .btn-editor{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:900px){.btn-editor{grid-template-columns:1fr}}
 .bl-head{display:flex;align-items:center;gap:8px;margin:0 0 8px}
@@ -1369,7 +1386,7 @@ nav.tabs{padding:0 6px}
 .bl-preview svg{width:100%;height:100%;display:block}
 .bl-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin:8px 0}
 .bl-fields label,.bl-row{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--dim);min-width:0}
-.bl-fields input,.bl-fields select,.bl-row input,.bl-row select{height:36px;background:#171c23;color:inherit;border:1px solid var(--line);border-radius:8px;padding:0 8px;min-width:0}
+.bl-fields input,.bl-fields select,.bl-row input,.bl-row select{height:36px;background:var(--input-bg);color:var(--input-ink);border:1px solid var(--line);border-radius:8px;padding:0 8px;min-width:0}
 .bl-row{flex-direction:row;align-items:center;margin:6px 0}
 .bl-row input,.bl-row select{flex:1}
 .pages-layout{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:start}
