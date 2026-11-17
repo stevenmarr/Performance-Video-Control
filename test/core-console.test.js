@@ -35,6 +35,7 @@ test('ATEM reaches connected, a split PTZ is degraded, cameras have their own ma
   const cam = new MockPTZ({ model: 'AW-UE150', title: 'CAM-1' });
   const atemPort = await atem.start(0);
   const camPort = await cam.start(0);
+  fs.writeFileSync(path.join(dir, 'systems.json'), JSON.stringify({ version: 1, active: 'atem', armed: ['atem', 'ptz'], connections: {}, sessions: {}, instances: [] }));
   const sm = new SystemManager({
     dataDir: dir,
     engine: fakeEngine(),

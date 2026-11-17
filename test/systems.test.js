@@ -235,9 +235,11 @@ test('desk: configured systems stay on the tab bar, an explicit desk is kept, a 
 test('mock overrides fix the connection; unconfigured systems are never contacted by the poller', async () => {
   const dir = tmp(); const { m, port, stop } = await e2();
   try {
-    const sm = new SystemManager({ dataDir: dir, engine: fakeEngine(), overrides: { e2: { host: '127.0.0.1', port } }, pollMs: 40, refreshMs: 100 });
+    const sm = new SystemManager({ dataDir: dir, engine: fakeEngine(), overrides: { e2: { host: '127.0.0.1', port } }, pollMs: 40, refreshMs: 100, autoStart: false });
+    await sm.setActive('e2');
+    sm.start();
     await new Promise((r) => setTimeout(r, 250));
-    assert.equal(sm.getState().systems.e2.status.connected, true, 'a configured system shows live status on the dashboard');
+    assert.equal(sm.getState().systems.e2.status.connected, true, 'a configured system on the desk shows live status on the dashboard');
     assert.equal(sm.getState().systems.pixelhue.status.connected, false);
     assert.throws(() => sm.updateConnection('e2', { host: '192.0.2.50' }), /Mock mode/);
     assert.ok(m.history.length > 0); sm.close();
@@ -344,4 +346,55 @@ test('a user-configured RS6 stays on the desk and stays configured', () => {
 test('boot does not connect the original RS6 unless it is configured or in mock mode', () => {
   const src = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
   assert.match(src, /if \(engine\.settings\.mock \|\| systems\.configured\('rs6'\)\) await engine\.connect\(\)/);
+});
+
+test('AVAILABLE RS6 stays NOT CONFIGURED when only leftover presets and the factory default exist', () => {
+  const dir = tmp();
+  try {
+    fs.writeFileSync(path.join(dir, 'settings.json'), JSON.stringify({ host: '127.0.0.1', restPort: 3001, awjPort: 10606, protocol: 'rest' }));
+    fs.writeFileSync(path.join(dir, 'presets.json'), JSON.stringify({ version: 2, presets: [{ number: 1, name: 'Walk-in', destinations: ['S1'], memories: { S1: 1 } }] }));
+    fs.writeFileSync(path.join(dir, 'systems.json'), JSON.stringify({ version: 1, active: 'rs6', armed: ['rs6'], connections: {}, sessions: {}, instances: [] }));
+    const engine = new Engine({ dataDir: dir });
+    const sm = new SystemManager({ dataDir: dir, engine, autoStart: false });
+    const st = sm.getState();
+    assert.equal(st.systems.rs6.configured, false, 'old presets do not count as a configured RS6');
+    assert.equal(st.armed.includes('rs6'), false);
+    assert.equal(st.systems.rs6.status.fsm, 'disconnected');
+    assert.equal(st.systems.rs6.status.link, 'idle');
+    assert.equal(st.systems.rs6.status.connected, false);
+    assert.notEqual(st.systems.rs6.status.fsm, 'failed');
+    assert.equal(engine.presets.length, 1);
+    sm.close();
+    engine.close();
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('removing a failed connection from the desk clears its status; an empty desk shows no failures', async () => {
+  const dir = tmp();
+  const sm = new SystemManager({ dataDir: dir, engine: fakeEngine({ host: '' }), autoStart: false });
+  try {
+    sm.updateConnection('e2', { host: '192.0.2.80', port: 9999 });
+    sm.cfg.armed = sm._arm(['e2']);
+    sm.cfg.active = 'e2';
+    const slot = sm.bag('e2');
+    sm._apply(slot, { type: 'start' });
+    for (let i = 0; i < 8; i++) sm._apply(slot, { type: 'down', error: 'refused' });
+    assert.equal(sm.statusOf(slot).fsm, 'failed');
+    assert.equal(sm.getState().systems.e2.status.fsm, 'failed');
+    await sm.setArmed('e2', false);
+    const st = sm.getState();
+    assert.deepEqual(st.armed, [], 'the desk is empty');
+    assert.equal(st.systems.e2.configured, true, 'the saved address is kept');
+    assert.equal(st.systems.e2.status.fsm, 'disconnected');
+    assert.equal(st.systems.e2.status.link, 'idle');
+    assert.equal(st.systems.e2.status.connected, false);
+    assert.equal(st.systems.e2.status.error, null);
+    const deskFail = (st.instances || []).filter((i) => i.armed && (i.status.fsm === 'failed' || i.status.link === 'offline' || i.status.link === 'reconnecting'));
+    assert.equal(deskFail.length, 0, 'no armed instance still reports a failure');
+    const catalogFail = Object.values(st.systems).filter((s) => s.status && (s.status.fsm === 'failed' || s.status.link === 'offline' || s.status.link === 'reconnecting'));
+    assert.equal(catalogFail.length, 0, 'AVAILABLE rows show no failed or offline status when the desk is empty');
+    assert.equal(sm.bag('e2').conn.state, 'disconnected');
+    await sm._tick('e2');
+    assert.equal(sm.bag('e2').conn.state, 'disconnected', 'an unarmed slot is not retried');
+  } finally { sm.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });

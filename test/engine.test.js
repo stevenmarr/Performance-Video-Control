@@ -230,7 +230,7 @@ test('a fresh Engine has no RS6 address and connect does not log a refused simul
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('a leftover factory default 127.0.0.1:3001 is forgotten, and a user-saved or preset-backed RS6 is kept', async () => {
+test('a leftover factory default 127.0.0.1:3001 is forgotten, even when old presets remain; a user-saved RS6 is kept', async () => {
   const os = require('os');
   const stale = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6stale-'));
   const claimed = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6claim-'));
@@ -253,8 +253,11 @@ test('a leftover factory default 127.0.0.1:3001 is forgotten, and a user-saved o
     fs.writeFileSync(path.join(preset, 'settings.json'), JSON.stringify({ host: '127.0.0.1', restPort: 3001, awjPort: 10606, protocol: 'rest' }));
     fs.writeFileSync(path.join(preset, 'presets.json'), JSON.stringify({ version: 2, presets: [{ number: 1, name: 'Walk-in', destinations: ['S1'], memories: { S1: 1 } }] }));
     const used = new Engine({ dataDir: preset });
-    assert.equal(used.settings.host, '127.0.0.1');
-    assert.equal(used.rs6Configured(), true);
+    assert.equal(used.settings.host, '', 'leftover presets do not keep the factory simulator address');
+    assert.equal(used.rs6Configured(), false);
+    assert.equal(used.presets.length, 1, 'the presets file itself is not deleted');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(preset, 'settings.json'), 'utf8')).host, '');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(preset, 'presets.json'), 'utf8')).presets[0].name, 'Walk-in');
     used.close();
   } finally {
     fs.rmSync(stale, { recursive: true, force: true });

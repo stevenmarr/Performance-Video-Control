@@ -65,6 +65,7 @@ test('an E2 heartbeat crash does not drop PixelHue', async () => {
   const ph = new MockPixelHue();
   const e2Port = await e2.start(0);
   const phPort = await ph.start(0);
+  fs.writeFileSync(path.join(dir, 'systems.json'), JSON.stringify({ version: 1, active: 'e2', armed: ['e2', 'pixelhue'], connections: {}, sessions: {}, instances: [] }));
   const sm = new SystemManager({
     dataDir: dir,
     engine: fakeEngine(),

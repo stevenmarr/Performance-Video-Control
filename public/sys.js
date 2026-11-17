@@ -72,6 +72,18 @@
     if (st.connected) return { cls: 'ok', txt: 'ONLINE' };
     return { cls: 'off', txt: 'OFFLINE' };
   }
+  function typeOnDesk(type) {
+    return instances().some((i) => i.armed && typeOf(i.id) === type);
+  }
+  // AVAILABLE cards are templates. A type with nothing on the desk must not
+  // show OFFLINE or FAILED from a leftover or parked connection.
+  function palStatus(s) {
+    if (!s) return { cls: 'off', txt: 'UNKNOWN' };
+    const conf = s.configured !== undefined ? s.configured : !!(s.connection && (s.connection.host || (s.connection.cameras && s.connection.cameras.length)));
+    if (!conf) return { cls: 'idle', txt: 'NOT CONFIGURED' };
+    if (!typeOnDesk(s.key || s.type)) return { cls: 'idle', txt: 'NOT ON DESK' };
+    return statusOf(s);
+  }
   const ver = (v) => (v && typeof v === 'object' ? `${v.major}.${v.minor}.${v.patch}` : v || '');
 
   // ---------- 0.11.0 two-row navigation (docs/navigation.md) ----------
@@ -272,7 +284,7 @@
     const sts = desk.map(statusOf);
     $('#dashSummary').innerHTML = `<b>${Object.keys(SYS.systems).length}</b> types · <b>${desk.length}</b> on the desk · <span class="ok">${sts.filter((x) => x.cls === 'ok').length} online</span> · <span class="off">${sts.filter((x) => x.cls === 'off' || x.cls === 'warn').length} offline / degraded</span>`;
     const palRow = (s) => {
-      const st = statusOf(s);
+      const st = palStatus(s);
       return `<article class="sys-card avail ${st.cls}" data-card="${s.key}" data-pal="${s.key}" draggable="true" title="Drag onto the desk. This stays here — it is a template, not a used-up device.">
         <div class="mono">${MONO[s.key] || '?'}</div>
         <div class="nm">${esc(s.short || s.label)}</div>
@@ -309,11 +321,11 @@
     const order = groups.flatMap((g) => g.systems);
     const leftPool = (groupSel === 'all' ? order : groups.find((g) => g.name === groupSel).systems).filter((k) => SYS.systems[k]);
     const q = dashQ.trim().toLowerCase();
-    const stOk = (k) => { const x = SYS.systems[k]; const c = statusOf(x).cls; return dashSt === 'all' || (dashSt === 'online' && c === 'ok') || (dashSt === 'issues' && (c === 'off' || c === 'warn')) || (dashSt === 'idle' && c === 'idle'); };
-    const qOk = (k) => { const x = SYS.systems[k]; return !q || `${x.key} ${x.short} ${x.label} ${x.group || ''} ${x.kind} ${statusOf(x).txt} ${(x.connection && x.connection.host) || ''}`.toLowerCase().includes(q); };
+    const stOk = (k) => { const x = SYS.systems[k]; const c = palStatus(x).cls; return dashSt === 'all' || (dashSt === 'online' && c === 'ok') || (dashSt === 'issues' && (c === 'off' || c === 'warn')) || (dashSt === 'idle' && c === 'idle'); };
+    const qOk = (k) => { const x = SYS.systems[k]; return !q || `${x.key} ${x.short} ${x.label} ${x.group || ''} ${x.kind} ${palStatus(x).txt} ${(x.connection && x.connection.host) || ''}`.toLowerCase().includes(q); };
     const cnt = (f) => leftPool.filter((k) => qOk(k) && f(k)).length;
     const stChip = (k, l, f) => `<button class="mode ${dashSt === k ? 'active' : ''}" data-dashst="${k}" type="button">${l} <small>${cnt(f)}</small></button>`;
-    set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('online', 'ONLINE', (k) => statusOf(SYS.systems[k]).cls === 'ok') + stChip('issues', 'ISSUES', (k) => ['off', 'warn'].includes(statusOf(SYS.systems[k]).cls)) + stChip('idle', 'NOT SET UP', (k) => statusOf(SYS.systems[k]).cls === 'idle'));
+    set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('online', 'ONLINE', (k) => palStatus(SYS.systems[k]).cls === 'ok') + stChip('issues', 'ISSUES', (k) => ['off', 'warn'].includes(palStatus(SYS.systems[k]).cls)) + stChip('idle', 'NOT SET UP', (k) => palStatus(SYS.systems[k]).cls === 'idle'));
     const offKeys = leftPool.filter((k) => qOk(k) && stOk(k));
     const block = (title, hint, html) => `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div>${html}</section>`;
     const leftHtml = offKeys.length
