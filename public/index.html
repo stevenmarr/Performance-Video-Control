@@ -6,6 +6,20 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#0b0d10">
 <title>Control Center</title>
+<script>
+(function () {
+  try {
+    var p = JSON.parse(localStorage.getItem('cc.prefs') || '{}') || {};
+    var t = p.theme || 'dark';
+    if (t === 'system') t = (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    if (t !== 'light') t = 'dark';
+    document.documentElement.dataset.theme = t;
+    document.documentElement.style.colorScheme = t;
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.content = t === 'light' ? '#f3f5f7' : '#0b0d10';
+  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+})();
+</script>
 <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png">
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -46,7 +60,9 @@
     <button class="tab tab-modules" data-tab="modsys" title="Connection modules: setup, status, buttons, variables and feedbacks. No surface pages.">MODULES</button>
     <button class="tab tab-cues" data-tab="cues" title="Cues. RUN CUE plays the loaded cue. The button locks while that timeline is running.">CUES</button>
     <button class="tab tab-looks" data-tab="looks" title="Hi-res cue stack for one switcher: RS6, E2 or PixelHue. Absolute and relative recalls. Not ATEM.">PRESETS</button>
-    <button class="tab tab-decks" data-tab="decks" title="USB Stream Decks, the button library, and Path C page push. USB needs the Elgato app quit. Path C push needs the plugin.">Control Devices</button>
+    <button class="tab tab-decks" data-tab="decks" title="USB Stream Decks. Quit the Elgato app so this app can open the deck.">Control Devices</button>
+    <button class="tab tab-buttons" data-tab="buttons" title="Create and edit library buttons: keys, encoders, and touch segments, with actions, variables, and feedbacks. Placement is on PAGES.">BUTTONS</button>
+    <button class="tab tab-pages" data-tab="pages" title="Lay out a surface from library buttons, then push that page to an online Path C deck. The Elgato plugin has to be running for that push.">PAGES</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
@@ -82,7 +98,7 @@
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
   <span class="tabs-home-note" id="tabsLooksNote" hidden>One switcher per stack. Absolute is a full look. Relative changes only that preset's layers. GO loads preview. Bail loads after TAKE.</span>
   <span class="tabs-home-note" id="tabsCuesNote" hidden>Drag a preset onto a cue or its timeline. RUN CUE plays that cue and locks until the timeline finishes.</span>
-  <span class="tabs-home-note" id="tabsDecksNote" hidden>DEVICES is USB (quit the Elgato app so this app can open the deck). PAGES pushes a layout to the Path C plugin.</span>
+  <span class="tabs-home-note" id="tabsDecksNote" hidden>DEVICES is USB (quit the Elgato app so this app can open the deck). BUTTONS creates library keys. PAGES lays out a surface and pushes it to the Path C plugin.</span>
   <button type="button" class="tab decks-sub" data-tab="decks" hidden>DEVICES</button>
   <button type="button" class="tab decks-sub" data-tab="buttons" hidden>BUTTONS</button>
   <button type="button" class="tab decks-sub" data-tab="pages" hidden>PAGES</button>
@@ -581,6 +597,13 @@
 <dialog id="dlgSettings">
   <form method="dialog" id="formSettings" class="form">
     <h2>Device settings</h2>
+    <label>Appearance
+      <select name="uiTheme" id="uiTheme" title="Light and dark appearance for Control Center. Scopes is a separate Mac app and stays dark.">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="system">System</option>
+      </select>
+    </label>
     <div class="note" id="mockNote" hidden>Mock mode: the app is talking to its built-in simulated RS6. Host/ports are fixed.</div>
     <label>Device IP / host <input name="host" required placeholder="192.168.2.140 or 127.0.0.1"></label>
     <div class="row2">

@@ -5,8 +5,9 @@
 One desk for the show. The app runs on a Mac (or a Pi that only relays video) and serves a dark,
 touch-friendly UI. An iPad or phone on the same network opens it in a browser.
 
-The top row is **SYSTEMS**, the systems you have put on the desk, and **Control Devices**. Each system you add
-gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green. **Control Devices** draws those pages on Stream Decks over USB.
+The top row is **SYSTEMS**, the systems you have put on the desk, **Control Devices**, **BUTTONS**, and **PAGES**. Each system you add
+gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green. **BUTTONS** is the library. **PAGES** lays those buttons out on a Stream Deck and pushes the page. **Control Devices** is the USB assign view.
+Appearance (dark, light, or system) is in Settings. The default is dark. Scopes is a separate Mac app and stays dark.
 
 | On the desk | What it drives |
 |---|---|
@@ -105,7 +106,7 @@ Group chips (Presentation switchers, Production switchers, Cameras, Media server
 box filter the cards. The look matches the rest of Control Center: dark panels, red for the system
 you are in.
 
-Stream Deck pages are **Control Devices → PAGES**. That push goes to the Path C plugin. SYSTEMS does not export a Companion page file.
+Stream Deck pages are the top-level **PAGES** tab. That push goes to the Path C plugin. SYSTEMS does not export a Companion page file.
 
 ---
 
@@ -149,7 +150,7 @@ Two paths stay. They do not share a device.
 
 **Control Devices → DEVICES** owns the deck over USB, including on a Pi. Quit the Elgato app so this app can open the keys.
 
-**Control Devices → PAGES** pushes a saved page to the Elgato plugin (Path C). The plugin `com.performancevideo.control` calls this app over HTTP. This app calls the camera. The Stream Deck does not open a camera connection. Companion is not in that path. Leave the Elgato app running for a push.
+The top-level **PAGES** tab pushes a saved page to the Elgato plugin (Path C). The plugin `com.performancevideo.control` calls this app over HTTP. This app calls the camera. The Stream Deck does not open a camera connection. Companion is not in that path. Leave the Elgato app running for a push.
 
 | | |
 |---|---|
@@ -205,7 +206,7 @@ A client that calls `POST /api/sys/ptz/cmd/step` with an explicit `steps` count 
 HOME on every page opens Control Center. It does not recall a shot. Red is program / live only.
 ALL STOP is the bottom-right key on every page.
 
-The same plugin listens on `127.0.0.1:9721`. **Control Devices → PAGES** pushes through that path. The USB view on DEVICES does not.
+The same plugin listens on `127.0.0.1:9721`. The **PAGES** tab pushes through that path. The USB view on DEVICES does not.
 
 ---
 

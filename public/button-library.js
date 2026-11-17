@@ -1,6 +1,6 @@
 'use strict';
-// BUTTONS, under Control Devices. Creates library buttons through the Step 1
-// routes. Placement is the PAGES page, not this one.
+// BUTTONS, a top-level Control Center tab. Creates library buttons through the Step 1
+// routes. Placement is the PAGES tab, not this one.
 (() => {
   const root = document.querySelector('#buttonRoot');
   if (!root || !window.CC) return;
@@ -133,6 +133,7 @@
         <label>Name<input data-field="name" value="${esc(button.name)}"></label>
         <label>Element<select data-field="element">${elements}</select></label>
         <label>Role<select data-field="role">${roles}</select></label>
+        <label>Look<select data-field="theme"><option value="dark"${button.theme !== 'light' ? ' selected' : ''}>Dark (mission-critical)</option><option value="light"${button.theme === 'light' ? ' selected' : ''}>Light</option></select></label>
         <label>Text<input data-field="text" value="${esc(button.text || '')}" placeholder="$(atem:name)"></label>
         <label>Title<input data-field="title" value="${esc(button.title || '')}"></label>
         <label>Caption<input data-field="caption" value="${esc(button.caption || '')}"></label>

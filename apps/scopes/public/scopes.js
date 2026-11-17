@@ -46,15 +46,10 @@
       $('#panels').classList.toggle('solo', !!st.solo && st.show.has(st.solo));
     }
     document.querySelectorAll('.pnl').forEach((p) => p.classList.toggle('max', p.dataset.k === st.solo));
-    // Same column grid as the PTZ dock. The row unit grows so the panels fill this stage instead of scrolling off it.
-    if (scopeDock && scopeDock.layout) {
-      const items = scopeDock.layout().filter((it) => !it.closed && !it.f);
-      const rows = items.reduce((m, it) => Math.max(m, it.y + (it.c ? 1 : it.h)), 1) || 1;
-      const gap = 8;
-      const ph = $('#panels').clientHeight;
-      const row = Math.max(12, Math.floor((ph - gap * Math.max(0, rows - 1)) / rows));
-      $('#panels').style.setProperty('--dk-row', `${row}px`);
-    }
+    // Row unit stays the dock default (30 px). The stage scrolls vertically when the grid is taller
+    // than the window. The GL / overlay canvases stay viewport-sized (sticky), so a taller page
+    // does not allocate a giant buffer. --stage-vh sizes those canvases to the visible port.
+    stage.style.setProperty('--stage-vh', `${H}px`);
     const sb = stage.getBoundingClientRect(); rects = {};
     for (const p of vis) {
       if (p.offsetParent === null) continue;
@@ -105,8 +100,11 @@
     }
     ctx.restore();
   }
-  new ResizeObserver(layout).observe($('#stage'));
-  window.addEventListener('resize', layout);
+  let layoutRaf = 0;
+  const requestLayout = () => { if (layoutRaf) return; layoutRaf = requestAnimationFrame(() => { layoutRaf = 0; layout(); }); };
+  if (window.ResizeObserver) new ResizeObserver(requestLayout).observe($('#stage'));
+  window.addEventListener('resize', requestLayout);
+  $('#stage').addEventListener('scroll', requestLayout, { passive: true });
 
   // ---------- controls ----------
   function applyOpts() {

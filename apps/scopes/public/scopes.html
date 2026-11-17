@@ -9,7 +9,7 @@
   :root { --bg: #121212; --panel: #1a1a1a; --line: #2a2a2a; --txt: #F5F5F5; --dim: #9a9a9a; --acc: #C42020; --ok: #3fbf6a; --bad: #e5484d; }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--bg); color: var(--txt); font: 13px/1.3 -apple-system, "Segoe UI", Roboto, Arial, sans-serif; overflow: hidden; }
-  body { display: flex; flex-direction: column; }
+  body { display: flex; flex-direction: column; min-height: 0; }
   .bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 8px; background: var(--panel); border-bottom: 1px solid var(--line); }
   .bar .grp { display: inline-flex; gap: 2px; align-items: center; }
   .bar .lbl { color: var(--dim); font-size: 11px; letter-spacing: .06em; margin: 0 4px 0 6px; }
@@ -19,12 +19,20 @@
   button:focus-visible, select:focus-visible { outline: 2px solid var(--acc); outline-offset: 1px; }
   select { max-width: 260px; }
   input[type=range] { padding: 0; min-height: 0; width: 90px; accent-color: var(--acc); background: none; border: 0; }
-  .stage { position: relative; flex: 1; min-height: 0; }
+  .stage { position: relative; flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; -webkit-overflow-scrolling: touch; }
+  /* Sticky viewport for the GL / overlay canvases. Height 0 so it does not add to the scroll
+     height; the canvases are painted over the visible port only. */
+  .stage-port { position: sticky; top: 0; height: 0; overflow: visible; pointer-events: none; z-index: 1; }
+  .stage-port .msg, .stage-port .note { pointer-events: auto; z-index: 6; }
+  .stage-port canvas.gl, .stage-port canvas.ov { position: absolute; top: 0; left: 0; width: 100%; height: var(--stage-vh, 100%); pointer-events: none; }
   /* Same dock chrome as the PTZ camera page: 24-column grid, header, edge resize, LAYOUT menu.
-     The picture stays on the canvas behind the cards, so the body is transparent. */
-  .panels { position: absolute; inset: 6px; z-index: 3; pointer-events: none; display: grid;
+     The picture stays on the canvas behind the cards, so the body is transparent.
+     The grid is in normal flow (not stretched to the stage) so a fixed 30 px row can grow
+     the page and the stage can scroll. */
+  .panels { position: relative; z-index: 3; pointer-events: none; display: grid; margin: 6px;
+    min-height: calc(100% - 12px);
     grid-template-columns: repeat(var(--dk-cols, var(--cols, 2)), minmax(0, 1fr));
-    grid-auto-rows: var(--dk-row, minmax(0, 1fr)); gap: var(--dk-gap, 8px); align-content: start; }
+    grid-auto-rows: var(--dk-row, 30px); gap: var(--dk-gap, 8px); align-content: start; }
   .panels.solo > .pnl:not(.max) { display: none; }
   .panels.solo { grid-template-columns: 1fr; }
   .pnl { border: 1px solid #2a3442; border-radius: 12px; min-width: 0; min-height: 0; position: relative; background: transparent; }
@@ -116,6 +124,11 @@
   <b style="color:var(--txt)">Desktop Video.</b> The INPUT list is every DeckLink input this Mac can see, including an UltraStudio Mini Replay. Pick it and capture starts. The helper is built once with <code>npm run build</code> in <code>apps/scopes</code> (<code>make</code> in <code>tools/native/decklink-recv</code>). Scopes runs on this Mac, not on the Pi.
 </aside>
 <div class="stage" id="stage">
+  <div class="stage-port" id="stagePort">
+    <canvas class="gl" id="gl"></canvas><canvas class="ov" id="ov"></canvas>
+    <div class="msg" id="msg" hidden></div>
+    <div class="note" id="note" hidden></div>
+  </div>
   <div class="panels" id="panels">
     <div class="pnl" data-k="pic" aria-label="Picture">
       <div class="scope-tools" aria-label="Picture">
@@ -143,9 +156,6 @@
     </div>
     <div class="pnl" data-k="ltng" aria-label="Lightning"></div>
   </div>
-  <canvas class="gl" id="gl"></canvas><canvas class="ov" id="ov"></canvas>
-  <div class="msg" id="msg" hidden></div>
-  <div class="note" id="note" hidden></div>
   <video id="vid" muted playsinline style="position:absolute;width:2px;height:2px;opacity:0;pointer-events:none"></video>
 </div>
 <div class="ro" id="ro" aria-live="off"></div>

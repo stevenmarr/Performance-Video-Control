@@ -604,10 +604,8 @@
     // 0.5.0 fix: MOVE (and SAVE) used to stay on across tab switches, so taps meant as RECALL on the way back
     // picked and moved tiles ("the presets are re ordered"). Leaving PRESETS always returns to RECALL.
     if (tab !== 'presets' && (mode === 'move' || mode === 'save')) setMode('recall');
-    const deckOpen = tab === 'decks' || tab === 'buttons' || tab === 'pages';
     document.querySelectorAll('.tab').forEach((x) => {
-      const topDeck = x.classList.contains('tab-decks') && !x.classList.contains('decks-sub');
-      x.classList.toggle('active', x.dataset.tab === tab || (deckOpen && topDeck));
+      x.classList.toggle('active', x.dataset.tab === tab);
     });
     for (const x of TABS) { const el = $(`#pane-${x}`); if (el) el.hidden = x !== tab && !(tab === 'amv' && x === 'alayout'); }
     for (const x of TABS) document.body.classList.toggle(`tab-${x}`, x === tab);

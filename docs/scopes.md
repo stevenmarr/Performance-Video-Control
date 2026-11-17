@@ -14,3 +14,6 @@ Legacy NDI: [apps/scopes/docs/ndi-ingest.md](../apps/scopes/docs/ndi-ingest.md).
 
 You cannot type a new source in the INPUT menu. The list is Desktop Video devices, cameras, test clips,
 and a legacy NDI sidecar only while it is pushing.
+
+The scope dock uses the same 30 px row unit as the PTZ camera page. The stage scrolls vertically
+when the grid is taller than the window. Panels are not shrunk to fit the viewport.
