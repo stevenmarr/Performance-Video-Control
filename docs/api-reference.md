@@ -1,6 +1,6 @@
 # HTTP and stream API reference
 
-Documented from the code on the default branch `performance-video-control`, v0.29.3, commit 251a29d9049c53723210ea0e1ab057dfcd3a6ef2. Only what the code registers is listed. Fields that are large or built from live desk state are summarized by their top-level keys. Anything not shown clearly in the handler is marked unverified.
+Documented from the code on the default branch `performance-video-control`, v0.30.0, commit 251a29d9049c53723210ea0e1ab057dfcd3a6ef2. Only what the code registers is listed. Fields that are large or built from live desk state are summarized by their top-level keys. Anything not shown clearly in the handler is marked unverified.
 
 The app listens with `node server.js`. Default port is 8080 (`--port` or `PORT`). Default bind is `0.0.0.0` (`--host` or `HOST`). Data lives in the directory from `lib/datadir.js` (`--data` or `RS6_DATA_DIR`). `--mock` starts in-process simulators.
 
