@@ -40,7 +40,9 @@
     const driver = control.driver || {};
     const live = (control.devices || []).filter((d) => d.transport === 'usb');
     if (note) {
-      note.textContent = !driver.installed
+      note.textContent = control.companionDrivesDecks
+        ? 'Companion drives the Stream Decks (COMPANION tab → Let Companion drive Stream Decks). Control Center does not open them while that is on.'
+        : !driver.installed
         ? (driver.error || 'USB driver is not installed.')
         : (live.length
           ? `${live.length} Stream Deck${live.length === 1 ? '' : 's'} on USB. Each one keeps its own system.`

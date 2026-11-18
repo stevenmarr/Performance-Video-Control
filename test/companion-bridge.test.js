@@ -30,7 +30,7 @@ test('the buttons model lists every CC button and page, with the + XL strip and 
   const { lib, cut, page } = sample(data);
   const bridge = new CompanionBridge({ dataDir: data, buttons: lib, appVersion: '0.31.0', apiVersion: 9 });
   const model = bridge.buttonsModel();
-  assert.equal(model.moduleId, 'rs6-presets');
+  assert.equal(model.moduleId, 'pvllc-control-center');
   assert.equal(model.buttons.length, 3);
   const b = model.buttons.find((x) => x.id === cut.id);
   assert.deepEqual(b.events, ['press']);
@@ -63,7 +63,12 @@ test('a page export is a Companion version 6 page with keys on top, then touch, 
   assert.equal(j.page.surfaceLayout, 'streamdeck-plus-xl');
   assert.deepEqual(j.page.gridSize, { minColumn: 0, maxColumn: 8, minRow: 0, maxRow: 5 });
   const conn = Object.keys(j.instances)[0];
-  assert.equal(j.instances[conn].moduleId, 'rs6-presets');
+  assert.equal(j.instances[conn].moduleId, 'pvllc-control-center');
+  // 0.31.1: when Companion only has legacy rs6-presets connections, the export matches them
+  bridge.status.connections = [{ id: 'c1', label: 'cc', moduleId: 'rs6-presets', legacy: true }];
+  const legacy = JSON.parse(bridge.companionConfig(page.id).body);
+  assert.equal(Object.values(legacy.instances)[0].moduleId, 'rs6-presets');
+  bridge.status.connections = [];
   const key = j.page.controls[3][8];
   assert.equal(key.type, 'button');
   assert.equal(key.steps[0].action_sets.down[0].action, 'cc_button_run');
@@ -115,11 +120,14 @@ test('config is host and port only, saved to companion.json; check tells Compani
   const data = dir();
   const lib = new ButtonLibrary({ dataDir: data });
   let mode = 'api';
+  let withNew = false;
   const fake = http.createServer((req, res) => {
     res.setHeader('X-App', 'Bitfocus Companion');
     if (req.url === '/api/connections' && mode === 'api') {
       res.setHeader('Content-Type', 'application/json');
-      return res.end(JSON.stringify([{ id: 'c1', label: 'cc', moduleId: 'rs6-presets', enabled: true, status: { category: 'good' } }, { id: 'c2', label: 'atem', moduleId: 'bmd-atem', enabled: true }]));
+      const list = [{ id: 'c1', label: 'cc', moduleId: 'rs6-presets', enabled: true, status: { category: 'good' } }, { id: 'c2', label: 'atem', moduleId: 'bmd-atem', enabled: true }];
+      if (withNew) list.push({ id: 'c3', label: 'pvcc', moduleId: 'pvllc-control-center', enabled: true });
+      return res.end(JSON.stringify(list));
     }
     res.statusCode = mode === 'api' ? 200 : 404;
     res.end('<html><title>Bitfocus Companion</title></html>');
@@ -134,11 +142,16 @@ test('config is host and port only, saved to companion.json; check tells Compani
     assert.throws(() => bridge.setConfig({ host: '127.0.0.1', port: 70000 }), (e) => e.status === 400);
     bridge.setConfig({ host: '127.0.0.1', port });
     const saved = JSON.parse(fs.readFileSync(path.join(data, 'companion.json'), 'utf8'));
-    assert.deepEqual(Object.keys(saved).sort(), ['host', 'port', 'syncSeq', 'syncedAt']);
+    assert.deepEqual(Object.keys(saved).sort(), ['companionUsed', 'driveDecks', 'host', 'port', 'syncSeq', 'syncedAt']);
     let v = await bridge.check();
     assert.equal(v.status.online, true);
     assert.equal(v.status.httpApi, true);
     assert.deepEqual(v.status.connections.map((c) => c.label), ['cc']);
+    assert.equal(v.status.connections[0].legacy, true);
+    withNew = true; // 0.31.1: both the new id and the legacy id are listed
+    v = await bridge.check();
+    assert.deepEqual(v.status.connections.map((c) => [c.label, c.moduleId, c.legacy]), [['cc', 'rs6-presets', true], ['pvcc', 'pvllc-control-center', false]]);
+    withNew = false;
     mode = 'noapi';
     v = await bridge.check();
     assert.equal(v.status.online, true);
@@ -173,11 +186,16 @@ test('HTTP: /api/companion routes, the page export download, and copy / reorder 
     const p = JSON.parse((await call('POST', '/api/surface-pages', { name: 'Show', surface: 'xl', keys: [{ row: 0, col: 0, buttonId: b.id }] })).text);
     const view = JSON.parse((await call('GET', '/api/companion')).text);
     assert.equal(view.counts.pages, 1);
-    assert.equal(view.moduleId, 'rs6-presets');
+    assert.equal(view.moduleId, 'pvllc-control-center');
+    assert.deepEqual(view.legacyModuleIds, ['rs6-presets']);
     const model = JSON.parse((await call('GET', '/api/companion/buttons')).text);
     assert.equal(model.buttons[0].id, b.id);
     const hello = JSON.parse((await call('POST', '/api/companion/hello', { moduleVersion: '0.10.0', label: 'cc', rev: model.rev })).text);
     assert.equal(hello.rev, model.rev);
+    assert.equal(JSON.parse((await call('GET', '/api/companion')).text).decks.drive, true, '0.31.1: the module reporting in hands the decks to Companion');
+    const off = JSON.parse((await call('POST', '/api/companion/decks', { drive: false })).text);
+    assert.equal(off.decks.drive, false);
+    assert.equal((await call('POST', '/api/companion/decks', { drive: 'sometimes' })).status, 400);
     const synced = JSON.parse((await call('POST', '/api/companion/sync', {})).text);
     assert.notEqual(synced.rev, model.rev);
     const file = await call('GET', `/api/companion/pages/${p.id}/companionconfig`);
@@ -269,4 +287,78 @@ test('migration: old surface-pages.json and button-library.json are stamped vers
   assert.throws(() => lib.reorderPages(['p1', 'p1']), (e) => e.status === 400);
   assert.throws(() => lib.reorderPages(['nope']), (e) => e.status === 404);
   fs.rmSync(data, { recursive: true, force: true });
+});
+
+test('0.31.1 "Let Companion drive Stream Decks": automatic once Companion is in use, explicit on / off, persisted', async () => {
+  const data = dir();
+  const lib = new ButtonLibrary({ dataDir: data });
+  const calls = [];
+  const decks = { releasedToCompanion: [], setCompanionDrivesDecks: async (on) => { calls.push(on); } };
+  const bridge = new CompanionBridge({ dataDir: data, buttons: lib, decks });
+  assert.deepEqual(bridge.view().decks, { drive: false, setting: 'auto', companionUsed: false, released: 0 });
+  bridge.hello({ moduleVersion: '0.11.0', label: 'pvcc' });
+  assert.equal(bridge.view().decks.drive, true, 'the module reporting in turns the automatic default on');
+  assert.equal(calls[calls.length - 1], true);
+  const again = new CompanionBridge({ dataDir: data, buttons: lib, decks });
+  assert.equal(again.view().decks.drive, true, 'persisted: a restart releases the decks before USB starts');
+  assert.equal(calls[calls.length - 1], true);
+  let v = await again.setDecks({ drive: false });
+  assert.deepEqual([v.decks.drive, v.decks.setting], [false, false]);
+  assert.equal(calls[calls.length - 1], false);
+  assert.equal(new CompanionBridge({ dataDir: data, buttons: lib }).drivesDecks(), false, 'an explicit off survives a restart');
+  v = await again.setDecks({ drive: 'auto' });
+  assert.deepEqual([v.decks.drive, v.decks.setting], [true, 'auto']);
+  await assert.rejects(again.setDecks({ drive: 'maybe' }), (e) => e.status === 400);
+  fs.rmSync(data, { recursive: true, force: true });
+});
+
+test('0.31.1 deck service: Companion driving the decks closes every USB handle and stops opening decks', async () => {
+  const data = dir();
+  const { DeckService } = require('../lib/decks/service');
+  const svc = new DeckService({ dataDir: data, usbEnv: { CC_DECK_USB: '0' } });
+  let closed = 0;
+  let scans = 0;
+  const deck = { id: 'hid-1', serial: 'AD4MA61012E9ZB', model: 'Stream Deck XL', transport: 'usb' };
+  svc.usb = {
+    isolated: true, disabled: false, lastReport: null, openErrors: [],
+    status: () => ({ installed: true }), scan: async () => { scans += 1; return [deck]; },
+    close: async () => { closed += 1; }, closeId: async () => true, paint: async () => false, buttonSize: () => null, stop() {},
+  };
+  svc.usbDevices = [deck];
+  const out = await svc.setCompanionDrivesDecks(true);
+  assert.deepEqual(out, { companionDrivesDecks: true, released: 1 });
+  assert.equal(closed, 1, 'all USB deck handles closed');
+  assert.deepEqual(svc.usbDevices, []);
+  await svc.pollUsb();
+  assert.equal(scans, 0, 'no USB scan, so Control Center never reopens the deck');
+  const listed = await svc.view({ refresh: false });
+  assert.equal(listed.control.companionDrivesDecks, true);
+  assert.deepEqual(listed.control.releasedToCompanion.map((d) => d.serial), ['AD4MA61012E9ZB']);
+  await svc.setCompanionDrivesDecks(false);
+  delete process.env.CC_DECK_USB; // this file turns real USB off; the fake usb above stands in
+  try { await svc.pollUsb(); } finally { process.env.CC_DECK_USB = '0'; }
+  assert.equal(scans, 1, 'turned off: Control Center scans and opens decks again');
+  assert.equal(svc.companionDrivesDecks, false);
+  svc.stopUsb();
+  fs.rmSync(data, { recursive: true, force: true });
+});
+
+test('0.31.1 USB worker: suspend closes the decks, ends the worker process and keeps it from respawning until resume', async () => {
+  const { EventEmitter } = require('events');
+  const { UsbWorker } = require('../lib/decks/usb-host');
+  const w = new UsbWorker({ log: () => {} });
+  const ops = [];
+  const child = new EventEmitter();
+  Object.assign(child, { connected: true, exitCode: null, signalCode: null, kill: (sig) => { ops.push(`kill ${sig}`); child.connected = false; setImmediate(() => child.emit('exit', null, sig)); } });
+  w._child = child;
+  w._rpc = async (op) => { ops.push(op); return { ok: true }; };
+  let spawned = 0;
+  w._spawn = () => { spawned += 1; };
+  await w.suspend();
+  assert.deepEqual(ops, ['close', 'kill SIGTERM'], 'handles closed first, then the process ends');
+  assert.equal(w._child, null);
+  await assert.rejects(w._ensure(), /handed to Companion/);
+  assert.equal(spawned, 0, 'no respawn while Companion drives the decks');
+  w.resume();
+  assert.equal(w._suspended, false);
 });
