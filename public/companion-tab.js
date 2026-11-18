@@ -31,7 +31,7 @@
       rows.push(conns.length
         ? conns.map((c) => `<div class="cmp-row"><i class="cmp-dot ${c.enabled ? 'ok' : 'warn'}"></i><b>${esc(c.label || c.id)}</b><small>${esc(c.moduleId || v.moduleId)}${c.legacy ? ' (old id)' : ''} · ${c.enabled ? 'enabled' : 'disabled'}${c.status && c.status.category ? ` · ${esc(c.status.category)}` : ''}${c.status && c.status.message ? ` · ${esc(c.status.message)}` : ''}</small></div>`).join('')
         : `<p class="note small">No Control Center module connection in Companion. Install the Control Center module, then add a "Performance Video Control Center" connection pointing at this app.</p>`);
-      if (conns.some((c) => c.legacy)) rows.push(`<p class="note small">A connection still uses the old module id rs6-presets. Import Control Center module 0.11.0 or newer from <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">the releases page</a>; Companion moves the connection to the new id.</p>`);
+      if (conns.some((c) => c.legacy)) rows.push(`<p class="note small">A connection still uses the old module id rs6-presets. It runs the old rs6-presets code, which does not see CC buttons and pages. PV Companion moves it to the built-in Performance Video Control Center module at start-up; in stock Companion import module 0.11.0 or newer from <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">the releases page</a>, then edit the connection and change its module to Performance Video Control Center.</p>`);
     }
     if (m) {
       rows.push(`<div class="cmp-row"><i class="cmp-dot ${m.current ? (m.stale ? 'warn' : 'ok') : 'off'}"></i><b>Module ${esc(m.version || '?')}</b><small>${m.label ? `${esc(m.label)} · ` : ''}last seen ${esc(new Date(m.at).toLocaleTimeString())}${m.presets != null ? ` · ${m.presets} presets` : ''}</small></div>`);
@@ -58,18 +58,26 @@
     </div>`;
   }
 
-  function paint() {
-    if (!view) { root.innerHTML = '<p class="note">Loading…</p>'; return; }
-    const v = view;
+  // The left column (status, module, decks, sync) is repainted freely. The right
+  // column holds Companion's web UI in an iframe and is only rebuilt when what it
+  // shows changes (address, online, Show here): replacing or moving an iframe
+  // reloads Companion's UI back to its start page (Connections). 0.31.2.
+  let frameKey = null;
+  function frameHtml(v) {
+    const url = v.webUrl;
+    const online = !!(v.status && v.status.online);
+    const frame = showFrame && online
+      ? `<iframe class="cmp-frame" src="${esc(url)}" title="Companion web UI" referrerpolicy="no-referrer"></iframe>`
+      : `<p class="note">${online ? 'Companion\'s web UI is hidden.' : 'Companion\'s web UI shows here once Companion answers.'} <a href="${esc(url)}" target="_blank" rel="noopener">Open ${esc(url)} in a new window</a>.</p>`;
+    return `<div class="cmp-row"><b>COMPANION WEB UI</b><span class="spacer"></span>
+          <label class="chk"><input type="checkbox" id="cmpFrame"${showFrame ? ' checked' : ''}> Show here</label>
+          <a class="btn mini" href="${esc(url)}" target="_blank" rel="noopener">Open in a new window</a></div>
+        ${frame}`;
+  }
+  function leftHtml(v) {
     const st = statusLine(v);
     const pages = (v.pages || []).map((p) => `<div class="cmp-row"><b>${esc(p.name)}</b><small>${esc(p.label || p.surface)}</small><span class="spacer"></span><a class="btn mini" href="/api/companion/pages/${esc(p.id)}/companionconfig" download>.companionconfig</a></div>`).join('') || '<p class="note small">No pages yet. Make one on PAGES.</p>';
-    const url = v.webUrl;
-    const frame = showFrame && v.status && v.status.online
-      ? `<iframe class="cmp-frame" src="${esc(url)}" title="Companion web UI" referrerpolicy="no-referrer"></iframe>`
-      : `<p class="note">${v.status && v.status.online ? 'Companion\'s web UI is hidden.' : 'Companion\'s web UI shows here once Companion answers.'} <a href="${esc(url)}" target="_blank" rel="noopener">Open ${esc(url)} in a new window</a>.</p>`;
-    root.innerHTML = `<div class="cmp-grid">
-      <div>
-        <div class="cmp-card"><h3>CONNECTION</h3>
+    return `<div class="cmp-card"><h3>CONNECTION</h3>
           <div class="cmp-row"><i class="cmp-dot ${st.cls}"></i><span>${esc(st.txt)}</span></div>
           <form class="cmp-row" id="cmpConfig"><label>Host <input name="host" value="${esc(v.config.host)}" autocomplete="off" spellcheck="false" size="14"></label>
             <label>Port <input name="port" type="number" min="1" max="65535" value="${esc(v.config.port)}" style="width:6em"></label>
@@ -83,16 +91,27 @@
           <p class="note small">The module publishes every CC button and page as Companion presets (Presets → Performance Video Control Center). SYNC tells it to refresh now${v.syncedAt ? `; last SYNC ${esc(new Date(v.syncedAt).toLocaleString())}` : ''}. Revision ${esc(v.rev)}.</p>
           <p class="note small">A whole page can also go across as a file. Download it, then in Companion use Import / Export → Import, pick the page to replace, and map "cc" to your Control Center module connection.</p>
           <div class="cmp-pages">${pages}</div>
-        </div>
-      </div>
-      <div>
-        <div class="cmp-row"><b>COMPANION WEB UI</b><span class="spacer"></span>
-          <label class="chk"><input type="checkbox" id="cmpFrame"${showFrame ? ' checked' : ''}> Show here</label>
-          <a class="btn mini" href="${esc(url)}" target="_blank" rel="noopener">Open in a new window</a></div>
-        ${frame}
-      </div>
-    </div>`;
-    frameUrl = url;
+        </div>`;
+  }
+
+  function paint() {
+    if (!view) { root.innerHTML = '<p class="note">Loading…</p>'; frameKey = null; return; }
+    const v = view;
+    let left = root.querySelector('#cmpLeft');
+    let right = root.querySelector('#cmpRight');
+    if (!left || !right) {
+      root.innerHTML = '<div class="cmp-grid"><div id="cmpLeft"></div><div id="cmpRight"></div></div>';
+      left = root.querySelector('#cmpLeft');
+      right = root.querySelector('#cmpRight');
+      frameKey = null;
+    }
+    // Do not repaint while the host / port fields are being typed in.
+    const ae = document.activeElement;
+    const typing = ae && ae.tagName === 'INPUT' && ae.closest && ae.closest('#cmpConfig');
+    if (!typing) left.innerHTML = leftHtml(v);
+    const key = JSON.stringify([v.webUrl, !!(v.status && v.status.online), showFrame]);
+    if (key !== frameKey) { right.innerHTML = frameHtml(v); frameKey = key; }
+    frameUrl = v.webUrl;
   }
 
   async function load(check) {
@@ -137,8 +156,9 @@
   window.addEventListener('cc:tab', (ev) => {
     clearInterval(timer);
     if (ev.detail !== 'companion') return;
-    run(load(true).catch((e) => { root.innerHTML = `<p class="note">${esc(e.message)}</p>`; }));
-    // Status only; the iframe is not reloaded by the poll.
+    run(load(true).catch((e) => { root.innerHTML = `<p class="note">${esc(e.message)}</p>`; frameKey = null; }));
+    // Status only. paint() keeps the iframe unless the address, online state or Show here changed,
+    // so the module's hello (every 30 s, new `at`) no longer reloads Companion's UI.
     timer = setInterval(() => {
       if (document.hidden || !window.CC.getTab || window.CC.getTab() !== 'companion') return;
       api('POST', '/api/companion/check').then((v) => {

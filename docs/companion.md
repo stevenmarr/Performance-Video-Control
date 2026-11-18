@@ -62,3 +62,18 @@ USB deck handles at once and stops opening decks, so Companion picks them up (un
 see it within a few seconds). It is on automatically once the Control Center module reports in or a check finds its
 connection; tick or untick it to choose explicitly, or press **Automatic** to go back. The choice is saved in companion.json.
 Turn it off to drive the decks from Control Center (Control Devices) again, after quitting Companion or disabling its Stream Deck surface.
+
+## Companion's web UI in the tab (0.31.2)
+
+The COMPANION tab shows Companion's own web UI in an iframe. Up to 0.31.1 every status change the 10 s poll saw
+repainted the whole tab, iframe included. The module says hello every 30 s with a new timestamp, so the iframe was
+rebuilt about every 30 s and Companion's UI reloaded at `/`, which redirects to Connections. From 0.31.2 the status
+column repaints on its own and the iframe is only rebuilt when Companion's address, its online state or **Show here**
+changes. Companion opened in its own browser window was never affected by this.
+
+## Old rs6-presets connections
+
+A connection on the old module id `rs6-presets` runs the pre-0.10 code, which has none of the CC buttons and pages.
+Companion only offers the move to `pvllc-control-center` (its `legacyIds`); it does not move it by itself. In stock
+Companion edit the connection and change its module to Performance Video Control Center (import module 0.11.0 or newer
+first). PV Companion ships the module built in and moves `rs6-presets` connections at start-up.
