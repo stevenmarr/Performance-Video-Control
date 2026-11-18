@@ -63,6 +63,7 @@
     <button class="tab tab-decks" data-tab="decks" title="USB Stream Decks. Quit the Elgato app so this app can open the deck.">Control Devices</button>
     <button class="tab tab-buttons" data-tab="buttons" title="Create and edit library buttons: keys, encoders, and touch segments, with actions, variables, and feedbacks. Placement is on PAGES.">BUTTONS</button>
     <button class="tab tab-pages" data-tab="pages" title="Lay out a surface from library buttons, then push that page to an online Path C deck. The Elgato plugin has to be running for that push.">PAGES</button>
+    <button class="tab tab-companion" data-tab="companion" title="Bitfocus Companion: status, the PV Control Center module, sync CC buttons and pages, and Companion's own web UI">COMPANION</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
@@ -98,10 +99,7 @@
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
   <span class="tabs-home-note" id="tabsLooksNote" hidden>One switcher per stack. Absolute is a full look. Relative changes only that preset's layers. GO loads preview. Bail loads after TAKE.</span>
   <span class="tabs-home-note" id="tabsCuesNote" hidden>Drag a preset onto a cue or its timeline. RUN CUE plays that cue and locks until the timeline finishes.</span>
-  <span class="tabs-home-note" id="tabsDecksNote" hidden>DEVICES is USB (quit the Elgato app so this app can open the deck). BUTTONS creates library keys. PAGES lays out a surface and pushes it to the Path C plugin.</span>
-  <button type="button" class="tab decks-sub" data-tab="decks" hidden>DEVICES</button>
-  <button type="button" class="tab decks-sub" data-tab="buttons" hidden>BUTTONS</button>
-  <button type="button" class="tab decks-sub" data-tab="pages" hidden>PAGES</button>
+  <span class="tabs-home-note" id="tabsDecksNote" hidden>Control Devices is USB (quit the Elgato app so this app can open the deck). BUTTONS creates library keys. PAGES lays them out per surface. COMPANION hands both to Companion, which puts them on Stream Decks.</span>
   </div>
 </nav>
 
@@ -503,6 +501,14 @@
     </div>
     <div id="pagesRoot"></div>
   </section>
+  <section class="grid-wrap pane" id="pane-companion" hidden>
+    <div class="scopes-head">
+      <div class="section-title">COMPANION <small>Control Center defines the buttons and pages. Companion puts them on Stream Decks.</small></div>
+      <span class="spacer"></span>
+      <button type="button" class="btn mini" id="btnCmpCheck">Check now</button>
+    </div>
+    <div id="companionRoot"></div>
+  </section>
   <section class="grid-wrap pane" id="pane-pxplay" hidden>
     <div class="board-head"><div class="section-title">PIXERA TIMELINES <small id="pxInfo">transport per timeline</small></div><span class="spacer"></span>
       <button class="btn mini" id="pxRefresh" type="button">⟳ REFRESH</button></div>
@@ -855,6 +861,7 @@
 <script src="/decks.js"></script>
 <script src="/button-library.js"></script>
 <script src="/surface-pages.js"></script>
+<script src="/companion-tab.js"></script>
 <script src="/tsl.js"></script>
 <script src="/modules-tab.js"></script>
 </body>

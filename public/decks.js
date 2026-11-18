@@ -19,7 +19,8 @@
       }
     }
     const strip = knobs ? `<div class="deck-strip">${knobs}</div>` : '';
-    return `${strip}<div class="deck-mini deck-face" style="grid-template-columns:repeat(${columns},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(72px,1fr))">${cells.join('')}</div>`;
+    // Keys on top, the touch strip and dials below them, as on the real + / + XL.
+    return `<div class="deck-mini deck-face" style="grid-template-columns:repeat(${columns},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(72px,1fr))">${cells.join('')}</div>${strip}`;
   }
 
   function picks(device) {

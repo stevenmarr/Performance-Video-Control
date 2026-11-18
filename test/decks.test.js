@@ -173,7 +173,7 @@ test('Control Devices is a top tab and the client owns Stream Decks over USB, no
   assert.match(html, /id="btnDeckScan"/);
   assert.match(html, /src="\/decks\.js"/);
   assert.match(read('public/app.js'), /'decks'/);
-  assert.match(read('public/sys.js'), /decks: \['decks', 'buttons', 'pages'\]/);
+  assert.match(read('public/sys.js'), /decks: \['decks', 'buttons', 'pages', 'companion'\]/);
   assert.match(html, /class="tab tab-buttons" data-tab="buttons"/);
   assert.match(html, /id="pane-buttons"/);
   assert.match(html, /src="\/button-library\.js"/);
