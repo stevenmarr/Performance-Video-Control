@@ -2,7 +2,8 @@
 // COMPANION, a top-level tab (0.31.0). Control Center defines buttons (BUTTONS)
 // and pages (PAGES). Companion, and Steven's fork with its page designs and page
 // templates, assigns them to Stream Decks. This tab shows whether Companion is
-// answering on host:port, whether the PV Control Center module (rs6-presets) is
+// answering on host:port, whether the Control Center module (pvllc-control-center, or the
+// legacy rs6-presets id) is
 // installed and current, lets you SYNC CC buttons and pages into it, download a
 // page as a .companionconfig, and opens Companion's own web UI.
 (() => {
@@ -28,17 +29,33 @@
     const rows = [];
     if (s.checked && s.httpApi) {
       rows.push(conns.length
-        ? conns.map((c) => `<div class="cmp-row"><i class="cmp-dot ${c.enabled ? 'ok' : 'warn'}"></i><b>${esc(c.label || c.id)}</b><small>${esc(v.moduleId)} · ${c.enabled ? 'enabled' : 'disabled'}${c.status && c.status.category ? ` · ${esc(c.status.category)}` : ''}${c.status && c.status.message ? ` · ${esc(c.status.message)}` : ''}</small></div>`).join('')
-        : `<p class="note small">No PV Control Center connection in Companion. Install the module, then add a "PV Control Center" connection pointing at this app.</p>`);
+        ? conns.map((c) => `<div class="cmp-row"><i class="cmp-dot ${c.enabled ? 'ok' : 'warn'}"></i><b>${esc(c.label || c.id)}</b><small>${esc(c.moduleId || v.moduleId)}${c.legacy ? ' (old id)' : ''} · ${c.enabled ? 'enabled' : 'disabled'}${c.status && c.status.category ? ` · ${esc(c.status.category)}` : ''}${c.status && c.status.message ? ` · ${esc(c.status.message)}` : ''}</small></div>`).join('')
+        : `<p class="note small">No Control Center module connection in Companion. Install the Control Center module, then add a "Performance Video Control Center" connection pointing at this app.</p>`);
+      if (conns.some((c) => c.legacy)) rows.push(`<p class="note small">A connection still uses the old module id rs6-presets. Import Control Center module 0.11.0 or newer from <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">the releases page</a>; Companion moves the connection to the new id.</p>`);
     }
     if (m) {
       rows.push(`<div class="cmp-row"><i class="cmp-dot ${m.current ? (m.stale ? 'warn' : 'ok') : 'off'}"></i><b>Module ${esc(m.version || '?')}</b><small>${m.label ? `${esc(m.label)} · ` : ''}last seen ${esc(new Date(m.at).toLocaleTimeString())}${m.presets != null ? ` · ${m.presets} presets` : ''}</small></div>`);
-      if (!m.current) rows.push(`<p class="note small">This module is older than ${esc(v.moduleMinVersion)}. It cannot see CC buttons and pages. Update it from <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">the releases page</a>.</p>`);
+      if (!m.current) rows.push(`<p class="note small">This Control Center module is older than ${esc(v.moduleMinVersion)}. It cannot see CC buttons and pages. Update it from <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">the releases page</a>.</p>`);
       else if (m.stale) rows.push('<p class="note small">The module has not picked up the latest buttons and pages yet. It checks every few seconds; SYNC forces it.</p>');
     } else {
-      rows.push(`<p class="note small">The module has not reported in. It needs version ${esc(v.moduleMinVersion)} or newer: <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">releases</a>.</p>`);
+      rows.push(`<p class="note small">The Control Center module has not reported in. It needs version ${esc(v.moduleMinVersion)} or newer: <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">releases</a>.</p>`);
     }
     return rows.join('');
+  }
+
+  // 0.31.1: who opens the USB Stream Decks, Control Center or Companion.
+  function decksCard(v) {
+    const d = v.decks || { drive: false, setting: 'auto', companionUsed: false, released: 0 };
+    const auto = d.setting === 'auto';
+    const state = d.drive
+      ? `Companion drives the Stream Decks. Control Center has closed its USB deck handles${d.released ? ` (${d.released} released)` : ''} and does not open decks.`
+      : 'Control Center opens the USB Stream Decks (Control Devices tab). Companion cannot open a deck Control Center holds.';
+    return `<div class="cmp-card"><h3>STREAM DECKS</h3>
+      <div class="cmp-row"><label class="chk"><input type="checkbox" id="cmpDriveDecks"${d.drive ? ' checked' : ''}> <b>Let Companion drive Stream Decks</b></label>
+        <span class="spacer"></span>${auto ? '<small>automatic</small>' : '<button type="button" class="btn mini" id="cmpDecksAuto" title="On once Companion is in use (the module reported in, or a check found its connection)">Automatic</button>'}</div>
+      <div class="cmp-row"><i class="cmp-dot ${d.drive ? 'ok' : 'off'}"></i><small>${esc(state)}</small></div>
+      <p class="note small">${auto ? `Automatic: ${d.companionUsed ? 'on, because Companion is in use with this app' : 'off until the Control Center module reports in or a check finds its connection'}. ` : ''}Turn it off to drive the decks from Control Center again; quit Companion (or disable its Stream Deck surface) first.</p>
+    </div>`;
   }
 
   function paint() {
@@ -60,10 +77,11 @@
           <p class="note small">Companion's web UI is on port 8000 unless you changed it. Use this Mac's address (127.0.0.1) when Companion runs here.${v.status && v.status.checkedAt ? ` Checked ${esc(new Date(v.status.checkedAt).toLocaleTimeString())}.` : ''}</p>
         </div>
         <div class="cmp-card"><h3>MODULE</h3>${moduleLine(v)}</div>
+        ${decksCard(v)}
         <div class="cmp-card"><h3>SYNC</h3>
           <div class="cmp-row"><span>${v.counts.buttons} buttons · ${v.counts.pages} pages</span><span class="spacer"></span><button type="button" class="btn mini primary" id="btnCmpSync">SYNC TO COMPANION</button></div>
-          <p class="note small">The module publishes every CC button and page as Companion presets (Presets → PV Control Center). SYNC tells it to refresh now${v.syncedAt ? `; last SYNC ${esc(new Date(v.syncedAt).toLocaleString())}` : ''}. Revision ${esc(v.rev)}.</p>
-          <p class="note small">A whole page can also go across as a file. Download it, then in Companion use Import / Export → Import, pick the page to replace, and map "cc" to your PV Control Center connection.</p>
+          <p class="note small">The module publishes every CC button and page as Companion presets (Presets → Performance Video Control Center). SYNC tells it to refresh now${v.syncedAt ? `; last SYNC ${esc(new Date(v.syncedAt).toLocaleString())}` : ''}. Revision ${esc(v.rev)}.</p>
+          <p class="note small">A whole page can also go across as a file. Download it, then in Companion use Import / Export → Import, pick the page to replace, and map "cc" to your Control Center module connection.</p>
           <div class="cmp-pages">${pages}</div>
         </div>
       </div>
@@ -94,11 +112,19 @@
     })());
   });
   root.addEventListener('click', (ev) => {
+    if (ev.target.id === 'cmpDecksAuto') {
+      run(api('POST', '/api/companion/decks', { drive: 'auto' }).then((v) => { view = v; paint(); }));
+    }
     if (ev.target.id === 'btnCmpSync') {
       run(api('POST', '/api/companion/sync').then(() => load(false)).then(() => toast('Sync sent. The module refreshes its presets.')));
     }
   });
   root.addEventListener('change', (ev) => {
+    if (ev.target.id === 'cmpDriveDecks') {
+      const drive = ev.target.checked;
+      run(api('POST', '/api/companion/decks', { drive }).then((v) => { view = v; paint(); toast(drive ? 'Stream Decks released to Companion' : 'Control Center drives the Stream Decks again'); }));
+      return;
+    }
     if (ev.target.id === 'cmpFrame') {
       showFrame = ev.target.checked;
       localStorage.setItem('cc.companion.frame', showFrame ? '1' : '0');
@@ -116,7 +142,7 @@
     timer = setInterval(() => {
       if (document.hidden || !window.CC.getTab || window.CC.getTab() !== 'companion') return;
       api('POST', '/api/companion/check').then((v) => {
-        const changed = !view || v.status.online !== view.status.online || v.webUrl !== frameUrl || JSON.stringify(v.module) !== JSON.stringify(view.module) || v.rev !== view.rev;
+        const changed = !view || v.status.online !== view.status.online || v.webUrl !== frameUrl || JSON.stringify(v.module) !== JSON.stringify(view.module) || JSON.stringify(v.decks) !== JSON.stringify(view.decks) || v.rev !== view.rev;
         view = v;
         if (changed) paint();
       }).catch(() => {});

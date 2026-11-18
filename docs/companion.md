@@ -5,7 +5,7 @@ Control Center **defines** buttons and pages. Bitfocus Companion **assigns** the
 ```
 Control Center                         Companion (or Steven's fork)
   BUTTONS  → library buttons  ─┐
-  PAGES    → pages per surface ─┼─ module "PV Control Center" (rs6-presets 0.10.0+) ─→ presets, actions, feedbacks
+  PAGES    → pages per surface ─┼─ Control Center module (pvllc-control-center 0.11.0+) ─→ presets, actions, feedbacks
   COMPANION → status, SYNC   ──┘   or a .companionconfig page file ────────────────→ Import
                                                                        Surfaces tab → which deck shows which page
 ```
@@ -33,14 +33,14 @@ Pages save to `surface-pages.json`. A Path C deck can still get a page directly 
 
 ## 3. Hand them to Companion (COMPANION tab)
 
-1. In Companion, install the **PV Control Center** module (`companion-module-rs6-presets` 0.10.0 or newer) and add a connection that points at this app (this Mac's address, port 8080).
+1. In Companion, install the **Control Center module** ("Performance Video Control Center", id `pvllc-control-center`, 0.11.0 or newer; release asset `pvllc-control-center.tgz`. Version 0.10.0 under the old id `rs6-presets` also works) and add a connection that points at this app (this Mac's address, port 8080).
 2. In Control Center open **COMPANION**. Enter Companion's host and port (default `127.0.0.1`, port `8000`) and press **Save**.
-3. The CONNECTION card says whether Companion answers. The MODULE card lists the PV Control Center connections Companion has, and the module version that last reported in. An older module is flagged with a link to the releases.
-4. Press **SYNC TO COMPANION**. The module refreshes its presets. In Companion, open **Buttons → Presets → PV Control Center**:
+3. The CONNECTION card says whether Companion answers. The MODULE card lists the Control Center module connections Companion has, and the module version that last reported in. An older module is flagged with a link to the releases.
+4. Press **SYNC TO COMPANION**. The module refreshes its presets. In Companion, open **Buttons → Presets → Performance Video Control Center**:
    * **CC buttons** has one preset per library button.
    * **CC page: \<name\>** has one preset per placed slot, named by its row and column.
    Drag them onto Companion buttons, or onto a page on the fork's page browser.
-5. To move a whole page at once, press **.companionconfig** next to the page. In Companion use **Import / Export → Import**, choose the page to replace, and map the connection called `cc` to your PV Control Center connection. On the fork, the page keeps its surface layout (Stream Deck, XL, +, or + XL); save it as a template there if you want to stamp it out again.
+5. To move a whole page at once, press **.companionconfig** next to the page. In Companion use **Import / Export → Import**, choose the page to replace, and map the connection called `cc` to your Control Center module connection. On the fork, the page keeps its surface layout (Stream Deck, XL, +, or + XL); save it as a template there if you want to stamp it out again.
 6. In Companion's **Surfaces** tab, pick the page (and startup page) each Stream Deck shows. Companion owns the deck: quit Control Center's USB use of that deck (Control Devices) or let Companion take it.
 
 The COMPANION tab also shows Companion's own web UI. If it does not show (for example when you open Control Center from another computer, where `127.0.0.1` is that computer), use **Open in a new window**.
@@ -53,3 +53,12 @@ The COMPANION tab also shows Companion's own web UI. If it does not show (for ex
 * Nothing about Companion is stored except its host and port (`companion.json`). Companion's HTTP API has no password.
 
 API details: [api-reference.md](api-reference.md#companion-bridge-companion-tab-0310).
+
+## Stream Decks: Control Center or Companion (0.31.1)
+
+Only one program can open a USB Stream Deck. If Control Center holds a deck, Companion logs `cannot open device ...` for it.
+The COMPANION tab's **STREAM DECKS** card has **Let Companion drive Stream Decks**. When it is on, Control Center closes its
+USB deck handles at once and stops opening decks, so Companion picks them up (unplug and replug the deck if Companion does not
+see it within a few seconds). It is on automatically once the Control Center module reports in or a check finds its
+connection; tick or untick it to choose explicitly, or press **Automatic** to go back. The choice is saved in companion.json.
+Turn it off to drive the decks from Control Center (Control Devices) again, after quitting Companion or disabling its Stream Deck surface.

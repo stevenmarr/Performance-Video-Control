@@ -1,6 +1,6 @@
 # HTTP and stream API reference
 
-Documented from the code on the default branch `performance-video-control`, v0.31.0 (this change, on top of a239929). Only what the code registers is listed. Fields that are large or built from live desk state are summarized by their top-level keys. Anything not shown clearly in the handler is marked unverified.
+Documented from the code on the default branch `performance-video-control`, v0.31.1 (this change, on top of 296b809). Only what the code registers is listed. Fields that are large or built from live desk state are summarized by their top-level keys. Anything not shown clearly in the handler is marked unverified.
 
 The app listens with `node server.js`. Default port is 8080 (`--port` or `PORT`). Default bind is `0.0.0.0` (`--host` or `HOST`). Data lives in the directory from `lib/datadir.js` (`--data` or `RS6_DATA_DIR`). `--mock` starts in-process simulators.
 
@@ -932,11 +932,11 @@ Body `{ ids: [pageId, ...] }`. Every page or a subset (for example the pages of 
 
 ## Companion bridge (COMPANION tab, 0.31.0)
 
-Control Center defines the buttons and pages. Bitfocus Companion (and Steven's fork) puts them on Stream Decks. The PV Control Center module (`rs6-presets`, 0.10.0 or newer) is the client of these routes. API_VERSION stays 9; `/api/version` lists the additive feature `companionButtons`. Source: `lib/companion/bridge.js`.
+Control Center defines the buttons and pages. Bitfocus Companion (and Steven's fork) puts them on Stream Decks. The Control Center module (`pvllc-control-center` 0.11.0+, or legacy id `rs6-presets` 0.10.0) is the client of these routes. API_VERSION stays 9; `/api/version` lists the additive feature `companionButtons`. Source: `lib/companion/bridge.js`.
 
 ### GET /api/companion
 
-`{ config: { host, port }, webUrl, status: { checked, online, httpApi, connections: [{ id, label, enabled, status }], error, checkedAt }, module, moduleId, moduleMinVersion, moduleRepo, rev, syncSeq, syncedAt, counts: { buttons, pages }, pages: [{ id, name, surface, label }] }`. `status` is the last check; `module` is the last `hello` from the module (or null) with `current` (version is at least `moduleMinVersion`) and `stale` (it has not seen the current `rev`).
+`{ config: { host, port }, webUrl, status: { checked, online, httpApi, connections: [{ id, label, moduleId, legacy, enabled, status }], error, checkedAt }, module, moduleId, legacyModuleIds, moduleName, moduleMinVersion, moduleRepo, rev, syncSeq, syncedAt, counts: { buttons, pages }, pages: [{ id, name, surface, label }] }`. `status` is the last check; `module` is the last `hello` from the module (or null) with `current` (version is at least `moduleMinVersion`) and `stale` (it has not seen the current `rev`).
 
 ### POST /api/companion/config
 
@@ -944,7 +944,7 @@ Body `{ host, port }`. Host is a name or IP (default `127.0.0.1`), port 1–6553
 
 ### POST /api/companion/check
 
-Probes `http://host:port/api/connections` (Companion 4.3+ HTTP API). `online` and `httpApi` are true when that returns the connection list; `connections` keeps only `rs6-presets` connections. If the list is not readable but `/` answers as Companion (`X-App: Bitfocus Companion`), `online` is true and `httpApi` false. Returns the view.
+Probes `http://host:port/api/connections` (Companion 4.3+ HTTP API). `online` and `httpApi` are true when that returns the connection list; `connections` keeps only Control Center module connections (`pvllc-control-center`, or legacy `rs6-presets`, flagged `legacy: true`). If the list is not readable but `/` answers as Companion (`X-App: Bitfocus Companion`), `online` is true and `httpApi` false. Returns the view.
 
 ### POST /api/companion/hello
 
@@ -953,6 +953,10 @@ Sent by the module. Body `{ moduleVersion, label, companionVersion?, rev?, prese
 ### POST /api/companion/sync
 
 Bumps the sync counter, so `rev` changes and the module republishes its presets. Returns `{ ok, rev, syncSeq, syncedAt }`.
+
+### POST /api/companion/decks (0.31.1)
+
+"Let Companion drive Stream Decks". Body `{ drive: true | false | "auto" }`. When on, Control Center closes every USB Stream Deck handle and stops scanning, so Companion can open the decks. `"auto"` (the default) is on once Companion is in use with this app: the module said `hello`, or a check found a Control Center module connection. Saved in companion.json as `driveDecks` (`null` = auto) and `companionUsed`. Returns the view, whose `decks` is `{ drive, setting, companionUsed, released }`. `GET /api/decks` adds `control.companionDrivesDecks` and `control.releasedToCompanion`. 400 for any other `drive` value.
 
 ### GET /api/companion/buttons
 
@@ -964,7 +968,7 @@ Body `{ event?, delta? }`. Runs that button's actions for `event` (`press`, `rel
 
 ### GET /api/companion/pages/:id/companionconfig
 
-Downloads one page as `<name>.companionconfig`: a Companion page export, `version: 6`, `type: "page"`, which Companion upgrades on import. Keys keep row and column; on + / + XL the touch strip is the row under the keys and the encoders the row under that. Each control calls the module action `cc_button_run` and the feedback `cc_button_look` on a connection named `cc` (`?label=` changes the name). On import, map that connection to your PV Control Center connection.
+Downloads one page as `<name>.companionconfig`: a Companion page export, `version: 6`, `type: "page"`, which Companion upgrades on import. Keys keep row and column; on + / + XL the touch strip is the row under the keys and the encoders the row under that. Each control calls the module action `cc_button_run` and the feedback `cc_button_look` on a connection named `cc` (`?label=` changes the name). On import, map that connection to your Control Center module connection. The export uses the module id of the connection the last check found (legacy `rs6-presets` if that is what Companion has), else `pvllc-control-center`.
 
 ## TSL tally
 

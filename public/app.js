@@ -420,7 +420,7 @@
     el.className = 'pill link ' + state; el.textContent = txt; el.title = detail || '';
     document.body.classList.toggle('link-down', state !== 'ok');
     const bn = $('#linkBanner');
-    if (bn) { bn.hidden = state === 'ok'; $('#linkMsg').textContent = state === 'offline' ? 'This device is offline. Waiting for the network…' : `Lost the connection to the RS6 Presets app${detail ? ` (${detail})` : ''}. Reconnecting${link.attempt > 1 ? `, attempt ${link.attempt}` : ''}… The display may be out of date.`; }
+    if (bn) { bn.hidden = state === 'ok'; $('#linkMsg').textContent = state === 'offline' ? 'This device is offline. Waiting for the network…' : `Lost the connection to the Control Center app${detail ? ` (${detail})` : ''}. Reconnecting${link.attempt > 1 ? `, attempt ${link.attempt}` : ''}… The display may be out of date.`; }
   }
   function closeStream() { if (link.es) { link.es.onerror = null; link.es.onopen = null; try { link.es.close(); } catch { /* ignore */ } link.es = null; } }
   async function refetchState() {
