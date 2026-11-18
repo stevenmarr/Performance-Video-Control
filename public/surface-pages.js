@@ -1,5 +1,5 @@
 'use strict';
-// PAGES, under Control Devices. Names a page for one surface type and assigns
+// PAGES, a top-level tab. Names a page for one surface type and assigns
 // library buttons onto keys, encoders, and touch segments. Push sends the
 // selected page to an online Path C deck. It does not open a second deploy path.
 (() => {
@@ -126,22 +126,13 @@
     return `<button type="button" class="${cls}" draggable="${slot ? 'true' : 'false'}" data-kind="${kind}" data-col="${col}"${rowAttr} title="${esc(title)}">${body}</button>`;
   }
 
+  // Physical order on the Stream Deck + and + XL: the keys are on top, the
+  // touch strip is under the keys, and the encoders (dials) are under the strip.
+  // Gaps on the + XL (no knob under the 2nd, 5th and 8th key) stay empty.
   function boardHtml(surface, page) {
     const cols = surface.cols;
     const rows = surface.rows;
     const knobs = surface.knobCols || [];
-    let strip = '';
-    if (knobs.length) {
-      const cells = [];
-      for (let c = 0; c < cols; c++) {
-        if (!knobs.includes(c)) {
-          cells.push(`<div style="grid-column:${c + 1}"></div>`);
-          continue;
-        }
-        cells.push(`<div class="pages-slot" style="grid-column:${c + 1}">${slotButton('encoder', 0, c, page)}${slotButton('touch', 0, c, page)}</div>`);
-      }
-      strip = `<div class="pages-strip deck-strip" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${cells.join('')}</div>`;
-    }
     const keys = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -149,7 +140,16 @@
       }
     }
     const grid = `<div class="deck-mini deck-face" style="grid-template-columns:repeat(${cols},minmax(0,1fr));grid-template-rows:repeat(${rows},minmax(72px,1fr))">${keys.join('')}</div>`;
-    return strip + grid;
+    if (!knobs.length) return grid;
+    const row = (kind, cls) => {
+      const cells = [];
+      for (let c = 0; c < cols; c++) {
+        if (!knobs.includes(c)) { cells.push(`<div class="pages-gap" style="grid-column:${c + 1}"></div>`); continue; }
+        cells.push(`<div class="pages-slot" style="grid-column:${c + 1}">${slotButton(kind, 0, c, page)}</div>`);
+      }
+      return `<div class="pages-strip deck-strip ${cls}" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${cells.join('')}</div>`;
+    };
+    return grid + row('touch', 'pages-touch-row') + row('encoder', 'pages-encoder-row');
   }
 
   function syncPage() {
@@ -193,7 +193,9 @@
         <label class="bl-row" style="align-self:end"><button type="button" class="btn" data-rename>Rename</button></label>
         <label class="bl-row" style="align-self:end">${confirmDelete
           ? `<button type="button" class="btn" data-do-delete>Delete page</button><button type="button" class="btn" data-cancel-delete>Cancel</button>`
-          : `<button type="button" class="btn" data-ask-delete>Delete</button>`}</label>` : ''}
+          : `<button type="button" class="btn" data-ask-delete>Delete</button>`}</label>
+        <label class="bl-row" style="align-self:end"><button type="button" class="btn" data-copy>Copy</button><button type="button" class="btn" data-move="-1" title="Move this page earlier">◀</button><button type="button" class="btn" data-move="1" title="Move this page later">▶</button></label>
+        <label class="bl-row" style="align-self:end"><a class="btn" data-companion-export href="/api/companion/pages/${esc(page.id)}/companionconfig" download title="Download this page as a Companion page export (.companionconfig). Import it in Companion and pick the PV Control Center connection.">Companion export</a></label>` : ''}
     </div>
     <p class="note small">${page ? (matching.length === 1 ? 'This is the only saved page for this size.' : `${matching.length} saved pages for this size.`) : 'No named page on this surface yet. The grid below is empty.'}</p>` : '';
     const library = surface ? `<div class="section-title">Library</div><div class="pages-lib">${buttons.length ? buttons.map((b) => `<button type="button" class="btn mini${armed === b.id ? ' on' : ''}" draggable="true" data-lib="${esc(b.id)}">${esc(b.name)} <small>${esc(ELEMENT[b.element] || b.element)}</small></button>`).join('') : '<p class="note small">No library buttons yet. Create them on Buttons.</p>'}</div>
@@ -445,6 +447,35 @@
         const i = pages.findIndex((p) => p.id === saved.id);
         if (i >= 0) pages[i] = saved;
         notice = `Renamed to “${saved.name}”.`;
+        paint();
+      })());
+      return;
+    }
+    if (ev.target.closest('[data-copy]')) {
+      const page = syncPage();
+      if (!page) return;
+      run((async () => {
+        const copy = await api('POST', `/api/surface-pages/${page.id}/copy`, {});
+        const at = pages.findIndex((p) => p.id === page.id);
+        pages.splice(at + 1, 0, copy);
+        pageId = copy.id;
+        notice = `Copied to “${copy.name}”. The copy uses the same library buttons.`;
+        paint();
+      })());
+      return;
+    }
+    const move = ev.target.closest('[data-move]');
+    if (move) {
+      const page = syncPage();
+      if (!page) return;
+      const same = pages.filter((p) => p.surface === page.surface).map((p) => p.id);
+      const i = same.indexOf(page.id);
+      const j = i + Number(move.dataset.move);
+      if (i < 0 || j < 0 || j >= same.length) return;
+      [same[i], same[j]] = [same[j], same[i]];
+      run((async () => {
+        const out = await api('POST', '/api/surface-pages/order', { ids: same });
+        pages = (out && out.pages) || pages;
         paint();
       })());
       return;

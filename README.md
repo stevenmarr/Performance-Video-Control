@@ -5,8 +5,8 @@
 One desk for the show. The app runs on a Mac (or a Pi that only relays video) and serves a dark,
 touch-friendly UI. An iPad or phone on the same network opens it in a browser.
 
-The top row is **SYSTEMS**, the systems you have put on the desk, **Control Devices**, **BUTTONS**, and **PAGES**. Each system you add
-gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green. **BUTTONS** is the library. **PAGES** lays those buttons out on a Stream Deck and pushes the page. **Control Devices** is the USB assign view.
+The top row is **SYSTEMS**, the systems you have put on the desk, **Control Devices**, **BUTTONS**, **PAGES**, and **COMPANION**. Each system you add
+gets its own pages: presets, switcher, cameras, media. Program is red. Preview is green. **BUTTONS** is the library. **PAGES** lays those buttons out on a Stream Deck and pushes the page. **Control Devices** is the USB assign view. **COMPANION** hands BUTTONS and PAGES to Bitfocus Companion, which assigns them to Stream Decks ([docs/companion.md](docs/companion.md)).
 Appearance (dark, light, or system) is in Settings. The default is dark. Scopes is a separate Mac app and stays dark.
 
 | On the desk | What it drives |

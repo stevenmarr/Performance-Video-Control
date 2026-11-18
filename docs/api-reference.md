@@ -1,6 +1,6 @@
 # HTTP and stream API reference
 
-Documented from the code on the default branch `performance-video-control`, v0.30.0, commit 251a29d9049c53723210ea0e1ab057dfcd3a6ef2. Only what the code registers is listed. Fields that are large or built from live desk state are summarized by their top-level keys. Anything not shown clearly in the handler is marked unverified.
+Documented from the code on the default branch `performance-video-control`, v0.31.0 (this change, on top of a239929). Only what the code registers is listed. Fields that are large or built from live desk state are summarized by their top-level keys. Anything not shown clearly in the handler is marked unverified.
 
 The app listens with `node server.js`. Default port is 8080 (`--port` or `PORT`). Default bind is `0.0.0.0` (`--host` or `HOST`). Data lives in the directory from `lib/datadir.js` (`--data` or `RS6_DATA_DIR`). `--mock` starts in-process simulators.
 
@@ -917,6 +917,54 @@ Path C plugin poll of the app's PTZ view, formatted for the deck. Long-poll with
 `require("./deck").layout()` — PTZ deck layout used by the plugin. Source: `lib/deck.js`.
 
 ---
+
+## Surface pages: copy and order (0.31.0)
+
+### POST /api/surface-pages/:id/copy
+
+Body `{ name?, surface? }`. Copies the page right after the original, using the same library buttons. `surface` may be another surface type; placements that do not exist there are dropped and counted. Returns the new page plus `copiedFrom` and `dropped`. 404 if the page is missing. Source: `ButtonLibrary.copyPage`.
+
+### POST /api/surface-pages/order
+
+Body `{ ids: [pageId, ...] }`. Every page or a subset (for example the pages of one surface type). The listed pages go back into the positions they already hold, in the given order; others do not move. 400 on a repeated id, 404 on an unknown id. Returns `{ version, pages }`. Source: `ButtonLibrary.reorderPages`.
+
+`GET /api/surface-pages` now also returns `version: 2`. `surface-pages.json` and `button-library.json` are written as `{ version: 2, pages | buttons }`. An older file is migrated on load: a bare list, a Companion / fork surface id (`streamdeck`, `streamdeck-xl`, `streamdeck-plus`, `streamdeck-plus-xl`, ...), a legacy `order` number (sorted, then dropped), a duplicate page id, or the reserved id `order`.
+
+## Companion bridge (COMPANION tab, 0.31.0)
+
+Control Center defines the buttons and pages. Bitfocus Companion (and Steven's fork) puts them on Stream Decks. The PV Control Center module (`rs6-presets`, 0.10.0 or newer) is the client of these routes. API_VERSION stays 9; `/api/version` lists the additive feature `companionButtons`. Source: `lib/companion/bridge.js`.
+
+### GET /api/companion
+
+`{ config: { host, port }, webUrl, status: { checked, online, httpApi, connections: [{ id, label, enabled, status }], error, checkedAt }, module, moduleId, moduleMinVersion, moduleRepo, rev, syncSeq, syncedAt, counts: { buttons, pages }, pages: [{ id, name, surface, label }] }`. `status` is the last check; `module` is the last `hello` from the module (or null) with `current` (version is at least `moduleMinVersion`) and `stale` (it has not seen the current `rev`).
+
+### POST /api/companion/config
+
+Body `{ host, port }`. Host is a name or IP (default `127.0.0.1`), port 1–65535 (default 8000, Companion's web UI). Saved to `companion.json` as host, port, and the sync counter only. No credentials. Returns the view.
+
+### POST /api/companion/check
+
+Probes `http://host:port/api/connections` (Companion 4.3+ HTTP API). `online` and `httpApi` are true when that returns the connection list; `connections` keeps only `rs6-presets` connections. If the list is not readable but `/` answers as Companion (`X-App: Bitfocus Companion`), `online` is true and `httpApi` false. Returns the view.
+
+### POST /api/companion/hello
+
+Sent by the module. Body `{ moduleVersion, label, companionVersion?, rev?, presets? }`. Returns `{ ok, rev, expected }`.
+
+### POST /api/companion/sync
+
+Bumps the sync counter, so `rev` changes and the module republishes its presets. Returns `{ ok, rev, syncSeq, syncedAt }`.
+
+### GET /api/companion/buttons
+
+What the module publishes. `{ rev, appVersion, apiVersion, moduleId, buttons: [{ id, name, element, role, text, title, caption, look: { bgcolor, color, bar, border }, events, actions, feedbacks }], pages: [{ id, name, index, surface, layout: { label, cols, rows, knobCols, touchRow, encoderRow, companionLayout }, keys, encoders, touch }] }`. `rev` changes on any button or page edit and on SYNC. On + / + XL the touch strip is `touchRow` (the row under the keys) and the encoders are `encoderRow` (under the strip). `companionLayout` is the matching page layout id on Steven's fork (`streamdeck`, `streamdeck-xl`, `streamdeck-plus`, `streamdeck-plus-xl`), or null.
+
+### POST /api/companion/buttons/:id/run
+
+Body `{ event?, delta? }`. Runs that button's actions for `event` (`press`, `release`, `hold`, `turn`, `push`, `touch`; default from the element) the same way a USB deck press does. For `turn`, a non-zero `delta` is sent as `steps` when the action has none. Returns `{ ok, id, event, ran: [{ action, ok, path?, skipped?, error? }] }`. A page-only id (for example `nav.home`) is listed as skipped. 404 for an unknown button, 400 for an unknown event.
+
+### GET /api/companion/pages/:id/companionconfig
+
+Downloads one page as `<name>.companionconfig`: a Companion page export, `version: 6`, `type: "page"`, which Companion upgrades on import. Keys keep row and column; on + / + XL the touch strip is the row under the keys and the encoders the row under that. Each control calls the module action `cc_button_run` and the feedback `cc_button_look` on a connection named `cc` (`?label=` changes the name). On import, map that connection to your PV Control Center connection.
 
 ## TSL tally
 

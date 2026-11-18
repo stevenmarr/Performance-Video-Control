@@ -64,7 +64,7 @@ test('BUTTONS and PAGES are always-visible top-level tabs; Scopes is not a Contr
   assert.match(html, /src="\/surface-pages\.js"/);
   assert.match(read('public/app.js'), /'buttons'/);
   assert.match(read('public/app.js'), /'pages'/);
-  assert.match(read('public/sys.js'), /decks: \['decks', 'buttons', 'pages'\]/);
+  assert.match(read('public/sys.js'), /decks: \['decks', 'buttons', 'pages', 'companion'\]/);
   assert.match(read('public/button-library.js'), /data-field="theme"/);
   assert.doesNotMatch(html, /data-tab="scopes"/);
   assert.doesNotMatch(html, /id="pane-scopes"/);

@@ -11,7 +11,7 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
 ## Row 1: home and system groups
 
 ```
-[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [MODULES] [CUES] [PRESETS] [Control Devices] [BUTTONS] [PAGES]
+[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [MODULES] [CUES] [PRESETS] [Control Devices] [BUTTONS] [PAGES] [COMPANION]
 ```
 
 * **⌂ SYSTEMS** is always first. It is the home page: a palette of every system type on the left, and one card per instance on the desk.
@@ -28,7 +28,7 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
   two are on the desk, for example `E2 / PIXELHUE`.
 * **MODULES** is always shown. It is connection modules (setup, status, buttons, variables, feedbacks), not a device to ADD TO DESK and not a Stream Deck page.
 * **TALLIES** (TSL) are on **ATEM → SWITCHER**, not a SYSTEMS card. Scopes is not a tab in this app. The waveform, parade, vectorscope, Lightning and Desktop Video page is the standalone app in `apps/scopes` (port 8092). `/#scopes`, `/#lightning` and `/#pscopes` do not open a pane here.
-* **Control Devices**, **BUTTONS**, and **PAGES** are always shown on the top row (they are not hidden under each other). `/#decks` opens DEVICES, `/#buttons` opens the button library, `/#pages` opens surface layout. When any of those three is selected, the second row is DEVICES, BUTTONS, and PAGES. DEVICES is the USB assign view (quit the Elgato app so this app can open the deck). BUTTONS creates, edits, duplicates, and deletes library keys (actions, variables, and feedbacks). PAGES lays out a surface from those buttons and pushes it to an online Path C deck (the Elgato plugin has to be running for that push).
+* **Control Devices**, **BUTTONS**, **PAGES**, and **COMPANION** are always shown on the top row. `/#decks` opens Control Devices (USB), `/#buttons` the button library, `/#pages` surface layout, and `/#companion` the Companion bridge. Since 0.31.0 there is no second-row copy of these tabs; the second row shows only a short note while one of them is open. BUTTONS creates, edits, duplicates, and deletes library keys (actions, variables, and feedbacks). PAGES lays out a surface from those buttons (new, rename, copy, reorder, delete) and can push it to an online Path C deck. COMPANION hands buttons and pages to Bitfocus Companion, which assigns them to Stream Decks. See [companion.md](companion.md).
 * Tapping a group button opens **the page you last used in that group**. The first time, it opens the
   group's main page (PRESETS, SWITCHER, CAMERA CONTROL, TIMELINES, COLUMNS). The last page is remembered
   in this browser.
@@ -46,13 +46,7 @@ Only the pages of the selected group are shown, always in the same order:
 | PIXERA | TIMELINES · CUES |
 | MILLUMIN | COLUMNS · LAYER |
 
-**Control Devices**, **BUTTONS**, and **PAGES** share a second row:
-
-| Page | What it is |
-|---|---|
-| DEVICES | USB Stream Decks. Home picks one system. This is the view that used to be the whole tab. |
-| BUTTONS | Create, edit, duplicate, and delete library buttons. No grid. |
-| PAGES | Name a page for a surface type, assign library buttons, and push that page to an online Path C deck. |
+**Control Devices**, **BUTTONS**, **PAGES**, and **COMPANION** have no second row of their own (0.31.0 removed the duplicate DEVICES / BUTTONS / PAGES buttons). Use the top row.
 
 **LAYOUT** is the M/E and SuperSource picture: resources on the left, canvases in the middle, properties on the right. **MULTIVIEW** is its own page. DVE / SS / KEYS stays the full key and DSK panel. See [atem-layout.md](atem-layout.md).
 
@@ -70,7 +64,7 @@ sideways with a swipe or the trackpad, and the selected tab is scrolled into vie
 
 Page tabs keep their `data-tab` attributes (`.tab[data-tab=arouter]`), and group buttons are
 `.tgrp[data-tabgrp=atem]`. A page tab is only visible while its group is selected, so a script should
-click the group first. **Control Devices**, **BUTTONS**, and **PAGES** are the exception: `#tabsTop .tab[data-tab=decks]`, `#tabsTop .tab[data-tab=buttons]`, and `#tabsTop .tab[data-tab=pages]` are always on the top row. Prefer those selectors; the second-row copies also exist while that group is open.
+click the group first. **Control Devices**, **BUTTONS**, and **PAGES** are the exception: `#tabsTop .tab[data-tab=decks]`, `#tabsTop .tab[data-tab=buttons]`, `#tabsTop .tab[data-tab=pages]`, and `#tabsTop .tab[data-tab=companion]` are always on the top row. There are no second-row copies.
 `test/ui-helpers.js` has `openTab(page, tab)`, which does that.
-`body[data-tabgrp]` holds the selected group (`home` on SYSTEMS, `decks` on Control Devices, BUTTONS, or PAGES).
+`body[data-tabgrp]` holds the selected group (`home` on SYSTEMS, `decks` on Control Devices, BUTTONS, PAGES, or COMPANION).
 There is no `.tab[data-tab=scopes]`, no `#pane-scopes`, and no `#scopesFrame`. Scopes is a standalone Mac app (`apps/scopes`) and does not appear in this Control Center, including on a Pi.
