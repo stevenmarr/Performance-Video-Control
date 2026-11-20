@@ -374,16 +374,45 @@ test('the coverage manifest lists every Companion module and matches the catalog
   assert.equal(sum.implemented + sum.partial + sum['not yet'], sum.total);
 });
 
-test('MODULES pane fills the leftover window and scrolls when the catalog is taller than the view', () => {
-  const css = fs.readFileSync(path.join(__dirname, '..', 'public', 'modules.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  const rules = [];
-  const re = /([^{}]+)\{([^{}]*)\}/g;
-  let m;
-  while ((m = re.exec(css))) rules.push({ sel: m[1].trim(), body: m[2] });
-  const pane = rules.find((r) => /#pane-modsys:not\(\[hidden\]\)/.test(r.sel) || r.sel === '#pane-modsys');
-  assert.ok(pane, 'the MODULES pane has a layout rule');
-  assert.match(pane.body, /overflow-y\s*:\s*auto/);
-  assert.match(pane.body, /min-height\s*:\s*0/);
-  assert.match(pane.body, /flex\s*:\s*1/);
-  assert.match(css, /body\.tab-modsys \.main/);
+test('0.33.0: no MODULES tab; SYSTEMS lists the module systems, and #modsys deep links land on SYSTEMS', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'public', 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
+  const sys = fs.readFileSync(path.join(__dirname, '..', 'public', 'sys.js'), 'utf8');
+  assert.doesNotMatch(html, /data-tab="modsys"/);
+  assert.doesNotMatch(html, /modules-tab\.js/);
+  assert.match(html, /<script src="\/sys-modules\.js"><\/script>\s*<script src="\/sys\.js"><\/script>/);
+  assert.ok(!fs.existsSync(path.join(__dirname, '..', 'public', 'modules-tab.js')));
+  assert.match(app, /if \(t === 'modsys' \|\| t === 'modules'\) t = 'system';/);
+  assert.match(sys, /\^\(modsys\|modules\)\$/);
+  const css = fs.readFileSync(path.join(__dirname, '..', 'public', 'modules.css'), 'utf8');
+  assert.doesNotMatch(css, /pane-modsys|tab-modsys/);
+});
+
+test('0.33.0: the lite catalog is only the systems Control Center has a control module for', () => {
+  const { liteCatalog, catalog, controllable } = require('../lib/modules');
+  const lite = liteCatalog().systems;
+  const all = catalog.systems();
+  assert.ok(lite.length < all.length);
+  assert.ok(!lite.some((s) => s.status === 'not yet'), 'no "not yet" (Companion-only) entries');
+  assert.ok(!lite.some((s) => s.id === 'console' || s.id === 'tsl'));
+  for (const id of ['rs6', 'e2', 'pixelhue', 'atem', 'ptz', 'pixera', 'millumin', 'videohub', 'hyperdeck', 'mitti']) assert.ok(lite.find((s) => s.nativeId === id), id);
+  assert.ok(lite.find((s) => s.id === 'vmix' && !s.nativeId));
+  assert.ok(!('buttons' in lite[0]) && !('connection' in lite[0]), 'lite rows carry no buttons or connection fields');
+  assert.ok(JSON.stringify(lite).length < 120000);
+  assert.equal(lite.length, all.filter(controllable).length);
+});
+
+test('0.33.0: a module desk save keeps a saved secret when the form sends the mask or a blank', () => {
+  const { ModuleDesk } = require('../lib/modules/runtime');
+  const desk = new ModuleDesk({});
+  const row = desk.create('obs', { connection: { host: '10.0.0.5', password: 'pw-one' } });
+  assert.equal(row.connection.password, '***');
+  desk.update(row.id, { connection: { host: '10.0.0.6', password: '***' } });
+  assert.equal(desk.must(row.id).connection.password, 'pw-one');
+  desk.update(row.id, { connection: { password: '' } });
+  assert.equal(desk.must(row.id).connection.password, 'pw-one');
+  desk.update(row.id, { connection: { password: 'pw-two' } });
+  assert.equal(desk.must(row.id).connection.password, 'pw-two');
+  assert.equal(desk.must(row.id).connection.host, '10.0.0.6');
+  desk.close();
 });

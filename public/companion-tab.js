@@ -29,12 +29,14 @@
     const rows = [];
     if (s.checked && s.httpApi) {
       rows.push(conns.length
-        ? conns.map((c) => `<div class="cmp-row"><i class="cmp-dot ${c.enabled ? 'ok' : 'warn'}"></i><b>${esc(c.label || c.id)}</b><small>${esc(c.moduleId || v.moduleId)}${c.legacy ? ' (old id)' : ''} · ${c.enabled ? 'enabled' : 'disabled'}${c.status && c.status.category ? ` · ${esc(c.status.category)}` : ''}${c.status && c.status.message ? ` · ${esc(c.status.message)}` : ''}</small></div>`).join('')
+        ? conns.map((c) => `<div class="cmp-row"><i class="cmp-dot ${c.enabled ? 'ok' : 'warn'}"></i><b>${esc(c.label || c.id)}</b><small>${esc(c.moduleId || v.moduleId)}${c.legacy ? ' (old id)' : ''}${c.versionId ? ` · ${c.versionId === 'builtin' ? 'built-in copy' : c.versionId === 'dev' ? 'dev copy' : `imported v${esc(c.versionId)}`}` : ''} · ${c.enabled ? 'enabled' : 'disabled'}${c.status && c.status.category ? ` · ${esc(c.status.category)}` : ''}${c.status && c.status.message ? ` · ${esc(c.status.message)}` : ''}</small></div>`).join('')
         : `<p class="note small">No Control Center module connection in Companion. Install the Control Center module, then add a "Performance Video Control Center" connection pointing at this app.</p>`);
-      if (conns.some((c) => c.legacy)) rows.push(`<p class="note small">A connection still uses the old module id rs6-presets. It runs the old rs6-presets code, which does not see CC buttons and pages. PV Companion moves it to the built-in Performance Video Control Center module at start-up; in stock Companion import module 0.11.0 or newer from <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">the releases page</a>, then edit the connection and change its module to Performance Video Control Center.</p>`);
+      if (conns.some((c) => c.legacy)) rows.push(`<p class="note small">A connection still uses the old module id rs6-presets. It runs the old rs6-presets code, which does not see CC buttons and pages. PV Companion moves it to the built-in Performance Video Control Center module at start-up; in stock Companion import module 0.13.0 or newer from <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">the releases page</a>, then edit the connection and change its module to Performance Video Control Center.</p>`);
     }
+    // 0.33.0: the deck pages (CC deck: presets), or why there are none and how to turn them on
+    if (window.CCAdvice) for (const a of window.CCAdvice.deckAdvice(v)) rows.push(`<div class="cmp-row cmp-advice"><i class="cmp-dot ${a.cls}"></i><small>${esc(a.text)}</small></div>`);
     if (m) {
-      rows.push(`<div class="cmp-row"><i class="cmp-dot ${m.current ? (m.stale ? 'warn' : 'ok') : 'off'}"></i><b>Module ${esc(m.version || '?')}</b><small>${m.label ? `${esc(m.label)} · ` : ''}last seen ${esc(new Date(m.at).toLocaleTimeString())}${m.presets != null ? ` · ${m.presets} presets` : ''}</small></div>`);
+      rows.push(`<div class="cmp-row"><i class="cmp-dot ${m.current ? (m.stale ? 'warn' : 'ok') : 'off'}"></i><b>Module ${esc(m.version || '?')}</b><small>${m.label ? `${esc(m.label)} · ` : ''}last seen ${esc(new Date(m.at).toLocaleTimeString())}${m.presets != null ? ` · ${m.presets} CC button presets` : ''}${m.deckPresets != null ? ` · ${m.deckPresets} deck presets` : ''}</small></div>`);
       if (!m.current) rows.push(`<p class="note small">This Control Center module is older than ${esc(v.moduleMinVersion)}. It cannot see CC buttons and pages. Update it from <a href="${esc(v.moduleRepo)}/releases" target="_blank" rel="noopener">the releases page</a>.</p>`);
       else if (m.stale) rows.push('<p class="note small">The module has not picked up the latest buttons and pages yet. It checks every few seconds; SYNC forces it.</p>');
     } else {
@@ -92,8 +94,22 @@
           <p class="note small">A whole page can also go across as a file. Download it, then in Companion use Import / Export → Import, pick the page to replace, and map "cc" to your Control Center module connection.</p>
           <div class="cmp-pages">${pages}</div>
         </div>
-        ${deckPagesCard(v)}`;
+        ${deckPagesCard(v)}
+        ${userPagesCard(v)}`;
   }
+
+  // 0.33.0: pages edited in PV Companion and saved back (Control Center pages → Save to User pages). Stored in this
+  // app's data, so they are backed up with it. Download one to import it in any Companion.
+  function userPagesCard(v) {
+    const list = v.userPages || [];
+    const rows = list.map((p) => `<div class="cmp-row"><b>${esc(p.name)}</b><small>${p.controls} buttons${p.originTitle ? ` · from ${esc(p.originTitle)}` : ''} · ${esc(new Date(p.updatedAt).toLocaleString())}</small><span class="spacer"></span>
+        <a class="btn mini" href="/api/companion/user-pages/${encodeURIComponent(p.id)}/companionconfig" download>.companionconfig</a>
+        <button type="button" class="btn mini danger" data-userdel="${esc(p.id)}">${userDelArmed === p.id ? 'PRESS AGAIN' : 'DELETE'}</button></div>`).join('');
+    return `<div class="cmp-card"><h3>USER PAGES</h3>
+          <p class="note small">Control Center pages you edited in PV Companion and saved there with "Save to User pages". The Control Center originals never change. PV Companion lists these under Control Center pages → User pages.</p>
+          ${rows || '<p class="note small">None yet.</p>'}</div>`;
+  }
+  let userDelArmed = null;
 
   // 0.32.0: the Stream Deck pages Control Center draws (HOME, PTZ, ATEM, CONSOLE) as
   // Companion pages. "Whole deck" follows HOME / page keys like a USB deck; a single
@@ -153,6 +169,14 @@
     if (ev.target.id === 'cmpDecksAuto') {
       run(api('POST', '/api/companion/decks', { drive: 'auto' }).then((v) => { view = v; paint(); }));
     }
+    const del = ev.target.closest && ev.target.closest('[data-userdel]');
+    if (del) {
+      const id = del.dataset.userdel;
+      if (userDelArmed !== id) { userDelArmed = id; paint(); setTimeout(() => { if (userDelArmed === id) { userDelArmed = null; paint(); } }, 4000); return; }
+      userDelArmed = null;
+      run(api('DELETE', `/api/companion/user-pages/${encodeURIComponent(id)}`).then(() => load(false)).then(() => toast('User page deleted')));
+      return;
+    }
     if (ev.target.id === 'btnCmpSync') {
       run(api('POST', '/api/companion/sync').then(() => load(false)).then(() => toast('Sync sent. The module refreshes its presets.')));
     }
@@ -181,7 +205,7 @@
     timer = setInterval(() => {
       if (document.hidden || !window.CC.getTab || window.CC.getTab() !== 'companion') return;
       api('POST', '/api/companion/check').then((v) => {
-        const changed = !view || v.status.online !== view.status.online || v.webUrl !== frameUrl || JSON.stringify(v.module) !== JSON.stringify(view.module) || JSON.stringify(v.decks) !== JSON.stringify(view.decks) || v.rev !== view.rev;
+        const changed = !view || v.status.online !== view.status.online || v.webUrl !== frameUrl || JSON.stringify(v.module) !== JSON.stringify(view.module) || JSON.stringify(v.decks) !== JSON.stringify(view.decks) || v.rev !== view.rev || JSON.stringify(v.userPages) !== JSON.stringify(view.userPages) || JSON.stringify(v.status.connections) !== JSON.stringify(view.status.connections);
         view = v;
         if (changed) paint();
       }).catch(() => {});

@@ -71,6 +71,30 @@ rebuilt about every 30 s and Companion's UI reloaded at `/`, which redirects to 
 column repaints on its own and the iframe is only rebuilt when Companion's address, its online state or **Show here**
 changes. Companion opened in its own browser window was never affected by this.
 
+## Why Companion still showed the old buttons, and the fixes (0.33.0, module 0.13.0)
+
+Three things made a correctly updated setup look like the old RS6 preset days:
+
+* **Order.** Module 0.12.0 listed its presets RS6 → per-system → CC buttons → **CC deck**, so the deck pages were at the
+  bottom under dozens of older sections. Module 0.13.0 lists **CC deck** and **CC** first; config **Older per-system
+  presets → Hide** removes the old sections.
+* **The count.** "10 presets" on the COMPANION tab was only the CC button presets; deck pages were not reported.
+  Module 0.13.0 reports deck presets too, and the MODULE card says **N CC button presets · N deck presets**. When deck
+  presets are 0 it says why and how to switch them on (Connections → the connection → **Control Center deck pages for**
+  → Stream Deck + XL → Save, then SYNC). Connections made before 0.12.0 get Stream Deck + XL switched on by an upgrade.
+* **An old imported module.** An imported `pvllc-control-center` 0.11.0 shadowed PV Companion's built-in copy for new
+  connections and in Manage Modules. PV Companion now prefers a newer built-in copy and moves connections off an older
+  import. The MODULE card says **imported v0.11.0** on such a connection, with how to fix it.
+
+## Control Center pages and User pages in PV Companion (0.33.0)
+
+PV Companion has **Pages → Control Center pages**: the live deck pages (whole deck and each PTZ / ATEM / HOME / CONSOLE
+page, per deck size), the PAGES library pages, and **User pages**. **Place** copies one into a new Companion page.
+That page is its own copy: edit it like any page, the Control Center original never changes. **Save page N to User
+pages** stores an edited copy here in Control Center (`companion-user-pages.json` in the data folder, so it is backed up
+with the app). The COMPANION tab lists them under **USER PAGES** with a download and a delete. A user page keeps only
+the connection labels and module ids its buttons use, never a connection's address, config or secrets.
+
 ## Old rs6-presets connections
 
 A connection on the old module id `rs6-presets` runs the pre-0.10 code, which has none of the CC buttons and pages.

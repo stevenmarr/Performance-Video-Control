@@ -970,6 +970,22 @@ Body `{ event?, delta? }`. Runs that button's actions for `event` (`press`, `rel
 
 Downloads one page as `<name>.companionconfig`: a Companion page export, `version: 6`, `type: "page"`, which Companion upgrades on import. Keys keep row and column; on + / + XL the touch strip is the row under the keys and the encoders the row under that. Each control calls the module action `cc_button_run` and the feedback `cc_button_look` on a connection named `cc` (`?label=` changes the name). On import, map that connection to your Control Center module connection. The export uses the module id of the connection the last check found (legacy `rs6-presets` if that is what Companion has), else `pvllc-control-center`.
 
+### GET /api/companion/catalog (0.33.0)
+
+Every page Control Center outputs for Companion, for PV Companion's **Control Center pages**: `{ appVersion, connection, moduleId, deck: [{ surface, label, layout, pages: [{ id, title }] }], library: [{ id, title, surface, label, layout }], user: [{ id, userId, title, name, origin, originTitle, surfaceLayout, controls, connections, createdAt, updatedAt }] }`. Ids are `deck:<surface>:` (whole deck), `deck:<surface>:<system>.<page>`, `library:<page id>`, `user:<user page id>`.
+
+### GET /api/companion/catalog/export?id=&label=[&download=1] (0.33.0)
+
+One of those pages as a Companion page export: `{ name, export }`, or the file itself with `download=1`. `label` is the Companion connection label the buttons should use. 404 for an unknown id.
+
+### GET, POST /api/companion/user-pages; POST, DELETE /api/companion/user-pages/:id; GET /api/companion/user-pages/:id/companionconfig (0.33.0)
+
+User pages: edited copies saved from PV Companion. POST body `{ name, page, instances, version, origin?, originTitle? }` (POST to `/:id` with `page` updates that page, without `page` it renames it). `instances` is reduced to `{ label, moduleId, lastUpgradeIndex }` per connection. Limits: 200 pages, 1.5 MB in all. Stored in `companion-user-pages.json` in the data folder.
+
+## Connection modules on SYSTEMS (0.33.0)
+
+Source: `lib/modules/routes.js`. `GET /api/modules/lite` lists only the systems Control Center has a control module for (id, name, category, status, kind, counts; no buttons or connection forms, about 64 KB instead of the 830 KB full catalog). `GET /api/modules/instances` lists module instances on the desk with status. `GET /api/modules/systems/:id[?theme=light]` returns one system with its connection form, buttons, variables, feedbacks and docs link, for its desk card. Saving a connection form with a secret field left blank (or still `***`) keeps the saved secret.
+
 ## TSL tally
 
 Source: `lib/tsl.js`. 404 `{ error: "TSL not available" }` if `systems.tsl` is missing.

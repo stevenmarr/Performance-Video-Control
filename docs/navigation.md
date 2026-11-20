@@ -11,7 +11,7 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
 ## Row 1: home and system groups
 
 ```
-[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [MODULES] [CUES] [PRESETS] [Control Devices] [BUTTONS] [PAGES] [COMPANION]
+[⌂ SYSTEMS] [● RS6] [● E2 / PIXELHUE] [● ATEM] [● PTZ] [● PIXERA] [● MILLUMIN] [CUES] [PRESETS] [Control Devices] [BUTTONS] [PAGES] [COMPANION]
 ```
 
 * **⌂ SYSTEMS** is always first. It is the home page: a palette of every system type on the left, and one card per instance on the desk.
@@ -26,7 +26,8 @@ Next to the Performance Video mark and **CONTROL CENTER** is the connection pill
   see each system's status.
 * E2 and PixelHue share one group because they share the preset pages. The button shows whichever of the
   two are on the desk, for example `E2 / PIXELHUE`.
-* **MODULES** is always shown. It is connection modules (setup, status, buttons, variables, feedbacks), not a device to ADD TO DESK and not a Stream Deck page.
+* There is no **MODULES** tab since 0.33.0. Systems that run on a Control Center connection module (vMix, OBS, Resolume, ...) are on **SYSTEMS** like every other system: ADD puts one on the desk, and its desk card has the status, CONNECT / DISCONNECT, CONFIGURE (address, port, options) and **BUTTONS · VARIABLES · FEEDBACKS** (button previews you can press, live variables, feedback states, the dark / light preview toggle, the protocol docs link). `/#modsys` and `/#modules` open SYSTEMS. SYSTEMS lists only systems Control Center has a control module for, not all of Companion's catalog.
+* The SYSTEMS list on the left is only for adding: each row says **NOT ON DESK** or **N ON DESK**. Connection status (ONLINE, OFFLINE, CONNECTING, NOT SET UP, CONFIGURED) is only on the desk cards.
 * **TALLIES** (TSL) are on **ATEM → SWITCHER**, not a SYSTEMS card. Scopes is not a tab in this app. The waveform, parade, vectorscope, Lightning and Desktop Video page is the standalone app in `apps/scopes` (port 8092). `/#scopes`, `/#lightning` and `/#pscopes` do not open a pane here.
 * **Control Devices**, **BUTTONS**, **PAGES**, and **COMPANION** are always shown on the top row. `/#decks` opens Control Devices (USB), `/#buttons` the button library, `/#pages` surface layout, and `/#companion` the Companion bridge. Since 0.31.0 there is no second-row copy of these tabs; the second row shows only a short note while one of them is open. BUTTONS creates, edits, duplicates, and deletes library keys (actions, variables, and feedbacks). PAGES lays out a surface from those buttons (new, rename, copy, reorder, delete) and can push it to an online Path C deck. COMPANION hands buttons and pages to Bitfocus Companion, which assigns them to Stream Decks. See [companion.md](companion.md).
 * Tapping a group button opens **the page you last used in that group**. The first time, it opens the
