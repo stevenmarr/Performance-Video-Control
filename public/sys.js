@@ -60,7 +60,7 @@
     const st = s.status || {};
     const conf = s.configured !== undefined ? s.configured : !!(s.connection && (s.connection.host || (s.connection.cameras && s.connection.cameras.length)));
     const ptz = s.key === 'ptz' || s.type === 'ptz';
-    if (!conf) return { cls: 'idle', txt: 'NOT CONFIGURED' };
+    if (!conf) return { cls: 'idle', txt: 'NOT SET UP' };
     if (st.fsm === 'failed') return { cls: 'off', txt: 'FAILED' };
     if (st.fsm === 'degraded') {
       const extra = ptz && st.online != null && st.total != null ? ` ${st.online}/${st.total}` : '';
@@ -75,14 +75,16 @@
   function typeOnDesk(type) {
     return instances().some((i) => i.armed && typeOf(i.id) === type);
   }
-  // AVAILABLE cards are templates. A type with nothing on the desk must not
-  // show OFFLINE or FAILED from a leftover or parked connection.
+  function deskCount(type) {
+    return instances().filter((i) => i.armed && typeOf(i.id) === type).length;
+  }
+  // AVAILABLE rows are only for adding to the desk (0.33.0). They say how many of that type are on the desk, never
+  // a connection state: online / offline / not set up is on the desk cards only.
   function palStatus(s) {
-    if (!s) return { cls: 'off', txt: 'UNKNOWN' };
-    const conf = s.configured !== undefined ? s.configured : !!(s.connection && (s.connection.host || (s.connection.cameras && s.connection.cameras.length)));
-    if (!conf) return { cls: 'idle', txt: 'NOT CONFIGURED' };
-    if (!typeOnDesk(s.key || s.type)) return { cls: 'idle', txt: 'NOT ON DESK' };
-    return statusOf(s);
+    if (!s) return { cls: 'idle', txt: 'NOT ON DESK', n: 0 };
+    const n = deskCount(s.key || s.type);
+    if (!n) return { cls: 'idle', txt: 'NOT ON DESK', n: 0 };
+    return { cls: 'has', txt: `${n} ON DESK`, n };
   }
   const ver = (v) => (v && typeof v === 'object' ? `${v.major}.${v.minor}.${v.patch}` : v || '');
 
@@ -214,12 +216,15 @@
   // Landing: the SYSTEMS page is home. A deep link (/#presets, /#xpresets, /#atem, ...) opens that tab instead.
   (() => {
     let h = decodeURIComponent((location.hash || '').replace(/^#\/?/, '').replace(/^tab=/, ''));
+    if (/^(modsys|modules)$/i.test(h)) { h = 'system'; try { history.replaceState(null, '', '#system'); } catch { /* old browser */ } } // 0.33.0: MODULES is on SYSTEMS now
     if (h && document.querySelector(`.tab[data-tab="${h.replace(/[^\w-]/g, '')}"]`)) { window.__ccTabClicked = true; CC.setTab(h); } else CC.setTab('system');
   })();
 
   // ---------- dashboard (home): status + every connection setting ----------
   let dashQ = ''; let dashSt = localStorage.getItem('cc.dashSt') || 'all';
-  if (dashSt === 'desk') dashSt = 'all';
+  if (!['all', 'desk', 'off'].includes(dashSt)) dashSt = 'all'; // 0.33.0: the left list filters on desk / not on desk only
+  const M = () => window.CCMOD || null;
+  window.addEventListener('cc:mods', () => { if (SYS && CC.getTab() === 'system') renderDash(); });
   let groupSel = localStorage.getItem('cc.group') || 'all';
   const f = (name, label, type, val, ph, dis, extra = '') => `<label>${label}<input name="${name}" type="${type}" value="${esc(val ?? '')}" placeholder="${esc(ph)}" ${dis} ${extra}></label>`;
   function connForm(s, inst) {
@@ -280,14 +285,15 @@
   function renderDash() {
     const clock = $('#dashClock'); if (clock) clock.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     const desk = instances().filter((i) => i.armed);
-    const sts = desk.map(statusOf);
-    $('#dashSummary').innerHTML = `<b>${Object.keys(SYS.systems).length}</b> types · <b>${desk.length}</b> on the desk · <span class="ok">${sts.filter((x) => x.cls === 'ok').length} online</span> · <span class="off">${sts.filter((x) => x.cls === 'off' || x.cls === 'warn').length} offline / degraded</span>`;
+    const sts = desk.map(statusOf).concat(M() ? M().instances().map((i) => M().statusOf(i)) : []);
+    const nTypes = Object.keys(SYS.systems).length + (M() ? M().systems().length : 0);
+    $('#dashSummary').innerHTML = `<b>${nTypes}</b> types · <b>${sts.length}</b> on the desk · <span class="ok">${sts.filter((x) => x.cls === 'ok').length} online</span> · <span class="off">${sts.filter((x) => x.cls === 'off' || x.cls === 'warn').length} offline / degraded</span>`;
     const palRow = (s) => {
       const st = palStatus(s);
-      return `<article class="sys-card avail ${st.cls}" data-card="${s.key}" data-pal="${s.key}" draggable="true" title="Drag onto the desk. This stays here — it is a template, not a used-up device.">
+      return `<article class="sys-card avail ${st.n ? 'has' : 'idle'}" data-card="${s.key}" data-pal="${s.key}" draggable="true" title="Drag onto the desk. This stays here — it is a template, not a used-up device.">
         <div class="mono">${MONO[s.key] || '?'}</div>
         <div class="nm">${esc(s.short || s.label)}</div>
-        <div class="st"><span class="led ${st.cls}"></span>${st.txt}</div>
+        <div class="st"><span class="led ${st.n ? 'ok' : 'idle'}"></span>${st.txt}</div>
         <div class="sys-acts"><button type="button" class="btn mini primary" data-use="${s.key}">ADD</button></div>
       </article>`;
     };
@@ -310,39 +316,54 @@
         <div class="sys-acts"><button type="button" class="btn mini" data-open="${esc(s.id)}">OPEN ${open}</button>${tog}${linkBtn}<button type="button" class="btn mini danger" data-armoff="${esc(s.id)}">REMOVE FROM DESK</button></div>
         <div class="stats">${statsOf(form)}</div>${liveLine(form)}
         <details data-det="${esc(s.id)}" ${openDet.has(s.id) ? 'open' : ''}><summary>CONFIGURE <span class="cfg-sum">${esc(addr)}</span></summary>${connForm(form, s.id)}</details>
+        ${M() ? M().nativePanel(type, s.id, openDet) : ''}
       </article>`;
     };
-    const groups = SYS.groups || [{ name: 'Systems', systems: Object.keys(SYS.systems) }];
+    // 0.33.0: the AVAILABLE list is every system Control Center has a control module for: the native types
+    // (SYS.systems) and the protocol modules (public/sys-modules.js). Rows only add to the desk.
+    const mods = M() ? M().systems() : [];
+    const modDesk = M() ? M().instances() : [];
+    const natGroups = SYS.groups || [{ name: 'Systems', systems: Object.keys(SYS.systems) }];
+    const groupMap = new Map(natGroups.map((g) => [g.name, { name: g.name, items: g.systems.filter((k) => SYS.systems[k]).map((k) => ({ nat: k })) }]));
+    for (const m of mods) { const g = M().groupOf(m); if (!groupMap.has(g)) groupMap.set(g, { name: g, items: [] }); groupMap.get(g).items.push({ mod: m.id }); }
+    const groups = [...groupMap.values()];
     if (groupSel !== 'all' && !groups.some((g) => g.name === groupSel)) groupSel = 'all';
     const chip = (key, label, n) => `<button class="mode ${groupSel === key ? 'active' : ''}" data-group="${esc(key)}" type="button">${esc(label)} <small>${n}</small></button>`;
-    const allTypes = Object.keys(SYS.systems);
-    set($('#dashGroups'), 'groups', chip('all', 'ALL', allTypes.length) + groups.map((g) => chip(g.name, g.name.toUpperCase(), g.systems.length)).join(''));
-    const order = groups.flatMap((g) => g.systems);
-    const leftPool = (groupSel === 'all' ? order : groups.find((g) => g.name === groupSel).systems).filter((k) => SYS.systems[k]);
+    const allItems = groups.flatMap((g) => g.items);
+    set($('#dashGroups'), 'groups', chip('all', 'ALL', allItems.length) + groups.map((g) => chip(g.name, g.name.toUpperCase(), g.items.length)).join(''));
+    const leftPool = groupSel === 'all' ? allItems : groups.find((g) => g.name === groupSel).items;
     const q = dashQ.trim().toLowerCase();
-    const stOk = (k) => { const x = SYS.systems[k]; const c = palStatus(x).cls; return dashSt === 'all' || (dashSt === 'online' && c === 'ok') || (dashSt === 'issues' && (c === 'off' || c === 'warn')) || (dashSt === 'idle' && c === 'idle'); };
-    const qOk = (k) => { const x = SYS.systems[k]; return !q || `${x.key} ${x.short} ${x.label} ${x.group || ''} ${x.kind} ${palStatus(x).txt} ${(x.connection && x.connection.host) || ''}`.toLowerCase().includes(q); };
-    const cnt = (f) => leftPool.filter((k) => qOk(k) && f(k)).length;
+    const nOf = (it) => (it.nat ? palStatus(SYS.systems[it.nat]).n : M().countOf(it.mod));
+    const textOf = (it) => {
+      if (it.nat) { const x = SYS.systems[it.nat]; return `${x.key} ${x.short} ${x.label} ${x.group || ''} ${x.kind}`; }
+      const x = M().sysOf(it.mod) || {}; return `${x.id} ${x.short} ${x.label} ${x.manufacturer || ''} ${x.category || ''} ${M().groupOf(x)}`;
+    };
+    const qOk = (it) => !q || `${textOf(it)} ${nOf(it) ? 'on desk' : 'not on desk'}`.toLowerCase().includes(q);
+    const stOk = (it) => dashSt === 'all' || (dashSt === 'desk' && nOf(it) > 0) || (dashSt === 'off' && !nOf(it));
+    const cnt = (f) => leftPool.filter((it) => qOk(it) && f(it)).length;
     const stChip = (k, l, f) => `<button class="mode ${dashSt === k ? 'active' : ''}" data-dashst="${k}" type="button">${l} <small>${cnt(f)}</small></button>`;
-    set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('online', 'ONLINE', (k) => palStatus(SYS.systems[k]).cls === 'ok') + stChip('issues', 'ISSUES', (k) => ['off', 'warn'].includes(palStatus(SYS.systems[k]).cls)) + stChip('idle', 'NOT SET UP', (k) => palStatus(SYS.systems[k]).cls === 'idle'));
-    const offKeys = leftPool.filter((k) => qOk(k) && stOk(k));
+    set($('#dashStatus'), 'dst', stChip('all', 'ALL', () => true) + stChip('desk', 'ON DESK', (it) => nOf(it) > 0) + stChip('off', 'NOT ON DESK', (it) => !nOf(it)));
+    const offItems = leftPool.filter((it) => qOk(it) && stOk(it));
     const block = (title, hint, html) => `<section class="sys-sec"><div class="section-title">${title} <small>${hint}</small></div>${html}</section>`;
-    const leftHtml = offKeys.length
-      ? `<div class="sys-cards cards avail">${offKeys.map((k) => palRow(SYS.systems[k])).join('')}</div>`
-      : '<p class="note small">Nothing matches this filter. The list is every system type — dragging one does not remove it.</p>';
-    const rightHtml = desk.length
-      ? `<div class="sys-cards cards" data-desk="1">${desk.map(instRow).join('')}</div>`
+    const leftHtml = offItems.length
+      ? `<div class="sys-cards cards avail">${offItems.map((it) => (it.nat ? palRow(SYS.systems[it.nat]) : M().palRow(M().sysOf(it.mod)))).join('')}</div>`
+      : `<p class="note small">${M() && !M().ready() ? 'Loading the module list…' : 'Nothing matches this filter. The list is every system Control Center has a control module for. Adding one does not remove it.'}</p>`;
+    const deskCards = desk.map(instRow).join('') + modDesk.map((i) => M().instRow(i, openDet)).join('');
+    const rightHtml = desk.length || modDesk.length
+      ? `<div class="sys-cards cards" data-desk="1">${deskCards}</div>`
       : '<div class="sys-cards cards" data-desk="1"><p class="note small">Nothing on the desk. Drag a system from the left, or ADD it. You can add the same type more than once.</p></div>';
-    const cards = `<div class="sys-cols">${block('AVAILABLE', 'Every type stays here. Drag one onto the desk to add another instance.', leftHtml)}${block('ON THE DESK', 'Each card is its own device: name, address, and connection.', `<div class="sys-desk" data-desk="1">${rightHtml}</div>`)}</div>`;
+    const cards = `<div class="sys-cols">${block('AVAILABLE', 'Every system Control Center can control. ADD or drag one onto the desk; the number says how many are on it.', leftHtml)}${block('ON THE DESK', 'Each card is its own device: name, address, connection status, and its buttons, variables and feedbacks.', `<div class="sys-desk" data-desk="1">${rightHtml}</div>`)}</div>`;
     // keep a focused connection form from being replaced while typing
     const typing = document.activeElement && /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName) && document.activeElement.closest && document.activeElement.closest('#sysCards');
     if (!typing) set($('#sysCards'), 'cards', cards);
+    if (M()) M().paintOpen($('#sysCards'));
   }
-  $('#sysCards').addEventListener('toggle', (ev) => { const d = ev.target; if (!d.dataset || !d.dataset.det) return; if (d.open) openDet.add(d.dataset.det); else openDet.delete(d.dataset.det); localStorage.setItem('cc.conn', JSON.stringify([...openDet])); }, true);
+  $('#sysCards').addEventListener('toggle', (ev) => { const d = ev.target; if (M() && d.dataset) M().onToggle(d); if (!d.dataset || !d.dataset.det) return; if (d.open) openDet.add(d.dataset.det); else openDet.delete(d.dataset.det); localStorage.setItem('cc.conn', JSON.stringify([...openDet])); }, true);
   $('#dashSearch').addEventListener('input', () => { dashQ = $('#dashSearch').value; renderDash(); });
   $('#dashStatus').addEventListener('click', (ev) => { const b = ev.target.closest('[data-dashst]'); if (!b) return; dashSt = b.dataset.dashst; localStorage.setItem('cc.dashSt', dashSt); renderDash(); });
   $('#dashGroups').addEventListener('click', (ev) => { const b = ev.target.closest('[data-group]'); if (!b) return; groupSel = b.dataset.group; localStorage.setItem('cc.group', groupSel); renderDash(); });
   $('#sysCards').addEventListener('click', (ev) => {
+    if (M() && M().onClick(ev)) return;
     const b = ev.target.closest('button'); if (!b) return;
     if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); const r = (st.instances || []).find((i) => i.id === b.dataset.armoff); toast(`${(r && r.name) || b.dataset.armoff} left the desk`); }).catch((e) => toast(e.message, true)));
     if (b.dataset.link) {
@@ -369,6 +390,7 @@
     if (b.dataset.reconnect) return run(api('POST', `/api/sys/${b.dataset.reconnect}/connect`).then(() => toast('Connected')));
   });
   $('#sysCards').addEventListener('submit', (ev) => {
+    if (M() && M().onSubmit(ev)) return;
     ev.preventDefault();
     const fm = ev.target;
     const k = fm.dataset.sys; const b = {};
@@ -411,6 +433,7 @@
     ev.preventDefault();
     desk.classList.remove('drop');
     const type = ev.dataTransfer ? ev.dataTransfer.getData('text/plain') : '';
+    if (type && M() && M().onDrop(type)) return;
     if (!type || !SYS.systems[type]) return;
     run(api('POST', '/api/sys/instances', { type }).then((st) => {
       onSys(st);
