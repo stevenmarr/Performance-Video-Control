@@ -77,3 +77,27 @@ A connection on the old module id `rs6-presets` runs the pre-0.10 code, which ha
 Companion only offers the move to `pvllc-control-center` (its `legacyIds`); it does not move it by itself. In stock
 Companion edit the connection and change its module to Performance Video Control Center (import module 0.11.0 or newer
 first). PV Companion ships the module built in and moves `rs6-presets` connections at start-up.
+
+## Deck pages and touch-strip displays in Companion (0.32.0)
+
+Up to 0.31.2 Companion only got the BUTTONS / PAGES library (`GET /api/companion/buttons`). The pages a USB
+Stream Deck shows — HOME, the PTZ paint / preset / lens pages with their knobs, the ATEM switcher page, CONSOLE —
+are built at run time by `lib/decks/faces.js` for a deck session and were never in that library, so Companion
+could not show them. From 0.32.0:
+
+* Every surface size has one Control Center **virtual deck**, `companion-<surface>` (`plusxl`, `plus`, `xl`, `mk2`).
+  A Companion key on it calls `POST /api/companion/deck/:surface/key` (`press` / `release`); a knob or a touch-strip
+  cell calls `POST /api/companion/deck/:surface/dial` (`rotate` with `ticks`, `down` / `up` for push and long-press
+  reset, `tap` for the strip). Control Center runs the same press / release / turn as a USB deck of that size, so
+  HOME, system and page keys, holds, the ATEM shift and the R / B gain pair steps behave the same.
+* `pin: "ptz.0"` (system.page) moves that virtual deck to one page before the press, for page presets that stay on
+  one page. No pin: the deck follows its own navigation (the "whole deck" page).
+* `GET /api/companion/deck[?surfaces=plusxl][&since=<rev>&timeout=<ms>]` returns, per surface, what the deck shows
+  now (`live`) and every system page (`pages`), as key text and colors and, for each knob, the touch-strip readout
+  (label and live value, e.g. `R GAIN +12` / `B GAIN -3`, the active side marked `>`). `widgets` has every PTZ dial
+  as a standalone display; `POST /api/companion/dials/:widget` turns one without a page. `rev` is a hash of the
+  answer; with `since` the request waits until something changes. `layoutRev` changes only when the set of presets would.
+* `GET /api/companion/deck/:surface/companionconfig[?pin=ptz.0]` downloads a Companion page file. The COMPANION tab
+  lists them under **DECK PAGES**. On a + / + XL the strip readouts are on the row under the keys and the knobs on
+  the row under that, the same rows as Steven's Companion fork page layouts.
+* The Control Center module 0.12.0 draws all of this (`cc_deck_look`) and publishes presets under **CC deck**.

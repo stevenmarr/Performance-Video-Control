@@ -91,7 +91,26 @@
           <p class="note small">The module publishes every CC button and page as Companion presets (Presets → Performance Video Control Center). SYNC tells it to refresh now${v.syncedAt ? `; last SYNC ${esc(new Date(v.syncedAt).toLocaleString())}` : ''}. Revision ${esc(v.rev)}.</p>
           <p class="note small">A whole page can also go across as a file. Download it, then in Companion use Import / Export → Import, pick the page to replace, and map "cc" to your Control Center module connection.</p>
           <div class="cmp-pages">${pages}</div>
-        </div>`;
+        </div>
+        ${deckPagesCard(v)}`;
+  }
+
+  // 0.32.0: the Stream Deck pages Control Center draws (HOME, PTZ, ATEM, CONSOLE) as
+  // Companion pages. "Whole deck" follows HOME / page keys like a USB deck; a single
+  // page stays on that page. The module 0.12.0 draws them, knobs and touch strip too.
+  function deckPagesCard(v) {
+    const list = v.deckPages || [];
+    if (!list.length) return '';
+    const rows = list.map((s) => {
+      const base = `/api/companion/deck/${encodeURIComponent(s.surface)}/companionconfig`;
+      const pages = s.pages.map((p) => `<div class="cmp-row"><span>${esc(p.title)}</span><small>${esc(p.id)}</small><span class="spacer"></span><a class="btn mini" href="${base}?pin=${encodeURIComponent(p.id)}" download>.companionconfig</a></div>`).join('');
+      return `<details class="cmp-deck"><summary><b>${esc(s.label)}</b> <small>${s.pages.length} pages</small></summary>
+          <div class="cmp-row"><span>Whole deck (follows HOME and page keys)</span><span class="spacer"></span><a class="btn mini primary" href="${base}" download>.companionconfig</a></div>
+          ${pages}</details>`;
+    }).join('');
+    return `<div class="cmp-card"><h3>DECK PAGES</h3>
+          <p class="note small">The PTZ, ATEM, HOME and CONSOLE pages this app draws on a Stream Deck, with the + / + XL knobs and touch-strip readouts (R / B gain, iris, detail ...). Needs the Control Center module 0.12.0. In Companion: Import / Export → Import, pick the page to replace, and map "cc" to your Control Center module connection. They are also under Presets → CC deck.</p>
+          ${rows}</div>`;
   }
 
   function paint() {
