@@ -1,5 +1,5 @@
 'use strict';
-// 0.33.0: what the COMPANION tab says about the Control Center deck pages in Companion (CC deck: ... presets): how
+// 0.33.0 (0.34.1: module 0.14.0 lists only Control Center presets): what the COMPANION tab says about the Control Center deck pages in Companion (CC deck: ... presets): how
 // many the module publishes, or why there are none and how to turn them on. Pure, so test/companion-advice.test.js
 // can run it; the tab uses window.CCAdvice.
 (function (root) {
@@ -29,12 +29,12 @@
       return out;
     }
     if (!atLeast(m.version, reportMin) || m.deckPresets == null) {
-      out.push({ cls: 'warn', text: `Module ${m.version} has the deck pages but does not report them here, so this tab cannot tell whether they are published. In Companion they are Presets → Performance Video Control Center → "CC deck: …", listed after the older presets in this version (module ${reportMin} lists them first). If there is no "CC deck:" section: ${ENABLE(label)}` });
+      out.push({ cls: 'warn', text: `Module ${m.version} has the deck pages but does not report them here, so this tab cannot tell whether they are published. In Companion they are Presets → Performance Video Control Center → "CC deck: …", after the module's other sections in this version (module ${reportMin} and newer list them first; 0.14.0 lists only Control Center presets). If there is no "CC deck:" section: ${ENABLE(label)}` });
       return out;
     }
     const sizes = (m.deckSurfaces || []).map((s) => SIZES[s] || s).join(', ') || 'no deck size';
     if (m.deckPresets > 0) {
-      out.push({ cls: 'ok', text: `Deck pages: ${m.deckPresets} presets for ${sizes}. In Companion: Presets → Performance Video Control Center → "CC deck: …" (listed first)${m.legacyPresets === 'hide' ? '; the older per-system presets are hidden' : ''}.` });
+      out.push({ cls: 'ok', text: `Deck pages: ${m.deckPresets} presets for ${sizes}. In Companion: Presets → Performance Video Control Center → "CC deck: …" (listed first).` });
       return out;
     }
     if (m.deckState === 'error') out.push({ cls: 'off', text: `Deck pages: 0 presets. The module cannot read them from this app (${m.deckError || 'no answer'}). Check that its host and port point at this app. ${ENABLE(label)}` });

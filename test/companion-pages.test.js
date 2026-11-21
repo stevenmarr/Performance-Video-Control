@@ -1,6 +1,6 @@
 'use strict';
 // 0.33.0: PV Companion's "Control Center pages" (live deck pages, PAGES library pages, user pages saved back), the
-// USER PAGES store, and the COMPANION tab's deck-pages advice (why Companion shows only the older presets).
+// USER PAGES store, and the COMPANION tab's deck-pages advice (whether the CC deck presets are published).
 process.env.RS6_QUIET = '1';
 process.env.CC_DECK_USB = '0';
 const test = require('node:test');
@@ -100,6 +100,7 @@ test('hello carries the deck pages a 0.13.0 module publishes; check() says which
   const v = await bridge.check();
   assert.deepEqual(v.status.connections.map((c) => [c.versionId, c.oldImport]), [['0.11.0', true], ['builtin', false]]);
   bridge.hello({ moduleVersion: '0.13.0', label: 'rs6presets', rev: 'x', presets: 10, deckPresets: 872, deckSurfaces: ['plusxl', 'bogus'], deckState: 'ok', legacyPresets: 'show' });
+  assert.equal('legacyPresets' in bridge.view().module, false, '0.34.1: the removed module setting is not kept');
   const view = bridge.view();
   assert.equal(view.module.deckPresets, 872);
   assert.deepEqual(view.module.deckSurfaces, ['plusxl']);
@@ -112,7 +113,7 @@ test('hello carries the deck pages a 0.13.0 module publishes; check() says which
   cleanup(dir);
 });
 
-test('the COMPANION tab says why Companion shows only the older presets, and how to turn the deck pages on', () => {
+test('the COMPANION tab says whether the deck pages are published, and how to turn them on', () => {
   const base = { deckMinVersion: '0.12.0', deckReportVersion: '0.13.0', status: { connections: [] } };
   const text = (v) => deckAdvice({ ...base, ...v }).map((a) => `${a.cls}: ${a.text}`).join('\n');
   // Steven's case: an imported 0.11.0 next to the built-in, or a 0.12.0 module that does not say
@@ -128,6 +129,10 @@ test('the COMPANION tab says why Companion shows only the older presets, and how
   assert.match(text({ module: { version: '0.13.0', deckPresets: 0, deckSurfaces: ['plusxl'], deckState: 'off' } }), /^off: Deck pages: 0 presets for Stream Deck \+ XL\. The module has not started them\. To turn them on/);
   assert.match(text({ module: { version: '0.13.0', deckPresets: 0, deckState: 'loading' } }), /^warn: Deck pages: loading/);
   assert.equal(text({}), '');
+  // 0.34.1: module 0.14.0 is Control Center only; nothing here talks about older or RS6 preset sections
+  const t014 = text({ module: { version: '0.14.0', deckPresets: 872, deckSurfaces: ['plusxl'], deckState: 'ok', legacyPresets: 'hide' } });
+  assert.match(t014, /^ok: Deck pages: 872 presets for Stream Deck \+ XL\. In Companion: Presets → Performance Video Control Center → "CC deck: …" \(listed first\)\.$/);
+  for (const t of [t012, t014]) assert.doesNotMatch(t, /older|RS6 presets|per-system/i);
 });
 
 test('the COMPANION tab has USER PAGES and the advice, and the routes exist', () => {
