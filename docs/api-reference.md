@@ -1022,6 +1022,12 @@ Every page Control Center outputs for Companion, for PV Companion's **Control Ce
 
 One of those pages as a Companion page export: `{ name, export }`, or the file itself with `download=1`. `label` is the Companion connection label the buttons should use. 404 for an unknown id.
 
+0.36.0: `look=0` leaves out the `cc_deck_look` feedbacks of a deck page, so the placed copy shows its own text and colours (to restyle in Companion; the keys still run Control Center). On a pinned deck page every navigation key's press action has `go`, the page it opens (`home.0`, `ptz.3`, `atem.0`, `console.0`); PV Companion turns those into Companion page jumps when it places every page of a deck. The catalog marks the whole-deck entry `whole: true`, and each system page has `system` and `instance` (the system's name); with two or more systems of one kind armed (PTZ 1 and PTZ 2) the page titles start with that name ("PTZ 2 · PTZ paint · MSU").
+
+### GET /api/companion/catalog/preview.png?id= (0.36.0)
+
+A small PNG of one catalog page for PV Companion's **Control Center pages** list (fetched by PV Companion's server, so the browser never needs Control Center's address). Deck pages use the very pictures the deck shows (keys; on + / + XL the strip and knobs rows under them); library and user pages are drawn from their buttons' text and colours on the page's own grid. 48 px cells. 400 for a bad id, 404 for an unknown page. Feature `companionPagePreview`.
+
 ### GET, POST /api/companion/user-pages; POST, DELETE /api/companion/user-pages/:id; GET /api/companion/user-pages/:id/companionconfig (0.33.0)
 
 User pages: edited copies saved from PV Companion. POST body `{ name, page, instances, version, origin?, originTitle? }` (POST to `/:id` with `page` updates that page, without `page` it renames it). `instances` is reduced to `{ label, moduleId, lastUpgradeIndex }` per connection. Limits: 200 pages, 1.5 MB in all. Stored in `companion-user-pages.json` in the data folder.
