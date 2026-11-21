@@ -43,7 +43,7 @@ Pages save to `surface-pages.json`. A Path C deck can still get a page directly 
 5. To move a whole page at once, press **.companionconfig** next to the page. In Companion use **Import / Export → Import**, choose the page to replace, and map the connection called `cc` to your Control Center module connection. On the fork, the page keeps its surface layout (Stream Deck, XL, +, or + XL); save it as a template there if you want to stamp it out again.
 6. In Companion's **Surfaces** tab, pick the page (and startup page) each Stream Deck shows. Companion owns the deck: quit Control Center's USB use of that deck (Control Devices) or let Companion take it.
 
-The COMPANION tab also shows Companion's own web UI. If it does not show (for example when you open Control Center from another computer, where `127.0.0.1` is that computer), use **Open in a new window**.
+The COMPANION tab also shows Companion's own web UI, at `/companion/` on Control Center's own address (0.34.0, see below), so it works from any computer that can open Control Center.
 
 ## What runs where
 
@@ -62,6 +62,52 @@ USB deck handles at once and stops opening decks, so Companion picks them up (un
 see it within a few seconds). It is on automatically once the Control Center module reports in or a check finds its
 connection; tick or untick it to choose explicitly, or press **Automatic** to go back. The choice is saved in companion.json.
 Turn it off to drive the decks from Control Center (Control Devices) again, after quitting Companion or disabling its Stream Deck surface.
+
+## One web app: Control Center runs Companion (0.34.0)
+
+From 0.34.0 Control Center starts PV Companion itself and shows it at **http://\<this Mac\>:8080/companion/**, the
+same address as the rest of Control Center. There is no separate Terminal window and no `yarn start:local` by hand.
+
+* **Start and stop.** The launchd service `com.performancevideo.controlcenter` starts Control Center, and Control
+  Center starts Companion: `yarn start:local` in `~/companion`, with config in `~/companion-config` and Companion's
+  web server on `127.0.0.1:8000` (loopback only; browsers reach it through Control Center). Stopping or restarting
+  Control Center stops Companion cleanly (SIGTERM to its whole process group, SIGKILL after 10 s).
+* **Supervision.** If Companion exits, Control Center ends whatever is left of it and starts it again after 1, 2, 5,
+  10, 30, then 60 s (the delay resets after two minutes of running). The **COMPANION SERVICE** card on the COMPANION
+  tab shows the state (STARTING, RUNNING, BACKOFF, UNHEALTHY, ERROR, NOT-INSTALLED, ADOPTED, STOPPED), pid, uptime,
+  restarts and Node version, with RESTART / STOP / START and the last lines of Companion's log. The full log is
+  `companion.log` in the data folder (rotated at 5 MB). A Companion left running by a Control Center that was killed
+  hard is stopped at the next start (`companion.pid`).
+* **Node and yarn.** start:local needs Node 26.10+ (below 27). Control Center uses its own node when that fits, else
+  looks in nvm, Homebrew `node@26`, fnm, mise, asdf, Volta, `/opt/homebrew/bin`, `/usr/local/bin` and the PATH a
+  login shell has, because launchd gives Control Center a bare PATH. Set **Node** / **yarn** under Settings on the card
+  if it picks the wrong one.
+* **Already running.** If a Companion that Control Center did not start already answers on the port (for example one
+  still open in Terminal), the card says ADOPTED and Control Center uses it. Quit it and Control Center starts its own
+  within 10 s.
+* **Updating Companion** stays separate: `git pull` in `~/companion`, then RESTART on the card (or restart Control
+  Center). A pulled checkout rebuilds Companion's web UI on that first start (a minute or two); a crash restart on
+  the same commit skips the rebuild (fork `COMPANION_DEV_REBUILD_WEBUI=auto`, set by Control Center).
+* **Opt out.** Untick **Run Companion inside Control Center** (or start Control Center with `--no-companion`, or set
+  `CC_COMPANION_MODE=external`). Control Center then uses the Companion at the CONNECTION card's host and port, and
+  still shows it at `/companion/`. With no checkout at the folder (the Pi, for example) the card says NOT-INSTALLED
+  and the CONNECTION host and port are used the same way.
+* **Settings** are in `companion-supervisor.json` in the data folder: `mode` (`managed` / `external`), `path`,
+  `configDir`, `port`, `nodePath`, `yarnPath`. Environment variables win over the file (handy in the launchd plist):
+  `CC_COMPANION_MODE`, `CC_COMPANION_PATH`, `CC_COMPANION_CONFIG_DIR`, `CC_COMPANION_PORT`, `CC_COMPANION_NODE`,
+  `CC_COMPANION_YARN`. `--mock` never starts Companion unless `CC_COMPANION_MODE=managed`.
+
+**How /companion/ works.** `lib/companion/proxy.js` forwards `/companion/*` to Companion with the prefix removed and
+the request header `companion-custom-prefix: companion`. Companion's web UI is built with the placeholder base
+`/ROOT_URL_HERE` and its server swaps in that prefix (upstream reverse-proxy support), so assets, the router and the
+tRPC websocket all live under `/companion/` with no Companion change. The websocket `/companion/trpc` is checked
+against Control Center's own origin first (a page from another site cannot open it), then forwarded with
+Companion's own origin. `/user-guide/` and `/instance/` (help links and module HTTP handlers) are forwarded too.
+Because the frame is now same-origin, it also works from another computer or an iPad: there is no `127.0.0.1` in it.
+
+**LAN access.** Companion used to answer only on this Mac (start:local binds 127.0.0.1). Through Control Center it is
+reachable by anyone who can open Control Center, the same as every other Control Center page. Control Center has
+no login; keep the show network private.
 
 ## Companion's web UI in the tab (0.31.2)
 

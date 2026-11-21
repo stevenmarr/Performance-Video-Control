@@ -930,6 +930,46 @@ Body `{ ids: [pageId, ...] }`. Every page or a subset (for example the pages of 
 
 `GET /api/surface-pages` now also returns `version: 2`. `surface-pages.json` and `button-library.json` are written as `{ version: 2, pages | buttons }`. An older file is migrated on load: a bare list, a Companion / fork surface id (`streamdeck`, `streamdeck-xl`, `streamdeck-plus`, `streamdeck-plus-xl`, ...), a legacy `order` number (sorted, then dropped), a duplicate page id, or the reserved id `order`.
 
+## Companion service and /companion/ (0.34.0)
+
+Control Center runs PV Companion and serves its web UI under its own origin. Features `companionService` and
+`companionProxy`; API_VERSION stays 9. Source: `lib/companion/supervisor.js`, `lib/companion/proxy.js`.
+
+### GET /companion/*, websocket /companion/trpc
+
+Companion's web UI, REST API and tRPC websocket, forwarded to Companion with `/companion` removed and
+`companion-custom-prefix: companion` (plus X-Forwarded-For / -Host / -Proto) set. `GET /companion` redirects to
+`/companion/`. `/user-guide/*` and `/instance/*` are forwarded unchanged. A websocket whose `Origin` is not this
+Control Center gets 403. When Companion does not answer: 502, an HTML page that retries every 3 s for browsers, else
+`{ error, state }`. Any other websocket upgrade on Control Center gets 404.
+
+### GET /api/companion/service
+
+`{ mode, managed, state, message, pid, port, path, configDir, startedAt, healthyAt, uptimeSec, restarts, lastExit,
+node: { path, version }, yarn, settings, envOverrides, uiPath, logSeq }`. `state` is `starting`, `running`,
+`unhealthy`, `backoff`, `stopping`, `stopped`, `error`, `not-installed`, `adopted` or `external`. Without a service
+(tests, `--mock`): `{ managed: false, state: 'external', available: false }`.
+
+### POST /api/companion/service/config
+
+Body any of `{ mode: 'managed'|'external', path, configDir, port, nodePath, yarnPath }`. Saved to
+`companion-supervisor.json`; Companion restarts when what runs changed. Returns the status.
+
+### POST /api/companion/service/start | stop | restart
+
+Returns the status. `stop` resolves once Companion's process group is gone. 409 when this Control Center has no
+Companion service.
+
+### GET /api/companion/service/logs (?since, ?limit)
+
+`{ seq, lines: [{ seq, t, stream: 'out'|'err'|'cc', text }], file }`: Companion's stdout / stderr and Control
+Center's own notes (`cc`), last 1500 lines kept; `companion.log` in the data folder has everything.
+
+### GET /api/companion (0.34.0 additions)
+
+Adds `uiUrl: '/companion/'` and `service` (the status above, or null). In managed mode `webUrl` is
+`http://127.0.0.1:<service port>` whatever host and port are saved.
+
 ## Companion bridge (COMPANION tab, 0.31.0)
 
 Control Center defines the buttons and pages. Bitfocus Companion (and Steven's fork) puts them on Stream Decks. The Control Center module (`pvllc-control-center` 0.11.0+, or legacy id `rs6-presets` 0.10.0) is the client of these routes. API_VERSION stays 9; `/api/version` lists the additive feature `companionButtons`. Source: `lib/companion/bridge.js`.

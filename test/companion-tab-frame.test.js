@@ -105,3 +105,33 @@ test('the tab script never replaces the whole root on a poll once painted', () =
   assert.equal(writes.length, 3);
   assert.match(src, /if \(key !== frameKey\) \{ right\.innerHTML = frameHtml\(v\); frameKey = key; \}/);
 });
+
+// 0.34.0: one web app. The frame shows Companion through Control Center (/companion/, same origin), and the
+// COMPANION SERVICE card shows the service Control Center runs. A service state change repaints the card only.
+test('0.34.0: the frame is /companion/ and the COMPANION SERVICE card follows the service without reloading the frame', async () => {
+  const h = harness();
+  const service = { mode: 'managed', managed: true, state: 'running', message: 'Companion is running inside Control Center.', pid: 4242, port: 8000, uptimeSec: 75, restarts: 0, node: { path: '/x/node', version: 'v26.13.1' }, settings: { mode: 'managed', path: '~/companion', configDir: '~/companion-config', port: 8000, nodePath: '', yarnPath: '' }, envOverrides: [] };
+  h.setView(baseView({ uiUrl: '/companion/', service }));
+  h.run();
+  h.winListeners['cc:tab']({ detail: 'companion' });
+  await new Promise((r) => setImmediate(r)); await new Promise((r) => setImmediate(r));
+  assert.match(h.right.innerHTML, /<iframe class="cmp-frame" src="\/companion\/"/);
+  assert.match(h.right.innerHTML, /href="\/companion\/" target="_blank"/);
+  assert.match(h.left.innerHTML, /COMPANION SERVICE/);
+  assert.match(h.left.innerHTML, /RUNNING/);
+  assert.match(h.left.innerHTML, /pid 4242 · up 1 min · Node v26\.13\.1 · port 8000/);
+  assert.match(h.left.innerHTML, /data-svc="restart"/);
+  assert.match(h.left.innerHTML, /data-svc="stop"/);
+  assert.match(h.left.innerHTML, /id="cmpSvcManaged" checked/);
+  assert.match(h.left.innerHTML, /Control Center runs Companion itself/);
+  const frameWrites = h.right.writes;
+  h.setView(baseView({ uiUrl: '/companion/', service: { ...service, state: 'backoff', pid: null, restarts: 1, message: 'Companion stopped unexpectedly (exit code 1). Restarting in 2 s.' } }));
+  await h.tick();
+  assert.match(h.left.innerHTML, /BACKOFF/);
+  assert.match(h.left.innerHTML, /Restarting in 2 s/);
+  assert.equal(h.right.writes, frameWrites, 'the Companion frame is not reloaded by a service status change');
+  h.setView(baseView({ uiUrl: '/companion/', service: { ...service, mode: 'external', managed: false, state: 'external', message: 'Companion is run outside Control Center.' } }));
+  await h.tick();
+  assert.doesNotMatch(h.left.innerHTML, /data-svc=/);
+  assert.match(h.left.innerHTML, /id="cmpSvcManaged">/);
+});
