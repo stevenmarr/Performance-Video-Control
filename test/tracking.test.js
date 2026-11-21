@@ -7,6 +7,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const net = require('net');
+const { ownOnly } = require('./own-only');
 const { cleanSettings, loadStore, saveStore, fileFor, nudge, defaults } = require('../lib/tracking/settings');
 const { actionToRequest } = require('../lib/decks/page-push');
 const deck = require('../lib/deck');
@@ -45,6 +46,7 @@ function mockTracker() {
   const sockets = new Set();
   const server = net.createServer((socket) => {
     sockets.add(socket);
+    socket.on('error', () => {}); // a reset (the test closing, a peer going away) is not a test failure
     let buf = Buffer.alloc(0);
     let up = false;
     const decoder = new FrameDecoder();
@@ -72,6 +74,7 @@ function mockTracker() {
       try { messages.push(JSON.parse(frame.payload.toString('utf8'))); } catch { /* not a tracker message */ }
     }
   });
+  ownOnly(server); // a CI port probe never reaches the mock tracker (it would be sent frames too)
   return new Promise((resolve) => {
     server.listen(0, '127.0.0.1', () => resolve({
       server, messages, port: server.address().port,

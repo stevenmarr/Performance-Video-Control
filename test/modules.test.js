@@ -7,6 +7,8 @@ const os = require('os');
 const path = require('path');
 const http = require('http');
 const net = require('net');
+const { ownOnly } = require('./own-only');
+const { until } = require('./helpers');
 const dgram = require('dgram');
 const { resolveKey, actionList, THEMES } = require('../lib/decks/key-class');
 const { ButtonLibrary } = require('../lib/decks/button-library');
@@ -18,6 +20,7 @@ const osc = require('../lib/drivers/osc');
 const coverage = require('../lib/modules/coverage');
 
 function listen(server) {
+  ownOnly(server); // a CI port probe never reaches the mock
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 }
 
@@ -165,21 +168,28 @@ test('TCP echoes a delimited line, and server mode records an incoming line', as
   });
   const port = await listen(server);
   const desk = new ModuleDesk();
+  let client = null;
   try {
     const row = desk.create('generic-tcp', { connection: { host: '127.0.0.1', port, delimiter: '\\n', reconnect: false } });
     await desk.connect(row.id);
     const res = await desk.run(row.id, 'send', { payload: 'hello\\n', encoding: 'escape', expect: 'ok' });
     assert.match(res.vars['tcp.reply'], /hello-ok/);
-    const listenPort = port + 1;
+    // a free port from the OS (port + 1 could be taken, e.g. by another process's client socket)
+    const listenPort = await new Promise((resolve) => { const probe = net.createServer(); probe.listen(0, '127.0.0.1', () => { const p = probe.address().port; probe.close(() => resolve(p)); }); });
     const inbound = desk.create('generic-tcp', { connection: { host: '', port: listenPort, server: true, listenHost: '127.0.0.1', delimiter: '\\n' } });
     await desk.connect(inbound.id);
-    const client = net.connect({ host: '127.0.0.1', port: listenPort });
+    // The driver's own server hears any client, a CI port probe too, whose lines can replace ours within the same
+    // tick; so every line it records is kept, not only the last.
+    const recorded = [];
+    const vars = desk.must(inbound.id).vars;
+    let last = vars['tcp.last'];
+    Object.defineProperty(vars, 'tcp.last', { get: () => last, set: (v) => { last = v; recorded.push(v); }, enumerable: true, configurable: true });
+    client = net.connect({ host: '127.0.0.1', port: listenPort });
     await new Promise((resolve) => client.once('connect', resolve));
     client.write('from-show\n');
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    assert.match(desk.must(inbound.id).vars['tcp.last'], /from-show/);
-    client.end();
+    await until(() => recorded.some((l) => /from-show/.test(l)), 3000, 'from-show recorded');
   } finally {
+    if (client) client.destroy(); // an open client would keep the file's event loop alive after a failure
     desk.close();
     await new Promise((resolve) => server.close(resolve));
   }
@@ -254,7 +264,9 @@ test('OBS websocket 5 identifies with the documented password hash', async () =>
         const at = buf.indexOf('\r\n\r\n');
         if (at < 0) return;
         const text = buf.subarray(0, at).toString();
-        const key = /Sec-WebSocket-Key:\s*(\S+)/i.exec(text)[1];
+        const m = /Sec-WebSocket-Key:\s*(\S+)/i.exec(text);
+        if (!m) { sock.destroy(); return; } // not a WebSocket handshake (a port probe): never ours
+        const key = m[1];
         sock.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${wsAcceptKey(key)}\r\n\r\n`);
         open = true;
         send({ op: 0, d: { rpcVersion: 1, authentication: { challenge, salt } } });
