@@ -1,0 +1,4 @@
+#!/bin/sh
+# Test stand-in for `yarn start:local`: runs fake-companion.js with the node first on PATH, like yarn does.
+[ "$1" = "start:local" ] || { echo "fake-yarn: unexpected $*" >&2; exit 2; }
+exec node "$(dirname "$0")/fake-companion.js"

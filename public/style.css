@@ -1456,6 +1456,7 @@ nav.tabs{padding:0 6px}
 #pane-companion .cmp-dot.ok{background:var(--pvw)}
 #pane-companion .cmp-dot.warn{background:#E0B030}
 #pane-companion .cmp-dot.off{background:var(--pgm)}
+#pane-companion .cmp-log{max-height:260px;overflow:auto;background:#05080d;border:1px solid var(--line);border-radius:8px;padding:8px;font:11px/1.35 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all;margin:6px 0 0}
 #pane-companion .cmp-frame{width:100%;height:calc(100vh - 220px);min-height:420px;border:1px solid var(--line);border-radius:10px;background:#000}
 #pane-companion .cmp-pages{display:flex;flex-direction:column;gap:6px}
 @media (max-width:900px){#pane-companion .cmp-grid{grid-template-columns:1fr}}

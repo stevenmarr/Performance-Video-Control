@@ -1,0 +1,6 @@
+{
+  "name": "fake-companion",
+  "private": true,
+  "engines": { "node": ">=16.0.0 <999" },
+  "scripts": { "start:local": "node fake-companion.js" }
+}

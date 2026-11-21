@@ -6,6 +6,7 @@
 // legacy rs6-presets id) is
 // installed and current, lets you SYNC CC buttons and pages into it, download a
 // page as a .companionconfig, and opens Companion's own web UI.
+// 0.34.0: Control Center runs Companion (COMPANION SERVICE card) and shows its UI at /companion/, same origin.
 (() => {
   const root = document.querySelector('#companionRoot');
   if (!root || !window.CC) return;
@@ -45,6 +46,57 @@
     return rows.join('');
   }
 
+  // 0.34.0: COMPANION SERVICE. Control Center starts PV Companion (yarn start:local in ~/companion), restarts it
+  // if it stops, and stops it when Control Center stops. Or "Companion runs separately" (external mode).
+  const SERVICE_DOT = { running: 'ok', adopted: 'ok', starting: 'warn', stopping: 'warn', unhealthy: 'warn', backoff: 'off', error: 'off', 'not-installed': 'off', stopped: 'off', external: '' };
+  let logsOpen = false;
+  let logSeq = 0;
+  function serviceCard(v) {
+    const s = v.service;
+    if (!s) return '';
+    const st = s.settings || {};
+    const managed = !!s.managed;
+    const facts = [
+      s.pid ? `pid ${s.pid}` : '',
+      s.uptimeSec ? `up ${s.uptimeSec >= 3600 ? `${Math.floor(s.uptimeSec / 3600)} h ${Math.floor((s.uptimeSec % 3600) / 60)} min` : s.uptimeSec >= 60 ? `${Math.floor(s.uptimeSec / 60)} min` : `${s.uptimeSec} s`}` : '',
+      s.restarts ? `${s.restarts} restart${s.restarts === 1 ? '' : 's'}` : '',
+      s.node && s.node.version ? `Node ${s.node.version}` : '',
+      managed ? `port ${s.port}` : '',
+    ].filter(Boolean).join(' · ');
+    return `<div class="cmp-card" id="cmpService"><h3>COMPANION SERVICE</h3>
+      <div class="cmp-row"><i class="cmp-dot ${SERVICE_DOT[s.state] || ''}"></i><b>${esc(String(s.state || '').toUpperCase())}</b><small>${esc(facts)}</small><span class="spacer"></span>
+        ${managed ? `<button type="button" class="btn mini" data-svc="restart">RESTART</button>${s.pid || s.state === 'backoff' || s.state === 'starting' ? '<button type="button" class="btn mini danger" data-svc="stop">STOP</button>' : '<button type="button" class="btn mini primary" data-svc="start">START</button>'}` : ''}</div>
+      ${s.message ? `<p class="note small">${esc(s.message)}</p>` : ''}
+      ${s.lastExit && managed && s.state !== 'running' ? `<p class="note small">Last exit: ${esc(s.lastExit.signal || `code ${s.lastExit.code}`)} after ${esc(s.lastExit.ranSec)} s.</p>` : ''}
+      <div class="cmp-row"><label class="chk"><input type="checkbox" id="cmpSvcManaged"${managed ? ' checked' : ''}> <b>Run Companion inside Control Center</b></label></div>
+      <details class="cmp-deck" id="cmpSvcSettings"><summary><b>Settings</b> <small>${esc(st.path || '~/companion')}</small></summary>
+        <form id="cmpSvcForm">
+          <div class="cmp-row"><label>Companion folder <input name="path" value="${esc(st.path || '')}" placeholder="~/companion" spellcheck="false" size="22"></label></div>
+          <div class="cmp-row"><label>Config folder <input name="configDir" value="${esc(st.configDir || '')}" placeholder="~/companion-config" spellcheck="false" size="22"></label></div>
+          <div class="cmp-row"><label>Port <input name="port" type="number" min="1" max="65535" value="${esc(st.port || 8000)}" style="width:6em"></label></div>
+          <div class="cmp-row"><label>Node <input name="nodePath" value="${esc(st.nodePath || '')}" placeholder="automatic (Node 26.10+)" spellcheck="false" size="22"></label></div>
+          <div class="cmp-row"><label>yarn <input name="yarnPath" value="${esc(st.yarnPath || '')}" placeholder="automatic" spellcheck="false" size="22"></label></div>
+          <div class="cmp-row"><button class="btn mini primary">Save and restart</button></div>
+          ${s.envOverrides && s.envOverrides.length ? `<p class="note small">Set in Control Center's environment (they win over these fields): ${esc(s.envOverrides.join(', '))}.</p>` : ''}
+          <p class="note small">Control Center runs <code>yarn start:local</code> in the Companion folder, like Terminal does. Update Companion with <code>git pull</code> in that folder, then RESTART here.${s.node && s.node.path ? ` Using ${esc(s.node.path)}.` : ''}</p>
+        </form></details>
+      ${managed ? `<details class="cmp-deck" id="cmpSvcLogs"${logsOpen ? ' open' : ''}><summary><b>Log</b> <small>last lines from Companion</small></summary><pre class="cmp-log" id="cmpLog"></pre></details>` : ''}
+    </div>`;
+  }
+  let logText = '';
+  async function loadLogs() {
+    if (!logsOpen) return;
+    try {
+      const r = await api('GET', `/api/companion/service/logs?since=${logSeq}&limit=400`);
+      if (r.lines && r.lines.length) {
+        logText = (logText + r.lines.map((l) => `${l.t.slice(11, 19)} ${l.stream === 'err' ? '!' : l.stream === 'cc' ? '>' : ' '} ${l.text}`).join('\n') + '\n').split('\n').slice(-600).join('\n');
+        logSeq = r.seq;
+      }
+    } catch { /* the status card already says what is wrong */ }
+    const pre = root.querySelector('#cmpLog');
+    if (pre) { const atEnd = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 8; pre.textContent = logText; if (atEnd) pre.scrollTop = pre.scrollHeight; }
+  }
+
   // 0.31.1: who opens the USB Stream Decks, Control Center or Companion.
   function decksCard(v) {
     const d = v.decks || { drive: false, setting: 'auto', companionUsed: false, released: 0 };
@@ -65,8 +117,10 @@
   // shows changes (address, online, Show here): replacing or moving an iframe
   // reloads Companion's UI back to its start page (Connections). 0.31.2.
   let frameKey = null;
+  // 0.34.0: Companion's web UI comes through Control Center at /companion/ (same origin, one web app).
+  const uiUrl = (v) => v.uiUrl || v.webUrl;
   function frameHtml(v) {
-    const url = v.webUrl;
+    const url = uiUrl(v);
     const online = !!(v.status && v.status.online);
     const frame = showFrame && online
       ? `<iframe class="cmp-frame" src="${esc(url)}" title="Companion web UI" referrerpolicy="no-referrer"></iframe>`
@@ -79,8 +133,10 @@
   function leftHtml(v) {
     const st = statusLine(v);
     const pages = (v.pages || []).map((p) => `<div class="cmp-row"><b>${esc(p.name)}</b><small>${esc(p.label || p.surface)}</small><span class="spacer"></span><a class="btn mini" href="/api/companion/pages/${esc(p.id)}/companionconfig" download>.companionconfig</a></div>`).join('') || '<p class="note small">No pages yet. Make one on PAGES.</p>';
-    return `<div class="cmp-card"><h3>CONNECTION</h3>
+    const managed = !!(v.service && v.service.managed);
+    return `${serviceCard(v)}<div class="cmp-card"><h3>CONNECTION</h3>
           <div class="cmp-row"><i class="cmp-dot ${st.cls}"></i><span>${esc(st.txt)}</span></div>
+          ${managed ? `<p class="note small">Control Center runs Companion itself on ${esc(v.webUrl)} and shows it here at ${esc(uiUrl(v))}. Host and port below are only used when Companion runs separately.</p>` : ''}
           <form class="cmp-row" id="cmpConfig"><label>Host <input name="host" value="${esc(v.config.host)}" autocomplete="off" spellcheck="false" size="14"></label>
             <label>Port <input name="port" type="number" min="1" max="65535" value="${esc(v.config.port)}" style="width:6em"></label>
             <button class="btn mini primary">Save</button></form>
@@ -142,9 +198,14 @@
     }
     // Do not repaint while the host / port fields are being typed in.
     const ae = document.activeElement;
-    const typing = ae && ae.tagName === 'INPUT' && ae.closest && ae.closest('#cmpConfig');
-    if (!typing) left.innerHTML = leftHtml(v);
-    const key = JSON.stringify([v.webUrl, !!(v.status && v.status.online), showFrame]);
+    const typing = ae && ae.tagName === 'INPUT' && ae.closest && (ae.closest('#cmpConfig') || ae.closest('#cmpSvcForm'));
+    const settingsOpen = !!(root.querySelector('#cmpSvcSettings') && root.querySelector('#cmpSvcSettings').open);
+    if (!typing) {
+      left.innerHTML = leftHtml(v);
+      if (settingsOpen && left.querySelector) { const d = left.querySelector('#cmpSvcSettings'); if (d) d.open = true; }
+      if (logsOpen) loadLogs();
+    }
+    const key = JSON.stringify([uiUrl(v), v.webUrl, !!(v.status && v.status.online), showFrame]);
     if (key !== frameKey) { right.innerHTML = frameHtml(v); frameKey = key; }
     frameUrl = v.webUrl;
   }
@@ -156,6 +217,14 @@
   }
 
   root.addEventListener('submit', (ev) => {
+    if (ev.target.id === 'cmpSvcForm') {
+      ev.preventDefault();
+      const f = new FormData(ev.target);
+      const body = {};
+      for (const k of ['path', 'configDir', 'port', 'nodePath', 'yarnPath']) body[k] = f.get(k);
+      run(api('POST', '/api/companion/service/config', body).then(() => load(true)).then(() => toast('Companion settings saved')));
+      return;
+    }
     if (ev.target.id !== 'cmpConfig') return;
     ev.preventDefault();
     const f = new FormData(ev.target);
@@ -166,6 +235,12 @@
     })());
   });
   root.addEventListener('click', (ev) => {
+    const svc = ev.target.closest && ev.target.closest('[data-svc]');
+    if (svc) {
+      const what = svc.dataset.svc;
+      run(api('POST', `/api/companion/service/${what}`).then(() => load(false)).then(() => toast(what === 'stop' ? 'Companion stopped' : what === 'start' ? 'Companion starting' : 'Companion restarting')));
+      return;
+    }
     if (ev.target.id === 'cmpDecksAuto') {
       run(api('POST', '/api/companion/decks', { drive: 'auto' }).then((v) => { view = v; paint(); }));
     }
@@ -181,7 +256,15 @@
       run(api('POST', '/api/companion/sync').then(() => load(false)).then(() => toast('Sync sent. The module refreshes its presets.')));
     }
   });
+  root.addEventListener('toggle', (ev) => {
+    if (ev.target && ev.target.id === 'cmpSvcLogs') { logsOpen = ev.target.open; if (logsOpen) loadLogs(); }
+  }, true);
   root.addEventListener('change', (ev) => {
+    if (ev.target.id === 'cmpSvcManaged') {
+      const mode = ev.target.checked ? 'managed' : 'external';
+      run(api('POST', '/api/companion/service/config', { mode }).then(() => load(true)).then(() => toast(mode === 'managed' ? 'Control Center runs Companion now' : 'Companion runs separately now')));
+      return;
+    }
     if (ev.target.id === 'cmpDriveDecks') {
       const drive = ev.target.checked;
       run(api('POST', '/api/companion/decks', { drive }).then((v) => { view = v; paint(); toast(drive ? 'Stream Decks released to Companion' : 'Control Center drives the Stream Decks again'); }));
@@ -205,9 +288,11 @@
     timer = setInterval(() => {
       if (document.hidden || !window.CC.getTab || window.CC.getTab() !== 'companion') return;
       api('POST', '/api/companion/check').then((v) => {
-        const changed = !view || v.status.online !== view.status.online || v.webUrl !== frameUrl || JSON.stringify(v.module) !== JSON.stringify(view.module) || JSON.stringify(v.decks) !== JSON.stringify(view.decks) || v.rev !== view.rev || JSON.stringify(v.userPages) !== JSON.stringify(view.userPages) || JSON.stringify(v.status.connections) !== JSON.stringify(view.status.connections);
+        const svcKey = (x) => JSON.stringify(x && x.service ? [x.service.state, x.service.message, x.service.pid, x.service.restarts, x.service.mode] : null);
+        const changed = !view || svcKey(v) !== svcKey(view) || v.status.online !== view.status.online || v.webUrl !== frameUrl || JSON.stringify(v.module) !== JSON.stringify(view.module) || JSON.stringify(v.decks) !== JSON.stringify(view.decks) || v.rev !== view.rev || JSON.stringify(v.userPages) !== JSON.stringify(view.userPages) || JSON.stringify(v.status.connections) !== JSON.stringify(view.status.connections);
         view = v;
         if (changed) paint();
+        else if (logsOpen) loadLogs();
       }).catch(() => {});
     }, 10000);
   });

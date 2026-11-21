@@ -2,7 +2,7 @@
 'use strict';
 require('./lib/decks/jpeg-guard').installJpegGuard();
 // Performance Video Control Center. One desk for the show systems (RS6, E2, PixelHue, ATEM, PTZ, Pixera, Millumin).
-// Usage: node server.js [--port 8080] [--host 0.0.0.0] [--data <dir>]
+// Usage: node server.js [--port 8080] [--host 0.0.0.0] [--data <dir>] [--no-companion]
 // --mock starts built-in simulators for tests. It is not the desk path, and it does not add NDI fixture sources.
 const path = require('path');
 const os = require('os');
@@ -75,18 +75,31 @@ async function main() {
     console.log(`MOCK Pixera tcp 127.0.0.1:${sysOverrides.pixera.port}  MOCK Millumin osc 127.0.0.1:${sysOverrides.millumin.port}`);
   }
   const systems = new SystemManager({ dataDir, engine, overrides: sysOverrides });
-  const server = createServer(engine, systems);
+  // 0.34.0: Control Center runs PV Companion (~/companion, yarn start:local) and serves it at /companion/.
+  // Not in --mock (tests, demos) unless CC_COMPANION_MODE=managed. --no-companion or CC_COMPANION_MODE=external
+  // keeps using a Companion started some other way.
+  const { CompanionSupervisor } = require('./lib/companion/supervisor');
+  const runCompanion = !process.argv.includes('--no-companion') && (!mock || process.env.CC_COMPANION_MODE === 'managed');
+  const companionSupervisor = runCompanion ? new CompanionSupervisor({ dataDir }) : null;
+  if (companionSupervisor) companionSupervisor.on('state', (st) => engine.log(st.state === 'error' || st.state === 'backoff' || st.state === 'not-installed' ? 'warn' : 'info', `Companion: ${st.state}${st.message ? ` · ${st.message}` : ''}`));
+  const server = createServer(engine, systems, { companionSupervisor });
   require('./lib/listen').listen(server, port, bind, async () => {
     const ips = Object.values(os.networkInterfaces()).flat().filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
     console.log(`Control Center: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
     console.log(`Data dir: ${dataDir}`);
     if (server.decks) server.decks.startUsb();
     if (systems.os) systems.os.ready();
+    if (companionSupervisor) { companionSupervisor.start(); console.log(`Companion: ${companionSupervisor.managed ? `started by Control Center (web UI http://localhost:${port}/companion/)` : 'runs separately (external mode)'}`); }
     if (engine.settings.mock || systems.configured('rs6')) await engine.connect();
     if (mock && engine.presets.length === 0 && arg('seed', true) !== 'false') await seed(engine);
   });
 
+  let shuttingDown = false;
   const shutdown = async () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    // 0.34.0: stop Companion first (SIGTERM to its process group, SIGKILL after 10 s)
+    if (companionSupervisor) { try { await companionSupervisor.stop(); } catch (e) { console.error(`Stopping Companion: ${e.message}`); } }
     if (server.decks) {
       server.decks.stopUsb();
       try { await server.decks.usb.close(); } catch { /* already closed */ }
