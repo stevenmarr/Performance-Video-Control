@@ -33,7 +33,7 @@ Pages save to `surface-pages.json`. A Path C deck can still get a page directly 
 
 ## 3. Hand them to Companion (COMPANION tab)
 
-1. In Companion, install the **Control Center module** ("Performance Video Control Center", id `pvllc-control-center`, 0.11.0 or newer; release asset `pvllc-control-center.tgz`. Version 0.10.0 under the old id `rs6-presets` also works) and add a connection that points at this app (this Mac's address, port 8080).
+1. In Companion, install the **Control Center module** ("Performance Video Control Center", id `pvllc-control-center`, 0.11.0 or newer, 0.14.0 recommended; release asset `pvllc-control-center.tgz`. PV Companion has it built in) and add a connection that points at this app (this Mac's address, port 8080).
 2. In Control Center open **COMPANION**. Enter Companion's host and port (default `127.0.0.1`, port `8000`) and press **Save**.
 3. The CONNECTION card says whether Companion answers. The MODULE card lists the Control Center module connections Companion has, and the module version that last reported in. An older module is flagged with a link to the releases.
 4. Press **SYNC TO COMPANION**. The module refreshes its presets. In Companion, open **Buttons → Presets → Performance Video Control Center**:
@@ -119,11 +119,12 @@ changes. Companion opened in its own browser window was never affected by this.
 
 ## Why Companion still showed the old buttons, and the fixes (0.33.0, module 0.13.0)
 
-Three things made a correctly updated setup look like the old RS6 preset days:
+Three things made a correctly updated setup look out of date:
 
-* **Order.** Module 0.12.0 listed its presets RS6 → per-system → CC buttons → **CC deck**, so the deck pages were at the
-  bottom under dozens of older sections. Module 0.13.0 lists **CC deck** and **CC** first; config **Older per-system
-  presets → Hide** removes the old sections.
+* **Order.** Module 0.12.0 listed its per-system sections before CC buttons and **CC deck**, so the deck pages were at
+  the bottom under dozens of other sections. Module 0.13.0 lists **CC deck** and **CC** first. Module 0.14.0 (with
+  Control Center 0.34.1) lists only the Control Center presets (**CC deck**, **CC buttons**, **CC page**); its actions
+  and feedbacks are unchanged, so placed buttons keep working.
 * **The count.** "10 presets" on the COMPANION tab was only the CC button presets; deck pages were not reported.
   Module 0.13.0 reports deck presets too, and the MODULE card says **N CC button presets · N deck presets**. When deck
   presets are 0 it says why and how to switch them on (Connections → the connection → **Control Center deck pages for**
