@@ -133,9 +133,19 @@ Three things made a correctly updated setup look out of date:
   connections and in Manage Modules. PV Companion now prefers a newer built-in copy and moves connections off an older
   import. The MODULE card says **imported v0.11.0** on such a connection, with how to fix it.
 
+## Companion buttons draw Control Center's own pictures (0.35.0, module 0.15.0)
+
+Up to 0.34.x a Companion button for a CC deck key got only text lines and two colors, so Companion drew a plain
+text button: no color bar, no small header over the big label, no green PVW / red PGM frame, no dashed amber guard
+border, no house on HOME, and the strip readouts were text instead of the round knobs. From 0.35.0 every slot in
+`GET /api/companion/deck` has an `img` id and `GET /api/companion/deck/art/<id>.png` is the very picture the DECKS page
+and a USB deck show. Module 0.15.0 fetches each picture once (the id changes with the value or tally) and draws it
+full-bleed (`cc_deck_look` / `cc_dial_look` return `png64`). A page placed from **Control Center pages** keeps the
+layout tile for tile, blank keys included. Older modules keep drawing text.
+
 ## Control Center pages and User pages in PV Companion (0.33.0)
 
-PV Companion has **Pages → Control Center pages**: the live deck pages (whole deck and each PTZ / ATEM / HOME / CONSOLE
+PV Companion has **Control Center pages** in the left menu under BUILD (fork 0.35.0; before that it was at the bottom of **Buttons → Pages tab**, not the left-menu Pages screen): the live deck pages (whole deck and each PTZ / ATEM / HOME / CONSOLE
 page, per deck size), the PAGES library pages, and **User pages**. **Place** copies one into a new Companion page.
 That page is its own copy: edit it like any page, the Control Center original never changes. **Save page N to User
 pages** stores an edited copy here in Control Center (`companion-user-pages.json` in the data folder, so it is backed up
