@@ -156,6 +156,23 @@ pages** stores an edited copy here in Control Center (`companion-user-pages.json
 with the app). The COMPANION tab lists them under **USER PAGES** with a download and a delete. A user page keeps only
 the connection labels and module ids its buttons use, never a connection's address, config or secrets.
 
+### 0.36.0 (fork 0.36.0, PV Companion "Control Center pages" round 2)
+
+* **Pictures in the list.** Every page in **Control Center pages** shows a small picture of its keys (strip and knobs
+  too on a + / + XL). PV Companion's server fetches it from `GET /api/companion/catalog/preview.png`.
+* **PTZ camera row.** Only cameras that exist get a key, named after the camera. With one camera there is one camera
+  key; the CAM 2 (green) / CAM 3 (red) keys of the design are gone, and so are ◂ CAM / CAM ▸ and the CAMS bank key.
+  Live preview / program tally still colours a camera key.
+* **Two of a kind.** With PTZ 1 and PTZ 2 (or two ATEMs ...) armed, page titles start with the system's name, and the
+  HOME key on each system page shows that name too.
+* **Navigating between placed pages.** **Place every page** (per deck size) puts HOME and every system page on
+  Companion pages in a row and turns their HOME / page / system keys into Companion page jumps, so the Stream Deck
+  moves between them with no Surfaces-tab change. **Whole deck** is still the one-page way: place it once on the page
+  the Stream Deck shows, and Control Center's own HOME and page keys change what it shows.
+* **Restyle a copy.** Tick **My own look** before placing to leave out the Control Center deck look, so text and colours
+  edited in Companion show (the keys still run Control Center). Without it, the deck look paints Control Center's
+  picture over the key; remove the "Control Center deck look" feedback from one key to restyle just that key.
+
 ## Old rs6-presets connections
 
 A connection on the old module id `rs6-presets` runs the pre-0.10 code, which has none of the CC buttons and pages.
