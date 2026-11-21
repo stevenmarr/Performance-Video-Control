@@ -4,9 +4,18 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('http');
 const net = require('net');
+const { ownOnly } = require('./own-only');
 const { ModuleDesk } = require('../lib/modules/runtime');
 
+// Wait `ms`, then let the event loop turn a few dozen times, so bytes a driver wrote to a mock in this process have
+// been read, however slow the machine is (a plain timer alone raced a loaded CI box).
+async function settle(ms) {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+  for (let i = 0; i < 40; i++) await new Promise((resolve) => setImmediate(resolve));
+}
+
 function listen(server) {
+  ownOnly(server); // a CI port probe never reaches the mock
   return new Promise((resolve) => server.listen(0, '127.0.0.1', () => resolve(server.address().port)));
 }
 
@@ -40,7 +49,7 @@ test('Brompton brightness, NovaStar checksum and HELIOS sACN channels', async ()
     const nova = desk.create('novastar-vxpro', { connection: { host: '127.0.0.1', port: tcpPort } });
     await desk.connect(nova.id);
     await desk.run(nova.id, 'brightness', { level: 255 });
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle(30);
     assert.equal(Buffer.concat(frames).slice(-3).toString('hex'), 'ff545b');
     const wall = desk.create('helios', { connection: { host: '127.0.0.1', port: sink.address().port, universe: 1 } });
     await desk.run(wall.id, 'brightness', { level: 200 });
@@ -142,7 +151,7 @@ test('SmartView brightness is the Ethernet protocol block', async () => {
     const row = desk.create('bmd-smartview', { connection: { host: '127.0.0.1', port, delimiter: '\\n\\n', reconnect: false } });
     await desk.connect(row.id);
     await desk.run(row.id, 'brightness', { monitor: 'A', value: 127 });
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle(30);
     const text = lines.join('');
     assert.match(text, /MONITOR A:\nBrightness: 127\n/);
   } finally {
@@ -170,7 +179,7 @@ test('LW3, Extron SIS and Kramer Protocol 3000 send the published route lines', 
     assert.equal(armed.pending, true);
     await desk.run(kr.id, 'preset', { preset: 3 });
     await desk.run(kr.id, 'route', { layer: 1, output: 4, input: 2 });
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     const text = lines.join('');
     assert.match(text, /CALL \/MEDIA\/VIDEO\/XP:switch\(I4:O1\)\r\n/);
     assert.match(text, /1\*3!\r/);
@@ -207,7 +216,7 @@ test('HELO record, Teranex output mode and Streaming Encoder start use the publi
     const live = await desk.run(stream.id, 'start');
     assert.equal(live.pending, true);
     await desk.run(stream.id, 'start');
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     const text = lines.join('');
     assert.match(text, /VIDEO OUTPUT:\nVideo mode: 1080i5994\n/);
     assert.match(text, /STREAM STATE:\nAction: Start\n/);
@@ -234,7 +243,7 @@ test('MagicQ go and blackout use the published OSC addresses', async () => {
     await desk.run(magic.id, 'blackout');
     const quick = desk.create('chamsys-quickq', { connection: { host: '127.0.0.1', port: sink.address().port } });
     await desk.run(quick.id, 'go', { playback: 3 });
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     assert.ok(messages.some((m) => m.address === '/pb/1/go' && m.args.length === 0));
     const dbo = messages.find((m) => m.address === '/dbo');
     assert.ok(dbo && dbo.args[0].type === 'i' && dbo.args[0].value === 0);
@@ -257,7 +266,7 @@ test('X Air channel fader is the published OSC example', async () => {
     const row = desk.create('behringer-xair', { connection: { host: '127.0.0.1', port: sink.address().port } });
     await desk.run(row.id, 'fader', { channel: '01', level: '0.5' });
     await desk.run(row.id, 'info');
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     const fader = messages.find((m) => m.address === '/ch/01/mix/fader');
     assert.ok(fader && fader.args[0].type === 'f' && Math.abs(fader.args[0].value - 0.5) < 0.001);
     assert.ok(messages.some((m) => m.address === '/xinfo' && m.args.length === 0));
@@ -295,7 +304,7 @@ test('LW2, Protocol 2000, dLive and Wing send the published messages', async () 
     const wing = desk.create('behringer-wing', { connection: { host: '127.0.0.1', port: sink.address().port } });
     await desk.run(wing.id, 'fader', { channel: 2, db: '-2.5' });
     await desk.run(wing.id, 'mute', { channel: 1 });
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(Buffer.from('{1@5}')));
     assert.ok(text.includes(Buffer.from('01858883', 'hex')));
@@ -339,7 +348,7 @@ test('HS6000 bus select, Spyder transition and PDS preset use the published comm
     assert.equal(armedTake.pending, true);
     await desk.run(sp.id, 'transition', { mix: 1, frames: 1 });
     const packet = await got;
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle(30);
     const text = Buffer.concat(lines);
     assert.equal(text[0], 0x02);
     assert.ok(text.includes(Buffer.from('SBUS:01:02')));
@@ -376,7 +385,7 @@ test('Canon preset, V-60HD cut and WATCHOUT run use the published commands', asy
     await desk.connect(wo.id);
     await desk.run(wo.id, 'run');
     await desk.run(wo.id, 'cue', { cue: 'Cue1' });
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle(30);
     assert.ok(seen.some((u) => u.includes('/-wvhttp-01-/control.cgi') && u.includes('p=1')));
     assert.ok(seen.some((u) => u.includes('p.action=stop')));
     const text = Buffer.concat(lines);
@@ -418,7 +427,7 @@ test('Colorlight brightness, COEX cabinet brightness and Roland basic cut use th
     const armed = await desk.run(roland.id, 'cut');
     assert.equal(armed.pending, true);
     await desk.run(roland.id, 'cut');
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle(30);
     const bright = seen.find((s) => s.url.includes('/processor/setBrightness'));
     assert.equal(bright.method, 'POST');
     assert.equal(JSON.parse(bright.body).data.brightness, 80);
@@ -464,7 +473,7 @@ test('Q-SYS, Tesira, MXA910, Bravia and AHM send the published commands', async 
     const ahm = desk.create('allenheath-ahm', { connection: { host: '127.0.0.1', port, reconnect: false } });
     await desk.connect(ahm.id);
     await desk.run(ahm.id, 'mute', { channel: 1 });
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(Buffer.from('{"jsonrpc":"2.0","id":1,"method":"Control.Set","params":{"Name":"MainGain","Value":-12}}\0')));
     assert.ok(text.includes(Buffer.from('DEVICE recallPreset 1001\n')));
@@ -510,7 +519,7 @@ test('NEC power, Samsung MDC, Ultimatte density and Wake-on-LAN match the publis
     const wol = desk.create('wake-on-lan', { connection: { host: '127.0.0.1', port: sink.address().port, mac: '00:11:22:33:44:55' } });
     await desk.run(wol.id, 'wake', { mac: '00:11:22:33:44:55' });
     const packet = await got;
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle(30);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(on));
     assert.ok(text.includes(Buffer.from('aa11010012', 'hex')));
@@ -535,7 +544,7 @@ test('Epson opens ESC/VP.net and then sends PWR ON', async () => {
     await desk.connect(row.id);
     await desk.run(row.id, 'on');
     await desk.run(row.id, 'hdmi1');
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle(30);
     const text = Buffer.concat(lines);
     assert.equal(text.slice(0, 16).toString('hex'), '4553432f56502e6e6574100300000000');
     assert.ok(text.includes(Buffer.from('PWR ON\r')));
@@ -588,7 +597,7 @@ test('the new display, camera, console, timer and protocol systems send their pu
     await desk.run(clock.id, 'down', { timer: 0, seconds: 60 });
     const msc = desk.create('midi-show-control', { connection: { host: '127.0.0.1', port: sink.address().port } });
     await desk.run(msc.id, 'go');
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(Buffer.from('ka 01 01\r')));
     assert.ok(text.includes(Buffer.from('power on\r')));
@@ -675,7 +684,7 @@ test('the live-event consoles, multiview, recorders, cameras and graphics send t
     await desk.run(ew.id, 'mute1');
     const dis = desk.create('disguise-osc', { connection: udpConn });
     await desk.run(dis.id, 'play');
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(Buffer.from('9b007f9b0000', 'hex')));
     assert.ok(text.includes(Buffer.from('b06300b06200b00600b02601', 'hex')));
@@ -765,7 +774,7 @@ test('the PDU, camera, graphics and timer systems send their published commands'
     await desk.run(lil.id, 'route', { input: 1, output: 2 });
     const cue = desk.create('cuetimer', { connection: { host: '127.0.0.1', port: udp } });
     await desk.run(cue.id, 'fire');
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(Buffer.from('on 1\r')));
     assert.ok(text.includes(Buffer.from('s_output_mute S 0000 00 NC 0,1\r')));
@@ -837,7 +846,7 @@ test('the matrix, display, router and show-control systems send their published 
     await desk.run(cue.id, 'go', { cue: 1 });
     const avm = desk.create('avmatrix-switcher', { connection: { host: '127.0.0.1', port: udp } });
     await desk.run(avm.id, 'route', { input: 1, output: 2 });
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(Buffer.from('SET SW in4 out1\n')));
     assert.ok(text.includes(Buffer.from('OUT01FR04\r')));
@@ -901,7 +910,7 @@ test('the audio, lighting and playback systems send their published commands', a
     await desk.run(watchout.id, 'play', { timeline: 1 });
     const hog = desk.create('highend-hog4', { connection: { host: '127.0.0.1', port: udp } });
     await desk.run(hog.id, 'go', { list: 1 });
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(Buffer.from('#|X001|web|SR1|3|U|\r\n')));
     assert.ok(text.includes(Buffer.from('#|X001|web|SM01|1|U|\r\n')));
@@ -930,7 +939,7 @@ test('the audio, lighting and playback systems send their published commands', a
     await desk.run(mimo.id, 'live', { document: '458706932', layer: 'BA868701-8131-49CB-8EDD-8C7E6E7CD60B' });
     const axi = desk.create('aximmetry', { connection: { host: '127.0.0.1', port: webPort, https: false } });
     await desk.run(axi.id, 'camera', {});
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const more = Buffer.concat(lines);
     assert.ok(more.includes(Buffer.from('sw i02 o05\r')));
     assert.ok(packets.some((p) => p.toString() === '1G'));
@@ -977,7 +986,7 @@ test('ONYX, Dugan and Bosch send the commands printed in their manuals', async (
     await desk.run(dugan.id, 'mute', { channel: 2 });
     const bosch = desk.create('bosch-hd-camera', { connection: { host: '127.0.0.1', port: webPort, https: false } });
     await desk.run(bosch.id, 'wide', {});
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const text = Buffer.concat(lines);
     assert.ok(packets.some((p) => {
       const m = osc.decode(p);
@@ -1022,6 +1031,7 @@ test('the recorder, router, display and console systems send their published com
         const at = buf.indexOf('\r\n\r\n');
         if (at < 0) return;
         const key = /Sec-WebSocket-Key:\s*(\S+)/i.exec(buf.subarray(0, at).toString());
+        if (!key) { sock.destroy(); return; } // not a WebSocket handshake (a port probe): never ours
         sock.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${wsAcceptKey(key[1])}\r\n\r\n`);
         buf = buf.subarray(at + 4);
         open = true;
@@ -1071,7 +1081,7 @@ test('the recorder, router, display and console systems send their published com
     await desk.run(qlc.id, 'start', { fn: 1 });
     const cisco = desk.create('cisco-roomos', { connection: { host: '127.0.0.1', port: wsPort, path: '/ws' } });
     await desk.run(cisco.id, 'present', {});
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const text = Buffer.concat(lines);
     assert.ok(text.includes(Buffer.from('Preset.Take = 1\r')));
     assert.ok(text.includes(Buffer.from('A60100000004011802B8', 'hex')));
@@ -1103,7 +1113,7 @@ test('the recorder, router, display and console systems send their published com
     await desk.run(beyond.id, 'bright', { level: 100 });
     const shark = desk.create('lightshark', { connection: { host: '127.0.0.1', port: udp } });
     await desk.run(shark.id, 'go', { playback: 1 });
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const more = Buffer.concat(lines);
     assert.ok(more.includes(Buffer.from('06010018011E', 'hex')));
     assert.ok(more.includes(Buffer.from('012\n\r')));
@@ -1129,7 +1139,7 @@ test('the recorder, router, display and console systems send their published com
     await desk.run(genelec.id, 'level', {});
     const play = desk.create('playbackpro', { connection: { host: '127.0.0.1', port: udp } });
     await desk.run(play.id, 'take', {});
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await settle(50);
     const last = Buffer.concat(lines);
     assert.ok(last.includes(Buffer.from('@SSW,1,1\r\n')));
     assert.ok(last.includes(Buffer.from('AA020007000000001001003C', 'hex')));
@@ -1148,7 +1158,7 @@ test('the recorder, router, display and console systems send their published com
     await desk.run(galaxy.id, 'recall', { snapshot: 3 });
     const bird = desk.create('birddog-converters', { connection: { host: '127.0.0.1', port: webPort, https: false } });
     await desk.run(bird.id, 'connect', { source: 'None' });
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     const batch = Buffer.concat(lines);
     assert.ok(batch.includes(Buffer.from('< SET 2 AUDIO_MUTE ON >\r')));
     assert.ok(batch.includes(Buffer.from('< SET 1 RF_MUTE 1 >\r\n')));
@@ -1174,7 +1184,7 @@ test('the recorder, router, display and console systems send their published com
     await desk.run(tc.id, 'start', {});
     const moxa = desk.create('moxa-e1200', { connection: { host: '127.0.0.1', port: webPort, https: false } });
     await desk.run(moxa.id, 'on', {});
-    await new Promise((resolve) => setTimeout(resolve, 40));
+    await settle(40);
     const gear = Buffer.concat(lines);
     assert.ok(gear.includes(Buffer.from('stopir,1:1\r')));
     assert.ok(gear.includes(Buffer.from('setstate,1:1,1,500\r')));
@@ -1198,7 +1208,7 @@ test('the recorder, router, display and console systems send their published com
     await desk.run(reaper.id, 'mute', {});
     const pdu = desk.create('synaccess-pdu', { connection: { host: '127.0.0.1', port: webPort, https: false, authType: 'none' } });
     await desk.run(pdu.id, 'on', {});
-    await new Promise((resolve) => setTimeout(resolve, 30));
+    await settle(30);
     const pub = Buffer.concat(lines);
     assert.ok(pub.includes(Buffer.from('launchTask?take\n')));
     assert.ok(seen.some((line) => line.startsWith('POST /keypress/home')));

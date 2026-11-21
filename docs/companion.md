@@ -143,6 +143,10 @@ and a USB deck show. Module 0.15.0 fetches each picture once (the id changes wit
 full-bleed (`cc_deck_look` / `cc_dial_look` return `png64`). A page placed from **Control Center pages** keeps the
 layout tile for tile, blank keys included. Older modules keep drawing text.
 
+0.35.1: pictures are drawn off the main thread, two at a time, so Control Center keeps answering camera and switcher
+requests while Companion fetches a page set. When the usual font files are missing it finds a sans and a mono family
+in the font folders instead of loading every system font (about 3 ms a picture instead of about 150 ms).
+
 ## Control Center pages and User pages in PV Companion (0.33.0)
 
 PV Companion has **Control Center pages** in the left menu under BUILD (fork 0.35.0; before that it was at the bottom of **Buttons → Pages tab**, not the left-menu Pages screen): the live deck pages (whole deck and each PTZ / ATEM / HOME / CONSOLE

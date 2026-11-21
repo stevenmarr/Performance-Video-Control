@@ -11,6 +11,9 @@ const { PTZDriver } = require('../lib/drivers/ptz');
 const AUTH = require('../lib/drivers/http-auth');
 const { MockPTZ } = require('../lib/mocks/ptz');
 const { SystemManager } = require('../lib/systems');
+const { ownOnly } = require('./own-only');
+// start a mock camera that only hears this process (a CI port probe's GET / would count as one more 401 challenge)
+const startOwn = (mock) => { const port = mock.start(0); ownOnly(mock.server); return port; };
 // test passwords are made up per run: the only password written in this repo is the factory default
 const PW1 = `t-${require('crypto').randomBytes(6).toString('hex')}`; const PW2 = `t-${require('crypto').randomBytes(6).toString('hex')}`;
 
@@ -35,7 +38,7 @@ test('http-auth: challenge parsing, Digest (MD5 / MD5-sess / SHA-256, qop auth) 
 test('PTZ driver: factory login answers a Digest camera; only after the challenge; up front afterwards; wrong login is reported', async () => {
   const dig = new MockPTZ({ model: 'AW-UE150', title: 'DIG', auth: 'digest' }); const bas = new MockPTZ({ model: 'AW-UE150', title: 'BAS', auth: 'basic', pass: PW1 });
   const open = new MockPTZ({ model: 'AW-HE130', title: 'OPEN' });
-  const list = [{ id: 'd', name: 'Dig', host: '127.0.0.1', port: await dig.start(0) }, { id: 'b', name: 'Bas', host: '127.0.0.1', port: await bas.start(0) }, { id: 'o', name: 'Open', host: '127.0.0.1', port: await open.start(0) }];
+  const list = [{ id: 'd', name: 'Dig', host: '127.0.0.1', port: await startOwn(dig) }, { id: 'b', name: 'Bas', host: '127.0.0.1', port: await startOwn(bas) }, { id: 'o', name: 'Open', host: '127.0.0.1', port: await startOwn(open) }];
   const d = new PTZDriver({ cameras: list });
   try {
     await d.poll('d'); assert.equal(d.cam('d').st.data.model, 'AW-UE150'); assert.equal(dig.challenges, 1, 'one challenge');
@@ -57,7 +60,7 @@ test('PTZ driver: factory login answers a Digest camera; only after the challeng
 
 test('PTZ login in the SystemManager: per camera, kept in systems.json only, never in API answers or shows; reset to factory', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rs6ptzauth-'));
-  const m = new MockPTZ({ model: 'AW-UE150', title: 'A', auth: 'digest', user: 'op', pass: PW2 }); const port = await m.start(0);
+  const m = new MockPTZ({ model: 'AW-UE150', title: 'A', auth: 'digest', user: 'op', pass: PW2 }); const port = await startOwn(m);
   const logs = [];
   const eng = { settings: { host: '192.0.2.10' }, presets: [], destinations: [], live: { inputs: {} }, log() {}, changed() {} };
   const sm = new SystemManager({ dataDir: dir, engine: eng, autoStart: false }); const origLog = sm.log.bind(sm); sm.log = (l, msg) => { logs.push(String(msg)); return origLog(l, msg); };

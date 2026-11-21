@@ -7,6 +7,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('http');
 const net = require('net');
+const { ownOnly } = require('./own-only');
 const crypto = require('crypto');
 const { createCompanionProxy, upstreamPath, rewriteLocation, originAllowed } = require('../lib/companion/proxy');
 const { setup } = require('./helpers');
@@ -39,6 +40,7 @@ function fakeCompanion() {
   const open = new Set();
   const close = srv.close.bind(srv);
   srv.close = (cb) => { for (const s of open) s.destroy(); srv.closeAllConnections(); return close(cb); };
+  ownOnly(srv); // a CI port probe's GET / would be the last request seen
   return new Promise((resolve) => srv.listen(0, '127.0.0.1', () => resolve({ srv, port: srv.address().port, seen, upgrades })));
 }
 

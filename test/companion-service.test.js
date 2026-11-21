@@ -9,12 +9,17 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const net = require('net');
-const { CompanionSupervisor, versionOk, parseRange, expandHome } = require('../lib/companion/supervisor');
+const { CompanionSupervisor, groupAlive, versionOk, parseRange, expandHome } = require('../lib/companion/supervisor');
 const { until } = require('./helpers');
 
 const FAKE = path.join(__dirname, 'fixtures', 'fake-companion');
 const posix = process.platform !== 'win32';
-const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+// A zombie (exited, not collected yet) is not alive: in a container whose PID 1 never collects orphans, the fake's
+// grandchild stays one after it is killed.
+const alive = (pid) => {
+  try { process.kill(pid, 0); } catch (e) { return e.code === 'EPERM'; }
+  try { const st = fs.readFileSync(`/proc/${pid}/stat`, 'utf8'); return !/^[ZX]/.test(st.slice(st.lastIndexOf(')') + 2)); } catch { return true; }
+};
 const freePort = () => new Promise((resolve) => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => resolve(p)); }); });
 const readMarker = (f) => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch { return null; } };
 
@@ -233,4 +238,22 @@ test('a stale companion.pid naming another program, or nothing, is left alone', 
   assert.ok(sup.logsView().lines.some((l) => /now another program/.test(l.text)));
   fs.writeFileSync(path.join(dataDir, 'companion.pid'), JSON.stringify({ pid: 2147483000 }));
   await sup._reapOrphan(); // no such group: nothing to do, no throw
+});
+
+test('groupAlive: zombies do not count (a container whose PID 1 never collects orphans), live members do', () => {
+  const proc = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-fakeproc-'));
+  const put = (pid, comm, state, pgrp) => { fs.mkdirSync(path.join(proc, String(pid))); fs.writeFileSync(path.join(proc, String(pid), 'stat'), `${pid} (${comm}) ${state} 1 ${pgrp} ${pgrp} 0 -1\n`); };
+  put(4100, 'yarn', 'Z', 4100);
+  put(4101, 'node (tsx) x', 'Z', 4100); // a comm with spaces and ')'
+  put(4200, 'other', 'S', 4200);
+  fs.mkdirSync(path.join(proc, 'self'));
+  const kill = () => true; // kill(-pgid, 0) succeeds for a zombie-only group
+  assert.equal(groupAlive(4100, { kill, platform: 'linux', procDir: proc }), false, 'only zombies left: gone');
+  put(4102, 'node', 'S', 4100);
+  assert.equal(groupAlive(4100, { kill, platform: 'linux', procDir: proc }), true, 'a sleeping member: alive');
+  assert.equal(groupAlive(4100, { kill, platform: 'linux', procDir: path.join(proc, 'nope') }), true, 'no /proc: trust the signal');
+  assert.equal(groupAlive(4100, { kill, platform: 'darwin', procDir: proc }), true, 'not Linux: trust the signal');
+  const esrch = () => { const e = new Error('ESRCH'); e.code = 'ESRCH'; throw e; };
+  assert.equal(groupAlive(4100, { kill: esrch, platform: 'linux', procDir: proc }), false, 'no such group');
+  assert.equal(groupAlive(process.pid === 1 ? 2 : 999999, { platform: 'linux' }), false, 'real kill: a group that does not exist');
 });
