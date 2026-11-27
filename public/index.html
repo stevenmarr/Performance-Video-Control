@@ -24,6 +24,7 @@
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/e2-program.css">
 <link rel="stylesheet" href="/modules.css">
 </head>
 <body>
@@ -77,6 +78,7 @@
   <button class="tab x-only" data-tab="xsources" data-cap="sources" data-sys="preset">SOURCES</button>
   <button class="tab x-only" data-tab="xstills" data-cap="stills" data-sys="preset">STILLS</button>
   <button class="tab x-only" data-tab="xbackup" data-cap="backups" data-sys="preset">BACKUP</button>
+  <button class="tab x-only" data-tab="xprogram" data-cap="program" data-sys="preset" title="Program the E2 live: destination, layer, dials, source. Only what this frame actually has.">PROGRAM</button>
   <span class="tab-group x-only atem-grp" data-grp="atem">ATEM</span>
   <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher" data-sys="atem">SWITCHER</button>
   <button class="tab x-only" data-tab="arouter" data-cap="atemRouter" data-sys="atem">ROUTER</button>
@@ -237,6 +239,9 @@
     <div class="row capture-row"><span class="lbl">Capture a still<small>from an input into a still slot (overwrites that slot)</small></span>
       <select id="xstillInput"></select><input id="xstillSlot" type="number" min="1" max="999" placeholder="slot" class="slot-in"><button class="btn mini primary" id="xstillTake">CAPTURE</button></div>
     <div id="xstillsList" class="rows"></div>
+  </section>
+  <section class="grid-wrap pane e2p-pane" id="pane-xprogram" hidden>
+    <div id="e2program"></div>
   </section>
   <section class="grid-wrap pane" id="pane-xbackup" hidden>
     <div class="section-title"><span class="xsys"></span> INPUT BACKUPS <small>inputs with a backup configured on the device · PRIMARY or a backup</small></div>
@@ -887,6 +892,7 @@
 <script src="/app.js"></script>
 <script src="/sys-modules.js"></script>
 <script src="/sys.js"></script>
+<script src="/e2-program.js"></script>
 <script src="/atem.js"></script>
 <script src="/atem-macros.js"></script>
 <script src="/atem-ext.js"></script>
