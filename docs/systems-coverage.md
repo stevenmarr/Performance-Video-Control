@@ -18,6 +18,7 @@ Companion connection types: **1098**. Implemented: **243**. Partial: **0**. Not 
 | Blackmagic Videohub (`videohub`) | implemented | 1 | 4 | 2 | official | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |
 | Blackmagic HyperDeck (`hyperdeck`) | implemented | 9 | 8 | 3 | official | https://documents.blackmagicdesign.com/DeveloperManuals/HyperDeckEthernetProtocol.pdf |
 | Mitti (`mitti`) | implemented | 8 | 6 | 3 | official | https://imimot.com/mitti/ |
+| Playout (`playout`) | implemented | 5 | 8 | 5 | official | https://github.com/stevenmarr/Playout |
 | TSL tally (`tsl`) | implemented | 2 | 3 | 2 | official | https://tslproducts.com/ |
 | Control Center (`console`) | implemented | 21 | 4 | 3 | official | — |
 | Generic HTTP (`generic-http`) | implemented | 1 | 4 | 2 | official | https://www.rfc-editor.org/rfc/rfc9110 |
