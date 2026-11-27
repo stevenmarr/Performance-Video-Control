@@ -1460,3 +1460,10 @@ nav.tabs{padding:0 6px}
 #pane-companion .cmp-frame{width:100%;height:calc(100vh - 220px);min-height:420px;border:1px solid var(--line);border-radius:10px;background:#000}
 #pane-companion .cmp-pages{display:flex;flex-direction:column;gap:6px}
 @media (max-width:900px){#pane-companion .cmp-grid{grid-template-columns:1fr}}
+/* overhaul P1c: the PTZ preview always keeps 16:9. Before, .snap (overflow:hidden, so min-height 0) was a flex item
+   in the dock panel body (a flex column of fixed height), so a short panel squashed it (266x14 px), and the canvas
+   the frame is drawn on (inset 0, 100% x 100%) stretched with it. Now the box never shrinks below its 16:9 height,
+   it narrows to fit a short panel (pillarbox, centred), and the canvas letterboxes a frame of any other shape. */
+.rcp-view .snap{flex:0 0 auto;min-height:0;height:auto;aspect-ratio:16/9;width:100%;align-self:center}
+#pane-pctl .rcp-view .dk-body .snap{width:min(100%,max(160px,calc((100cqh - 96px) * 16 / 9)))}
+.snap canvas{object-fit:contain;background:#000}
