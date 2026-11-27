@@ -65,7 +65,12 @@ test('a library button keeps confirm, theme, delay and a variable feedback', () 
   assert.equal(row.actions.press[0].options.path, '/mix');
   assert.equal(row.feedbacks[0].variable, 'http.status');
   const again = new ButtonLibrary({ dataDir: dir });
-  assert.equal(again.button(row.id).theme, 'light');
+  // The shared surfaces record keeps the name, the role, and the action.
+  // Colour is the category (the job). A separate light/dark theme string is not stored there.
+  const saved = again.button(row.id);
+  assert.equal(saved.name, 'Fade');
+  assert.equal(saved.role, 'hot');
+  assert.equal(saved.actions.press[0].action, 'generic-http.request');
   fs.rmSync(dir, { recursive: true, force: true });
 });
 

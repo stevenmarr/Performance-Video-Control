@@ -224,8 +224,9 @@ test('COMPANION is a top tab; the duplicate second-row DEVICES / BUTTONS / PAGES
   const top = html.split('id="tabsSub"')[0];
   const sub = html.split('id="tabsSub"')[1].split('</nav>')[0];
   assert.match(top, /class="tab tab-companion" data-tab="companion"/);
-  assert.match(top, /class="tab tab-buttons" data-tab="buttons"/);
-  assert.match(top, /class="tab tab-pages" data-tab="pages"/);
+  assert.match(top, /class="tab tab-surfaces" data-tab="surfaces"/);
+  assert.doesNotMatch(top, /class="tab tab-buttons"/);
+  assert.doesNotMatch(top, /class="tab tab-pages"/);
   assert.doesNotMatch(sub, /decks-sub/);
   assert.doesNotMatch(sub, /data-tab="(decks|buttons|pages)"/);
   assert.doesNotMatch(read('public/sys.js'), /decks-sub/);
