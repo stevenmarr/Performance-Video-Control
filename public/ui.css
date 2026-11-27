@@ -1,0 +1,99 @@
+/* Shared controls. Class names start with cc- so they do not collide with
+   .btn, .ghost, .mode, or the PTZ dock. Geometry of #pane-pctl is untouched. */
+
+.cc-tip {
+  position: fixed;
+  z-index: 80;
+  max-width: min(360px, 80vw);
+  padding: 8px 10px;
+  border-radius: var(--cc-r-sm);
+  background: var(--cc-panel-2);
+  color: var(--cc-text);
+  border: 1px solid var(--cc-line-strong);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+  font: 600 13px/1.35 var(--cc-font);
+  pointer-events: none;
+}
+.cc-tip[hidden] { display: none; }
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--cc-accent);
+  outline-offset: 2px;
+}
+#pane-pctl .knob:focus-visible,
+#pane-pctl .joy:focus-visible,
+#pane-pctl .dk-head:focus-visible,
+#pane-pctl .rk-track:focus-visible {
+  outline: none;
+}
+
+.cc-panel {
+  background: var(--cc-panel);
+  color: var(--cc-text);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-lg);
+  padding: var(--cc-s3);
+}
+
+.cc-kicker {
+  font-size: var(--cc-fs-kicker);
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: var(--cc-dim);
+}
+
+.cc-field,
+.cc-panel input:not([type=checkbox]):not([type=radio]):not([type=range]),
+.cc-panel select,
+.cc-panel textarea {
+  font: inherit;
+  color: var(--input-ink);
+  background: var(--input-bg);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-sm);
+  padding: 8px 10px;
+  min-height: var(--cc-hit-mini);
+}
+
+.cc-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--cc-r-pill);
+  border: 1px solid var(--cc-line);
+  font-size: var(--cc-fs-micro);
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: var(--cc-dim);
+}
+.cc-status-ok { background: var(--cc-ok-bg); color: var(--cc-ok-ink); border-color: var(--cc-ok-line); }
+.cc-status-warn { background: var(--cc-warn-bg); color: var(--cc-warn-ink); border-color: var(--cc-warn-line); }
+.cc-status-bad { background: var(--cc-bad-bg); color: var(--cc-bad-ink); border-color: var(--cc-bad-line); }
+.cc-status-idle { color: var(--cc-idle); }
+
+.cc-empty {
+  color: var(--cc-dim);
+  font-size: var(--cc-fs-ui);
+  line-height: 1.4;
+  padding: var(--cc-s3);
+  border: 1px dashed var(--cc-line-strong);
+  border-radius: var(--cc-r);
+  background: transparent;
+}
+
+/* Program frame. The corner word (PGM) is the markup already on the item. */
+.cc-live {
+  border: var(--cc-live-width) solid var(--cc-pgm);
+  background: var(--cc-pgm-bg);
+}
+.cc-preview {
+  border: var(--cc-live-width) solid var(--cc-pvw);
+  background: var(--cc-pvw-bg);
+}

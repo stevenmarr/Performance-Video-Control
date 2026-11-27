@@ -49,21 +49,21 @@ test('standalone Scopes stage scrolls; layout does not shrink the dock row to fi
   assert.match(js, /--stage-vh/);
 });
 
-test('BUTTONS and PAGES are always-visible top-level tabs; Scopes is not a Control Center tab', () => {
+test('SURFACES is the top tab for pages, buttons, and devices; Scopes is not a Control Center tab', () => {
   const html = read('public/index.html');
   const top = html.split('id="tabsSub"')[0];
   assert.match(top, /id="tabsTop"/);
-  assert.match(top, /class="tab tab-buttons" data-tab="buttons"/);
-  assert.match(top, /class="tab tab-pages" data-tab="pages"/);
-  assert.match(top, /class="tab tab-decks" data-tab="decks"/);
-  assert.doesNotMatch(top, /hidden>BUTTONS</);
-  assert.doesNotMatch(top, /hidden>PAGES</);
+  assert.match(top, /class="tab tab-surfaces" data-tab="surfaces"/);
+  assert.match(html, /data-surfaces="pages"/);
+  assert.match(html, /data-surfaces="buttons"/);
+  assert.match(html, /data-surfaces="devices"/);
+  assert.doesNotMatch(top, /class="tab tab-buttons"/);
+  assert.doesNotMatch(top, /class="tab tab-pages"/);
   assert.match(html, /id="pane-buttons"/);
   assert.match(html, /id="pane-pages"/);
   assert.match(html, /src="\/button-library\.js"/);
   assert.match(html, /src="\/surface-pages\.js"/);
-  assert.match(read('public/app.js'), /'buttons'/);
-  assert.match(read('public/app.js'), /'pages'/);
+  assert.match(read('public/app.js'), /'surfaces'/);
   assert.match(read('public/sys.js'), /decks: \['decks', 'buttons', 'pages', 'companion'\]/);
   assert.match(read('public/button-library.js'), /data-field="theme"/);
   assert.doesNotMatch(html, /data-tab="scopes"/);

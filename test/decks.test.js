@@ -167,19 +167,20 @@ test('Control Center lists plugin decks, stamps on push, warns, reorders, and de
 test('Control Devices is a top tab and the client owns Stream Decks over USB, not Companion', () => {
   const html = read('public/index.html');
   const js = read('public/decks.js');
-  assert.match(html, /class="tab tab-decks" data-tab="decks"/);
-  assert.match(html, /Control Devices/);
+  assert.match(html, /class="tab tab-surfaces" data-tab="surfaces"/);
+  assert.match(html, /data-surfaces="devices"/);
+  assert.match(html, /CONTROL DEVICES/);
   assert.match(html, /id="pane-decks"/);
   assert.match(html, /id="btnDeckScan"/);
   assert.match(html, /src="\/decks\.js"/);
-  assert.match(read('public/app.js'), /'decks'/);
+  assert.match(read('public/app.js'), /'surfaces'/);
   assert.match(read('public/sys.js'), /decks: \['decks', 'buttons', 'pages', 'companion'\]/);
-  assert.match(html, /class="tab tab-buttons" data-tab="buttons"/);
+  assert.match(html, /data-surfaces="buttons"/);
   assert.match(html, /id="pane-buttons"/);
   assert.match(html, /src="\/button-library\.js"/);
-  assert.match(html, /class="tab tab-pages" data-tab="pages"/);
+  assert.match(html, /data-surfaces="pages"/);
   assert.match(html, /id="pane-pages"/);
-  assert.match(html, /id="tabsTop"[\s\S]*tab-buttons[\s\S]*tab-pages/);
+  assert.doesNotMatch(html.split('id="tabsSub"')[0], /class="tab tab-buttons"/);
   assert.match(html, /src="\/surface-pages\.js"/);
   assert.match(js, /\/api\/decks\/press/);
   assert.match(js, /\/api\/decks\/refresh/);

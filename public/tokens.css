@@ -1,0 +1,196 @@
+/* Control Center design tokens.
+   Colour means the job, and the same job uses the same colour on every system:
+     red    = program / on air
+     green  = preview
+     amber  = selected, or a warning
+     blue   = a control action (not tally)
+   A program item keeps a red frame. A preview item keeps a green frame.
+   The corner word stays PGM or PVW. Do not reuse these colours for decoration.
+   Loaded after style.css so these names are the source of truth. Legacy
+   variables (--bg, --pgm, …) point here, so existing rules follow the same jobs. */
+
+:root {
+  --cc-bg: #0b0d10;
+  --cc-panel: #14181d;
+  --cc-panel-2: #1b2027;
+  --cc-panel-3: #10141a;
+  --cc-raised: #20262e;
+  --cc-chip: #252c35;
+  --cc-line: #2a313b;
+  --cc-line-strong: #3a4350;
+  --cc-input: #171c23;
+
+  --cc-text: #d9dee5;
+  --cc-dim: #7d8794;
+  --cc-faint: #5d6773;
+  --cc-on-color: #ffffff;
+  --cc-on-pvw: #04140a;
+
+  --cc-pgm: #e5262e;
+  --cc-pgm-hot: #ff5a60;
+  --cc-pgm-ink: #ff8a8f;
+  --cc-pgm-bg: #3a0d10;
+  --cc-pgm-soft: #2a0e10;
+  --cc-pgm-line: #6b1f24;
+
+  --cc-pvw: #18c35a;
+  --cc-pvw-hot: #4ff08a;
+  --cc-pvw-ink: #6fe39b;
+  --cc-pvw-bg: #0b3019;
+  --cc-pvw-soft: #0e2a17;
+  --cc-pvw-line: #1f6b3a;
+
+  --cc-sel: #f0a500;
+  --cc-sel-ink: #ffd35c;
+  --cc-sel-bg: #3a2a05;
+  --cc-sel-line: #7a5a10;
+  --cc-sel-on: #1a1300;
+
+  --cc-accent: #3b8cff;
+  --cc-accent-ink: #9cc4ff;
+  --cc-accent-soft: #cfe2ff;
+  --cc-accent-bg: #14243d;
+  --cc-accent-deep: #173a6b;
+  --cc-accent-line: #27405f;
+
+  --cc-edit: #6b46c1;
+  --cc-edit-ink: #b79cff;
+  --cc-move: #0f766e;
+  --cc-move-ink: #5eead4;
+  --cc-save: #b7791f;
+  --cc-save-ink: #f6c46b;
+
+  --cc-ok: #2bd46b;
+  --cc-ok-ink: #6fe39b;
+  --cc-ok-bg: #0e2a17;
+  --cc-ok-line: #1f6b3a;
+  --cc-warn: #f0a500;
+  --cc-warn-ink: #ffd35c;
+  --cc-warn-bg: #3a2a05;
+  --cc-warn-line: #7a5a10;
+  --cc-bad: #ff4d55;
+  --cc-bad-ink: #ff8a8f;
+  --cc-bad-bg: #2a0e10;
+  --cc-bad-line: #6b1f24;
+  --cc-idle: #5b6573;
+
+  --cc-fs-micro: 10px;
+  --cc-fs-kicker: 11px;
+  --cc-fs-meta: 12px;
+  --cc-fs-ui: 13px;
+  --cc-fs-body: 15px;
+  --cc-fs-title: 17px;
+  --cc-fs-display: 22px;
+
+  --cc-s1: 4px;
+  --cc-s2: 8px;
+  --cc-s3: 12px;
+  --cc-s4: 16px;
+  --cc-s5: 24px;
+
+  --cc-r-xs: 4px;
+  --cc-r-sm: 6px;
+  --cc-r: 10px;
+  --cc-r-lg: 14px;
+  --cc-r-pill: 99px;
+
+  --cc-hit: 40px;
+  --cc-hit-mini: 32px;
+  --cc-live-width: 3px;
+
+  --cc-font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --cc-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --bg: var(--cc-bg);
+  --panel: var(--cc-panel);
+  --panel2: var(--cc-panel-2);
+  --line: var(--cc-line);
+  --text: var(--cc-text);
+  --dim: var(--cc-dim);
+  --pgm: var(--cc-pgm);
+  --pgm-bg: var(--cc-pgm-bg);
+  --pvw: var(--cc-pvw);
+  --pvw-bg: var(--cc-pvw-bg);
+  --sel: var(--cc-sel);
+  --sel-bg: var(--cc-sel-bg);
+  --accent: var(--cc-accent);
+  --danger: #c0392b;
+  --r: var(--cc-r);
+  --input-bg: var(--cc-input);
+  --input-ink: var(--cc-text);
+}
+
+html[data-theme=light] {
+  --cc-bg: #f3f5f7;
+  --cc-panel: #ffffff;
+  --cc-panel-2: #e8edf3;
+  --cc-panel-3: #f7f9fb;
+  --cc-raised: #e8edf3;
+  --cc-chip: #e8edf3;
+  --cc-line: #c5ccd6;
+  --cc-line-strong: #aeb6c2;
+  --cc-input: #ffffff;
+  --cc-text: #1a1f26;
+  --cc-dim: #5a6570;
+  --cc-faint: #6b7580;
+  --cc-on-color: #ffffff;
+  --cc-on-pvw: #04140a;
+  --cc-pgm: #c01b22;
+  --cc-pgm-hot: #c01b22;
+  --cc-pgm-ink: #9b1c24;
+  --cc-pgm-bg: #f8d4d6;
+  --cc-pgm-soft: #fde3e4;
+  --cc-pgm-line: #f0a8ac;
+  --cc-pvw: #0f8f42;
+  --cc-pvw-hot: #0f8f42;
+  --cc-pvw-ink: #157a3e;
+  --cc-pvw-bg: #d4f0df;
+  --cc-pvw-soft: #dff6e8;
+  --cc-pvw-line: #8ad4a6;
+  --cc-sel: #c48400;
+  --cc-sel-ink: #7a5a00;
+  --cc-sel-bg: #f7e7c2;
+  --cc-sel-line: #e0c27a;
+  --cc-sel-on: #1a1300;
+  --cc-accent: #1563d6;
+  --cc-accent-ink: #1563d6;
+  --cc-accent-soft: #16345c;
+  --cc-accent-bg: #e4eefb;
+  --cc-accent-deep: #d6e6fa;
+  --cc-accent-line: #9ebff0;
+  --cc-edit: #5b3eab;
+  --cc-edit-ink: #5b3eab;
+  --cc-move: #0f766e;
+  --cc-move-ink: #0f766e;
+  --cc-save: #8a5a10;
+  --cc-save-ink: #8a5a10;
+  --cc-ok: #0f8f42;
+  --cc-ok-ink: #157a3e;
+  --cc-ok-bg: #dff6e8;
+  --cc-ok-line: #8ad4a6;
+  --cc-warn: #c48400;
+  --cc-warn-ink: #7a5a00;
+  --cc-warn-bg: #f7e7c2;
+  --cc-warn-line: #e0c27a;
+  --cc-bad: #c01b22;
+  --cc-bad-ink: #9b1c24;
+  --cc-bad-bg: #fde3e4;
+  --cc-bad-line: #f0a8ac;
+  --cc-idle: #5a6570;
+  --bg: var(--cc-bg);
+  --panel: var(--cc-panel);
+  --panel2: var(--cc-panel-2);
+  --line: var(--cc-line);
+  --text: var(--cc-text);
+  --dim: var(--cc-dim);
+  --pgm: var(--cc-pgm);
+  --pgm-bg: var(--cc-pgm-bg);
+  --pvw: var(--cc-pvw);
+  --pvw-bg: var(--cc-pvw-bg);
+  --sel: var(--cc-sel);
+  --sel-bg: var(--cc-sel-bg);
+  --accent: var(--cc-accent);
+  --danger: #b3261e;
+  --input-bg: var(--cc-input);
+  --input-ink: var(--cc-text);
+}

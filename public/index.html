@@ -26,6 +26,9 @@
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/e2-program.css">
 <link rel="stylesheet" href="/modules.css">
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/ui.css">
+<link rel="stylesheet" href="/desk.css">
 </head>
 <body>
 <header class="top">
@@ -42,7 +45,7 @@
   <div class="spacer"></div>
   <div class="top-end">
     <button id="btnHelp" class="btn ghost" title="Help (F1)" data-help="help">? HELP</button>
-    <button id="btnSettings" class="btn ghost">⚙ Settings</button>
+    <button id="btnSettings" class="btn ghost" title="Appearance, RS6 connection, and where the show is saved">⚙ Settings</button>
     <span id="appVer" class="app-ver" title="Control Center version"></span>
     <span id="appMem" class="app-mem" role="status" aria-live="polite" title="Memory Control Center is using on this computer">APP —<small>SYS —</small></span>
   </div>
@@ -67,36 +70,36 @@
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
   <span class="tabs-home-note" id="tabsHomeNote">Pick a system above, or ADD one below.</span>
   <span class="tab-group rs6-only" data-grp="rs6">RS6</span>
-  <button class="tab active rs6-only" data-tab="presets" data-sys="rs6">PRESETS</button>
-  <button class="tab rs6-only" data-tab="inputs" data-sys="rs6">INPUTS</button>
-  <button class="tab rs6-only" data-tab="backup" data-sys="rs6">BACKUP</button>
-  <button class="tab rs6-only" data-tab="audio" data-sys="rs6">AUDIO</button>
+  <button class="tab active rs6-only" data-tab="presets" data-sys="rs6" title="RS6 memories. Tap a tile to load Preview, then TAKE.">PRESETS</button>
+  <button class="tab rs6-only" data-tab="inputs" data-sys="rs6" title="RS6 inputs. Red is on Program. Green is on Preview.">INPUTS</button>
+  <button class="tab rs6-only" data-tab="backup" data-sys="rs6" title="Primary and backup inputs. AUTO switches if the primary fails.">BACKUP</button>
+  <button class="tab rs6-only" data-tab="audio" data-sys="rs6" title="Audio channels. Tap a channel to mute it.">AUDIO</button>
   <button class="tab rs6-only" data-tab="webrcs" data-sys="rs6" title="The device's own Web RCS, inside this app">WEB RCS</button>
   <span class="tab-group x-only preset-grp" data-grp="preset"><button type="button" class="grp-btn" data-focus="e2">E2</button><button type="button" class="grp-btn" data-focus="pixelhue">PIXELHUE</button></span>
-  <button class="tab x-only" data-tab="xpresets" data-cap="presets" data-sys="preset">PRESETS</button>
-  <button class="tab x-only" data-tab="xcues" data-cap="cues" data-sys="preset">CUES</button>
-  <button class="tab x-only" data-tab="xsources" data-cap="sources" data-sys="preset">SOURCES</button>
-  <button class="tab x-only" data-tab="xstills" data-cap="stills" data-sys="preset">STILLS</button>
-  <button class="tab x-only" data-tab="xbackup" data-cap="backups" data-sys="preset">BACKUP</button>
+  <button class="tab x-only" data-tab="xpresets" data-cap="presets" data-sys="preset" title="Presets on this E2 or PixelHue. Tap a tile to recall it.">PRESETS</button>
+  <button class="tab x-only" data-tab="xcues" data-cap="cues" data-sys="preset" title="Cues stored on the E2 or PixelHue.">CUES</button>
+  <button class="tab x-only" data-tab="xsources" data-cap="sources" data-sys="preset" title="Sources on this switcher.">SOURCES</button>
+  <button class="tab x-only" data-tab="xstills" data-cap="stills" data-sys="preset" title="Still store. Capture writes over the slot you pick.">STILLS</button>
+  <button class="tab x-only" data-tab="xbackup" data-cap="backups" data-sys="preset" title="Inputs that have a backup on the device.">BACKUP</button>
   <button class="tab x-only" data-tab="xprogram" data-cap="program" data-sys="preset" title="Program the E2 live: destination, layer, dials, source. Only what this frame actually has.">PROGRAM</button>
   <span class="tab-group x-only atem-grp" data-grp="atem">ATEM</span>
-  <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher" data-sys="atem">SWITCHER</button>
-  <button class="tab x-only" data-tab="arouter" data-cap="atemRouter" data-sys="atem">ROUTER</button>
-  <button class="tab x-only" data-tab="aaudio" data-cap="atemAudio" data-sys="atem">AUDIO</button>
-  <button class="tab x-only" data-tab="akeys" data-cap="atemKeys" data-sys="atem">DVE / SS / KEYS</button>
-  <button class="tab x-only" data-tab="alayout" data-cap="atemKeys" data-sys="atem">LAYOUT</button>
-  <button class="tab x-only" data-tab="amv" data-cap="atemKeys" data-sys="atem">MULTIVIEW</button>
-  <button class="tab x-only" data-tab="amacros" data-cap="atemMacros" data-sys="atem">MACROS</button>
+  <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher" data-sys="atem" title="Program and Preview. Red is on air. Green is preview.">SWITCHER</button>
+  <button class="tab x-only" data-tab="arouter" data-cap="atemRouter" data-sys="atem" title="Pick an output, then the source that feeds it.">ROUTER</button>
+  <button class="tab x-only" data-tab="aaudio" data-cap="atemAudio" data-sys="atem" title="ATEM audio mixer. Faders, mute, and monitor.">AUDIO</button>
+  <button class="tab x-only" data-tab="akeys" data-cap="atemKeys" data-sys="atem" title="Upstream keys, downstream keys, and SuperSource.">DVE / SS / KEYS</button>
+  <button class="tab x-only" data-tab="alayout" data-cap="atemKeys" data-sys="atem" title="Place keys on the M/E. HOLD keeps the edit off air until APPLY.">LAYOUT</button>
+  <button class="tab x-only" data-tab="amv" data-cap="atemKeys" data-sys="atem" title="What each multiview window shows.">MULTIVIEW</button>
+  <button class="tab x-only" data-tab="amacros" data-cap="atemMacros" data-sys="atem" title="ATEM macros. Run, edit, or store.">MACROS</button>
   <span class="tab-group x-only ptz-grp" data-grp="ptz">PTZ</span>
-  <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz">CAMERA CONTROL</button>
-  <button class="tab x-only" data-tab="ptrack" data-cap="ptzControl" data-sys="ptz">TRACKING</button>
-  <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras" data-sys="ptz">CAMERAS</button>
+  <button class="tab x-only" data-tab="pctl" data-cap="ptzControl" data-sys="ptz" title="Pan, zoom, paint, and presets for the selected camera.">CAMERA CONTROL</button>
+  <button class="tab x-only" data-tab="ptrack" data-cap="ptzControl" data-sys="ptz" title="Auto-tracking settings. Tracking keeps running if this page closes.">TRACKING</button>
+  <button class="tab x-only" data-tab="pcams" data-cap="ptzCameras" data-sys="ptz" title="Add, edit, or remove cameras on this PTZ system.">CAMERAS</button>
   <span class="tab-group x-only pixera-grp" data-grp="pixera">PIXERA</span>
-  <button class="tab x-only" data-tab="pxplay" data-cap="pixeraTransport" data-sys="pixera">TIMELINES</button>
-  <button class="tab x-only" data-tab="pxcues" data-cap="pixeraCues" data-sys="pixera">CUES</button>
+  <button class="tab x-only" data-tab="pxplay" data-cap="pixeraTransport" data-sys="pixera" title="Play, pause, or stop each Pixera timeline.">TIMELINES</button>
+  <button class="tab x-only" data-tab="pxcues" data-cap="pixeraCues" data-sys="pixera" title="Step cues on the selected Pixera timeline.">CUES</button>
   <span class="tab-group x-only millumin-grp" data-grp="millumin">MILLUMIN</span>
-  <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin">COLUMNS</button>
-  <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
+  <button class="tab x-only" data-tab="mlcol" data-cap="milluminColumns" data-sys="millumin" title="Launch, play, or stop a Millumin column.">COLUMNS</button>
+  <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin" title="Start, pause, or stop media on the selected layer.">LAYER</button>
   <span class="tabs-home-note" id="tabsLooksNote" hidden>One switcher per stack. Absolute is a full look. Relative changes only that preset's layers. GO loads preview. Bail loads after TAKE.</span>
   <span class="tabs-home-note" id="tabsCuesNote" hidden>Drag a preset onto a cue or its timeline. RUN CUE plays that cue and locks until the timeline finishes.</span>
   <span class="tabs-home-note" id="tabsDecksNote" hidden>SURFACES is the Page Builder and Button Designer. Page edits go live on the USB Stream Deck + XL and tagged Companion pages. COMPANION keeps status and its own web UI.</span>
@@ -539,11 +542,11 @@
       <div class="section-title">SURFACES <small>Page Builder · Button Designer · Devices · TourBox · Self-test. Edits go live.</small></div>
     </div>
     <nav class="surfaces-sub" id="surfacesSub" role="tablist" aria-label="SURFACES sections">
-      <button type="button" class="subtab active" data-surfaces="pages">PAGES</button>
-      <button type="button" class="subtab" data-surfaces="buttons">BUTTONS</button>
-      <button type="button" class="subtab" data-surfaces="devices">DEVICES</button>
-      <button type="button" class="subtab" data-surfaces="tourbox">TOURBOX</button>
-      <button type="button" class="subtab" data-surfaces="selftest">SELF-TEST</button>
+      <button type="button" class="subtab active" data-surfaces="pages" title="Lay out a page. Edits go to the deck immediately.">PAGES</button>
+      <button type="button" class="subtab" data-surfaces="buttons" title="Design a library button. Colour still means the job.">BUTTONS</button>
+      <button type="button" class="subtab" data-surfaces="devices" title="USB Stream Decks. Quit the Elgato app so this app can open the deck.">DEVICES</button>
+      <button type="button" class="subtab" data-surfaces="tourbox" title="TourBox. Not connected in this build.">TOURBOX</button>
+      <button type="button" class="subtab" data-surfaces="selftest" title="Paint a known pattern on the Stream Deck and check Companion page tags.">SELF-TEST</button>
     </nav>
     <div id="surfacesPages" class="surfaces-pane"></div>
     <div id="surfacesButtons" class="surfaces-pane" hidden></div>
@@ -917,6 +920,7 @@
     </div>
   </div>
 </section>
+<script src="/ui.js"></script>
 <script src="/looks.js"></script>
 <script src="/cues-tab.js"></script>
 <script src="/prefs.js"></script>
