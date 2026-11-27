@@ -1,0 +1,118 @@
+{
+  "frame": {
+    "System": {
+      "Name": "House E2",
+      "FrameCollection": {
+        "Frame": {
+          "Name": "E2",
+          "Version": "9.2.1",
+          "FrameType": 0,
+          "FrameTypeName": "E2",
+          "isHost": true
+        }
+      }
+    }
+  },
+  "destinations": {
+    "ScreenDestination": [
+      { "id": 0, "Name": "Center LED", "HSize": 3840, "VSize": 2160, "Layers": null }
+    ],
+    "AuxDestination": [
+      { "id": 0, "AuxStreamMode": 4 }
+    ]
+  },
+  "contents": {
+    "0": {
+      "id": 0,
+      "Name": "Center LED",
+      "BGLyr": [
+        { "id": 0, "LastBGSourceIndex": -1, "BGShowMatte": 1, "BGColor": { "Red": 0, "Green": 0, "Blue": 0 } },
+        { "id": 1, "LastBGSourceIndex": -1, "BGShowMatte": 1, "BGColor": { "Red": 0, "Green": 0, "Blue": 0 } }
+      ],
+      "Layers": [
+        {
+          "id": 0,
+          "Name": "Layer1-A",
+          "LastSrcIdx": 0,
+          "PvwMode": 0,
+          "PgmMode": 1,
+          "PvwZOrder": 1,
+          "PgmZOrder": 1,
+          "Freeze": 0,
+          "ScalingMode": 2,
+          "Capacity": 2,
+          "Window": [
+            { "HPos": 0, "VPos": 0, "HSize": 3840, "VSize": 2160 },
+            { "HPos": 0, "VPos": 0, "HSize": 3840, "VSize": 2160 }
+          ],
+          "Source": [
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 },
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 }
+          ],
+          "Mask": [
+            { "Top": 0, "Left": 0, "Right": 0, "Bottom": 0 },
+            { "Top": 0, "Left": 0, "Right": 0, "Bottom": 0 }
+          ]
+        },
+        {
+          "id": 1,
+          "Name": "Layer1-B",
+          "LastSrcIdx": 2,
+          "PvwMode": 1,
+          "PgmMode": 0,
+          "PvwZOrder": 0,
+          "PgmZOrder": 0,
+          "Freeze": 0,
+          "ScalingMode": 2,
+          "Capacity": 2,
+          "Window": [
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 },
+            { "HPos": 960, "VPos": 540, "HSize": 1920, "VSize": 1080 }
+          ],
+          "Source": [
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 },
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 }
+          ],
+          "Mask": [
+            { "Top": 0, "Left": 0, "Right": 0, "Bottom": 0 },
+            { "Top": 2, "Left": 4, "Right": 4, "Bottom": 2 }
+          ]
+        },
+        {
+          "id": 2,
+          "Name": "Layer2-A",
+          "LastSrcIdx": -1,
+          "PvwMode": 0,
+          "PgmMode": 0,
+          "PvwZOrder": 2,
+          "PgmZOrder": 2,
+          "Freeze": 0,
+          "Window": [
+            { "HPos": 0, "VPos": 0, "HSize": 3840, "VSize": 2160 },
+            { "HPos": 0, "VPos": 0, "HSize": 3840, "VSize": 2160 }
+          ],
+          "Mask": [
+            { "Top": 0, "Left": 0, "Right": 0, "Bottom": 0 },
+            { "Top": 0, "Left": 0, "Right": 0, "Bottom": 0 }
+          ]
+        }
+      ]
+    }
+  },
+  "auxContent": {
+    "0": { "id": 0, "Name": "Record", "PvwLastSrcIndex": 3, "PgmLastSrcIndex": 0 }
+  },
+  "sources": [
+    { "id": 0, "Name": "Cam 1 Wide", "SrcType": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1 },
+    { "id": 1, "Name": "Cam 2 Tight", "SrcType": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1 },
+    { "id": 2, "Name": "PPT Main", "SrcType": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1 },
+    { "id": 3, "Name": "Playback A", "SrcType": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 4 }
+  ],
+  "inputs": [
+    { "id": 0, "Name": "Cam 1 Wide", "Format": "1920x1080p @59.94", "VideoStatus": "OK" }
+  ],
+  "presets": [
+    { "id": 0, "Name": "Walk-in", "presetSno": 1, "LockMode": 0 },
+    { "id": 1, "Name": "Keynote", "presetSno": 2, "LockMode": 0 }
+  ]
+}
