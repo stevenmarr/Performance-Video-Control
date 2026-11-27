@@ -268,8 +268,8 @@
         : s.kind === 'pixera' ? [['TIMELINES', n.timelines], ['PLAYING', n.playing], ['SELECTED', n.timeline ? 1 : 0], ['CUE', n.cue ? 1 : 0]]
           : s.kind === 'millumin' ? [['COLUMN', n.column ? 1 : 0], ['LAYER', n.layer ? 1 : 0], ['RUNNING', n.running], ['OPACITY', n.opacity == null ? null : 1]]
             : s.kind === 'router' ? [['OUTPUTS', n.outputs], ['INPUTS', n.inputs]]
-              : s.kind === 'hyperdeck' ? [['TRANSPORT', n.transport ? 1 : 0], ['TIMECODE', n.timecode ? 1 : 0]]
-                : s.kind === 'mitti' ? [['MODE', n.mode ? 1 : 0], ['CUE', n.cue == null ? 0 : 1]]
+              : s.kind === 'hyperdeck' ? [['TRANSPORT', n.transport ? 1 : 0], ['TIMECODE', n.timecode ? 1 : 0], ['CLIP', n.clipName || null], ['LEFT', n.remaining || null]]
+                : s.kind === 'mitti' ? [['MODE', n.mode ? 1 : 0], ['CUE', n.cueName || (n.cue == null ? 0 : n.cue)], ['LEFT', n.remaining || null]]
                   : [['PRESETS', n.presets], ['DESTINATIONS', n.destinations], ['SOURCES', n.sources]].concat(s.key === 'e2' ? [['CUES', n.cues]] : []);
     return rows.map(([k, v]) => `<div class="stat"><b>${v ?? '—'}</b><span>${k}</span></div>`).join('');
   }
@@ -279,6 +279,8 @@
     if (s.kind === 'ptz' && (s.cameras || []).length) return `<div class="live-line cams">${s.cameras.map((c) => `<span class="cam-chip ${c.connected ? '' : 'off'} ${c.tally ? 'tally' : ''}"><span class="led ${c.connected ? 'ok' : 'off'}"></span>${esc(c.name)}</span>`).join('')}</div>`;
     if (s.kind === 'pixera' && n.timeline) return `<div class="live-line"><span class="lg pgm">${n.playing ? 'PLAY' : 'STOP'}</span> ${esc(n.timeline)}${n.cue ? ` · ${esc(n.cue)}` : ''}</div>`;
     if (s.kind === 'millumin' && n.column) return `<div class="live-line"><span class="lg ${n.running ? 'pgm' : 'pvw'}">${n.running ? 'RUN' : 'STOP'}</span> ${esc(String(n.column))}</div>`;
+    if (s.kind === 'hyperdeck' && (n.clipName || n.remaining)) return `<div class="live-line"><span class="lg ${n.transport === 'record' || n.transport === 'play' ? 'pgm' : 'pvw'}">${esc(String(n.transport || 'stop').toUpperCase())}</span> ${esc(n.clipName || '')}${n.remaining ? ` · ${esc(n.remaining)} left` : ''}</div>`;
+    if (s.kind === 'mitti' && (n.cueName || n.remaining)) return `<div class="live-line"><span class="lg ${n.mode === 'play' ? 'pgm' : 'pvw'}">${esc(String(n.mode || 'stop').toUpperCase())}</span> ${esc(n.cueName || (n.cue == null ? '' : String(n.cue)))}${n.remaining ? ` · ${esc(n.remaining)} left` : ''}</div>`;
     return '';
   }
   const openDet = new Set(JSON.parse(localStorage.getItem('cc.conn') || '[]'));
