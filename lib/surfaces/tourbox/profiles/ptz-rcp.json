@@ -1,0 +1,290 @@
+{
+  "id": "ptz-rcp",
+  "name": "RCP",
+  "system": "ptz",
+  "bindings": [
+    {
+      "control": "knob",
+      "held": [],
+      "turn": {
+        "action": "ptz.step",
+        "op": "iris",
+        "target": "selected",
+        "velocity": true
+      },
+      "press": {
+        "action": "ptz.toggle",
+        "op": "irisMode",
+        "target": "selected"
+      },
+      "long": {
+        "action": "ptz.reset",
+        "op": "iris",
+        "target": "selected",
+        "liveGuard": "exposure"
+      }
+    },
+    {
+      "control": "dial",
+      "held": [],
+      "turn": {
+        "action": "ptz.step",
+        "op": "masterPed",
+        "target": "selected",
+        "velocity": true
+      },
+      "press": {
+        "action": "ptz.dialPair",
+        "ops": [
+          "masterPed",
+          "pictureLevel"
+        ],
+        "target": "selected"
+      },
+      "long": {
+        "action": "ptz.resetActiveDial",
+        "target": "selected"
+      }
+    },
+    {
+      "control": "scroll",
+      "held": [],
+      "turn": {
+        "action": "ptz.rate",
+        "axis": "zoom",
+        "target": "selected"
+      },
+      "press": {
+        "action": "ptz.oneTouchAF",
+        "target": "selected"
+      },
+      "long": {
+        "action": "ptz.toggle",
+        "op": "focusMode",
+        "target": "selected"
+      }
+    },
+    {
+      "control": "tour",
+      "held": [],
+      "press": {
+        "action": "tourbox.profile",
+        "profile": "ptz-msu"
+      },
+      "long": {
+        "action": "ptz.stop",
+        "target": "selected",
+        "axes": [
+          "pt",
+          "zoom",
+          "focus"
+        ]
+      }
+    },
+    {
+      "control": "top",
+      "held": [],
+      "press": {
+        "action": "tourbox.bank",
+        "bank": "white"
+      }
+    },
+    {
+      "control": "tall",
+      "held": [],
+      "press": {
+        "action": "tourbox.bank",
+        "bank": "black"
+      }
+    },
+    {
+      "control": "short",
+      "held": [],
+      "press": {
+        "action": "tourbox.bank",
+        "bank": "tone"
+      }
+    },
+    {
+      "control": "up",
+      "held": [],
+      "press": {
+        "action": "ptz.presetStep",
+        "dir": -1,
+        "target": "selected",
+        "guarded": true
+      }
+    },
+    {
+      "control": "down",
+      "held": [],
+      "press": {
+        "action": "ptz.presetStep",
+        "dir": 1,
+        "target": "selected",
+        "guarded": true
+      }
+    },
+    {
+      "control": "knob",
+      "held": [
+        "side"
+      ],
+      "turn": {
+        "action": "ptz.rate",
+        "axis": "focus",
+        "target": "selected"
+      }
+    },
+    {
+      "control": "dial",
+      "held": [
+        "side"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "gain",
+        "target": "selected",
+        "velocity": true,
+        "clamp": true
+      },
+      "press": {
+        "action": "ptz.toggle",
+        "op": "gain",
+        "auto": true,
+        "target": "selected"
+      }
+    },
+    {
+      "control": "scroll",
+      "held": [
+        "side"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "ndFilter",
+        "target": "selected",
+        "clamp": true
+      }
+    },
+    {
+      "control": "knob",
+      "held": [
+        "top"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "rGain",
+        "target": "selected",
+        "velocity": true
+      }
+    },
+    {
+      "control": "dial",
+      "held": [
+        "top"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "bGain",
+        "target": "selected",
+        "velocity": true
+      }
+    },
+    {
+      "control": "scroll",
+      "held": [
+        "top"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "chromaLevel",
+        "target": "selected",
+        "velocity": true
+      }
+    },
+    {
+      "control": "knob",
+      "held": [
+        "tall"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "rPed",
+        "target": "selected",
+        "velocity": true
+      }
+    },
+    {
+      "control": "dial",
+      "held": [
+        "tall"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "bPed",
+        "target": "selected",
+        "velocity": true
+      }
+    },
+    {
+      "control": "scroll",
+      "held": [
+        "tall"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "gPed",
+        "target": "selected",
+        "velocity": true
+      }
+    },
+    {
+      "control": "knob",
+      "held": [
+        "short"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "gamma",
+        "target": "selected",
+        "velocity": true
+      }
+    },
+    {
+      "control": "dial",
+      "held": [
+        "short"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "kneePoint",
+        "target": "selected",
+        "velocity": true
+      },
+      "press": {
+        "action": "ptz.toggle",
+        "op": "kneeMode",
+        "target": "selected",
+        "liveGuard": "hold"
+      }
+    },
+    {
+      "control": "scroll",
+      "held": [
+        "short"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "masterDetail",
+        "target": "selected",
+        "velocity": true
+      },
+      "press": {
+        "action": "ptz.toggle",
+        "op": "detail",
+        "target": "selected"
+      }
+    }
+  ]
+}

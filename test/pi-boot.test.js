@@ -75,6 +75,7 @@ test('the shipped unit is Type=simple on port 8088 and does not arm the watchdog
   assert.match(readme, /npm ci --omit=dev/);
   assert.match(readme, /99-control-center-streamdeck\.rules/);
   assert.match(readme, /99-control-center-atem-micro-panel\.rules/);
+  assert.match(readme, /99-control-center-tourbox\.rules/);
   const rules = fs.readFileSync(path.join(__dirname, '../tools/udev/50-control-center-streamdeck.rules'), 'utf8');
   assert.match(rules, /idVendor\}=="0fd9"/);
   assert.match(rules, /MODE="0660"/);
@@ -86,6 +87,13 @@ test('the shipped unit is Type=simple on port 8088 and does not arm the watchdog
   assert.match(panelRules, /MODE="0660"/);
   assert.match(panelRules, /GROUP="plugdev"/);
   assert.match(panelRules, /TAG\+="uaccess"/);
+  const tourboxRules = fs.readFileSync(path.join(__dirname, '../tools/udev/50-control-center-tourbox.rules'), 'utf8');
+  assert.match(tourboxRules, /idVendor\}=="2e3c"/);
+  assert.match(tourboxRules, /idProduct\}=="5740"/);
+  assert.match(tourboxRules, /ttyACM/);
+  assert.match(tourboxRules, /MODE="0660"/);
+  assert.match(tourboxRules, /GROUP="plugdev"/);
+  assert.match(tourboxRules, /TAG\+="uaccess"/);
   const pkg = require('../package.json');
   assert.equal(pkg.dependencies['@elgato-stream-deck/node'], '7.8.0');
   assert.equal(pkg.dependencies['node-hid'], '3.4.0');
