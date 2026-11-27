@@ -37,9 +37,12 @@ body.status-wall,body.status-edit{
 .st-primary,.remain{
   font-weight:800;letter-spacing:-.03em;line-height:.95;
   font-variant-numeric:tabular-nums;
-  font-size:min(var(--fs), 70cqh);
-  overflow:hidden;word-break:break-word;
+  font-size:min(var(--fs), 70cqh, 12cqw);
+  overflow:hidden;
 }
+.st-tile.type-clock .st-primary,
+.st-tile.type-countdown .remain,
+.st-tile.type-timer .remain{white-space:nowrap}
 .st-secondary{font-size:clamp(14px,2vw,22px);font-weight:650;color:var(--text);opacity:.9}
 .st-note{margin-top:auto;color:var(--dim);font-size:14px}
 .st-tile.warn-amber .remain{color:#ffd35c}
