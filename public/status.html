@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Status · Control Center</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/status.css">
+</head>
+<body class="status-wall">
+  <header class="st-top">
+    <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
+    <div class="st-title">STATUS <span id="layoutName"></span></div>
+    <div class="spacer"></div>
+    <div id="companionPill" class="pill off">COMPANION</div>
+    <div id="linkPill" class="pill wait">CONNECTING</div>
+    <a id="editLink" class="edit-link" href="/status/config">Edit layout</a>
+  </header>
+  <main id="board" class="st-board" aria-live="polite"></main>
+  <div id="coverage"></div>
+  <script src="/status-view.js"></script>
+  <script src="/status.js"></script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+/* Status wall. Uses the same colors as the rest of Control Center. */
+html:has(body.status-wall),
+html:has(body.status-edit){
+  overflow:auto;height:auto;min-height:100%;
+}
+body.status-wall,body.status-edit{
+  margin:0;min-height:100dvh;height:100dvh;max-height:none;overflow:hidden;
+  display:flex;flex-direction:column;background:var(--bg);color:var(--text);
+  padding:0;
+}
+.st-top{
+  display:flex;align-items:center;gap:14px;padding:10px 16px;
+  background:var(--panel);border-bottom:1px solid var(--line);flex:none;
+}
+.st-top .pvlogo{height:36px;width:auto}
+.st-title{font-weight:800;letter-spacing:.12em;font-size:18px}
+.st-title span{color:var(--dim);font-weight:700;letter-spacing:.04em;margin-left:8px}
+.st-top .spacer{flex:1}
+.st-top a.edit-link{color:var(--dim);font-size:13px;font-weight:700;text-decoration:none}
+.st-top a.edit-link:hover{color:var(--text)}
+.pill.live{background:#0e2a17;color:#6fe39b;border-color:#1f6b3a}
+.pill.wait{background:#3a2a05;color:#ffd35c;border-color:#f0a500}
+.st-board{
+  flex:1;min-height:0;overflow:auto;
+  display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  grid-auto-rows:minmax(140px,1fr);gap:14px;padding:14px;align-content:stretch;
+}
+.st-tile{
+  --fs:64px;
+  position:relative;min-width:0;min-height:0;overflow:hidden;
+  container-type:size;
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:14px 16px;display:flex;flex-direction:column;gap:4px;
+}
+.st-label{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.st-kicker{font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--dim)}
+.st-primary,.remain{
+  font-weight:800;letter-spacing:-.03em;line-height:.95;
+  font-variant-numeric:tabular-nums;
+  font-size:min(var(--fs), 70cqh);
+  overflow:hidden;word-break:break-word;
+}
+.st-secondary{font-size:clamp(14px,2vw,22px);font-weight:650;color:var(--text);opacity:.9}
+.st-note{margin-top:auto;color:var(--dim);font-size:14px}
+.st-tile.warn-amber .remain{color:#ffd35c}
+.st-tile.warn-red .remain,.st-tile.warn-over .remain{color:#ff5a60}
+.st-tile.warn-over .st-secondary{color:#ff5a60;font-weight:800;letter-spacing:.12em}
+.st-roles{display:flex;flex-direction:column;gap:8px;min-height:0;overflow:auto}
+.st-role{display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:10px;background:var(--panel2);border:2px solid var(--line)}
+.st-role .k{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--dim)}
+.st-role .v{font-size:clamp(18px,3vw,32px);font-weight:800;line-height:1.1}
+.st-role.program{border-color:var(--pgm);background:var(--pgm-bg)}
+.st-role.program .k{color:#ff8a8f}
+.st-role.preview{border-color:var(--pvw);background:var(--pvw-bg)}
+.st-role.preview .k{color:#6fe39b}
+.st-role.standby{border-color:var(--sel);background:var(--sel-bg)}
+.st-role.standby .k{color:#ffd35c}
+.st-cams{display:flex;flex-wrap:wrap;gap:8px;min-height:0;overflow:auto}
+.st-cam{
+  position:relative;min-width:140px;flex:1;padding:12px;border-radius:12px;
+  background:var(--panel2);border:3px solid var(--line);
+}
+.st-cam.live{border-color:var(--pgm);background:var(--pgm-bg)}
+.st-cam.preview{border-color:var(--pvw);background:var(--pvw-bg)}
+.live-badge,.pvw-badge{
+  position:absolute;top:8px;right:8px;font-size:11px;font-weight:900;letter-spacing:.12em;
+  padding:3px 6px;border-radius:4px;
+}
+.live-badge{background:var(--pgm);color:#fff}
+.pvw-badge{background:var(--pvw);color:#04140a}
+.cam-name{font-size:clamp(16px,2vw,26px);font-weight:800;padding-right:64px}
+.cam-meta{color:var(--dim);font-size:13px;margin-top:4px}
+.st-lines{display:flex;flex-direction:column;gap:6px;min-height:0;overflow:auto}
+.st-line{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:clamp(14px,1.6vw,20px);font-weight:700}
+.st-line .dot{width:12px;height:12px;border-radius:99px;background:#6b1f24;flex:none}
+.st-line.on .dot{background:#1f6b3a;box-shadow:0 0 0 3px rgba(31,107,58,.35)}
+.st-line .st{letter-spacing:.08em;font-size:.8em;color:var(--dim)}
+.st-line.on .st{color:#6fe39b}
+.st-line .ip,.st-line .age{color:var(--dim);font-weight:650}
+.chip{font-size:11px;font-weight:900;letter-spacing:.08em;padding:2px 6px;border-radius:4px;background:#3a2a05;color:#ffd35c}
+.chip.rec{background:var(--pgm);color:#fff}
+.st-missing,.st-coverage{padding:8px 16px 16px;color:var(--dim);font-size:14px}
+.st-coverage summary{cursor:pointer;font-weight:700}
+.st-coverage li{margin:4px 0}
+@media (max-width:800px){
+  .st-top{flex-wrap:wrap}
+  .st-board{grid-auto-rows:minmax(120px,auto);padding:10px;gap:10px}
+  .st-title{font-size:15px}
+}

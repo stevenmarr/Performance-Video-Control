@@ -38,6 +38,12 @@ node server.js
 Open **http://localhost:8080**. The terminal prints `Control Center:` and the LAN addresses. On an
 iPad or phone, open `http://<this-machine>:8080`.
 
+**Status** is a separate read-only screen for a tablet or a TV: **http://localhost:8080/status**.
+It shows the clock, countdowns, what is on program, and whether gear is online. It has no Take,
+no Recall, and no Record. To arrange that screen, open **http://localhost:8080/status/config**.
+Each saved layout has a name. A TV on the wall uses `/status?layout=FOH`. A client monitor uses
+`/status?layout=Client`. See [docs/status.md](docs/status.md).
+
 | Flag | Meaning |
 |---|---|
 | `--port 8080` | HTTP port (default 8080) |

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Status layouts · Control Center</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/status.css">
+  <link rel="stylesheet" href="/status-config.css">
+</head>
+<body class="status-edit">
+  <header class="st-top ed-top">
+    <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
+    <div class="st-title">STATUS <span>LAYOUTS</span></div>
+    <label>Layout
+      <select id="layoutPick"></select>
+    </label>
+    <label>Name
+      <input id="layoutName" maxlength="40" autocomplete="off">
+    </label>
+    <label>Time zone
+      <input id="timeZone" value="America/Chicago" autocomplete="off">
+    </label>
+    <label>Clock
+      <select id="hour12">
+        <option value="12">12-hour</option>
+        <option value="24">24-hour</option>
+      </select>
+    </label>
+    <button type="button" id="save" class="primary">Save</button>
+    <button type="button" id="newLayout">New</button>
+    <button type="button" id="duplicate">Duplicate</button>
+    <button type="button" id="remove">Delete</button>
+    <a class="edit-link" id="watch" href="/status">Open the wall</a>
+    <a class="edit-link" id="download" href="/api/status/export">Download JSON</a>
+    <label>Load JSON
+      <input id="importFile" type="file" accept="application/json,.json">
+    </label>
+  </header>
+  <p class="ed-note" id="statusLine">This page only changes what the status screen shows. It does not recall, take, or record. Drag a tile to move it. Drag the corner to resize it.</p>
+  <div class="ed-body">
+    <div class="ed-stage">
+      <div id="grid" class="ed-grid"></div>
+    </div>
+    <aside class="ed-side">
+      <h2>ADD A TILE</h2>
+      <div class="add-list" id="addList"></div>
+      <h2 id="inspectorTitle">TILE</h2>
+      <p class="hint" id="inspectorEmpty">Select a tile on the grid.</p>
+      <div id="inspector" hidden>
+        <label>Name on the tile
+          <input id="tileLabel" maxlength="60" autocomplete="off">
+        </label>
+        <label>Show as
+          <select id="tileType"></select>
+        </label>
+        <label>Data from
+          <select id="tileSource"></select>
+        </label>
+        <label id="varRow">Companion variable name
+          <input id="tileVar" maxlength="64" autocomplete="off" placeholder="show_name">
+        </label>
+        <label id="atRow">Countdown time
+          <input id="tileAt" maxlength="80" autocomplete="off" placeholder="7:00 PM">
+        </label>
+        <label id="modeRow">The variable is
+          <select id="countMode">
+            <option value="until">a clock time to count down to</option>
+            <option value="remaining">already a time remaining</option>
+          </select>
+        </label>
+        <div class="row2">
+          <label>Number size
+            <input id="fontSize" type="number" min="12" max="200" step="2">
+          </label>
+          <label>Size preset
+            <select id="sizePreset">
+              <option value="">Custom</option>
+              <option value="28">Small</option>
+              <option value="48">Room</option>
+              <option value="72">Large</option>
+              <option value="120">TV</option>
+            </select>
+          </label>
+        </div>
+        <div class="row2">
+          <label>Number color
+            <input id="color" type="color" value="#d9dee5">
+          </label>
+          <label>Background
+            <input id="background" type="color" value="#14181d">
+          </label>
+        </div>
+        <button type="button" id="clearColor">Use the theme colors</button>
+        <div class="row2" id="warnRow">
+          <label>Amber under (seconds)
+            <input id="amberSec" type="number" min="0" max="86400" step="1">
+          </label>
+          <label>Red under (seconds)
+            <input id="redSec" type="number" min="0" max="86400" step="1">
+          </label>
+        </div>
+        <p class="hint">Red has to be a shorter time than amber. 10 and 30 means red under 10 seconds and amber under 30.</p>
+        <button type="button" id="removeTile">Remove this tile</button>
+      </div>
+    </aside>
+  </div>
+  <script src="/status-grid.js"></script>
+  <script src="/status-view.js"></script>
+  <script src="/status-config.js"></script>
+</body>
+</html>
