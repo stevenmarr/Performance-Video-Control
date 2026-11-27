@@ -185,6 +185,11 @@ the connection labels and module ids its buttons use, never a connection's addre
 
 A knob only turns the control its label names. Names the table does not know are left unwired (no strip cell, turning does nothing) instead of falling back to IRIS. DEST, PRESET, SOURCE, JOG, SHUTTLE, ND, PIC LEVEL, VAR TEMP, SKIN, GAMMA MODE, KNEE SLOPE, KNEE MODE and the matrix knobs stay blank until they get real handlers. The MSU CAM 1-6 strip and PAN / TILT are unchanged.
 
+
+### 0.38.0
+
+Control Center drives the ATEM Micro Panel over USB-C on the Raspberry Pi 5 (Linux hidraw, udev rule `99-control-center-atem-micro-panel.rules`, vendor `1edb` product `bef0`). ARM is a gang latch: when it is blinking, CUT, AUTO and the T-bar fire every M/E. Buttons 1-20 are mappable. The selected M/E and the ARM latch are shared with the Stream Deck. Unlit keys glow white. A T-bar stroke now reaches handle 10000, so the transition completes, and PREV TRANS (CTPr) is a switcher op.
+
 ## Old rs6-presets connections
 
 A connection on the old module id `rs6-presets` runs the pre-0.10 code, which has none of the CC buttons and pages.
