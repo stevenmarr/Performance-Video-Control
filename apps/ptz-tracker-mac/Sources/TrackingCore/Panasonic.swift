@@ -123,17 +123,34 @@ public final class PtzCommandQueue: @unchecked Sendable {
 
     public init(gap: Double = 0.040) { self.gap = gap }
 
-    public func submit(_ command: PtzCommand, key: String? = nil) {
+    /// `front` puts a stop ahead of a speed that has not been sent yet. A newer command with the
+    /// same key still replaces the one waiting, which is how a later speed wins.
+    public func submit(_ command: PtzCommand, key: String? = nil, front: Bool = false) {
         let job = Job(command: command, key: key ?? command.axisKey)
         if let index = waiting.firstIndex(where: { $0.key == job.key }) {
-            waiting[index] = job
+            if front && index != 0 {
+                waiting.remove(at: index)
+                waiting.insert(job, at: 0)
+            } else {
+                waiting[index] = job
+            }
             return
         }
-        waiting.append(job)
+        if front {
+            waiting.insert(job, at: 0)
+        } else {
+            waiting.append(job)
+        }
     }
 
     public func take(now: Double) -> Job? {
-        if busy || waiting.isEmpty || now < nextAt { return nil }
+        if busy || waiting.isEmpty { return nil }
+        if now < nextAt {
+            // A stop does not wait out the 40 ms gap. The head holds its last speed until it hears one.
+            guard let index = waiting.firstIndex(where: { $0.command.isStop }) else { return nil }
+            busy = true
+            return waiting.remove(at: index)
+        }
         busy = true
         return waiting.removeFirst()
     }
@@ -149,5 +166,118 @@ public final class PtzCommandQueue: @unchecked Sendable {
     /// Test aid: the command still waiting for this key, if any.
     public func pending(_ key: String) -> PtzCommand? {
         waiting.first { $0.key == key }?.command
+    }
+}
+
+/// One Panasonic CGI conversation: one request at a time, the 40 ms gap, a stop that skips it,
+/// an immediate retry when a stop is lost, and a wait-and-try-again when the camera stops answering.
+///
+/// The menu-bar app drives this. Tests drive it against a fake clock and a mock camera.
+public struct CameraLink: Sendable {
+    public var timeout: Double
+    /// Extra tries after a stop fails, before the link waits and tries again.
+    public var stopRetries: Int
+    public var backoffs: [Double]
+
+    private var queue: PtzCommandQueue
+    private var inFlight = false
+    private var current: PtzCommand?
+    private var started: Double = 0
+    private var stopTries = 0
+    private var failures = 0
+    private var retryAt: Double = 0
+    private var backingOff = false
+    /// Set when a move was not confirmed. Speeds are ignored until a command succeeds,
+    /// so a later pan cannot replace the stop that is supposed to catch the head.
+    private var recovering = false
+
+    public init(gap: Double = 0.040, timeout: Double = 2, stopRetries: Int = 3, backoffs: [Double] = [0.5, 1, 2, 4, 8]) {
+        queue = PtzCommandQueue(gap: gap)
+        self.timeout = timeout
+        self.stopRetries = max(0, stopRetries)
+        self.backoffs = backoffs.isEmpty ? [0.5] : backoffs
+    }
+
+    public var isInFlight: Bool { inFlight }
+    public var depth: Int { queue.depth }
+    public var isBackingOff: Bool { backingOff }
+    public var isRecovering: Bool { recovering }
+    /// Nothing in flight, nothing waiting, and not sitting out a reconnect wait.
+    public var isSettled: Bool { !inFlight && queue.depth == 0 && !backingOff }
+
+    public func timedOut(now: Double) -> Bool {
+        inFlight && now - started >= timeout
+    }
+
+    public mutating func submit(_ command: PtzCommand) {
+        if recovering && !command.isStop { return }
+        queue.submit(command, front: command.isStop)
+    }
+
+    /// The command to GET now. Nil means wait: a request is already out, the gap has not elapsed,
+    /// or the link is sitting out a reconnect.
+    public mutating func poll(now: Double) -> PtzCommand? {
+        if inFlight { return nil }
+        if backingOff {
+            if now + 1e-9 < retryAt { return nil }
+            backingOff = false
+        }
+        guard let job = queue.take(now: now) else { return nil }
+        inFlight = true
+        current = job.command
+        started = now
+        return job.command
+    }
+
+    public mutating func succeed(now: Double) {
+        guard inFlight else { return }
+        inFlight = false
+        current = nil
+        stopTries = 0
+        failures = 0
+        recovering = false
+        queue.finish(now: now)
+    }
+
+    /// Drop the request that is out, without a retry. Used when the app is quitting and will not wait.
+    public mutating func cancelInFlight(now: Double) {
+        guard inFlight else { return }
+        inFlight = false
+        current = nil
+        queue.finish(now: now)
+    }
+
+    /// The request failed, timed out, or the connection dropped.
+    /// 0 means send the next command now. A positive number is how long to wait. Nil means nothing is waiting.
+    public mutating func fail(now: Double) -> Double? {
+        guard inFlight, let command = current else { return nil }
+        inFlight = false
+        current = nil
+        queue.finish(now: now)
+        if command.isStop && stopTries < stopRetries {
+            stopTries += 1
+            queue.submit(command, front: true)
+            return 0
+        }
+        if command.isStop {
+            stopTries = 0
+            let delay = backoffs[min(failures, backoffs.count - 1)]
+            failures += 1
+            backingOff = true
+            retryAt = now + delay
+            recovering = true
+            queue.submit(Panasonic.stopPanTilt(), front: true)
+            return delay
+        }
+        // The camera may still be holding the last speed on this axis. Stop that axis before any new move.
+        stopTries = 0
+        failures += 1
+        recovering = true
+        switch command.axisKey {
+        case "z": queue.submit(Panasonic.stopZoom(), front: true)
+        case "f": queue.submit(Panasonic.command("F50"), front: true)
+        default: queue.submit(Panasonic.stopPanTilt(), front: true)
+        }
+        return 0
     }
 }

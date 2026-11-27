@@ -169,6 +169,20 @@ final class PanasonicTests: XCTestCase {
         XCTAssertNil(queue.take(now: 0.02))
         XCTAssertEqual(queue.take(now: 0.06)?.command.code, "PTS5948")
     }
+
+    func testStopSkipsTheGap() {
+        let queue = PtzCommandQueue()
+        queue.submit(Panasonic.panTilt(pan: 4, tilt: 0))
+        XCTAssertEqual(queue.take(now: 0)?.command.code, "PTS5450")
+        queue.finish(now: 0.01)
+        queue.submit(Panasonic.zoom(6))
+        queue.submit(Panasonic.stopPanTilt())
+        XCTAssertEqual(queue.take(now: 0.02)?.command.code, "PTS5050", "a stop is not held for the 40 ms gap")
+        queue.finish(now: 0.02)
+        XCTAssertNil(queue.take(now: 0.03), "the speed that was waiting still honours the gap")
+        XCTAssertEqual(queue.pending("z")?.code, "Z56")
+        XCTAssertEqual(queue.take(now: 0.07)?.command.code, "Z56")
+    }
 }
 
 final class ProtocolTests: XCTestCase {

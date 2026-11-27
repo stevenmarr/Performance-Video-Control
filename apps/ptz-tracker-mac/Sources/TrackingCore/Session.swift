@@ -118,6 +118,12 @@ public final class TrackingSession: @unchecked Sendable {
             speeds = .zero
             return finish(commands: stopCommands(now: now), now: now)
         }
+        if detections == nil && phase == .locked {
+            // The runtime clock calls this with no new picture so a pause can expire and a
+            // loss hold can run out. The last box at a later time looks like the person stopped,
+            // and the head would ease off a walk it was still following.
+            return finish(commands: [], now: now)
+        }
         let output = speedsForCurrentLock(now: now)
         speeds = output.continuous
         return finish(commands: movementCommands(output.quantized, now: now), now: now)

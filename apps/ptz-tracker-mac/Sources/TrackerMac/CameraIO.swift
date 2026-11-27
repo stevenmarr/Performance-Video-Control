@@ -193,20 +193,23 @@ final class JPEGPollSource: NSObject, VideoSource, URLSessionTaskDelegate {
 }
 
 /// Sends the CGI commands the session produces. One request in flight, latest speed wins, 40 ms gap.
+/// A stop skips the gap. A lost stop is retried, and a move that times out is followed by a stop.
 /// Login is URLSession's own Basic/Digest handling, with the same factory default as Control Center (`admin` / `12345`).
 final class PanasonicClient: NSObject, CameraControlling, URLSessionTaskDelegate {
-    private let commands = PtzCommandQueue(gap: 0.040)
+    private var link = CameraLink(timeout: 2)
     private var session: URLSession?
     private var origin = ""
     private var user = "admin"
     private var password = "12345"
     private var pumping = false
+    private var giveUp = false
     private var drained: (() -> Void)?
     private let lock = NSLock()
 
     override init() {
         super.init()
         let config = URLSessionConfiguration.ephemeral
+        // Same 2 s as CameraLink.timeout. A request that dies here is a failed delivery, and the link retries a stop.
         config.timeoutIntervalForRequest = 2
         session = URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }
@@ -220,7 +223,10 @@ final class PanasonicClient: NSObject, CameraControlling, URLSessionTaskDelegate
     }
 
     func send(_ command: PtzCommand) {
-        commands.submit(command)
+        lock.lock()
+        giveUp = false
+        link.submit(command)
+        lock.unlock()
         pump()
     }
 
@@ -236,14 +242,18 @@ final class PanasonicClient: NSObject, CameraControlling, URLSessionTaskDelegate
         lock.unlock()
         stopAll()
         DispatchQueue.global().asyncAfter(deadline: .now() + 0.4) { [weak self] in
-            self?.fireDrained()
+            self?.fireDrained(force: true)
         }
     }
 
     private func pump() {
         lock.lock()
-        if pumping { lock.unlock(); return }
-        guard let job = commands.take(now: Date().timeIntervalSince1970) else {
+        if giveUp || pumping {
+            lock.unlock()
+            return
+        }
+        let now = Date().timeIntervalSince1970
+        guard let command = link.poll(now: now) else {
             pumping = false
             lock.unlock()
             fireDrained()
@@ -251,35 +261,79 @@ final class PanasonicClient: NSObject, CameraControlling, URLSessionTaskDelegate
         }
         pumping = true
         let origin = self.origin
+        let session = self.session
         lock.unlock()
-        guard !origin.isEmpty, let url = URL(string: origin + job.command.path), let session else {
-            finishPump()
+        guard !origin.isEmpty, let url = URL(string: origin + command.path), let session else {
+            lock.lock()
+            let delay = link.fail(now: Date().timeIntervalSince1970)
+            pumping = false
+            lock.unlock()
+            after(delay)
             return
         }
         session.dataTask(with: URLRequest(url: url)) { [weak self] data, response, error in
-            if let error {
-                trackerLog("camera \(job.command.code): \(error.localizedDescription)")
-            } else if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
-                trackerLog("camera \(job.command.code): HTTP \(http.statusCode)")
-            } else if let data, let body = String(data: data, encoding: .utf8), let refused = Panasonic.errorReply(body) {
-                trackerLog("camera refused \(job.command.code) (\(refused))")
+            guard let self else { return }
+            let failed = Self.transportFailed(command, data: data, response: response, error: error)
+            let now = Date().timeIntervalSince1970
+            self.lock.lock()
+            if self.giveUp {
+                self.link.cancelInFlight(now: now)
+                self.pumping = false
+                self.lock.unlock()
+                self.fireDrained(force: true)
+                return
             }
-            self?.finishPump()
+            let delay: Double?
+            if failed {
+                delay = self.link.fail(now: now)
+            } else {
+                self.link.succeed(now: now)
+                delay = 0
+            }
+            self.pumping = false
+            self.lock.unlock()
+            if failed { self.after(delay) } else { self.pump() }
         }.resume()
     }
 
-    private func finishPump() {
-        lock.lock()
-        pumping = false
-        commands.finish(now: Date().timeIntervalSince1970)
-        lock.unlock()
-        pump()
+    private func after(_ delay: Double?) {
+        guard let delay else {
+            fireDrained()
+            return
+        }
+        if delay <= 0 {
+            pump()
+            return
+        }
+        DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + delay) { [weak self] in
+            self?.pump()
+        }
     }
 
-    private func fireDrained() {
+    /// A transport failure is retried. A camera that answered, even with `ER2`, got the command.
+    private static func transportFailed(_ command: PtzCommand, data: Data?, response: URLResponse?, error: Error?) -> Bool {
+        if let error {
+            trackerLog("camera \(command.code): \(error.localizedDescription)")
+            return true
+        }
+        if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
+            trackerLog("camera \(command.code): HTTP \(http.statusCode)")
+            return true
+        }
+        if let data, let body = String(data: data, encoding: .utf8), let refused = Panasonic.errorReply(body) {
+            trackerLog("camera refused \(command.code) (\(refused))")
+        }
+        return false
+    }
+
+    private func fireDrained(force: Bool = false) {
         lock.lock()
-        let callback = (commands.depth == 0 && !pumping) ? drained : nil
-        if callback != nil { drained = nil }
+        let ready = force || (link.isSettled && !pumping)
+        let callback = ready ? drained : nil
+        if callback != nil {
+            drained = nil
+            if force { giveUp = true }
+        }
         lock.unlock()
         callback?()
     }
