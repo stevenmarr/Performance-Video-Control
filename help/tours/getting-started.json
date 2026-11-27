@@ -1,0 +1,14 @@
+{
+  "id": "getting-started",
+  "title": "Getting started",
+  "autoStart": false,
+  "steps": [
+    { "id": "show", "title": "The show file and APP LINK", "article": "getting-started", "select": "[data-help=show]" },
+    { "id": "systems", "title": "Put your gear on the desk", "article": "systems", "select": "[data-tab=system]" },
+    { "id": "tabs", "title": "A system's tabs", "article": "getting-started", "select": "#tabsTop" },
+    { "id": "cues", "title": "CUES / RUN CUE", "article": "getting-started", "select": "[data-tab=cues]" },
+    { "id": "surfaces", "title": "SURFACES: page builder (edits go live at once)", "article": "surfaces-pages", "select": "[data-tab=surfaces]" },
+    { "id": "lock", "title": "LOCK and the live guard", "article": "live-safety", "select": "[data-help=lock]" },
+    { "id": "help", "title": "HELP, SELF-TEST, and deck help mode", "article": "on-the-deck", "select": "[data-help=help]" }
+  ]
+}

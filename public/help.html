@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Control Center Manual</title>
+<link rel="stylesheet" href="/style.css">
+<style>body{padding:20px;max-width:800px;margin:auto} h1{border-bottom:1px solid var(--line)}</style>
+</head>
+<body>
+<h1>Control Center Manual</h1>
+<p>The guided tour only starts from the <strong>? HELP</strong> drawer (or Settings → Replay tour). It never starts by itself.</p>
+<p><a href="/">← Back to Control Center</a></p>
+<div id="list"></div>
+<script>
+fetch('/api/help/index').then(r => r.json()).then(idx => {
+  const list = document.getElementById('list');
+  list.innerHTML = '<ul>' + (idx.articles || []).map(a => `<li><a href="/api/help/${a.id}">${a.title}</a> <small>${a.tab || ''}</small></li>`).join('') + '</ul>';
+});
+</script>
+</body>
+</html>

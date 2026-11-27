@@ -1,0 +1,8 @@
+ptz.iris: "Turn to open or close the iris. Press to flip IRIS ⇄ GAIN. Hold 800 ms to reset to the scene value (not while this camera is on air)."
+ptz.live: "A live camera's controls keep their colour and get a red frame plus a LIVE corner. That is enough — the key does not fill red."
+core.system: "Short press opens the page-set chooser. Hold 800 ms to enter deck help mode, then press any key to see what it does."
+surfaces.live: "Page edits go live on the decks right away. There is no SYNC step. Undo also goes live."
+tour.start: "The tour only starts from Help. It never starts by itself."
+help: "Open the help drawer (or press F1). The tour starts only from here."
+lock: "CONSOLE LOCK stops the deck from sending. A refused press flashes amber."
+show: "The show file remembers the desk. APP LINK is how a browser finds this copy."

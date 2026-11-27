@@ -30,16 +30,17 @@
 <header class="top">
   <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
   <div class="brand">CONTROL <span>CENTER</span></div>
-  <button id="btnShow" class="btn ghost show-btn" title="Show file: save, save as, open, download, upload"><span class="show-k">SHOW</span> <span id="showName">Untitled show</span><span id="showDirty" class="dirty" title="Unsaved changes" hidden>●</span></button>
+  <button id="btnShow" class="btn ghost show-btn" data-help="show" title="Show file: save, save as, open, download, upload"><span class="show-k">SHOW</span> <span id="showName">Untitled show</span><span id="showDirty" class="dirty" title="Unsaved changes" hidden>●</span></button>
   <div id="conn" class="pill off rs6-only">Not connected</div>
   <div id="xconn" class="pill off x-only">Not connected</div>
   <div id="xlast" class="last x-only">PVW: —</div>
   <div id="last" class="last rs6-only">PVW: —</div>
   <div id="master" class="master rs6-only"></div>
   <div id="liveMode" class="pill rs6-only"></div>
-  <div id="link" class="pill link connecting" title="Connection between this page and the Control Center app">CONNECTING…</div>
+  <div id="link" class="pill link connecting" data-help="lock" title="Connection between this page and the Control Center app">CONNECTING…</div>
   <div class="spacer"></div>
   <div class="top-end">
+    <button id="btnHelp" class="btn ghost" title="Help (F1)" data-help="help">? HELP</button>
     <button id="btnSettings" class="btn ghost">⚙ Settings</button>
     <span id="appVer" class="app-ver" title="Control Center version"></span>
     <span id="appMem" class="app-mem" role="status" aria-live="polite" title="Memory Control Center is using on this computer">APP —<small>SYS —</small></span>
@@ -903,5 +904,6 @@
 <script src="/companion-tab.js"></script>
 <script src="/tsl.js"></script>
 <script src="/atem-panel.js"></script>
+  <script src="/help.js"></script>
 </body>
 </html>
