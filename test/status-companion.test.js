@@ -72,6 +72,7 @@ test('the Companion client only reads, against a mock server', async () => {
     assert.ok(seen.every((line) => line.startsWith('GET ')), seen.join('\n'));
   } finally {
     client.stop();
-    await new Promise((resolve) => server.close(resolve));
+    if (server.closeAllConnections) server.closeAllConnections();
+    server.close();
   }
 });

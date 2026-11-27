@@ -16,7 +16,9 @@ test('a live control keeps its fill and draws a LIVE corner; a target still fill
   assert.match(live, /#222226/, 'job colour remains the fill');
   assert.match(live, />LIVE</);
   assert.match(live, /#E5262E/);
-  assert.doesNotMatch(live, /fill="#C42020"/);
+  // LIVE corner badge uses #C42020; the key fill stays the job colour.
+  assert.match(live, /fill="#222226"/);
+  assert.doesNotMatch(live, /fill="#C42020" rx="18"/);
   const target = keySvg(tallyChrome({ fill: '#1d1a2b', bar: '#8B5CF6', title: 'CAM 1', value: 'Wide' }, 'pgm'));
   assert.match(target, /#C42020|#8C1C22|#3A0D10/);
   assert.doesNotMatch(target, />LIVE</);
