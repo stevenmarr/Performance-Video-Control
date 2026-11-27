@@ -1,0 +1,203 @@
+/* Desk look, applied on top of style.css. Layout, protocols, and the PTZ dock
+   grid stay as they are. This file only lines up colour, type, fields, tabs,
+   panels, and hit size with the tokens. */
+
+/* ----- chrome: header, tabs, buttons, fields, dialogs, status ----- */
+.section-title {
+  font-size: var(--cc-fs-kicker);
+  letter-spacing: .12em;
+  color: var(--cc-dim);
+}
+.btn:not(.take):not(.cut) { border-radius: var(--cc-r); }
+.btn.mini {
+  min-height: var(--cc-hit-mini);
+  padding: 6px 10px;
+  font-size: var(--cc-fs-meta);
+  border-radius: var(--cc-r-sm);
+}
+#pane-pctl .btn.mini { min-height: 0; padding: 4px 8px; }
+.btn.primary { background: var(--cc-accent); border-color: var(--cc-accent); color: var(--cc-on-color); }
+.btn.danger { background: var(--cc-pgm-soft); border-color: var(--cc-bad); color: var(--cc-bad-ink); }
+.btn.warn { background: var(--cc-warn-bg); border-color: var(--cc-sel); color: var(--cc-warn-ink); }
+.tab, .tgrp { border-radius: var(--cc-r-sm) var(--cc-r-sm) 0 0; }
+.tabs-top .tab,
+.tabs-top .tgrp { min-height: 36px; }
+.tabs-top .tab.active,
+.tabs-top .tab.tab-decks.active,
+.tabs-top .tab.tab-cues.active,
+.tabs-top .tab.tab-looks.active,
+.tabs-top .tab.tab-buttons.active,
+.tabs-top .tab.tab-pages.active,
+.tabs-top .tab.tab-companion.active,
+.tgrp.active {
+  color: var(--cc-text);
+  background: var(--cc-panel-2);
+  border-color: var(--cc-line);
+  box-shadow: inset 0 -3px 0 var(--cc-accent);
+}
+.tab.tab-home { color: var(--cc-accent-ink); }
+.tab.tab-home.active { color: var(--cc-text); }
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),
+select,
+textarea {
+  background: var(--input-bg);
+  color: var(--input-ink);
+  border-color: var(--cc-line);
+}
+#pane-pctl input,
+#pane-pctl select,
+#pane-pctl textarea { min-height: 0; }
+dialog { background: var(--cc-panel); color: var(--cc-text); border: 1px solid var(--cc-line); border-radius: var(--cc-r-lg); }
+dialog .form h2 { font-size: var(--cc-fs-title); letter-spacing: .04em; }
+.toast { background: var(--cc-panel-2); color: var(--cc-text); border-radius: var(--cc-r); }
+.toast.err { border-color: var(--cc-bad); color: var(--cc-bad-ink); }
+.pill.ok, .pill.link.ok, .pill.live-push, .rcs-status.ok {
+  background: var(--cc-ok-bg); color: var(--cc-ok-ink); border-color: var(--cc-ok-line);
+}
+.pill.off, .pill.link.offline, .rcs-status.bad {
+  background: var(--cc-bad-bg); color: var(--cc-bad-ink); border-color: var(--cc-bad-line);
+}
+.pill.link.connecting, .pill.link.reconnecting, .pill.live-poll, .rcs-status.warn, .link-banner {
+  background: var(--cc-warn-bg); color: var(--cc-warn-ink); border-color: var(--cc-warn-line);
+}
+.led.ok, .tgrp .led.ok, .sys-badge.ok .sys-dot { background: var(--cc-ok); box-shadow: 0 0 8px var(--cc-ok); }
+.led.off, .tgrp .led.off, .sys-badge.off .sys-dot { background: var(--cc-bad); box-shadow: 0 0 8px var(--cc-bad); }
+.led.warn, .tgrp .led.warn { background: var(--cc-warn); box-shadow: 0 0 8px var(--cc-warn); }
+.led.idle, .tgrp .led.idle, .sys-badge .sys-dot { background: var(--cc-idle); box-shadow: none; }
+.led.ok, .tgrp .led.ok { box-shadow: 0 0 8px var(--cc-ok); }
+.chip { background: var(--cc-chip); color: var(--cc-text); }
+.chip.warn, .badge.warn { background: var(--cc-warn-bg); color: var(--cc-warn-ink); }
+.badge { background: var(--cc-chip); color: var(--cc-text); }
+.note.warn { color: var(--cc-warn-ink); border-color: var(--cc-warn-line); }
+.empty-note, .cc-time-empty, .au-wempty, .ndi-empty, .lay-empty {
+  color: var(--cc-dim);
+  font-size: var(--cc-fs-ui);
+}
+
+/* Program is a red frame. Preview is a green frame. The corner word stays PGM / PVW. */
+.preset.pgm, .inp.pgm, .card.live-pgm, .cam-strip .cam.tally-r {
+  border-color: var(--cc-pgm);
+}
+.preset.pvw, .inp.pvw, .card.live-pvw {
+  border-color: var(--cc-pvw);
+}
+#pane-pctl.tally-pgm { box-shadow: inset 0 0 0 var(--cc-live-width) var(--cc-pgm); }
+#pane-pctl.tally-pvw { box-shadow: inset 0 0 0 var(--cc-live-width) var(--cc-pvw); }
+
+/* ----- SYSTEMS ----- */
+.sys-card {
+  background: var(--cc-panel);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-lg);
+}
+.sys-card.active { border-color: var(--cc-pgm); box-shadow: 0 0 0 1px var(--cc-pgm) inset; }
+.sys-card .stat, .dash-clock, .cam-chip {
+  background: var(--cc-input);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-sm);
+}
+.dash-clock { color: var(--cc-accent-soft); border-radius: var(--cc-r); }
+.dash-summary .ok, .sys-line .row-st.ok { color: var(--cc-ok-ink); }
+.dash-summary .off, .sys-line .row-st.off, .sys-line .row-st.warn, .sys-line .err-inline, .sys-card .err { color: var(--cc-bad-ink); }
+.sys-card .err { background: var(--cc-bad-bg); border: 1px solid var(--cc-bad-line); }
+.sys-menu { background: var(--cc-panel); border: 1px solid var(--cc-line); border-radius: var(--cc-r); }
+.sys-menu button.danger { color: var(--cc-bad-ink); }
+.dup-flag, .sys-card .st .mock, .pill .mock { background: var(--cc-warn-bg); color: var(--cc-warn-ink); }
+.badge-active { background: var(--cc-pgm); color: var(--cc-on-color); }
+.badge-stub { color: var(--cc-warn-ink); border-color: var(--cc-warn-line); }
+
+/* ----- RS6 and the shared preset pages (E2 / PixelHue) ----- */
+.palette, .panel, .me-block, .cue-list, .cue-editor, .cc-col, .look-card {
+  background: var(--cc-panel);
+  border-color: var(--cc-line);
+}
+.mode.active { background: var(--cc-accent); border-color: var(--cc-accent); color: var(--cc-on-color); }
+.mode[data-mode=save].active, .seg.bk.on { background: var(--cc-save); border-color: var(--cc-save); }
+.mode[data-mode=edit].active { background: var(--cc-edit); border-color: var(--cc-edit); }
+.mode[data-mode=move].active { background: var(--cc-move); border-color: var(--cc-move); }
+.mode-hint { background: var(--cc-panel); border-color: var(--cc-line); color: var(--cc-dim); }
+.preset.empty, .cc-cue.empty { border-color: var(--cc-line-strong); }
+.pager .pg.on, .ptab.active { background: var(--cc-accent); border-color: var(--cc-accent); color: var(--cc-on-color); }
+
+/* ----- ATEM, including the TSL map that used a second dark palette ----- */
+.tsl-panel, .scopes-head, .scopes-ndi {
+  background: var(--cc-panel);
+  color: var(--cc-text);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r);
+}
+.scopes-head { border-bottom: 1px solid var(--cc-line); }
+.tsl-table th, .tsl-table td, .mod-table th, .mod-table td { border-bottom-color: var(--cc-line); }
+.tsl-table input, .tsl-row input, .tsl-row select {
+  background: var(--input-bg);
+  color: var(--input-ink);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-sm);
+}
+.tsl-log, .cmp-log, .ndi-cmd {
+  background: var(--cc-bg);
+  color: var(--cc-dim);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-sm);
+}
+.src.on-pgm { background: var(--cc-pgm); border-color: var(--cc-pgm-hot); color: var(--cc-on-color); }
+.src.on-pvw { background: var(--cc-pvw); border-color: var(--cc-pvw-hot); color: var(--cc-on-pvw); }
+.src.on-aux { background: var(--cc-accent-deep); border-color: var(--cc-accent); color: var(--cc-on-color); }
+.bus-lbl.pgm { background: var(--cc-pgm-bg); color: var(--cc-pgm-ink); }
+.bus-lbl.pvw { background: var(--cc-pvw-bg); color: var(--cc-pvw-ink); }
+.me-block.focus { border-color: var(--cc-accent); box-shadow: 0 0 0 1px var(--cc-accent) inset; }
+
+/* ----- PTZ: colour only. The dock row, joystick, and knob sizes stay put. ----- */
+.rcp-allstop { background: var(--cc-pgm-bg); border-color: var(--cc-pgm); color: var(--cc-pgm-ink); }
+.rcp-read .okc { color: var(--cc-ok-ink) !important; }
+.rcp-read .warnc { color: var(--cc-warn-ink) !important; }
+.rcp-read .rd.err b, .cc-msg.err { color: var(--cc-bad-ink); }
+.cam-strip .cam .mr em.pg { background: var(--cc-pgm); color: var(--cc-on-color); }
+.cam-strip .cam .mr em.pv { background: var(--cc-pvw); color: var(--cc-on-pvw); }
+
+/* ----- CUES and the PRESETS stack ----- */
+.cc-cue.loaded, .cc-cell.hot { background: var(--cc-accent-bg); }
+.cc-cue.running { background: var(--cc-pvw-bg); border-color: var(--cc-pvw); }
+.cc-cue.failed { background: var(--cc-pgm-bg); border-color: var(--cc-pgm); }
+.cc-state[data-state="loaded"] { color: var(--cc-accent-ink); border-color: var(--cc-accent); }
+.cc-state[data-state="running"] { color: var(--cc-ok-ink); border-color: var(--cc-ok-line); }
+.cc-state[data-state="failed"] { color: var(--cc-bad-ink); border-color: var(--cc-bad-line); }
+.cc-cue.armed { border-color: var(--cc-accent); }
+.cc-menu, .lay-menu { background: var(--cc-panel); border: 1px solid var(--cc-line); border-radius: var(--cc-r); }
+.cc-props input, .cc-props select, .cc-act-edit input, .cc-act-edit select,
+.cue-step select, .cue-step input, .cue-head input, .cue-head select, .look-card input {
+  background: var(--input-bg);
+  color: var(--input-ink);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-sm);
+}
+
+/* ----- Control Devices, BUTTONS, PAGES ----- */
+.pages-empty, .pages-board .deck-key.empty {
+  background: var(--cc-panel-3);
+  color: var(--cc-idle);
+  box-shadow: inset 0 0 0 1px var(--cc-line);
+}
+.pages-state.on, .deck-dev .onl { color: var(--cc-ok-ink); }
+.pages-state.off, .deck-dev .offl { color: var(--cc-bad-ink); }
+.deck-page.on, .deck-dev.on { border-color: var(--cc-accent); box-shadow: inset 3px 0 0 var(--cc-accent); }
+.deck-pick .btn.on { background: var(--cc-accent-deep); border-color: var(--cc-accent); color: var(--cc-on-color); }
+.bl-fields input, .bl-fields select, .bl-row input, .bl-row select, .deck-top select {
+  background: var(--input-bg);
+  color: var(--input-ink);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-sm);
+}
+
+/* ----- COMPANION ----- */
+#pane-companion .cmp-card { background: var(--cc-panel); border: 1px solid var(--cc-line); border-radius: var(--cc-r); }
+#pane-companion .cmp-dot { background: var(--cc-idle); }
+#pane-companion .cmp-dot.ok { background: var(--cc-ok); }
+#pane-companion .cmp-dot.warn { background: var(--cc-warn); }
+#pane-companion .cmp-dot.off { background: var(--cc-bad); }
+#pane-companion .cmp-frame { border: 1px solid var(--cc-line); border-radius: var(--cc-r); background: var(--cc-bg); }
+
+/* ----- Pixera and Millumin ----- */
+.media-row { background: var(--cc-panel); border: 1px solid var(--cc-line); border-radius: var(--cc-r); }
+.media-row.on { border-color: var(--cc-pvw-line); }
+.mod-on { color: var(--cc-ok-ink); }

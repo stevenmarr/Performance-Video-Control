@@ -26,6 +26,7 @@ test('the page loads the shared controls and the help tip', () => {
   const js = read('public/ui.js');
   assert.match(html, /href="\/tokens\.css"/);
   assert.match(html, /href="\/ui\.css"/);
+  assert.match(html, /href="\/desk\.css"/);
   assert.match(html, /src="\/ui\.js"/);
   assert.match(css, /\.cc-tip\s*\{/);
   assert.match(css, /:focus-visible/);
