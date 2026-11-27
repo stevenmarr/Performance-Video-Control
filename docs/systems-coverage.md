@@ -16,8 +16,8 @@ Companion connection types: **1098**. Implemented: **243**. Partial: **0**. Not 
 | AV Stumpfl Pixera (`pixera`) | implemented | 8 | 4 | 3 | official | https://help.pixera.one/api/ |
 | Millumin (`millumin`) | implemented | 13 | 3 | 2 | official | https://www.millumin.com/documentation/ |
 | Blackmagic Videohub (`videohub`) | implemented | 1 | 4 | 2 | official | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |
-| Blackmagic HyperDeck (`hyperdeck`) | implemented | 9 | 5 | 3 | official | https://documents.blackmagicdesign.com/DeveloperManuals/HyperDeckEthernetProtocol.pdf |
-| Mitti (`mitti`) | implemented | 8 | 3 | 3 | official | https://imimot.com/mitti/ |
+| Blackmagic HyperDeck (`hyperdeck`) | implemented | 9 | 8 | 3 | official | https://documents.blackmagicdesign.com/DeveloperManuals/HyperDeckEthernetProtocol.pdf |
+| Mitti (`mitti`) | implemented | 8 | 6 | 3 | official | https://imimot.com/mitti/ |
 | TSL tally (`tsl`) | implemented | 2 | 3 | 2 | official | https://tslproducts.com/ |
 | Control Center (`console`) | implemented | 21 | 4 | 3 | official | — |
 | Generic HTTP (`generic-http`) | implemented | 1 | 4 | 2 | official | https://www.rfc-editor.org/rfc/rfc9110 |
