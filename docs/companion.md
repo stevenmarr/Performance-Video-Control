@@ -180,6 +180,11 @@ the connection labels and module ids its buttons use, never a connection's addre
 * The PTZ preview keeps 16:9 in a short dock panel (pillarbox) and letterboxes a frame of any other shape.
 * ATEM DVE budget comes from the switcher topology. DVE keys, fly keys and a DVE transition all count. Setting another DVE key, fly or a DVE transition when none are free is refused (409) and names who holds them. The KEYS tab shows that.
 
+
+### 0.37.1
+
+A knob only turns the control its label names. Names the table does not know are left unwired (no strip cell, turning does nothing) instead of falling back to IRIS. DEST, PRESET, SOURCE, JOG, SHUTTLE, ND, PIC LEVEL, VAR TEMP, SKIN, GAMMA MODE, KNEE SLOPE, KNEE MODE and the matrix knobs stay blank until they get real handlers. The MSU CAM 1-6 strip and PAN / TILT are unchanged.
+
 ## Old rs6-presets connections
 
 A connection on the old module id `rs6-presets` runs the pre-0.10 code, which has none of the CC buttons and pages.
