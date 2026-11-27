@@ -26,6 +26,8 @@
 <link rel="stylesheet" href="/style.css">
 <link rel="stylesheet" href="/e2-program.css">
 <link rel="stylesheet" href="/modules.css">
+<link rel="stylesheet" href="/tokens.css">
+<link rel="stylesheet" href="/ui.css">
 </head>
 <body>
 <header class="top">
@@ -42,7 +44,7 @@
   <div class="spacer"></div>
   <div class="top-end">
     <button id="btnHelp" class="btn ghost" title="Help (F1)" data-help="help">? HELP</button>
-    <button id="btnSettings" class="btn ghost">⚙ Settings</button>
+    <button id="btnSettings" class="btn ghost" title="Appearance, RS6 connection, and where the show is saved">⚙ Settings</button>
     <span id="appVer" class="app-ver" title="Control Center version"></span>
     <span id="appMem" class="app-mem" role="status" aria-live="polite" title="Memory Control Center is using on this computer">APP —<small>SYS —</small></span>
   </div>
@@ -917,6 +919,7 @@
     </div>
   </div>
 </section>
+<script src="/ui.js"></script>
 <script src="/looks.js"></script>
 <script src="/cues-tab.js"></script>
 <script src="/prefs.js"></script>
