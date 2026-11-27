@@ -173,6 +173,13 @@ the connection labels and module ids its buttons use, never a connection's addre
   edited in Companion show (the keys still run Control Center). Without it, the deck look paints Control Center's
   picture over the key; remove the "Control Center deck look" feedback from one key to restyle just that key.
 
+### 0.37.0 (module 0.16.0, surfaces overhaul phase 1)
+
+* Deck keys and Control Center buttons reach the same command routes the web UI uses (`/api/modules/cmd/...`, PTZ tracking, cue GO). A key with no function or no handler answers `{ ok: false, noop: true, reason }` instead of a silent success. Refused knob turns are logged.
+* `GET /api/companion/selftest` counts every key and knob on every deck size and lists label-only keys, keys with no handler, unbound knobs and library steps that resolve to nothing. `hello` returns `warnings` (panel LOCK, a PTZ paint lock, more than one Control Center connection, an old imported module, the last refused command).
+* The PTZ preview keeps 16:9 in a short dock panel (pillarbox) and letterboxes a frame of any other shape.
+* ATEM DVE budget comes from the switcher topology. DVE keys, fly keys and a DVE transition all count. Setting another DVE key, fly or a DVE transition when none are free is refused (409) and names who holds them. The KEYS tab shows that.
+
 ## Old rs6-presets connections
 
 A connection on the old module id `rs6-presets` runs the pre-0.10 code, which has none of the CC buttons and pages.
