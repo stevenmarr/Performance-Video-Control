@@ -41,7 +41,7 @@ test('PTZ 0.11.0: paint matrix + expanders (Playwright)', { skip: pw ? false : '
   assert.equal(await camVal('autoIrisSpeed'), '2', 'AUTO IRIS SPEED FAST sent (OSJ:01:2)');
   // 11: the 0.11.0 grip-swap panels became the 0.11.1 dock (test/ui-ptz-dock.test.js)
   assert.equal(await page.locator('.rcp > .panel .pgrip').count(), 0);
-  assert.equal(await page.locator('.rcp > .dk-panel > .dk-head').count(), 7);
+  assert.equal(await page.locator('.rcp > .dk-panel > .dk-head').count(), 8);
   // the expander stayed open across a reload (per browser)
   await page.reload(); await page.locator('details.xp[data-xp=iris]').waitFor({ state: 'attached' });
   assert.equal(await page.locator('details.xp[data-xp=iris][open]').count(), 1);

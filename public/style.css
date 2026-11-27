@@ -1470,3 +1470,15 @@ nav.tabs{padding:0 6px}
 /* overhaul P1d: DVE budget on the KEYS tab */
 .ak-dvechip{font:800 10px/1 ui-monospace,Menlo,monospace;color:#ffd35c;border:1px solid #6b5520;border-radius:6px;padding:3px 6px}
 .ak-dvefull{font:700 10px/1 -apple-system,sans-serif;color:var(--dim);border:1px dashed #39424e;border-radius:6px;padding:3px 6px;cursor:help}
+
+/* PTZ UHD crop panel and one-click setup card */
+.rcp-crop .crop-frame{position:relative;aspect-ratio:16/9;width:100%;background:#111;border:1px solid var(--line,#333);overflow:hidden;margin:8px 0}
+.rcp-crop .crop-win{position:absolute;box-sizing:border-box;border:2px solid;pointer-events:none}
+.rcp-crop .crop-win.yl{border-color:#e6c200;background:rgba(230,194,0,.12)}
+.rcp-crop .crop-win.g{border-color:#2ecc40;background:rgba(46,204,64,.08)}
+.rcp-crop .crop-win.mg{border-color:#e040fb;background:rgba(224,64,251,.08)}
+.rcp-crop .crop-meta,.provision .prov-steps{font:600 11px/1.4 ui-monospace,Menlo,monospace}
+.provision{margin:0 0 16px;padding:12px;border:1px solid var(--line,#333);border-radius:8px}
+.provision .prov-steps{display:flex;flex-wrap:wrap;gap:8px 16px;margin:8px 0;padding:0;list-style:decimal inside}
+.provision .prov-steps li.on{color:var(--accent,#6cf);font-weight:700}
+#ptzCropCtl.dim{opacity:.45;pointer-events:none}

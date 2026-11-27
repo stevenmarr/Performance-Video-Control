@@ -163,7 +163,7 @@ The same object is stored in Control Center's `ptz-tracking.json` (without `cont
     "host": "10.0.0.20",
     "port": 80,
     "user": "admin",
-    "password": "12345",
+    "password": "",
     "streamUrl": "http://10.0.0.20:80/cgi-bin/mjpeg?resolution=640&framerate=15"
   }
 }
