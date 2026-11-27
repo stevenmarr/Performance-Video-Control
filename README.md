@@ -276,6 +276,58 @@ For the Stream Deck plugin, use the steps above (Node.js 24, inside `streamdeck/
 
 `node server.js` on a Mac listens on **8080**. The Pi service listens on **8088**. Scopes, if you run it on this Mac, is a different process on **8092** (`apps/scopes`).
 
+### One command: update and launch (`cc`)
+
+On a Mac, `tools/cc` updates Control Center and PV Companion, then starts both.
+From 0.34.0 Control Center already starts Companion itself (`~/companion`,
+`yarn start:local`) and serves it at http://localhost:8080/companion/. The official
+Companion.app is left alone unless you pass `--app`.
+
+First time, from this folder:
+
+```bash
+./tools/cc install
+```
+
+That puts `cc` and `control-center` on your PATH (`~/bin`, or `/usr/local/bin`
+if that folder is writable and `~/bin` is not already on PATH). Then:
+
+```bash
+cc up
+```
+
+| Command | What it does |
+|---|---|
+| `cc up` | Update, then launch |
+| `cc update` | `git pull --ff-only` on `performance-video-control`, `npm ci --omit=dev` only if `package-lock.json` changed or `node_modules` is missing, pull `~/companion` (and `yarn install` if `yarn.lock` changed), and refresh the Control Center Companion module |
+| `cc launch` | Restart Control Center (the `com.performancevideo.controlcenter` launchd service if it is loaded, otherwise a background process), wait until http://localhost:8080/api/health answers, open the browser |
+| `cc stop` | Stop Control Center and the Companion it started |
+| `cc status` | Folders, branches, versions, and whether each is running |
+| `cc logs` | Tail the log at `~/Library/Logs/Control Center/` |
+| `cc install-service` | Write the user launchd plist if you want Control Center to start at login |
+
+`cc update` refuses if the checkout has uncommitted changes, so a pull cannot
+overwrite local work. There is no build step for the desk itself. USB Stream
+Decks still need the `npm ci --omit=dev` install, which `cc update` runs when
+the lockfile changes or `node_modules` is missing. A first Companion start
+after a pull can take a minute or two while it rebuilds its screens.
+
+Paths it assumes (override with `--dir`, `--companion`, `--module`, `--port`,
+or `CC_HOME`, `CC_COMPANION_PATH`, `CC_MODULE_DIR`, `CC_PORT`, `RS6_DATA_DIR`):
+
+- Control Center: the folder that contains `tools/cc`, or `~/control-center`
+- PV Companion: `~/companion` (or the path in `companion-supervisor.json`)
+- Companion module (optional): `~/companion-module-rs6-presets`. When that
+  checkout is present, `cc update` packages it into the fork's built-in module
+  (`~/companion/modules/pvllc-control-center`) and into
+  `~/companion-modules/dev` for Companion's Developer modules path
+- Data: `~/Library/Application Support/RS6 Presets`
+- Logs: `~/Library/Logs/Control Center/`
+
+`cc` is also the system C compiler (`/usr/bin/cc`). Use `control-center`
+(the same script) if you compile software in the same Terminal. `cc help`
+lists every flag, including `--dry-run`.
+
 ---
 
 ## Install / update on the Pi
