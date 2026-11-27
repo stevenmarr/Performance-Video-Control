@@ -390,7 +390,7 @@ label.btn{cursor:pointer}
 /* Header pills follow the open tab, not which system is focused. Tab buttons and group labels are armed
    individually (hidden), so RS6 and ATEM can both be on the bar. */
 body:not(.tab-presets):not(.tab-inputs):not(.tab-backup):not(.tab-audio):not(.tab-webrcs) .rs6-only:not(.tab):not(.tab-group){display:none !important}
-body:not(.tab-xpresets):not(.tab-xcues):not(.tab-xsources):not(.tab-xstills):not(.tab-xbackup):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-pcams):not(.tab-pxplay):not(.tab-pxcues):not(.tab-mlcol):not(.tab-mllayer) .x-only:not(.tab):not(.tab-group){display:none !important}
+body:not(.tab-xpresets):not(.tab-xcues):not(.tab-xsources):not(.tab-xstills):not(.tab-xbackup):not(.tab-xprogram):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-pcams):not(.tab-pxplay):not(.tab-pxcues):not(.tab-mlcol):not(.tab-mllayer) .x-only:not(.tab):not(.tab-group){display:none !important}
 .tab[hidden],.tab-group[hidden]{display:none !important}
 .tabs{align-items:flex-end;flex-wrap:wrap;row-gap:4px}
 .tab-group{display:inline-flex;align-items:center;gap:2px;margin:0 2px 0 12px;padding:0 0 8px;font-size:10px;font-weight:900;letter-spacing:.14em;color:#7d8b9c}
@@ -412,7 +412,7 @@ body:not(.tab-xpresets):not(.tab-xcues):not(.tab-xsources):not(.tab-xstills):not
 @media (max-width: 720px){.media-row{grid-template-columns:minmax(0,1fr)}}
 .sys-card.on-desk{border-color:#6b2428}
 .top #btnSystem,.top #xconn{order:1}.top #xlast{order:2}
-body:not(.tab-xpresets) #xlast{display:none}
+body:not(.tab-xpresets):not(.tab-xprogram) #xlast{display:none}
 .transport.xtransport{display:none}
 body.tab-xpresets .transport.xtransport{display:flex}
 .xtally-note{margin-top:4px}
@@ -528,7 +528,7 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .sys-cards.planned .mono{color:#ffd35c}
 
 /* ---------- 0.7.0: SYSTEMS home that scales, ATEM, Panasonic PTZ ---------- */
-body:not(.tab-xpresets):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-ptrack):not(.tab-ppresets):not(.tab-pcams) #xlast{display:none}
+body:not(.tab-xpresets):not(.tab-xprogram):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-ptrack):not(.tab-ppresets):not(.tab-pcams) #xlast{display:none}
 body.tab-atem #xlast,body.tab-arouter #xlast,body.tab-aaudio #xlast,body.tab-akeys #xlast,body.tab-amacros #xlast,body.tab-pctl #xlast,body.tab-ptrack #xlast,body.tab-ppresets #xlast,body.tab-pcams #xlast{display:block}
 .led.warn{background:#f0a500;box-shadow:0 0 8px #f0a500}
 .sys-card.warn::before{background:#f0a500}
