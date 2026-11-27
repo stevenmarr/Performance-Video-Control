@@ -648,26 +648,38 @@
       <button class="btn mini primary" data-cue="${c.id}" data-act="play">▶ PLAY</button><button class="btn mini" data-cue="${c.id}" data-act="pause">❚❚ PAUSE</button><button class="btn mini" data-cue="${c.id}" data-act="stop">■ STOP</button></div>`).join('') || '<div class="note">No cues on the device.</div>');
   }
   $('#xcuesList').addEventListener('click', (ev) => { const b = ev.target.closest('[data-cue]'); if (b) run(api('POST', `${base()}/cues/${b.dataset.cue}/${b.dataset.act}`).then(() => toast(`Cue ${b.dataset.act}`))); });
+  // E2 ids are 0-based, so the pane shows id + 1. PixelHue ids are already the device numbers.
+  const devOff = () => ((V && (V.type || V.system) === 'e2') ? 1 : 0);
   function renderStills() {
+    const off = devOff();
     const inputs = (V.sources || []).filter((s) => s.kind === 'input');
-    set($('#xstillInput'), 'stillin', inputs.map((s) => `<option value="${s.id}">${s.id + 1} · ${esc(s.name)}</option>`).join(''));
-    set($('#xstillsList'), 'stills', (V.stills || []).map((s) => `<div class="row"><span class="lbl">${esc(s.name)}<small>Still ${s.id + 1}${s.size ? ' · ' + esc(s.size) : ''}</small></span><span class="spacer"></span><button class="btn mini danger" data-delstill="${s.id}">DELETE</button></div>`).join('') || '<div class="note">The still store is empty.</div>');
+    set($('#xstillInput'), 'stillin', inputs.map((s) => `<option value="${s.id}">${s.id + off} · ${esc(s.name)}</option>`).join(''));
+    set($('#xstillsList'), 'stills', (V.stills || []).map((s) => `<div class="row"><span class="lbl">${esc(s.name)}<small>Still ${s.id + off}${s.size ? ' · ' + esc(s.size) : ''}</small></span><span class="spacer"></span><button class="btn mini danger" data-delstill="${s.id}">DELETE</button></div>`).join('') || '<div class="note">The still store is empty.</div>');
   }
   $('#xstillTake').addEventListener('click', () => {
+    const off = devOff();
     const slot = Number($('#xstillSlot').value); const input = Number($('#xstillInput').value);
-    if (!slot) return toast('Enter the still slot number', true);
-    const ex = (V.stills || []).find((s) => s.id === slot - 1);
-    if (!confirm(`Capture input ${input + 1} into still ${slot}${ex ? ` (overwrites "${ex.name}")` : ''}?`)) return;
-    run(api('POST', `${base()}/stills/take`, { input, file: slot - 1 }).then(() => toast('Still captured')));
+    if (!Number.isFinite(slot) || slot < off) return toast('Enter the still slot number', true);
+    const file = slot - off;
+    const ex = (V.stills || []).find((s) => s.id === file);
+    if (!confirm(`Capture input ${input + off} into still ${slot}${ex ? ` (overwrites "${ex.name}")` : ''}?`)) return;
+    run(api('POST', `${base()}/stills/take`, { input, file }).then(() => toast('Still captured')));
   });
   $('#xstillsList').addEventListener('click', (ev) => { const b = ev.target.closest('[data-delstill]'); if (!b) return; const s = V.stills.find((x) => x.id === Number(b.dataset.delstill)); if (confirm(`Delete still "${s ? s.name : b.dataset.delstill}" from the device?`)) run(api('DELETE', `${base()}/stills/${b.dataset.delstill}`).then(() => toast('Deleted'))); });
   function renderBackups() {
+    const off = devOff();
     set($('#xbkList'), 'bk', (V.backups || []).map((x) => {
       const btn = (slot, txt) => `<button class="btn mini seg ${x.active === slot ? 'on' : ''}" data-bk="${x.id}" data-slot="${slot}">${txt}</button>`;
-      return `<div class="row"><span class="lbl">${esc(x.name)}<small>Input ${x.id + 1}</small></span>${btn(-1, 'PRIMARY')}${x.backups.map((b) => btn(b.id, `B${b.id + 1} · ${esc(b.name || (b.stillId != null ? `Still ${b.stillId + 1}` : `In ${(b.inputId ?? 0) + 1}`))}`)).join('')}</div>`;
+      return `<div class="row"><span class="lbl">${esc(x.name)}<small>Input ${x.id + off}</small></span>${btn(-1, 'PRIMARY')}${x.backups.map((b) => btn(b.id, `B${b.id + off} · ${esc(b.name || (b.stillId != null ? `Still ${b.stillId + off}` : `In ${(b.inputId ?? 0) + off}`))}`)).join('')}</div>`;
     }).join('') || '<div class="note">No input has a backup configured on the device.</div>');
   }
-  $('#xbkList').addEventListener('click', (ev) => { const b = ev.target.closest('[data-bk]'); if (b) run(api('POST', `${base()}/backups/${b.dataset.bk}`, { slot: Number(b.dataset.slot) })); });
+  $('#xbkList').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-bk]'); if (!b) return;
+    const slot = Number(b.dataset.slot);
+    const body = { slot };
+    if (slot < 0) body.confirm = true;
+    run(api('POST', `${base()}/backups/${b.dataset.bk}`, body));
+  });
 
   // ---------- state ----------
   function renderAll() {
