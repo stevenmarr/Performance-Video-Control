@@ -201,3 +201,21 @@ dialog .form h2 { font-size: var(--cc-fs-title); letter-spacing: .04em; }
 .media-row { background: var(--cc-panel); border: 1px solid var(--cc-line); border-radius: var(--cc-r); }
 .media-row.on { border-color: var(--cc-pvw-line); }
 .mod-on { color: var(--cc-ok-ink); }
+
+/* SURFACES sub-tabs. A selected section is an action (blue), not preview green. */
+.surfaces-sub .subtab {
+  background: var(--cc-panel-2);
+  color: var(--cc-dim);
+  border: 1px solid var(--cc-line);
+  border-radius: var(--cc-r-sm);
+  min-height: var(--cc-hit-mini);
+  padding: 6px 12px;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+.surfaces-sub .subtab.active {
+  background: var(--cc-accent);
+  color: var(--cc-on-color);
+  border-color: var(--cc-accent);
+}
+.tabs-top .tab.tab-surfaces.active { box-shadow: inset 0 -3px 0 var(--cc-accent); }
