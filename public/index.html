@@ -281,6 +281,22 @@
       <div class="section-title" style="margin-top:10px">LAST PACKETS <small>sender log</small></div>
       <pre id="tslLog" class="tsl-log"></pre>
     </div>
+    <div class="tsl-panel" id="ampPanel">
+      <div class="section-title">ATEM MICRO PANEL <small>Control Center drives the panel on this Mac (USB-C or Bluetooth) instead of ATEM Software Control</small></div>
+      <div class="tsl-row">
+        <label class="chk"><input type="checkbox" id="ampEnabled"> Drive the panel</label>
+        <label>Switcher <select id="ampInst"></select></label>
+        <label>M/E <select id="ampMe"><option value="1">M/E 1</option><option value="2">M/E 2</option><option value="3">M/E 3</option><option value="4">M/E 4</option></select></label>
+        <label>PROGRAM row <select id="ampPgm"><option value="hot">Hot cut (Blackmagic)</option><option value="off">Tally only</option></select></label>
+        <label>ARM key <select id="ampArm"><option value="none">Nothing (Blackmagic)</option><option value="shift-ftb">SHIFT + ARM = FTB</option><option value="ftb">ARM = FTB</option></select></label>
+        <label class="chk"><input type="checkbox" id="ampInvert"> T-bar reversed</label>
+        <label class="chk"><input type="checkbox" id="ampLedRev"> T-bar lights reversed</label>
+      </div>
+      <div class="note small" id="ampState">…</div>
+      <div class="note small">Quit ATEM Software Control and ATEM Setup on this Mac first: they drive the same panel, and Control Center lets go of it while either is open. Settings are saved on this computer, not in the show.</div>
+      <div class="section-title" style="margin-top:10px">LAST PRESSES <small>what the panel sent and what Control Center did</small></div>
+      <pre id="ampLog" class="tsl-log"></pre>
+    </div>
   </section>
   <!-- ATEM ROUTER: Videohub-style destinations. Source bank is the popover (public/atem-ext.js). -->
   <section class="grid-wrap pane" id="pane-arouter" hidden>
@@ -864,5 +880,6 @@
 <script src="/companion-advice.js"></script>
 <script src="/companion-tab.js"></script>
 <script src="/tsl.js"></script>
+<script src="/atem-panel.js"></script>
 </body>
 </html>
