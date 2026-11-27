@@ -26,7 +26,15 @@ test('Ross sockets reconnect, split on CR LF, and do not invent a take-item stat
     const system = get(id);
     assert.equal(field(system, 'reconnect').default, true, id);
     assert.equal(field(system, 'delimiter').default, '\\r\\n', id);
-    assert.equal(system.poll, null, id);
+    if (id === 'ross-rosstalk') {
+      assert.equal(system.poll && system.poll.type, 'line-keepalive');
+      assert.equal(system.poll.line, 'NOOP\r\n');
+      assert.equal(field(system, 'keepalive').default, false);
+      assert.equal(field(system, 'keepaliveMs').default, 30000);
+    } else {
+      assert.equal(system.poll, null, id);
+      assert.equal(field(system, 'keepalive'), undefined, id);
+    }
   }
   const xp = get('ross-xpression');
   assert.ok(!xp.actions.some((a) => /state|status|noop/i.test(a.id)));
@@ -221,6 +229,36 @@ test('NK-SCP/A sends the 11-byte switch, the 5-byte read, and the 37-byte level 
     const level = lines.find((l) => l.startsWith('Z'));
     assert.equal(level, 'Z000,---,---,---,---,---,---,---,---\r');
     assert.equal(Buffer.byteLength(level), 37);
+  } finally {
+    desk.close();
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('RossTalk NOOP keep-alive is off until the connection turns it on, and the first line waits', async () => {
+  const lines = [];
+  const server = net.createServer((sock) => sock.on('data', (buf) => lines.push(buf.toString())));
+  const port = await listen(server);
+  const desk = new ModuleDesk({ pollFloorMs: 40 });
+  try {
+    const quiet = desk.create('ross-rosstalk', { connection: { host: '127.0.0.1', port, keepaliveMs: 80 } });
+    await desk.connect(quiet.id);
+    await new Promise((r) => setTimeout(r, 200));
+    assert.equal(lines.length, 0, 'keep-alive stays off');
+    const row = desk.create('ross-rosstalk', { connection: { host: '127.0.0.1', port, keepalive: true, keepaliveMs: 80 } });
+    await desk.connect(row.id);
+    await new Promise((r) => setTimeout(r, 30));
+    assert.equal(lines.length, 0, 'connect does not send NOOP');
+    await until(() => lines.filter((l) => l === 'NOOP\r\n').length >= 2, 1000, 'two NOOPs');
+    assert.ok(lines.every((l) => l === 'NOOP\r\n'));
+    const n = lines.length;
+    await desk.disconnect(row.id);
+    await new Promise((r) => setTimeout(r, 250));
+    assert.equal(lines.length, n, 'disconnect stops the timer');
+    const xp = desk.create('ross-xpression', { connection: { host: '127.0.0.1', port, keepalive: true, keepaliveMs: 80 } });
+    await desk.connect(xp.id);
+    await new Promise((r) => setTimeout(r, 200));
+    assert.equal(lines.length, n, 'XPression does not get the RossTalk timer');
   } finally {
     desk.close();
     await new Promise((resolve) => server.close(resolve));
