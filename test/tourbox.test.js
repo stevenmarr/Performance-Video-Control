@@ -100,7 +100,7 @@ test('TourBox device: handshake then one byte per event, with tick timing', asyn
   await box.open();
   const evs = [];
   let now = 1000;
-  const dev = new TourBoxDevice(box, { now: () => now, timers: { setTimeout: (fn, ms) => setTimeout(fn, Math.min(ms, 5)), clearTimeout } });
+  const dev = new TourBoxDevice(box, { now: () => now, timers: { setTimeout: (fn, ms) => { const t = setTimeout(fn, Math.min(ms, 5)); return Object.assign(t, { unref() { return this; } }); }, clearTimeout } });
   await dev.open();
   assert.equal(box.handshook, true);
   assert.ok(box.writes[0].equals(P.MAGIC1));
