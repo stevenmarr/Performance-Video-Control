@@ -88,6 +88,7 @@ async function main() {
     console.log(`Control Center: http://localhost:${port}${ips.map((ip) => `  http://${ip}:${port}`).join('')}`);
     console.log(`Data dir: ${dataDir}`);
     if (server.decks) server.decks.startUsb();
+    if (server.atemPanel) server.atemPanel.start(); // opens the ATEM Micro Panel only if it is enabled (Settings > ATEM Micro Panel)
     if (systems.os) systems.os.ready();
     if (companionSupervisor) { companionSupervisor.start(); console.log(`Companion: ${companionSupervisor.managed ? `started by Control Center (web UI http://localhost:${port}/companion/)` : 'runs separately (external mode)'}`); }
     if (engine.settings.mock || systems.configured('rs6')) await engine.connect();
@@ -100,6 +101,7 @@ async function main() {
     shuttingDown = true;
     // 0.34.0: stop Companion first (SIGTERM to its process group, SIGKILL after 10 s)
     if (companionSupervisor) { try { await companionSupervisor.stop(); } catch (e) { console.error(`Stopping Companion: ${e.message}`); } }
+    if (server.atemPanel) { try { await server.atemPanel.stop(); } catch { /* already stopped */ } }
     if (server.decks) {
       server.decks.stopUsb();
       try { await server.decks.usb.close(); } catch { /* already closed */ }
