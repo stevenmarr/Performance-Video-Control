@@ -128,9 +128,15 @@ test('keys: USK type, fill / key, luma, chroma, pattern, mask, DVE, fly key fram
     await d.uskDve(1, 2, { positionX: 4000 }); await until(() => d.view().mixEffects[1].keyers[2].dve.positionX === 4000, 2000, 'moved');
     await d.uskFlyRun(1, 2, 'a'); await until(() => d.view().mixEffects[1].keyers[2].dve.positionX === -4000, 3000, 'ran to A');
     await d.uskType(0, 0, 'dve'); await until(() => d.view().mixEffects[0].keyers[0].type === 'dve', 2000, '2nd dve');
-    await d.uskType(0, 1, 'dve'); await new Promise((r) => setTimeout(r, 150));
-    assert.equal(d.view().mixEffects[0].keyers[1].type, 'luma', 'the 2 M/E Constellation has 2 DVEs: a third DVE key is refused');
+    // overhaul P1d: Control Center refuses the third DVE itself and says which keys hold the two
+    assert.throws(() => d.uskType(0, 1, 'dve'), /No DVE free for M\/E 1 KEY 2: the switcher has 2, in use by M\/E 1 KEY 1, M\/E 2 KEY 3/);
+    assert.throws(() => d.uskType(0, 1, undefined, true), /No DVE free/, 'a fly key needs a DVE too');
+    assert.throws(() => d.style('DVE', 0), /No DVE free for the M\/E 1 DVE transition/);
+    assert.equal(d.view().mixEffects[0].keyers[1].type, 'luma');
     assert.equal(d.view().dves.count, 2); assert.equal(d.view().dves.inUse, 2);
+    assert.deepEqual(d.view().dves.perMe.map((x) => [x.used, x.free]), [[2, 0], [2, 0]], 'one shared budget: both M/Es see it full');
+    assert.deepEqual(d.view().dves.perMe[0].holders.map((h) => h.label), ['M/E 1 KEY 1', 'M/E 2 KEY 3']);
+    assert.doesNotThrow(() => d.uskType(0, 0, 'dve'), 'a key that holds a DVE may be set to DVE again');
     await d.uskType(0, 1, 'chroma'); await d.uskChroma(0, 1, { hue: 2000, gain: 600 }); await until(() => d.view().mixEffects[0].keyers[1].chroma.hue === 2000, 2000, 'chroma');
     await d.uskLuma(0, 3, { clip: 400, invert: true }); await until(() => d.view().mixEffects[0].keyers[3].luma.clip === 400, 2000, 'luma');
     await d.uskPattern(0, 3, { style: 2, size: 5000 }); await until(() => d.view().mixEffects[0].keyers[3].pattern.style === 2, 2000, 'pattern');

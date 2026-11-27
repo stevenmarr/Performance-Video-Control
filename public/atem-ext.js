@@ -293,6 +293,11 @@
   function uskCard(m, k) {
     const ids = { me: m + 1, key: k.index }; const keySrc = (V.sources || []).filter((x) => x.sa & 16); const anySrc = V.sources || [];
     const p = V.profile || {}; const hasDve = (V.dves && V.dves.count) || p.dve;
+    // overhaul P1d: is a DVE free for this key? (it already holds one, or the M/E's budget has room)
+    const bud = (V.dves && V.dves.perMe && V.dves.perMe[m]) || null;
+    const holds = k.type === 'dve' || k.flyEnabled;
+    const dveFull = !!(bud && !holds && bud.free <= 0);
+    const dveWhy = dveFull ? `No DVE free: ${bud.limit} ${V.dves.scope === 'perMe' ? 'on this M/E' : 'on the switcher'}, in use by ${bud.holders.map((h) => h.label).join(', ')}` : '';
     let body = '';
     if (k.type === 'luma' && k.luma) body = `${chk('uskLuma', ids, 'preMultiplied', k.luma.preMultiplied, 'PRE-MULT')}${num('uskLuma', ids, 'clip', k.luma.clip, 10, 1, 0, 100, 'CLIP %')}${num('uskLuma', ids, 'gain', k.luma.gain, 10, 1, 0, 100, 'GAIN %')}${chk('uskLuma', ids, 'invert', k.luma.invert, 'INVERT')}`;
     if (k.type === 'chroma' && k.chroma) body = `${num('uskChroma', ids, 'hue', k.chroma.hue, 10, 1, 0, 359.9, 'HUE °')}${num('uskChroma', ids, 'gain', k.chroma.gain, 10, 1, 0, 100, 'GAIN %')}${num('uskChroma', ids, 'ySuppress', k.chroma.ySuppress, 10, 1, 0, 100, 'Y SUPP %')}${num('uskChroma', ids, 'lift', k.chroma.lift, 10, 1, 0, 100, 'LIFT %')}${chk('uskChroma', ids, 'narrow', k.chroma.narrow, 'NARROW')}`;
@@ -306,8 +311,9 @@
         ${['a', 'b', 'full', 'infinite'].map((f) => `<button type="button" class="mode mini ${k.fly && k.fly.runningToKeyFrame === { a: 1, b: 2, full: 3, infinite: 4 }[f] ? 'running' : ''}" data-fly="run" data-frame="${f}" data-ids='${JSON.stringify(ids)}' ${(f === 'a' && !(k.fly && k.fly.isASet)) || (f === 'b' && !(k.fly && k.fly.isBSet)) ? 'disabled' : ''}>RUN ${f.toUpperCase()}</button>`).join('')}</div>` : ''}` : '';
     const mk = k.mask || {};
     return `<div class="ak-card ${k.onAir ? 'onair' : ''}"><div class="ak-head"><b>KEY ${k.index + 1}</b><button type="button" class="mode ${k.onAir ? 'onair' : ''}" data-uskon="${k.index}" data-on="${k.onAir ? 0 : 1}">${k.onAir ? 'ON AIR' : 'OFF'}</button>
-      <span class="seg-row">${['luma', 'chroma', 'pattern', 'dve'].map((t) => `<button type="button" class="mode mini ${k.type === t ? 'active' : ''}" data-usktype="${t}" data-key="${k.index}" ${t === 'dve' && !hasDve ? 'disabled title="No DVE on this model"' : ''}>${t.toUpperCase()}</button>`).join('')}</span>
-      ${k.canFlyKey && k.type !== 'dve' ? chk('uskType', ids, 'flyEnabled', k.flyEnabled, 'FLY') : ''}</div>
+      <span class="seg-row">${['luma', 'chroma', 'pattern', 'dve'].map((t) => `<button type="button" class="mode mini ${k.type === t ? 'active' : ''}" data-usktype="${t}" data-key="${k.index}" ${t === 'dve' && !hasDve ? 'disabled title="No DVE on this model"' : t === 'dve' && dveFull ? `disabled title="${esc(dveWhy)}"` : ''}>${t.toUpperCase()}</button>`).join('')}</span>
+      ${k.canFlyKey && k.type !== 'dve' ? (dveFull && !k.flyEnabled ? `<span class="ak-dvefull" title="${esc(dveWhy)}">FLY · no DVE free</span>` : chk('uskType', ids, 'flyEnabled', k.flyEnabled, 'FLY')) : ''}
+      ${holds ? '<span class="ak-dvechip" title="This key holds a DVE">DVE ●</span>' : ''}</div>
       <div class="ak-row">${sel('uskSources', ids, 'fill', k.fill, keySrc, 'FILL')}${k.type === 'luma' ? sel('uskSources', ids, 'cut', k.cut, anySrc, 'KEY') : ''}</div>
       <div class="ak-row ak-params">${body}</div>${dve}
       <div class="ak-row ak-params"><span class="modes-lbl">MASK</span>${chk('uskMask', ids, 'enabled', mk.enabled, 'ON')}${num('uskMask', ids, 'top', mk.top, 1000, 0.1, -9, 9, 'T')}${num('uskMask', ids, 'bottom', mk.bottom, 1000, 0.1, -9, 9, 'B')}${num('uskMask', ids, 'left', mk.left, 1000, 0.1, -16, 16, 'L')}${num('uskMask', ids, 'right', mk.right, 1000, 0.1, -16, 16, 'R')}</div></div>`;
@@ -352,7 +358,7 @@
     const pane = $('#pane-akeys'); if (busy(pane)) return;
     if (!live()) { S.set($('#akUsk'), 'aku', off()); S.set($('#akDsk'), 'akd', ''); S.set($('#akSs'), 'aks', ''); S.set($('#akMe'), 'akm', ''); $('#akInfo').textContent = ''; return; }
     const mes = V.mixEffects || []; if (ME) akMe = ME.get(); if (akMe >= mes.length) akMe = 0;
-    $('#akInfo').textContent = `${V.profile ? V.profile.name : V.product} · ${mes.reduce((n, m) => n + m.keyers.length, 0)} upstream keys · ${(V.dsk || []).length} DSK · DVE ${V.dves ? `${V.dves.inUse} of ${V.dves.count} in use` : '—'} · ${(V.superSources || []).length} SuperSource`;
+    $('#akInfo').textContent = `${V.profile ? V.profile.name : V.product} · ${mes.reduce((n, m) => n + m.keyers.length, 0)} upstream keys · ${(V.dsk || []).length} DSK · DVE ${V.dves ? `${V.dves.inUse} of ${V.dves.count} in use${V.dves.perMe && V.dves.inUse ? ` (${V.dves.perMe.flatMap((x) => x.holders).filter((h, i, a) => a.findIndex((y) => y.label === h.label) === i).map((h) => h.label).join(', ')})` : ''}` : '—'} · ${(V.superSources || []).length} SuperSource`;
     S.set($('#akMe'), 'akm', mes.length > 1 ? `<span class="modes-lbl">M/E</span>${mes.map((m) => `<button type="button" class="mode ${m.index === akMe ? 'active' : ''}" data-akme="${m.index}" title="Upstream keys of M/E ${m.index + 1}${m.keyers.some((k) => k.onAir) ? ' · a key is on air' : ''}">M/E ${m.index + 1}${m.keyers.some((k) => k.onAir) ? ' <span class="dot-air">●</span>' : ''}</button>`).join('')}` : '');
     const me = mes[akMe] || { keyers: [] };
     S.set($('#akUsk'), 'aku', `<div class="section-title">UPSTREAM KEYS <small>${mes.length > 1 ? `M/E ${akMe + 1}` : ''}</small></div><div class="ak-grid">${me.keyers.map((k) => uskCard(akMe, k)).join('') || '<div class="note small">No upstream keys.</div>'}</div>`);

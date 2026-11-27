@@ -988,7 +988,7 @@ Probes `http://host:port/api/connections` (Companion 4.3+ HTTP API). `online` an
 
 ### POST /api/companion/hello
 
-Sent by the module. Body `{ moduleVersion, label, companionVersion?, rev?, presets? }`. Returns `{ ok, rev, expected }`.
+Sent by the module. Body `{ moduleVersion, label, companionVersion?, rev?, presets? }`. Returns `{ ok, rev, expected, warnings }`. 0.37.0: `warnings` is what is blocking buttons right now (panel LOCK, a PTZ paint lock, more than one Control Center connection, an old imported module, the last refused command).
 
 ### POST /api/companion/sync
 
@@ -997,6 +997,11 @@ Bumps the sync counter, so `rev` changes and the module republishes its presets.
 ### POST /api/companion/decks (0.31.1)
 
 "Let Companion drive Stream Decks". Body `{ drive: true | false | "auto" }`. When on, Control Center closes every USB Stream Deck handle and stops scanning, so Companion can open the decks. `"auto"` (the default) is on once Companion is in use with this app: the module said `hello`, or a check found a Control Center module connection. Saved in companion.json as `driveDecks` (`null` = auto) and `companionUsed`. Returns the view, whose `decks` is `{ drive, setting, companionUsed, released }`. `GET /api/decks` adds `control.companionDrivesDecks` and `control.releasedToCompanion`. 400 for any other `drive` value.
+
+
+### GET /api/companion/selftest (0.37.0)
+
+What would and would not work, without pressing anything. `{ at, appVersion, module, warnings, totals, surfaces, problems, lastErrors }`. `totals` counts keys, working keys, navigation keys, label-only keys, keys whose action has no handler, blank keys, knobs, unbound knobs, mis-bound knobs, and library button actions that resolve to nothing. `problems` is the first of each (up to 400). `lastErrors` is the newest refused deck commands.
 
 ### GET /api/companion/buttons
 
