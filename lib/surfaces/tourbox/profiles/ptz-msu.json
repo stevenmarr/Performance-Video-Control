@@ -1,0 +1,174 @@
+{
+  "id": "ptz-msu",
+  "name": "MSU",
+  "system": "ptz",
+  "bindings": [
+    {
+      "control": "knob",
+      "held": [],
+      "turn": {
+        "action": "ptz.step",
+        "op": "iris",
+        "target": "msu-a",
+        "velocity": true
+      },
+      "press": {
+        "action": "ptz.toggle",
+        "op": "irisMode",
+        "target": "msu-a"
+      },
+      "long": {
+        "action": "ptz.reset",
+        "op": "iris",
+        "target": "msu-a",
+        "liveGuard": "exposure"
+      }
+    },
+    {
+      "control": "dial",
+      "held": [],
+      "turn": {
+        "action": "ptz.step",
+        "op": "iris",
+        "target": "msu-b",
+        "velocity": true
+      },
+      "press": {
+        "action": "ptz.toggle",
+        "op": "irisMode",
+        "target": "msu-b"
+      },
+      "long": {
+        "action": "ptz.reset",
+        "op": "iris",
+        "target": "msu-b",
+        "liveGuard": "exposure"
+      }
+    },
+    {
+      "control": "scroll",
+      "held": [],
+      "turn": {
+        "action": "ptz.step",
+        "op": "masterPed",
+        "target": "selected",
+        "velocity": true
+      },
+      "press": {
+        "action": "ptz.toggle",
+        "op": "pictureLevel",
+        "target": "selected"
+      },
+      "long": {
+        "action": "ptz.reset",
+        "op": "masterPed",
+        "target": "selected"
+      }
+    },
+    {
+      "control": "tour",
+      "held": [],
+      "press": {
+        "action": "tourbox.profile",
+        "profile": "ptz-rcp"
+      },
+      "long": {
+        "action": "ptz.stopAll"
+      }
+    },
+    {
+      "control": "left",
+      "held": [],
+      "press": {
+        "action": "tourbox.msuPair",
+        "dir": -1
+      }
+    },
+    {
+      "control": "right",
+      "held": [],
+      "press": {
+        "action": "tourbox.msuPair",
+        "dir": 1
+      }
+    },
+    {
+      "control": "up",
+      "held": [],
+      "press": {
+        "action": "ptz.sceneStep",
+        "dir": -1,
+        "target": "selected",
+        "guarded": true
+      }
+    },
+    {
+      "control": "down",
+      "held": [],
+      "press": {
+        "action": "ptz.sceneStep",
+        "dir": 1,
+        "target": "selected",
+        "guarded": true
+      }
+    },
+    {
+      "control": "top",
+      "held": [],
+      "press": {
+        "action": "ptz.copyPaint",
+        "target": "pair"
+      }
+    },
+    {
+      "control": "tall",
+      "held": [],
+      "press": {
+        "action": "tourbox.gangToggle"
+      }
+    },
+    {
+      "control": "short",
+      "held": [],
+      "press": {
+        "action": "ptz.compare"
+      }
+    },
+    {
+      "control": "knob",
+      "held": [
+        "side"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "iris",
+        "target": "gang",
+        "velocity": true
+      }
+    },
+    {
+      "control": "dial",
+      "held": [
+        "side"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "iris",
+        "target": "gang",
+        "velocity": true
+      }
+    },
+    {
+      "control": "scroll",
+      "held": [
+        "side"
+      ],
+      "turn": {
+        "action": "ptz.step",
+        "op": "iris",
+        "target": "gang",
+        "velocity": true
+      }
+    }
+  ]
+}
