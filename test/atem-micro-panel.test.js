@@ -99,7 +99,7 @@ test('panel scanner: finds the panel among other HID devices, reopens it after a
 
 // ---------- emulation (pure) ----------
 function fakeView({ mes = 2, keys = 4 } = {}) {
-  const bus = [0, ...Array.from({ length: 20 }, (_, i) => i + 1), 1000, 3010].map((id) => ({ id }));
+  const bus = [0, ...Array.from({ length: 20 }, (_, i) => i + 1), 1000, 3010, 3020, 6000, 6001].map((id) => ({ id }));
   return {
     topology: { mixEffects: mes },
     inputs: bus.map((b) => ({ id: b.id })),
@@ -113,7 +113,7 @@ function fakeView({ mes = 2, keys = 4 } = {}) {
 const refused = (r) => r.events.filter((e) => e.kind === 'refused').pop();
 function rig(opts = {}) {
   const v = fakeView(opts); let t = 1000; const sent = []; const events = []; let locked = false;
-  const emu = new AtemPanelEmulation({ view: () => ({ connected: true, view: v }), dispatch: (op, body) => { sent.push([op, body]); return opts.fail && opts.fail(op) ? Promise.reject(new Error('nope')) : Promise.resolve({ ok: true }); },
+  const emu = new AtemPanelEmulation({ view: () => ({ connected: true, view: v }), dispatch: (op, body) => { sent.push([op, body]); return opts.fail && opts.fail(op, body) ? Promise.reject(new Error('nope')) : Promise.resolve({ ok: true }); },
     now: () => t, locked: () => locked, onEvent: (e) => events.push(e), settings: opts.settings || {}, timers: { setTimeout: (fn) => ({ fn }), clearTimeout() {} } });
   const tap = (k) => { emu.down(k); emu.up(k); };
   return { v, emu, sent, events, tap, tick: (ms) => { t += ms; }, lock: (x) => { locked = x; } };
@@ -130,8 +130,8 @@ test('panel map: program hot-cuts, preview selects, SHIFT and double-press give 
   r.v.mes[0].program = 13; r.v.mes[0].preview = 2;
   let f = r.emu.frame(true);
   assert.equal(f.keys.program3, 'red', 'shifted source on air: its unshifted key blinks'); assert.equal(r.emu.frame(false).keys.program3, 'off');
-  assert.equal(f.keys.preview2, 'green'); assert.equal(f.keys.program1, 'off');
-  r.emu.down('shift'); f = r.emu.frame(false); assert.equal(f.keys.program3, 'red', 'SHIFT held: the 11-20 page, solid'); assert.equal(f.keys.preview2, 'off'); assert.equal(f.keys.shift, 'yellow'); r.emu.up('shift');
+  assert.equal(f.keys.preview2, 'green'); assert.equal(f.keys.program1, 'white', 'unlit keys glow white');
+  r.emu.down('shift'); f = r.emu.frame(false); assert.equal(f.keys.program3, 'red', 'SHIFT held: the 11-20 page, solid'); assert.equal(f.keys.preview2, 'white', 'shifted page: PVW 2 is source 12, not on preview'); assert.equal(f.keys.shift, 'yellow'); r.emu.up('shift');
 });
 
 test('panel map: MACRO held turns the PROGRAM row into macros (blue, green while running, press again stops)', () => {
@@ -149,7 +149,7 @@ test('panel map: MACRO held turns the PROGRAM row into macros (blue, green while
   assert.equal(r.emu.frame(true).keys.macro, 'green'); assert.equal(r.emu.frame(false).keys.macro, 'off', 'waiting: MACRO blinks');
   assert.deepEqual(r.sent.map((s) => s[0] + (s[1].macro !== undefined ? s[1].macro : '')), ['macroRun0', 'macroRun11', 'macroStop', 'macroContinue']);
   assert.ok(r.events.some((e) => e.kind === 'refused' && /macro 3 is empty/.test(e.reason)));
-  assert.equal(r.emu.frame(true).keys.program3, 'off', 'macro mode ends with MACRO released');
+  assert.equal(r.emu.frame(true).keys.program3, 'white', 'macro mode ends with MACRO released; unlit keys glow white');
 });
 
 test('panel map: next transition (single press, chord, double BKGD), key on air, styles, PREV TRANS, CUT / AUTO, DSK', () => {
@@ -164,12 +164,12 @@ test('panel map: next transition (single press, chord, double BKGD), key on air,
   assert.deepEqual(short, ['nextSelection:4', 'nextSelection:1', 'nextSelection:3', 'nextSelection:1', 'nextSelection:9', 'uskOnAir:0/true', 'uskOnAir:0/false', 'style:WIPE', 'previewTransition:true', 'cut:', 'auto:', 'dskTie:0/true', 'dskOnAir:1/true', 'dskAuto:0']);
   Object.assign(r.v.mes[0], { nextSelection: 0b101, nextStyle: 'DVE', inTransition: true, handle: 5000, previewTransition: true }); r.v.dsk[1].onAir = true; r.v.dsk[0].tie = true;
   const f = r.emu.frame(true).keys;
-  assert.equal(f['next-background'], 'yellow'); assert.equal(f['next-key2'], 'yellow'); assert.equal(f['next-key1'], 'off');
-  assert.equal(f['key1-on'], 'red'); assert.equal(f['transition-dve'], 'yellow'); assert.equal(f['transition-mix'], 'off'); assert.equal(f['preview-transition'], 'yellow');
+  assert.equal(f['next-background'], 'yellow'); assert.equal(f['next-key2'], 'yellow'); assert.equal(f['next-key1'], 'white');
+  assert.equal(f['key1-on'], 'red'); assert.equal(f['transition-dve'], 'yellow'); assert.equal(f['transition-mix'], 'white'); assert.equal(f['preview-transition'], 'yellow');
   assert.equal(f.auto, 'red'); assert.equal(f.cut, 'white'); assert.equal(f['dsk2-cut'], 'red'); assert.equal(f['dsk1-tie'], 'yellow'); assert.equal(f['dsk1-auto'], 'white');
 });
 
-test('panel map: M/E keys pick the M/E (only those the switcher has), refused presses flash red and say why, LOCK and ARM', () => {
+test('panel map: M/E keys pick the M/E (only those the switcher has), refused presses flash red and say why, LOCK', () => {
   const r = rig({ fail: (op) => op === 'style' });
   assert.equal(r.emu.frame().keys.mixeffect1, 'yellow'); assert.equal(r.emu.frame().keys.mixeffect2, 'white'); assert.equal(r.emu.frame().keys.mixeffect3, 'off');
   r.tap('mixeffect2'); r.tap('program7'); assert.deepEqual(r.sent.pop(), ['program', { me: 2, source: 7 }]);
@@ -177,16 +177,57 @@ test('panel map: M/E keys pick the M/E (only those the switcher has), refused pr
   r.tap('transition-dve');
   return new Promise((res) => setImmediate(res)).then(() => {
     assert.equal(r.emu.frame(true).keys['transition-dve'], 'red'); assert.equal(r.emu.frame(false).keys['transition-dve'], 'off');
-    r.tick(1000); assert.equal(r.emu.frame(true).keys['transition-dve'], 'off', 'flash ends');
-    r.tap('transition-arm'); assert.match(refused(r).reason, /ARM does nothing/);
-    r.emu.setSettings({ arm: 'shift-ftb' }); r.tap('transition-arm'); r.emu.down('shift'); r.tap('transition-arm'); r.emu.up('shift');
-    assert.deepEqual(r.sent.pop(), ['ftb', { me: 2 }]);
-    r.v.mes[1].ftb.black = true; assert.equal(r.emu.frame(true).keys['transition-arm'], 'red'); assert.equal(r.emu.frame(false).keys['transition-arm'], 'off');
+    r.tick(1000); assert.equal(r.emu.frame(true).keys['transition-dve'], 'white', 'flash ends, unlit style key glows white');
     r.lock('locked'); const n = r.sent.length; r.tap('cut'); r.tap('mixeffect1'); assert.equal(r.sent.length, n, 'locked: nothing sent'); assert.equal(r.emu.me, 1, 'M/E select is local, still works');
     r.emu.setSettings({ programRow: 'off' }); r.lock(false); r.tap('program1'); assert.equal(r.sent.length, n); assert.match(refused(r).reason, /tally only/);
     r.emu.setSettings({ overrides: { 'transition-arm': { op: 'macroRun', args: { macro: 0 } }, 'dsk2-auto': { none: true } } });
     r.tap('transition-arm'); assert.deepEqual(r.sent.pop(), ['macroRun', { me: 1, macro: 0 }]);
     r.tap('dsk2-auto'); assert.equal(r.sent.length, n, 'a key turned off in the map sends nothing');
+  });
+});
+
+test('panel map: buttons 1-20 are mappable (Black, Bars, media players, SuperSource); default is inputs 1-20', () => {
+  const r = rig();
+  r.tap('program1'); assert.deepEqual(r.sent.pop(), ['program', { me: 1, source: 1 }]);
+  r.emu.setSettings({ sources: [0, 1000, 3010, 6000, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20] });
+  r.tap('program1'); r.tap('program2'); r.tap('program3'); r.tap('program4');
+  assert.deepEqual(r.sent.slice(-4), [
+    ['program', { me: 1, source: 0 }],
+    ['program', { me: 1, source: 1000 }],
+    ['program', { me: 1, source: 3010 }],
+    ['program', { me: 1, source: 6000 }],
+  ]);
+  r.v.mes[0].program = 0;
+  assert.equal(r.emu.frame().keys.program1, 'red', 'mapped Black on air');
+  assert.equal(r.emu.frame().keys.program2, 'white');
+});
+
+test('panel map: ARM gangs CUT, AUTO and the T-bar on every M/E; a refusal names the M/E; ARM blinks while armed', () => {
+  const r = rig({ fail: (op, body) => op === 'auto' && body.me === 2 });
+  assert.equal(r.emu.frame().keys['transition-arm'], 'white', 'ARM idle is white');
+  r.tap('transition-arm');
+  assert.equal(r.emu.armed, true);
+  assert.equal(r.emu.frame(true).keys['transition-arm'], 'red');
+  assert.equal(r.emu.frame(false).keys['transition-arm'], 'off', 'ARM blinks while armed');
+  r.tap('cut');
+  assert.deepEqual(r.sent.filter((s) => s[0] === 'cut'), [['cut', { me: 1 }], ['cut', { me: 2 }]]);
+  r.tap('auto');
+  return new Promise((res) => setImmediate(res)).then(() => {
+    assert.ok(r.sent.some((s) => s[0] === 'auto' && s[1].me === 1));
+    assert.ok(r.sent.some((s) => s[0] === 'auto' && s[1].me === 2));
+    assert.match(refused(r).reason, /M\/E 2:/);
+    r.emu.tbar(0); r.tick(20); r.emu.tbar(0.5);
+    const pos = r.sent.filter((s) => s[0] === 'transitionPosition');
+    assert.deepEqual(pos.map((s) => s[1].me).sort((a, b) => a - b), [1, 2], 'T-bar handle sent to every M/E');
+    assert.ok(pos.every((s) => s[1].handle === 5000));
+    r.tap('transition-arm');
+    assert.equal(r.emu.armed, false);
+    const n = r.sent.length;
+    r.tap('cut');
+    assert.deepEqual(r.sent.slice(n), [['cut', { me: 1 }]], 'ARM released: only the selected M/E');
+    r.lock('locked'); r.tap('transition-arm');
+    assert.equal(r.emu.armed, false, 'CONSOLE LOCK leaves ARM alone and refuses the press');
+    assert.match(refused(r).reason, /LOCK|locked/i);
   });
 });
 
@@ -208,14 +249,14 @@ test('panel map: the T-bar runs a stroke to 10000, flips for the next stroke, pi
 });
 
 // ---------- the whole chain: panel -> Control Center -> 2 M/E Constellation HD (mock) ----------
-async function liveRig({ conflict = () => [] } = {}) {
+async function liveRig({ deskSelection = null } = {}) {
   const ctx = await setup({});
   const m = new MockAtem('chd2me'); m.speed = 20; const port = await m.start(0);
   const systems = new SystemManager({ dataDir: ctx.dataDir, engine: ctx.engine, overrides: { atem: { host: '127.0.0.1', port, me: 1 } }, autoStart: false });
   await systems.driver('atem').connect();
   const panel = new MockPanel();
   const host = new PanelHost({ inProcess: { hid: mockHid([panel]) } });
-  const svc = new AtemPanelService({ systems, dataDir: ctx.dataDir, host, conflictCheck: async () => conflict(), env: {}, blinkMs: 40, conflictMs: 60 });
+  const svc = new AtemPanelService({ systems, dataDir: ctx.dataDir, host, deskSelection, env: {}, blinkMs: 40 });
   return { ctx, m, systems, panel, host, svc, view: () => systems.driver('atem').view(), stop: async () => { try { await svc.stop(); systems.close(); } finally { await m.stop(); await ctx.teardown(); } } };
 }
 
@@ -253,18 +294,59 @@ test('panel + Control Center + mock 2 M/E Constellation HD: presses switch the M
   } finally { await L.stop(); }
 });
 
-test('panel service: lets go of the panel while ATEM Software Control is open, takes it back when it quits', async () => {
-  let apps = ['ATEM Software Control'];
-  const L = await liveRig({ conflict: () => apps });
+test('panel service: selected M/E and ARM follow the shared desk selection, and the desk follows the panel', async () => {
+  const { DeskSelection } = require('../lib/surfaces/desk-selection');
+  const desk = new DeskSelection();
+  const L = await liveRig({ deskSelection: desk });
   try {
     await L.svc.configure({ enabled: true }); L.svc.start();
-    await until(() => L.svc.status().state === 'conflict', 2000, 'conflict');
-    assert.deepEqual(L.svc.status().conflict, ['ATEM Software Control']); assert.equal(L.panel.opened, 0);
-    apps = [];
-    await until(() => L.svc.status().state === 'connected', 3000, 'taken back');
-    apps = ['ATEM Setup'];
-    await until(() => L.svc.status().state === 'conflict' && L.panel.closed, 2000, 'released again');
+    await until(() => L.svc.status().state === 'connected', 3000, 'panel connected');
+    desk.set({ me: 2, source: 'deck' });
+    await until(() => L.svc.status().me === 2, 1000, 'panel followed the Stream Deck M/E');
+    desk.set({ armed: true, source: 'deck' });
+    await until(() => L.svc.status().armed === true, 1000, 'panel followed ARM');
+    assert.equal(L.panel.lastLeds().keys['transition-arm'] === 'red' || L.panel.lastLeds().keys['transition-arm'] === 'off', true, 'ARM blinks');
+    L.panel.tap('mixeffect1');
+    await until(() => desk.me === 1, 1000, 'desk followed the panel M/E');
+    L.panel.tap('transition-arm'); // already armed from the desk: this releases
+    await until(() => desk.armed === false, 1000, 'ARM released on the desk');
+    L.panel.tap('transition-arm');
+    await until(() => desk.armed === true, 1000, 'ARM set from the panel');
+    const me2Before = L.view().mes[1].program;
+    const me2Preview = L.view().mes[1].preview;
+    L.panel.tap('preview6'); await until(() => L.view().mes[0].preview === 6, 2000, 'preview 6 on selected M/E only');
+    assert.notEqual(L.view().mes[1].preview, 6, 'PREVIEW stays on the selected M/E while ARM is on');
+    L.panel.tap('cut');
+    await until(() => L.view().mes[0].program === 6 && L.view().mes[1].program === me2Preview, 2000, 'armed CUT hits every M/E');
+    assert.equal(L.view().mes[0].program, 6);
+    assert.equal(L.view().mes[1].program, me2Preview, 'M/E 2 cut its own preview');
+    assert.notEqual(me2Before, me2Preview);
   } finally { await L.stop(); }
+});
+
+test('Stream Deck sessions follow the shared desk selection (M/E and ARM)', () => {
+  const { DeskSelection } = require('../lib/surfaces/desk-selection');
+  const { DeckService } = require('../lib/decks/service');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-desk-me-'));
+  try {
+    const desk = new DeskSelection();
+    const systems = {
+      getState: () => ({ armed: ['atem'], instances: [{ id: 'atem', type: 'atem' }], systems: {} }),
+      driver: () => ({ view: () => ({ mes: [{}, {}] }), status: () => ({ connected: true }) }),
+    };
+    const decks = new DeckService({ dataDir: dir, systems, usbEnv: { CC_DECK_USB: '0' }, deskSelection: desk });
+    decks.sessions.set('xl', { system: 'atem', page: 0, out: null, atemUi: { me: 1, flexBank: 0, shift: 0, mes: [1] } });
+    desk.set({ me: 2, armed: true, source: 'panel' });
+    const ui = decks.sessions.get('xl').atemUi;
+    assert.equal(ui.me, 2);
+    assert.deepEqual(ui.mes, [1, 2], 'ARM on the panel gangs the Stream Deck MES list');
+    desk.set({ armed: false, source: 'panel' });
+    assert.deepEqual(decks.sessions.get('xl').atemUi.mes, [2]);
+    decks.sessions.get('xl').atemUi = { ...decks.sessions.get('xl').atemUi, me: 1, mes: [1, 2] };
+    decks.pushDeskFromUi(decks.sessions.get('xl').atemUi, 'deck');
+    assert.equal(desk.me, 1);
+    assert.equal(desk.armed, true, 'MES on the Stream Deck lights ARM on the panel');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
 test('/api/surfaces/atem-panel: status, settings with validation, M/E select', async () => {
@@ -277,9 +359,11 @@ test('/api/surfaces/atem-panel: status, settings with validation, M/E select', a
   try {
     const st = (await call('GET', '/api/surfaces/atem-panel')).json;
     assert.equal(st.enabled, false); assert.equal(st.state, 'off'); assert.equal(st.instance, 'atem'); assert.equal(st.controls.length, 50);
-    const set = (await call('POST', '/api/surfaces/atem-panel', { arm: 'shift-ftb', programRow: 'off', sources: [1, 2, 3, 1000], tbarInvert: true, me: 9, bogus: 1 })).json;
-    assert.equal(set.settings.arm, 'shift-ftb'); assert.equal(set.settings.programRow, 'off'); assert.equal(set.settings.tbarInvert, true); assert.equal(set.settings.me, 4, 'M/E clamped to 1..4');
-    assert.deepEqual(set.settings.sources.slice(0, 5), [1, 2, 3, 1000, null]); assert.equal(set.settings.bogus, undefined);
+    const set = (await call('POST', '/api/surfaces/atem-panel', { arm: 'shift-ftb', programRow: 'off', sources: [0, 1000, 3010, 6000], tbarInvert: true, me: 9, idle: 'blue', bogus: 1 })).json;
+    assert.equal(set.settings.arm, undefined, 'FTB-on-ARM options are gone'); assert.equal(set.settings.programRow, 'off'); assert.equal(set.settings.tbarInvert, true); assert.equal(set.settings.me, 4, 'M/E clamped to 1..4');
+    assert.equal(set.settings.idle, 'blue');
+    assert.deepEqual(set.settings.sources.slice(0, 5), [0, 1000, 3010, 6000, null]); assert.equal(set.settings.bogus, undefined);
+    assert.equal(set.armed, false);
     assert.equal((await call('POST', '/api/surfaces/atem-panel', { instance: 'e2' })).status, 404, 'only an ATEM');
     assert.equal(server.atemPanel.started, false, 'createServer never opens the panel by itself');
   } finally { server.closeClients(); await new Promise((r) => server.close(r)); systems.close(); await ctx.teardown(); }
