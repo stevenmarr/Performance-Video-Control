@@ -1467,3 +1467,6 @@ nav.tabs{padding:0 6px}
 .rcp-view .snap{flex:0 0 auto;min-height:0;height:auto;aspect-ratio:16/9;width:100%;align-self:center}
 #pane-pctl .rcp-view .dk-body .snap{width:min(100%,max(160px,calc((100cqh - 96px) * 16 / 9)))}
 .snap canvas{object-fit:contain;background:#000}
+/* overhaul P1d: DVE budget on the KEYS tab */
+.ak-dvechip{font:800 10px/1 ui-monospace,Menlo,monospace;color:#ffd35c;border:1px solid #6b5520;border-radius:6px;padding:3px 6px}
+.ak-dvefull{font:700 10px/1 -apple-system,sans-serif;color:var(--dim);border:1px dashed #39424e;border-radius:6px;padding:3px 6px;cursor:help}

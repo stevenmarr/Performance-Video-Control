@@ -149,7 +149,14 @@
   function boxOf(ss, b) { const s = ssOf(ss); return s && s.boxes.find((x) => x.index === b); }
   function dskOf(i) { return (doc.dsks || []).find((d) => d.index === i); }
   function mvOf(i) { return (mvDoc || []).find((m) => m.index === i); }
-  function dveFree() { let n = 0; for (const m of doc.mes || []) for (const k of m.keys) if (k.type === 'dve') n++; return Math.max(0, dveCount() - n); }
+  // overhaul P1d: fly keys hold a DVE too, and the switcher's own budget (V.dves.perMe) wins when it is known
+  function dveFree(me) {
+    const perMe = V.dves && V.dves.perMe; const scoped = V.dves && V.dves.scope === 'perMe';
+    let n = 0; for (const m of doc.mes || []) { if (scoped && me !== undefined && m.me !== me) continue; for (const k of m.keys) if (k.type === 'dve' || k.flyEnabled) n++; }
+    const limit = perMe && perMe.length ? (perMe[me || 0] || perMe[0]).limit : dveCount();
+    const trans = perMe ? perMe.flatMap((x) => x.holders).filter((h) => h.key === null && (!scoped || me === undefined || h.me === me)).length : 0;
+    return Math.max(0, limit - n - trans);
+  }
   function parseId(id) {
     const p = String(id || '').split(':');
     if (p[0] === 'key') return { kind: 'key', me: Number(p[1]), index: Number(p[2]) };
@@ -472,7 +479,7 @@
   function select(id) { sel = id; saveLs('cc.laySel', sel); render(); }
   function placeKeyAt(me, index, xUnit, yUnit) {
     const k = keyOf(me, index); if (!k || keyPlaced(k)) return;
-    const makeDve = dveCount() > 0 && dveFree() > 0;
+    const makeDve = dveCount() > 0 && dveFree(me) > 0;
     const home = { positionX: 0, positionY: 0, sizeX: 500, sizeY: 500 };
     k.placed = true;
     if (liveSend) k.onAir = true;
