@@ -79,6 +79,7 @@ function mockTracker() {
     server.listen(0, '127.0.0.1', () => resolve({
       server, messages, port: server.address().port,
       send(obj) { const frame = serverFrame(JSON.stringify(obj)); for (const s of sockets) s.write(frame); },
+      drop() { for (const s of sockets) s.destroy(); },
       close() { for (const s of sockets) s.destroy(); return new Promise((r) => server.close(r)); },
     }));
   });
@@ -181,6 +182,17 @@ test('tracking bridge: settings, status, start, and a desk move tells the tracke
     await new Promise((r) => setTimeout(r, 50));
     assert.equal(tracker.messages.length, n, 'a keep-alive is not an operator move');
 
+    const beforeStep = tracker.messages.filter((m) => m.type === 'override').length;
+    const stepped = await call('POST', '/api/sys/ptz/cmd/step', { cam: 'cam1', op: 'zoomPos', steps: 1 });
+    assert.equal(stepped.status, 200, JSON.stringify(stepped.json));
+    await until(() => tracker.messages.filter((m) => m.type === 'override').length > beforeStep, 2000, 'zoom step override');
+    assert.equal(tracker.messages.filter((m) => m.type === 'override').at(-1).command, 'step');
+    const beforeIris = tracker.messages.filter((m) => m.type === 'override').length;
+    const iris = await call('POST', '/api/sys/ptz/cmd/step', { cam: 'cam1', op: 'iris', steps: 1 });
+    assert.equal(iris.status, 200, JSON.stringify(iris.json));
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(tracker.messages.filter((m) => m.type === 'override').length, beforeIris, 'a paint step is not a camera move');
+
     assert.equal((await call('POST', '/api/sys/ptz/tracking/lock', { cam: 'nope', targetId: 't3' })).status, 404);
     assert.equal((await call('POST', '/api/sys/ptz/tracking/settings', { cam: 'cam1', source: 'jpeg' })).status, 200);
     const jpeg = await until(() => tracker.messages.find((m) => m.type === 'settings.set' && m.settings && m.settings.source === 'jpeg'), 2000, 'jpeg source');
@@ -244,6 +256,27 @@ test('tracking feel, nudge, and the encoder actions stay inside the camera scale
     assert.equal(loaded.cameras[0].settings.maxSpeed.pan, defaults().maxSpeed.pan);
     assert.equal(JSON.stringify(JSON.parse(fs.readFileSync(fileFor(dir), 'utf8'))).includes('12345'), false);
   } finally { svc.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('tracking stop is kept while the Mac is away, even through a burst of settings', async () => {
+  const tracker = await mockTracker();
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ptz-track-'));
+  const svc = new TrackingService({ dataDir: dir, cameras: () => [{ id: 'cam1', name: 'Wide', host: '127.0.0.1', port: 80 }] });
+  try {
+    svc.setLink({ host: '127.0.0.1', port: tracker.port });
+    await until(() => tracker.messages.some((m) => m.type === 'hello'), 2000, 'hello');
+    tracker.drop();
+    await until(() => svc.bridge.connected === false, 2000, 'disconnected');
+    const stopped = svc.stop('ptz', { cam: 'cam1' });
+    assert.equal(stopped.link.connected, false);
+    for (let i = 0; i < 25; i++) svc.setSettings('ptz', { cam: 'cam1', latencyMs: 200 + i });
+    await until(() => svc.bridge.connected, 4000, 'reconnected');
+    await until(() => tracker.messages.some((m) => m.type === 'stop' && m.cameraId === 'ptz:cam1'), 2000, 'queued stop');
+  } finally {
+    svc.close();
+    await tracker.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('tracking service does not connect until a link is saved', () => {
