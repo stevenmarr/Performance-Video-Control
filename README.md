@@ -304,6 +304,7 @@ sudo rm -rf /opt/control-center/node_modules
 sudo -u pi npm ci --omit=dev --prefix /opt/control-center
 sudo -u pi node -e "require('@elgato-stream-deck/node')"
 sudo cp /opt/control-center/tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
+sudo cp /opt/control-center/tools/udev/50-control-center-atem-micro-panel.rules /etc/udev/rules.d/99-control-center-atem-micro-panel.rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 sudo cp /opt/control-center/tools/systemd/control-center.service /etc/systemd/system/control-center.service
@@ -311,9 +312,11 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now control-center
 ```
 
-Unplug the Stream Decks and plug them back in after the udev rule is installed. Open **http://<the-pi>:8088**.
+Unplug the Stream Decks and the ATEM Micro Panel and plug them back in after the udev rules are installed. Open **http://<the-pi>:8088**.
 
-The rule matches Elgato vendor `0fd9`, mode `0660`, group `plugdev`, plus `uaccess`. It is installed as `99-` so it runs after Companion's `50-` rule. Companion's rule sets group `companion`. That is why `ls -l /dev/hidraw*` shows `crw-rw----+ root companion`. The `+` is an ACL for the person logged in on the console. A systemd service does not get that ACL. After this rule and a replug, the group should be `plugdev`. The unit has `SupplementaryGroups=plugdev`, so user `pi` can open the node without being added to the group by hand.
+The Stream Deck rule matches Elgato vendor `0fd9`, mode `0660`, group `plugdev`, plus `uaccess`. It is installed as `99-` so it runs after Companion's `50-` rule. Companion's rule sets group `companion`. That is why `ls -l /dev/hidraw*` shows `crw-rw----+ root companion`. The `+` is an ACL for the person logged in on the console. A systemd service does not get that ACL. After this rule and a replug, the group should be `plugdev`. The unit has `SupplementaryGroups=plugdev`, so user `pi` can open the node without being added to the group by hand.
+
+The ATEM Micro Panel is USB vendor `1edb`, product `bef0`. Its rule is the same pattern (`99-control-center-atem-micro-panel.rules`). Unplug and replug the panel after installing it, then restart the service. Control Center opens the panel through Linux hidraw (`node-hid`), without root, the same way it opens a Stream Deck. If the log says the panel is `busy`, turn off Companion's Blackmagic controller surface on that Pi so the two are not fighting over the same `/dev/hidraw` node.
 
 `usermod -aG` only affects processes started afterwards. A service that is already running keeps its old groups until `sudo systemctl restart control-center`.
 
@@ -341,6 +344,7 @@ sudo chown -R pi:pi /opt/control-center
 sudo -u pi npm ci --omit=dev --prefix /opt/control-center
 sudo -u pi node -e "require('@elgato-stream-deck/node')"
 sudo cp tools/udev/50-control-center-streamdeck.rules /etc/udev/rules.d/99-control-center-streamdeck.rules
+sudo cp tools/udev/50-control-center-atem-micro-panel.rules /etc/udev/rules.d/99-control-center-atem-micro-panel.rules
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 sudo cp tools/systemd/control-center.service /etc/systemd/system/control-center.service
@@ -350,7 +354,7 @@ sudo systemctl restart control-center
 
 That `cp` replaces the unit. Anything you changed in the unit file is gone. The drop-in is kept.
 
-Then unplug and replug the decks. Check the log and the one-shot diagnostic:
+Then unplug and replug the decks and the ATEM Micro Panel. Check the log and the one-shot diagnostic:
 
 ```bash
 journalctl -u control-center -n 80 --no-pager

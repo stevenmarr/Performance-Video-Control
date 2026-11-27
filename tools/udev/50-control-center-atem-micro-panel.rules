@@ -1,0 +1,22 @@
+# Control Center opens the Blackmagic ATEM Micro Panel (USB vendor 1edb, product bef0)
+# through /dev/hidraw, via node-hid, on the Raspberry Pi 5. Companion may ship its own
+# 50-blackmagic-panel-user.rules (TAG+=uaccess only). uaccess only grants the person
+# logged in at the seat. It does not grant a systemd service, which is why a node can
+# show crw-rw----+ and the service still cannot open it.
+#
+# Install this file as /etc/udev/rules.d/99-control-center-atem-micro-panel.rules
+# so it is applied after Companion's 50- rules and GROUP=plugdev wins.
+# Then:
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+# Unplug and replug the panel. Restart control-center after that.
+# The shipped unit lists SupplementaryGroups=plugdev, so the service can open
+# a plugdev node without a separate usermod.
+#
+# KERNELS matches Bluetooth and some USB presentations that do not expose
+# idVendor on the hidraw parent the usual way. Source for the match: Julusian's
+# node-blackmagic-controller headless udev rule (plugdev), plus uaccess.
+
+SUBSYSTEM=="input", GROUP="input", MODE="0660"
+
+KERNEL=="hidraw*", ATTRS{idVendor}=="1edb", ATTRS{idProduct}=="bef0", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+KERNEL=="hidraw*", KERNELS=="*:1EDB:BEF0.*", MODE="0660", GROUP="plugdev", TAG+="uaccess"
