@@ -1,0 +1,110 @@
+{
+  "frame": {
+    "System": {
+      "Name": "Arena",
+      "FrameCollection": {
+        "Frame": [
+          { "Name": "E2 Host", "Version": "10.2.0", "FrameType": 5, "FrameTypeName": "E2-Gen2", "isHost": true },
+          { "Name": "E2 Client", "Version": "10.2.0", "FrameType": 5, "FrameTypeName": "E2-Gen2", "isHost": false }
+        ]
+      }
+    }
+  },
+  "destinations": {
+    "ScreenDestination": [
+      { "id": 0, "Name": "Main Wall", "HSize": 7680, "VSize": 2160 },
+      { "id": 1, "Name": "IMAG", "HSize": 1920, "VSize": 1080 },
+      { "id": 2, "Name": "DSMs", "HSize": 1920, "VSize": 1080 }
+    ],
+    "AuxDestination": [
+      { "id": 0, "Name": "Confidence" },
+      { "id": 1, "AuxStreamMode": 4 }
+    ]
+  },
+  "contents": {
+    "0": {
+      "id": 0,
+      "Name": "Main Wall",
+      "Layers": [
+        {
+          "id": 0, "Name": "Layer1-A", "LastSrcIdx": 1, "PvwMode": 1, "PgmMode": 1,
+          "PvwZOrder": 2, "PgmZOrder": 2, "Freeze": 0, "ScalingMode": 1,
+          "Window": [
+            { "HPos": 0, "VPos": 0, "HSize": 7680, "VSize": 2160 },
+            { "HPos": 0, "VPos": 0, "HSize": 7680, "VSize": 2160 }
+          ],
+          "Mask": [
+            { "Left": 0, "Right": 0, "Top": 0, "Bottom": 0 },
+            { "Left": 0, "Right": 0, "Top": 0, "Bottom": 0 }
+          ]
+        },
+        {
+          "id": 1, "Name": "Layer1-B", "LastSrcIdx": -1, "PvwMode": 0, "PgmMode": 0,
+          "PvwZOrder": 1, "PgmZOrder": 1,
+          "Window": [
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 },
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 }
+          ]
+        },
+        {
+          "id": 2, "Name": "Layer3", "PvwLastSrcIndex": 4, "PgmLastSrcIndex": 3,
+          "PvwMode": 1, "PgmMode": 0, "PvwZOrder": 3, "PgmZOrder": 0, "Freeze": 1,
+          "Window": [
+            { "HPos": 0, "VPos": 0, "HSize": 960, "VSize": 540 },
+            { "HPos": 400, "VPos": 200, "HSize": 1600, "VSize": 900 }
+          ],
+          "Source": [
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 },
+            { "HPos": 200, "VPos": 80, "HSize": 1280, "VSize": 720 }
+          ],
+          "Mask": [
+            { "Left": 0, "Right": 0, "Top": 0, "Bottom": 0 },
+            { "Left": 1.5, "Right": 1.5, "Top": 0, "Bottom": 0 }
+          ]
+        }
+      ]
+    },
+    "1": {
+      "id": 1,
+      "Name": "IMAG",
+      "Layers": [
+        {
+          "id": 0, "Name": "Layer1-A", "LastSrcIdx": 0, "PvwMode": 0, "PgmMode": 1,
+          "Window": [
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 },
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 }
+          ]
+        }
+      ]
+    },
+    "2": {
+      "id": 2,
+      "Name": "DSMs",
+      "Layers": [
+        {
+          "id": 0, "Name": "Layer1-A", "LastSrcIdx": -1, "PvwMode": 0, "PgmMode": 0,
+          "Window": [
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 },
+            { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 }
+          ]
+        }
+      ]
+    }
+  },
+  "auxContent": {
+    "0": { "id": 0, "Name": "Confidence", "PvwLastSrcIndex": 1, "PgmLastSrcIndex": 1 },
+    "1": { "id": 1, "Name": "Stream", "PvwLastSrcIndex": 5, "PgmLastSrcIndex": 5 }
+  },
+  "sources": [
+    { "id": 0, "Name": "Cam Center", "SrcType": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1 },
+    { "id": 1, "Name": "Cam Left", "SrcType": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1 },
+    { "id": 3, "Name": "Playback", "SrcType": 0, "HSize": 3840, "VSize": 2160, "InputCfgVideoStatus": 1 },
+    { "id": 4, "Name": "Graphics", "SrcType": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1 },
+    { "id": 5, "Name": "Hold Slide", "SrcType": 1, "StillIndex": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1 }
+  ],
+  "presets": [
+    { "id": 0, "Name": "Doors", "presetSno": 1.0, "LockMode": 0 },
+    { "id": 1, "Name": "Show", "presetSno": 2.0, "LockMode": 0 },
+    { "id": 2, "Name": "Panel", "presetSno": 3.01, "LockMode": 1 }
+  ]
+}

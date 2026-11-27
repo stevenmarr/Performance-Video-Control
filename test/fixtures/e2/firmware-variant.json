@@ -1,0 +1,67 @@
+{
+  "frame": {
+    "System": {
+      "Name": "Variant Frame",
+      "FrameCollection": {
+        "Frame": { "Name": "S3", "Version": "6.1.0-variant", "FrameTypeName": "S3-4K", "isHost": true }
+      }
+    }
+  },
+  "destinations": {
+    "ScreenDestination": [
+      { "id": 0, "Name": "Stage", "HSize": { "Min": 0, "Max": 99999, "$t": 1920 }, "VSize": { "Min": 0, "Max": 99999, "$t": 1080 } }
+    ],
+    "AuxDestination": []
+  },
+  "contents": {
+    "0": {
+      "id": 0,
+      "Name": "Stage",
+      "Layers": [
+        {
+          "id": 0,
+          "Name": "PIP A",
+          "PvwLastSrcIndex": 2,
+          "PgmLastSrcIndex": 1,
+          "PvwMode": 1,
+          "PgmMode": 1,
+          "PreviewZOrder": 3,
+          "ProgramZOrder": 3,
+          "Freeze": { "Min": 0, "Max": 1, "$t": 0 },
+          "ScalingMode": 0,
+          "Window": {
+            "Pgm": { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 },
+            "Pvw": {
+              "HPos": { "Min": -8000, "Max": 8000, "$t": 120 },
+              "VPos": { "Min": -8000, "Max": 8000, "$t": 80 },
+              "HSize": { "Min": 0, "Max": 8000, "$t": 960 },
+              "VSize": { "Min": 0, "Max": 8000, "$t": 540 }
+            }
+          },
+          "Source": {
+            "Pvw": { "HPos": 40, "VPos": 20, "HSize": 800, "VSize": 450 },
+            "Pgm": { "HPos": 0, "VPos": 0, "HSize": 1920, "VSize": 1080 }
+          },
+          "Mask": {
+            "Pvw": { "Left": 10, "Right": 10, "Top": 5, "Bottom": 5 },
+            "Pgm": { "Left": 0, "Right": 0, "Top": 0, "Bottom": 0 }
+          },
+          "Border": { "Enable": 1, "Size": 6, "Softness": 3, "Red": 800, "Green": 20, "Blue": 20, "Opacity": 90 },
+          "DropShadow": { "Enable": 1, "HOffset": 8, "VOffset": 10, "Size": 14, "Softness": 4, "Opacity": 50 },
+          "Transparency": 25,
+          "Key": { "Mode": "chroma", "Clip": 33, "Gain": 12, "Invert": 1, "Hue": 140 },
+          "LayerTransition": { "In": { "Type": 2, "Time": 18 }, "Out": { "Type": 1, "Time": 9 } },
+          "PipEffect": { "Type": 4, "Time": 6 },
+          "WinH": 120
+        }
+      ]
+    }
+  },
+  "sources": [
+    { "id": 1, "Name": "Notes", "SrcType": 0, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1 },
+    { "id": 2, "Name": "Logo", "SrcType": 1, "HSize": 1920, "VSize": 1080, "InputCfgVideoStatus": 1, "Thumbnail": "" }
+  ],
+  "presets": [
+    { "id": 4, "Name": "Look 4", "presetSno": 4.2, "LockMode": 0 }
+  ]
+}

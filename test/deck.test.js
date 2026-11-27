@@ -191,7 +191,13 @@ test('readouts match the paint pane, and the strip SVG is a circular knob (dual 
     const last = op.options[op.options.length - 1][0];
     assert.equal(deck.nextValue(op, last, 1), first, `${op.id} wraps forward`);
     assert.equal(deck.nextValue(op, first, -1), last, `${op.id} wraps backward`);
+    assert.equal(deck.nextValue(op, last, 1, { wrap: false }), last, `${op.id} knob does not wrap forward`);
+    assert.equal(deck.nextValue(op, first, -1, { wrap: false }), first, `${op.id} knob does not wrap backward`);
   }
+  const gain = PC.catalogFor('UE150').ops.find((o) => o.id === 'gain');
+  assert.equal(gain.options[0][1], 'Auto');
+  assert.equal(deck.nextValue(gain, '08', -1, { wrap: false }), '08', 'gain does not step onto Auto');
+  assert.equal(deck.nextValue(gain, '80', 1, { wrap: false }), '08', 'a turn off Auto lands on 0 dB');
   assert.equal(deck.nextValue(irisOp, 98, 5), 99, 'a numeric range still stops at the end');
 
   const face = deck.dialFace('gainRb', snap, 0);

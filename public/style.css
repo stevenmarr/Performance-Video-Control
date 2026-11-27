@@ -390,7 +390,7 @@ label.btn{cursor:pointer}
 /* Header pills follow the open tab, not which system is focused. Tab buttons and group labels are armed
    individually (hidden), so RS6 and ATEM can both be on the bar. */
 body:not(.tab-presets):not(.tab-inputs):not(.tab-backup):not(.tab-audio):not(.tab-webrcs) .rs6-only:not(.tab):not(.tab-group){display:none !important}
-body:not(.tab-xpresets):not(.tab-xcues):not(.tab-xsources):not(.tab-xstills):not(.tab-xbackup):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-pcams):not(.tab-pxplay):not(.tab-pxcues):not(.tab-mlcol):not(.tab-mllayer) .x-only:not(.tab):not(.tab-group){display:none !important}
+body:not(.tab-xpresets):not(.tab-xcues):not(.tab-xsources):not(.tab-xstills):not(.tab-xbackup):not(.tab-xprogram):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-pcams):not(.tab-pxplay):not(.tab-pxcues):not(.tab-mlcol):not(.tab-mllayer) .x-only:not(.tab):not(.tab-group){display:none !important}
 .tab[hidden],.tab-group[hidden]{display:none !important}
 .tabs{align-items:flex-end;flex-wrap:wrap;row-gap:4px}
 .tab-group{display:inline-flex;align-items:center;gap:2px;margin:0 2px 0 12px;padding:0 0 8px;font-size:10px;font-weight:900;letter-spacing:.14em;color:#7d8b9c}
@@ -412,7 +412,7 @@ body:not(.tab-xpresets):not(.tab-xcues):not(.tab-xsources):not(.tab-xstills):not
 @media (max-width: 720px){.media-row{grid-template-columns:minmax(0,1fr)}}
 .sys-card.on-desk{border-color:#6b2428}
 .top #btnSystem,.top #xconn{order:1}.top #xlast{order:2}
-body:not(.tab-xpresets) #xlast{display:none}
+body:not(.tab-xpresets):not(.tab-xprogram) #xlast{display:none}
 .transport.xtransport{display:none}
 body.tab-xpresets .transport.xtransport{display:flex}
 .xtally-note{margin-top:4px}
@@ -528,7 +528,7 @@ body.tab-xpresets .transport.xtransport{display:flex}
 .sys-cards.planned .mono{color:#ffd35c}
 
 /* ---------- 0.7.0: SYSTEMS home that scales, ATEM, Panasonic PTZ ---------- */
-body:not(.tab-xpresets):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-ptrack):not(.tab-ppresets):not(.tab-pcams) #xlast{display:none}
+body:not(.tab-xpresets):not(.tab-xprogram):not(.tab-atem):not(.tab-arouter):not(.tab-aaudio):not(.tab-akeys):not(.tab-amacros):not(.tab-pctl):not(.tab-ptrack):not(.tab-ppresets):not(.tab-pcams) #xlast{display:none}
 body.tab-atem #xlast,body.tab-arouter #xlast,body.tab-aaudio #xlast,body.tab-akeys #xlast,body.tab-amacros #xlast,body.tab-pctl #xlast,body.tab-ptrack #xlast,body.tab-ppresets #xlast,body.tab-pcams #xlast{display:block}
 .led.warn{background:#f0a500;box-shadow:0 0 8px #f0a500}
 .sys-card.warn::before{background:#f0a500}
@@ -1482,3 +1482,45 @@ nav.tabs{padding:0 6px}
 .provision .prov-steps{display:flex;flex-wrap:wrap;gap:8px 16px;margin:8px 0;padding:0;list-style:decimal inside}
 .provision .prov-steps li.on{color:var(--accent,#6cf);font-weight:700}
 #ptzCropCtl.dim{opacity:.45;pointer-events:none}
+
+/* SURFACES tab — Page Builder (designer Phase B) */
+.surfaces-sub { display: flex; gap: 4px; margin: 8px 0 12px; flex-wrap: wrap; }
+.surfaces-sub .subtab { background: #1a1a1a; color: #ccc; border: 1px solid #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+.surfaces-sub .subtab.active { background: #2a4a6a; color: #fff; border-color: #4a8; }
+.surfaces-pane { min-height: 200px; }
+.builder-toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.builder-toolbar label { display: flex; gap: 6px; align-items: center; }
+.builder-toolbar input, .builder-toolbar select { background: #111; color: #eee; border: 1px solid #444; padding: 4px 8px; border-radius: 3px; }
+.live-pill { background: #0a4; color: #fff; padding: 4px 10px; border-radius: 12px; font-weight: 600; font-size: 12px; }
+.builder-main { display: flex; gap: 16px; }
+.page-tree { width: 220px; background: #111; padding: 10px; border-radius: 6px; }
+.page-tree ul { list-style: none; padding: 0; margin: 8px 0; }
+.page-tree li { padding: 6px 8px; cursor: pointer; border-radius: 3px; }
+.page-tree li.active, .page-tree li:hover { background: #2a3a4a; }
+.builder-canvas { flex: 1; }
+.sd-face { background: #0d0d0d; border: 2px solid #333; border-radius: 12px; padding: 12px; display: inline-block; }
+.sd-keys { display: grid; grid-template-columns: repeat(9, 72px); grid-template-rows: repeat(4, 72px); gap: 4px; }
+.sd-key { background: #1e1e1e; border: 1px solid #444; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; position: relative; cursor: grab; }
+.sd-key.zone-nav { border-color: #48f; }
+.sd-key.zone-target { border-color: #f84; }
+.sd-key.zone-functions { border-color: #4f8; }
+.sd-key.zone-status { border-color: #fa4; }
+.sd-key .zone-tag { position: absolute; bottom: 2px; font-size: 8px; opacity: 0.6; }
+.sd-key.over { outline: 2px solid #0f8; }
+.sd-strips { display: flex; gap: 8px; margin-top: 8px; justify-content: center; }
+.sd-strip { width: 40px; height: 80px; background: #222; border: 1px solid #555; border-radius: 4px; font-size: 9px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 4px; }
+.sd-knobs { display: flex; gap: 18px; margin-top: 6px; justify-content: center; }
+.sd-knob { width: 36px; height: 36px; border-radius: 50%; background: radial-gradient(#444, #111); border: 2px solid #666; }
+.what-changed { margin-top: 12px; background: #111; padding: 8px; border-radius: 6px; max-height: 160px; overflow: auto; }
+.what-changed pre { font-size: 11px; margin: 0; white-space: pre-wrap; }
+/* Help drawer and tour (Phase C) */
+.help-drawer{position:fixed;top:0;right:0;height:100vh;background:var(--panel);border-left:1px solid var(--line);z-index:1000;box-shadow:-4px 0 16px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden}
+.help-drawer[hidden]{display:none}
+.help-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.help-nav{display:flex;flex-wrap:wrap;gap:4px;padding:8px;border-bottom:1px solid var(--line)}
+.help-nav button{padding:4px 8px;font-size:11px;font-weight:700;background:transparent;border:1px solid var(--line);border-radius:4px}
+.help-nav .tour-go{background:var(--accent);color:#fff;border-color:var(--accent)}
+.help-body{flex:1;overflow:auto;padding:12px;font-size:13px}
+.help-tip{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#4da3ff;color:#fff;border:0;font-size:11px;line-height:16px;padding:0;cursor:help}
+.tour-card button{margin-right:6px;padding:4px 10px}
+

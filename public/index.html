@@ -24,22 +24,24 @@
 <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/e2-program.css">
 <link rel="stylesheet" href="/modules.css">
 </head>
 <body>
 <header class="top">
   <img class="pvlogo" src="/pv-logo.png" alt="Performance Video LLC" width="168" height="36">
   <div class="brand">CONTROL <span>CENTER</span></div>
-  <button id="btnShow" class="btn ghost show-btn" title="Show file: save, save as, open, download, upload"><span class="show-k">SHOW</span> <span id="showName">Untitled show</span><span id="showDirty" class="dirty" title="Unsaved changes" hidden>●</span></button>
+  <button id="btnShow" class="btn ghost show-btn" data-help="show" title="Show file: save, save as, open, download, upload"><span class="show-k">SHOW</span> <span id="showName">Untitled show</span><span id="showDirty" class="dirty" title="Unsaved changes" hidden>●</span></button>
   <div id="conn" class="pill off rs6-only">Not connected</div>
   <div id="xconn" class="pill off x-only">Not connected</div>
   <div id="xlast" class="last x-only">PVW: —</div>
   <div id="last" class="last rs6-only">PVW: —</div>
   <div id="master" class="master rs6-only"></div>
   <div id="liveMode" class="pill rs6-only"></div>
-  <div id="link" class="pill link connecting" title="Connection between this page and the Control Center app">CONNECTING…</div>
+  <div id="link" class="pill link connecting" data-help="lock" title="Connection between this page and the Control Center app">CONNECTING…</div>
   <div class="spacer"></div>
   <div class="top-end">
+    <button id="btnHelp" class="btn ghost" title="Help (F1)" data-help="help">? HELP</button>
     <button id="btnSettings" class="btn ghost">⚙ Settings</button>
     <span id="appVer" class="app-ver" title="Control Center version"></span>
     <span id="appMem" class="app-mem" role="status" aria-live="polite" title="Memory Control Center is using on this computer">APP —<small>SYS —</small></span>
@@ -59,9 +61,7 @@
     <button type="button" class="tgrp" data-tabgrp="millumin" hidden><i class="led"></i>MILLUMIN</button>
     <button class="tab tab-cues" data-tab="cues" title="Cues. RUN CUE plays the loaded cue. The button locks while that timeline is running.">CUES</button>
     <button class="tab tab-looks" data-tab="looks" title="Hi-res cue stack for one switcher: RS6, E2 or PixelHue. Absolute and relative recalls. Not ATEM.">PRESETS</button>
-    <button class="tab tab-decks" data-tab="decks" title="USB Stream Decks. Quit the Elgato app so this app can open the deck.">Control Devices</button>
-    <button class="tab tab-buttons" data-tab="buttons" title="Create and edit library buttons: keys, encoders, and touch segments, with actions, variables, and feedbacks. Placement is on PAGES.">BUTTONS</button>
-    <button class="tab tab-pages" data-tab="pages" title="Lay out a surface from library buttons, then push that page to an online Path C deck. The Elgato plugin has to be running for that push.">PAGES</button>
+    <button class="tab tab-surfaces" data-tab="surfaces" title="SURFACES: Page Builder, Button Designer, USB devices, TourBox, and self-test. Page edits go live immediately.">SURFACES</button>
     <button class="tab tab-companion" data-tab="companion" title="Bitfocus Companion: status, the Control Center module, sync CC buttons and pages, and Companion's own web UI">COMPANION</button>
   </div>
   <div class="tabs-sub" id="tabsSub" role="tablist" aria-label="Pages of the selected system">
@@ -78,6 +78,7 @@
   <button class="tab x-only" data-tab="xsources" data-cap="sources" data-sys="preset">SOURCES</button>
   <button class="tab x-only" data-tab="xstills" data-cap="stills" data-sys="preset">STILLS</button>
   <button class="tab x-only" data-tab="xbackup" data-cap="backups" data-sys="preset">BACKUP</button>
+  <button class="tab x-only" data-tab="xprogram" data-cap="program" data-sys="preset" title="Program the E2 live: destination, layer, dials, source. Only what this frame actually has.">PROGRAM</button>
   <span class="tab-group x-only atem-grp" data-grp="atem">ATEM</span>
   <button class="tab x-only" data-tab="atem" data-cap="atemSwitcher" data-sys="atem">SWITCHER</button>
   <button class="tab x-only" data-tab="arouter" data-cap="atemRouter" data-sys="atem">ROUTER</button>
@@ -98,7 +99,7 @@
   <button class="tab x-only" data-tab="mllayer" data-cap="milluminLayer" data-sys="millumin">LAYER</button>
   <span class="tabs-home-note" id="tabsLooksNote" hidden>One switcher per stack. Absolute is a full look. Relative changes only that preset's layers. GO loads preview. Bail loads after TAKE.</span>
   <span class="tabs-home-note" id="tabsCuesNote" hidden>Drag a preset onto a cue or its timeline. RUN CUE plays that cue and locks until the timeline finishes.</span>
-  <span class="tabs-home-note" id="tabsDecksNote" hidden>Control Devices is USB (quit the Elgato app so this app can open the deck). BUTTONS creates library keys. PAGES lays them out per surface. COMPANION hands both to Companion, which puts them on Stream Decks.</span>
+  <span class="tabs-home-note" id="tabsDecksNote" hidden>SURFACES is the Page Builder and Button Designer. Page edits go live on the USB Stream Deck + XL and tagged Companion pages. COMPANION keeps status and its own web UI.</span>
   </div>
 </nav>
 
@@ -238,6 +239,9 @@
     <div class="row capture-row"><span class="lbl">Capture a still<small>from an input into a still slot (overwrites that slot)</small></span>
       <select id="xstillInput"></select><input id="xstillSlot" type="number" min="1" max="999" placeholder="slot" class="slot-in"><button class="btn mini primary" id="xstillTake">CAPTURE</button></div>
     <div id="xstillsList" class="rows"></div>
+  </section>
+  <section class="grid-wrap pane e2p-pane" id="pane-xprogram" hidden>
+    <div id="e2program"></div>
   </section>
   <section class="grid-wrap pane" id="pane-xbackup" hidden>
     <div class="section-title"><span class="xsys"></span> INPUT BACKUPS <small>inputs with a backup configured on the device · PRIMARY or a backup</small></div>
@@ -400,6 +404,20 @@
       <button class="btn rcp-allstop" id="ptzAllStop" type="button" title="Stop every camera (Esc)">■ ALL STOP</button>
     </div>
     <div class="rcp-read" id="ptzRead"></div>
+    <div class="panel" id="tbxPanel">
+      <div class="section-title">TOURBOX NEO <small>Control Center talks to the TourBox directly over USB serial on this Raspberry Pi 5. Quit TourBox Console during a show. The TourBox follows the camera selected on the Stream Deck</small></div>
+      <label class="chk"><input type="checkbox" id="tbxEnabled"> Enable TourBox</label>
+      <span class="chip" id="tbxLive" hidden>LIVE</span>
+      <div class="note small" id="tbxState">…</div>
+      <div class="note small" id="tbxTouch"></div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px">
+        <button type="button" class="btn mini" id="tbxClaim">CLAIM</button>
+        <button type="button" class="btn mini ghost" id="tbxRelease">RELEASE</button>
+        <label class="chk"><input type="checkbox" id="tbxLearn"> Learn mode (does not fire the show)</label>
+      </div>
+      <div class="section-title" style="margin-top:10px">EVENT LOG <small>every control, for a bench check</small></div>
+      <pre class="note small" id="tbxLog" style="max-height:9em;overflow:auto"></pre>
+    </div>
     <div class="rcp">
       <div class="panel rcp-joy">
         <div class="section-title">PAN / TILT <small>drag: speed grows with distance · release stops</small></div>
@@ -516,7 +534,28 @@
       <label class="ctl-sel mini" title="Camera type used for the command set. Auto uses the model the camera reports."><select name="model" aria-label="Camera type"><option value="">Auto (detect from camera)</option></select></label>
       <button class="btn mini primary">ADD CAMERA</button></form>
   </section>
-  <section class="grid-wrap pane" id="pane-decks" hidden>
+    <section class="grid-wrap pane" id="pane-surfaces" hidden>
+    <div class="scopes-head">
+      <div class="section-title">SURFACES <small>Page Builder · Button Designer · Devices · TourBox · Self-test. Edits go live.</small></div>
+    </div>
+    <nav class="surfaces-sub" id="surfacesSub" role="tablist" aria-label="SURFACES sections">
+      <button type="button" class="subtab active" data-surfaces="pages">PAGES</button>
+      <button type="button" class="subtab" data-surfaces="buttons">BUTTONS</button>
+      <button type="button" class="subtab" data-surfaces="devices">DEVICES</button>
+      <button type="button" class="subtab" data-surfaces="tourbox">TOURBOX</button>
+      <button type="button" class="subtab" data-surfaces="selftest">SELF-TEST</button>
+    </nav>
+    <div id="surfacesPages" class="surfaces-pane"></div>
+    <div id="surfacesButtons" class="surfaces-pane" hidden></div>
+    <div id="surfacesDevices" class="surfaces-pane" hidden></div>
+    <div id="surfacesTourbox" class="surfaces-pane" hidden>
+      <p class="note">TourBox integration is planned. No TourBox is connected in this build.</p>
+    </div>
+    <div id="surfacesSelftest" class="surfaces-pane" hidden>
+      <p class="note">Self-test paints a known pattern on the USB Stream Deck + XL and reports Companion page tags. Run from the Page Builder LIVE ON DECK pill.</p>
+    </div>
+  </section>
+<section class="grid-wrap pane" id="pane-decks" hidden>
     <div class="scopes-head">
       <div class="section-title">CONTROL DEVICES <small>USB Stream Decks. Home picks one system. The keys fill that deck.</small></div>
       <span class="spacer"></span>
@@ -886,21 +925,25 @@
 <script src="/app.js"></script>
 <script src="/sys-modules.js"></script>
 <script src="/sys.js"></script>
+<script src="/e2-program.js"></script>
 <script src="/atem.js"></script>
 <script src="/atem-macros.js"></script>
 <script src="/atem-ext.js"></script>
 <script src="/atem-layout.js"></script>
 <script src="/paint-send.js"></script>
 <script src="/ptz.js"></script>
+<script src="/tourbox.js"></script>
 <script src="/tracking.js"></script>
 <script src="/pixera.js"></script>
 <script src="/millumin.js"></script>
 <script src="/decks.js"></script>
 <script src="/button-library.js"></script>
 <script src="/surface-pages.js"></script>
+<script src="/surfaces.js"></script>
 <script src="/companion-advice.js"></script>
 <script src="/companion-tab.js"></script>
 <script src="/tsl.js"></script>
 <script src="/atem-panel.js"></script>
+  <script src="/help.js"></script>
 </body>
 </html>

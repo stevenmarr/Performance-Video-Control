@@ -2,7 +2,7 @@
 
 Control Center systems are native. Each implemented system speaks the manufacturer's published protocol. Companion module names are a checklist, so a later run can see what is still open. They are not loaded or wrapped.
 
-Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not yet: **856**.
+Companion connection types: **1098**. Implemented: **243**. Partial: **0**. Not yet: **855**.
 
 ## Systems in this build
 
@@ -16,8 +16,9 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 | AV Stumpfl Pixera (`pixera`) | implemented | 8 | 4 | 3 | official | https://help.pixera.one/api/ |
 | Millumin (`millumin`) | implemented | 13 | 3 | 2 | official | https://www.millumin.com/documentation/ |
 | Blackmagic Videohub (`videohub`) | implemented | 1 | 4 | 2 | official | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |
-| Blackmagic HyperDeck (`hyperdeck`) | implemented | 9 | 5 | 3 | official | https://documents.blackmagicdesign.com/DeveloperManuals/HyperDeckEthernetProtocol.pdf |
-| Mitti (`mitti`) | implemented | 8 | 3 | 3 | official | https://imimot.com/mitti/ |
+| Blackmagic HyperDeck (`hyperdeck`) | implemented | 9 | 8 | 3 | official | https://documents.blackmagicdesign.com/DeveloperManuals/HyperDeckEthernetProtocol.pdf |
+| Mitti (`mitti`) | implemented | 8 | 6 | 3 | official | https://imimot.com/mitti/ |
+| Playout (`playout`) | implemented | 5 | 8 | 5 | official | https://github.com/stevenmarr/Playout |
 | TSL tally (`tsl`) | implemented | 2 | 3 | 2 | official | https://tslproducts.com/ |
 | Control Center (`console`) | implemented | 21 | 4 | 3 | official | — |
 | Generic HTTP (`generic-http`) | implemented | 1 | 4 | 2 | official | https://www.rfc-editor.org/rfc/rfc9110 |
@@ -25,7 +26,7 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 | Generic TCP (`generic-tcp`) | implemented | 1 | 3 | 2 | official | https://www.rfc-editor.org/rfc/rfc9293 |
 | vMix (`vmix`) | implemented | 19 | 7 | 6 | official | https://docs.vmix.com/help29/DeveloperAPI.html |
 | OBS Studio (`obs`) | implemented | 9 | 5 | 4 | official | https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md |
-| RossTalk (`ross-rosstalk`) | implemented | 9 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
+| RossTalk (`ross-rosstalk`) | implemented | 12 | 3 | 2 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | Sony VISCA (`sony-visca`) | implemented | 16 | 3 | 2 | official | https://pro.sony/ue_US/support-resources/knowledge-base/manuals |
 | BirdDog PTZ (`birddog-ptz`) | implemented | 12 | 2 | 2 | official | https://birddog.tv/ |
 | QLab (`qlab`) | implemented | 9 | 3 | 2 | official | https://qlab.app/docs/v5/scripting/osc-dictionary/ |
@@ -52,7 +53,7 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 | Blackmagic Streaming Encoder (`bmd-streaming`) | implemented | 4 | 2 | 1 | official | https://documents.blackmagicdesign.com/DeveloperManuals/WebPresenterEthernetProtocol.pdf |
 | Lightware LW2 (`lightware-lw2`) | implemented | 4 | 2 | 1 | official | https://www.lightware.com/en/support/open-api |
 | Kramer Protocol 2000 (`kramer-p2000`) | implemented | 3 | 1 | 1 | official | https://cdn.kramerav.com/web/downloads/manuals/protocol_2000_rev0_51.pdf |
-| Ross XPression (`ross-xpression`) | implemented | 15 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
+| Ross XPression (`ross-xpression`) | implemented | 15 | 3 | 2 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | Brompton Tessera (`brompton-tessera`) | implemented | 6 | 4 | 2 | official | https://dl.bromptontech.com/tessera/docs/TesseraIPControlAPI3_1_0_Beta4.pdf |
 | NovaStar VX Pro (`novastar-vxpro`) | partial | 1 | 2 | 1 | official | https://device.report/manuals/novastar-vx2000-pro-control-protocol-v1 |
 | Megapixel HELIOS (`helios`) | implemented | 6 | 3 | 2 | official | https://megapixelvr.com/downloads/HELIOS%20Processing%20System-User%20Guide.pdf |
@@ -73,7 +74,7 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 | Roland V-60HD (`roland-v60hd`) | implemented | 4 | 2 | 1 | official | https://static.roland.com/assets/media/pdf/V-60HD_reference_v31_eng04_W.pdf |
 | Dataton WATCHOUT (`dataton-watchout`) | implemented | 5 | 2 | 1 | official | https://docs.dataton.com/guide/watchout/external-control/watchout-6-protocol.html |
 | Roland basic LAN (`roland-basic`) | implemented | 4 | 2 | 1 | official | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
-| Q-SYS QRC (`qsys-qrc`) | implemented | 2 | 2 | 1 | official | https://help.qsys.com/content/External_Control_APIs/QRC/QRC_Commands.htm |
+| Q-SYS QRC (`qsys-qrc`) | implemented | 10 | 3 | 3 | official | https://help.qsys.com/content/External_Control_APIs/QRC/QRC_Commands.htm |
 | Biamp Tesira (`biamp-tesira`) | implemented | 5 | 2 | 1 | official | https://downloads.biamp.com/assets/docs/default-source/control/tesira_text_protocol_v4-2_jan22.pdf?sfvrsn=100c2497_46 |
 | Shure MXA910 (`shure-mxa910`) | implemented | 5 | 2 | 1 | official | https://www.shure.com/en-US/docs/commandstrings/MXA910 |
 | Sony Bravia Simple IP (`sony-bravia-simple`) | implemented | 6 | 2 | 1 | official | https://pro-bravia.sony.net/remote-display-control/simple-ip-control/ |
@@ -119,8 +120,9 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 | Yamaha DM3 (`yamaha-dm`) | implemented | 3 | 2 | 1 | official | https://usa.yamaha.com/files/download/other_assets/2/2063222/DM3_osc_specs_v100_en.pdf |
 | Sennheiser TeamConnect Ceiling 2 (`sennheiser-tcc2`) | implemented | 3 | 1 | 1 | official | https://assets.sennheiser.com/download/assets/TI_1245_v1.8.0_Sennheiser_Sound_Control_Protocol_TCC2_EN.pdf/c204169ce7bb11f0a354ea55b5d2fb86 |
 | Sennheiser EW-DX (`sennheiser-ewdx`) | implemented | 4 | 1 | 1 | official | https://docs.cloud.sennheiser.com/en-us/api-docs/resources/ew-dx-sound-control-protocol-3-0-x.pdf |
-| Ross video server (`ross-videoserver`) | implemented | 3 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
-| Ross Caprica (`ross-caprica`) | implemented | 4 | 2 | 1 | official | https://documentation.rossvideo.com/files/Manuals/Automation%20&%20Control/Caprica/Device%20Setup%20Sheets/RossTalk/RossTalk-IN.pdf |
+| Ross video server (`ross-videoserver`) | implemented | 3 | 3 | 2 | official | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
+| Ross Caprica (`ross-caprica`) | implemented | 7 | 3 | 4 | official | https://documentation.rossvideo.com/files/Manuals/Automation%20&%20Control/Caprica/Device%20Setup%20Sheets/RossTalk/RossTalk-IN.pdf |
+| Ross NK router (`ross-nk`) | implemented | 3 | 3 | 3 | official | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
 | Viz Trio (`viz-trio`) | implemented | 3 | 2 | 1 | official | https://documentation.vizrt.com/viz-trio-guide-4.4.pdf |
 | Analog Way Picturall (`picturall`) | implemented | 3 | 2 | 1 | official | https://s3.eu-west-3.amazonaws.com/aw.store01/Site+Internet/Series/Picturall+Mark+I/Common/User+Manual/user-manual-picturall-media-server-3.5.3.pdf |
 | disguise (`disguise-osc`) | implemented | 5 | 2 | 1 | official | https://help.disguise.one/designer/timeline-tracks-transports/osc/controlling |
@@ -226,7 +228,6 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 | Analog Way Midra (`analogway-midra`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Analog Way LiveCore (`analogway-livecore`) | not yet | 0 | 0 | 0 | official | https://www.analogway.com/downloads |
 | Barco ImagePRO (`barco-imagepro`) | not yet | 0 | 0 | 0 | official | https://www.barco.com/en/support/docs/R5919184 |
-| Ross NK router (`ross-nk`) | not yet | 0 | 0 | 0 | official | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
 | Colorlight GrandShow (`colorlight-grandshow`) | not yet | 0 | 0 | 0 | official | https://developer.colorlightcloud.com/CLTServer/en/api-reference/sender-device/screen-group/brightness-and-color-temperature/set-screen-brightness.html |
 | NovaStar other families (`novastar-other`) | not yet | 0 | 0 | 0 | official | https://oss.novastar.tech/uploads/2023/02/COEX-Series-Interface-API-User-Manual.pdf |
 | FOR-A (`fora`) | not yet | 0 | 0 | 0 | official | https://www.for-a.com/products/hvs6000/ |
@@ -341,7 +342,7 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 - ATEM's public interface is the Blackmagic SDK. The desk speaks that switcher protocol. The byte layout is the SDK's, not a separate REST document.
 - Analog Way Midra and LiveCore have no buttons. The classic Midra programmer guide was not found on an Analog Way download, and LiveCore is not the LivePremier protocol already spoken by RS6.
 - Barco ImagePRO-4K is listed on the Event Master protocol, which the E2 system already speaks. The older ImagePRO ASCII set is not aliased to PDS-4K.
-- Ross NK third-party control is the NK-3RD serial protocols or the NK-SCP/A ASCII protocol. The user guide does not print a command line, so no button is sent.
+- Ross NK-SCP/A ASCII is X, three-digit destination, comma, three-digit source, comma, breakaway, CR (11 bytes); Z plus eight sources (37 bytes); R plus the destination (5 bytes). 000 is input or output 1. Three dashes leave a level alone. A good reply is CR LF, then OK and a space. The guide's port is RS-232 (8 data bits, no parity, 1 stop). NK-3RD stays on its own serial protocols and is not this system.
 - Colorlight processors use the CLTPlatform brightness call. GrandShow is not that API. NovaStar COEX is the HTTP brightness API. The other NovaStar families are not that API and are not the VX Pro frame.
 - Roland basic PGM and CUT cover V-160HD, V-80HD, VR-120HD and V-1-4K. FOR-A's command list is behind a login. Evertz, Riedel RRCS, Haivision, Teradek, Magewell, Hippotizer and TriCaster did not yield a request line that was safe to send.
 - Avantis mute, CQ mute, MultiView routing, Blackmagic camera record, SMP 351 record, PCS4 receptacles, Vaddio presets, AVer VISCA, DM3 OSC, Sennheiser SSC, RossTalk server and Caprica, Viz Trio, Picturall, disguise OSC, SPX, Flowics reads and WLED are separate systems. AJA FS, Datavideo DVIP, OBSBOT, Clear-Com, Kairos, Encore, the SuperJoy, and the other ids named in the blocker rows did not yield a command line that was safe to send.
@@ -1179,7 +1180,7 @@ Companion connection types: **1098**. Implemented: **242**. Partial: **0**. Not 
 | `roland-xs62s` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | `roland-xs84h` | not yet | roland-other | https://static.roland.com/assets/media/pdf/LAN_RS-232_Basic_Control_Commands_eng02_W.pdf |
 | `rossvideo-caprica` | implemented | ross-caprica | https://documentation.rossvideo.com/files/Manuals/Automation%20&%20Control/Caprica/Device%20Setup%20Sheets/RossTalk/RossTalk-IN.pdf |
-| `rossvideo-nkrouter` | not yet | ross-nk | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
+| `rossvideo-nkrouter` | implemented | ross-nk | https://documentation.rossvideo.com/files/Manuals/Routers/NK/NK%20Series%20User%20Guide(9807DR-0100).pdf |
 | `rossvideo-rosstalk` | implemented | ross-rosstalk | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | `rossvideo-videoserver` | implemented | ross-videoserver | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |
 | `rossvideo-xpression` | implemented | ross-xpression | https://documentation.rossvideo.com/files/Manuals/Protocol%20Documents/RossTalk-Commands(4802DR-403).pdf |

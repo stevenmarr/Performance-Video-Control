@@ -1,0 +1,37 @@
+/* Event Master programming. Colour is the job: red is on program, green is preview, blue is the thing you are editing. */
+.e2p{display:flex;flex-direction:column;gap:12px;min-height:0}
+.e2p-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.e2p-head h2{margin:0;font-size:14px;letter-spacing:.08em}
+.e2p-head small{color:var(--dim);font-weight:600}
+.e2p-note{color:var(--dim);font-size:13px;margin:0}
+.e2p-grid{display:grid;grid-template-columns:minmax(160px,0.8fr) minmax(180px,0.9fr) minmax(280px,1.6fr) minmax(180px,1fr);gap:12px;min-height:0}
+.e2p-col{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.e2p-col h3{margin:0;font-size:11px;letter-spacing:.12em;color:var(--dim)}
+.e2p-list{display:flex;flex-direction:column;gap:6px;overflow:auto;max-height:52vh}
+.e2p-card{position:relative;text-align:left;border:2px solid var(--line);background:var(--panel2);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-height:52px}
+.e2p-card b{font-size:14px}
+.e2p-card small{color:var(--dim);font-size:11px;font-weight:700;letter-spacing:.04em}
+.e2p-card.sel{box-shadow:inset 0 0 0 2px var(--accent);border-color:var(--accent)}
+.e2p-card.pvw{border-color:var(--pvw);background:var(--pvw-bg)}
+.e2p-card.live{border-color:var(--pgm);background:var(--pgm-bg)}
+.e2p-card .live-tag{position:absolute;top:6px;right:6px;background:var(--pgm);color:#fff;font-size:10px;font-weight:800;letter-spacing:.08em;padding:2px 5px;border-radius:3px}
+.e2p-card.free{opacity:.78}
+.e2p-dial{border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--panel2)}
+.e2p-dial .pair{display:flex;gap:8px}
+.e2p-dial .half{flex:1;border:1px solid transparent;border-radius:8px;padding:4px 6px;color:var(--dim);background:transparent;text-align:left}
+.e2p-dial .half.on{border-color:var(--pvw);color:var(--text);background:var(--pvw-bg)}
+.e2p-dial .half b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+.e2p-dial input[type=range]{width:100%;accent-color:var(--pvw)}
+.e2p-tools{display:flex;flex-wrap:wrap;gap:6px}
+.e2p-tools .btn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.e2p-src{display:flex;align-items:center;gap:8px}
+.e2p-plate{width:46px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:800;flex:none;overflow:hidden}
+.e2p-plate img{width:100%;height:100%;object-fit:cover}
+.e2p-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.e2p-foot select{min-width:180px}
+.e2p .hot{background:var(--pgm);color:#fff;border-color:var(--pgm)}
+.e2p .guard{border-style:dashed;border-color:#E0B030;color:#E0B030}
+.e2p-review{font-size:12px;color:var(--dim)}
+.e2p-review li{margin:2px 0}
+@media (max-width: 1100px){.e2p-grid{grid-template-columns:1fr 1fr}}
+@media (max-width: 720px){.e2p-grid{grid-template-columns:1fr}.e2p-list{max-height:none}}

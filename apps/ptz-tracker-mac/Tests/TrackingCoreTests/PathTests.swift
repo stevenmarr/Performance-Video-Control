@@ -182,6 +182,38 @@ final class PathTests: XCTestCase {
         XCTAssertLessThan(plant.box().h, 0.75)
     }
 
+    func testAClockTickDoesNotEaseOffAWalk() {
+        var settings = FeelLibrary.apply(.medium, to: TrackingSettings())
+        settings.zoomEnabled = false
+        let session = TrackingSession(cameraId: "ptz:cam1", settings: settings)
+        var plant = StagePlant()
+        let dt = 1.0 / 15.0
+        var time = 0.0
+        _ = session.start(now: 0)
+        for step in 0..<45 {
+            time += dt
+            plant.personX = Double(step) * dt * 0.12
+            let result = session.tick(detections: [plant.detection()], now: time)
+            plant.integrate(quantized: result.quantized, dt: dt)
+        }
+        let moving = session.speeds.pan
+        let pan = Int(session.speeds.quantized().pan)
+        XCTAssertGreaterThan(moving, 2, "precondition: the head is following the walk")
+        XCTAssertGreaterThan(pan, 0)
+        for _ in 0..<5 {
+            time += 0.2
+            let result = session.tick(detections: nil, now: time)
+            XCTAssertTrue(result.commands.isEmpty, "a clock tick has no new picture, so it sends nothing")
+            XCTAssertEqual(Int(result.quantized.pan), pan, "the speed stays until a real frame arrives")
+            XCTAssertEqual(result.phase, .locked)
+        }
+        XCTAssertEqual(session.speeds.pan, moving, accuracy: 0.001)
+        time += dt
+        plant.personX += 0.12 * dt
+        let again = session.tick(detections: [plant.detection()], now: time)
+        XCTAssertGreaterThan(again.quantized.pan, 0, "the next real frame is still a walk to the right")
+    }
+
     func testDelayedVideoStillAimsAheadOfTheBoxWeWereShown() {
         var settings = TrackingSettings()
         settings.latencyMs = 200

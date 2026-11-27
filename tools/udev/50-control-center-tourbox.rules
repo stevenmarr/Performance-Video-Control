@@ -1,0 +1,14 @@
+# Control Center opens the TourBox NEO (USB vendor 2e3c, product 5740, model TBG_H)
+# as a USB CDC serial device (/dev/ttyACM*) on the Raspberry Pi 5. TourBox Console
+# must stay quit during a show — the two programs cannot share the port.
+#
+# Install this file as /etc/udev/rules.d/99-control-center-tourbox.rules
+# so it is applied after any earlier CDC rules and GROUP=plugdev wins.
+# Then:
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+# Unplug and replug the TourBox. Restart control-center after that.
+# The shipped unit lists SupplementaryGroups=plugdev, so the service can open
+# a plugdev node without a separate usermod.
+
+KERNEL=="ttyACM*", ATTRS{idVendor}=="2e3c", ATTRS{idProduct}=="5740", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="2e3c", ATTRS{idProduct}=="5740", MODE="0660", GROUP="plugdev", TAG+="uaccess"

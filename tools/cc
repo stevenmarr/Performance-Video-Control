@@ -1,0 +1,1260 @@
+#!/usr/bin/env bash
+# Control Center CLI for macOS. Update Control Center and Companion, then launch both.
+#
+#   cc up                 update, then launch
+#   cc update             git pull, npm ci if the lockfile changed, refresh the module
+#   cc launch             restart Control Center (Companion starts with it)
+#   cc stop               stop Control Center and the Companion it started
+#   cc status             branches, versions, running or not
+#   cc logs               tail the Control Center log
+#   cc install            put `cc` (and `control-center`) on your PATH
+#   cc uninstall          remove those PATH links
+#   cc install-service    install the user launchd service (optional)
+#   cc help
+#
+# Safe: refuses to pull when the checkout has uncommitted changes. Never uses
+# sudo unless you pass --sudo to `cc install` and ~/bin cannot be used.
+# No secrets are read or printed.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: cc <command> [options]
+
+  cc up                 Update Control Center and Companion, then launch both
+  cc update             Pull and install; do not start anything
+  cc launch             Restart Control Center (it starts Companion itself)
+  cc stop               Stop Control Center and the Companion it started
+  cc status             Show folders, branches, versions, and what is running
+  cc logs               Tail the Control Center log (add -n 200, or --no-follow)
+  cc install            Symlink this script as `cc` and `control-center` on PATH
+  cc uninstall          Remove those symlinks
+  cc install-service    Install ~/Library/LaunchAgents/com.performancevideo.controlcenter.plist
+  cc help               Show this help
+
+Options:
+  --dir PATH            Control Center checkout (default: this repo, or ~/control-center)
+  --companion PATH      PV Companion checkout (default: ~/companion, or the path in settings)
+  --module PATH         Control Center Companion module checkout
+  --branch NAME         Control Center branch to pull (default: performance-video-control)
+  --any-branch          Pull whatever branch is already checked out
+  --port N              Control Center HTTP port (default: 8080)
+  --dry-run             Print the steps; change nothing
+  --no-open             Do not open the browser after launch
+  --no-companion        Skip updating the ~/companion checkout
+  --no-module           Skip updating the Companion module
+  --app                 Also upgrade the official Companion.app via Homebrew, if installed
+  --force               For install-service: overwrite an existing plist
+  --sudo                For install: allow sudo when linking into /usr/local/bin
+  --follow / --no-follow  logs: follow the file (default) or print and exit
+  -n N                  logs: number of lines (default: 100)
+  -h, --help            Show this help
+
+Environment (all optional):
+  CC_HOME, CC_DIR, CC_COMPANION_PATH, CC_MODULE_DIR, CC_BRANCH, CC_PORT, CC_NODE,
+  CC_BIN_DIR, RS6_DATA_DIR
+
+From 0.34.0 Control Center starts PV Companion itself (`yarn start:local` in
+~/companion) and serves it at http://localhost:8080/companion/. `cc launch`
+starts Control Center; it does not also open the official Companion.app, which
+would fight over Stream Decks and port 8000. Pass --app only if you also want
+Homebrew to upgrade that app.
+
+`cc` is also the system C compiler at /usr/bin/cc. `cc install` also links
+`control-center`, which runs this same script.
+EOF
+}
+
+# ---------------------------------------------------------------------------
+# Output
+# ---------------------------------------------------------------------------
+if [ -t 1 ]; then
+  BOLD=$'\033[1m'; RED=$'\033[31m'; GRN=$'\033[32m'; YLW=$'\033[33m'; DIM=$'\033[2m'; RST=$'\033[0m'
+else
+  BOLD=''; RED=''; GRN=''; YLW=''; DIM=''; RST=''
+fi
+
+say() { printf '%s\n' "$*"; }
+hdr() { printf '\n%s%s%s\n' "$BOLD" "$*" "$RST"; }
+ok()  { printf '%s%s%s\n' "$GRN" "$*" "$RST"; }
+warn(){ printf '%s%s%s\n' "$YLW" "$*" "$RST" >&2; }
+err() { printf '%s%s%s\n' "$RED" "$*" "$RST" >&2; }
+die() { err "Error: $*"; exit 1; }
+dim() { printf '%s%s%s\n' "$DIM" "$*" "$RST"; }
+
+DRY_RUN=0
+run() {
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '%s+ %s%s\n' "$DIM" "$*" "$RST"
+    return 0
+  fi
+  printf '%s+ %s%s\n' "$DIM" "$*" "$RST"
+  "$@"
+}
+
+# ---------------------------------------------------------------------------
+# Defaults and args
+# ---------------------------------------------------------------------------
+CMD=''
+CC_DIR_ARG=''
+COMPANION_ARG=''
+MODULE_ARG=''
+BRANCH_ARG=''
+ANY_BRANCH=0
+PORT_ARG=''
+NO_OPEN=0
+NO_COMPANION=0
+NO_MODULE=0
+DO_APP=0
+FORCE=0
+USE_SUDO=0
+LOG_FOLLOW=1
+LOG_LINES=100
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    up|update|launch|stop|status|logs|install|uninstall|install-service|help)
+      if [ -n "$CMD" ]; then die "unexpected extra command '$1' (already doing $CMD)"; fi
+      CMD="$1"
+      shift
+      ;;
+    --dir) CC_DIR_ARG="${2:-}"; [ -n "$CC_DIR_ARG" ] || die "--dir needs a path"; shift 2 ;;
+    --companion) COMPANION_ARG="${2:-}"; [ -n "$COMPANION_ARG" ] || die "--companion needs a path"; shift 2 ;;
+    --module) MODULE_ARG="${2:-}"; [ -n "$MODULE_ARG" ] || die "--module needs a path"; shift 2 ;;
+    --branch) BRANCH_ARG="${2:-}"; [ -n "$BRANCH_ARG" ] || die "--branch needs a name"; shift 2 ;;
+    --port) PORT_ARG="${2:-}"; [ -n "$PORT_ARG" ] || die "--port needs a number"; shift 2 ;;
+    --any-branch) ANY_BRANCH=1; shift ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    --no-open) NO_OPEN=1; shift ;;
+    --no-companion) NO_COMPANION=1; shift ;;
+    --no-module) NO_MODULE=1; shift ;;
+    --app) DO_APP=1; shift ;;
+    --force) FORCE=1; shift ;;
+    --sudo) USE_SUDO=1; shift ;;
+    --follow) LOG_FOLLOW=1; shift ;;
+    --no-follow) LOG_FOLLOW=0; shift ;;
+    -n)
+      LOG_LINES="${2:-}"
+      [[ "$LOG_LINES" =~ ^[0-9]+$ ]] || die "-n needs a number"
+      shift 2
+      ;;
+    -h|--help) CMD='help'; shift ;;
+    *)
+      die "unknown argument: $1  (try cc help)"
+      ;;
+  esac
+done
+
+[ -n "$CMD" ] || CMD='help'
+if [ "$CMD" = 'help' ]; then usage; exit 0; fi
+
+WANT_BRANCH="${BRANCH_ARG:-${CC_BRANCH:-performance-video-control}}"
+PORT="${PORT_ARG:-${CC_PORT:-8080}}"
+[[ "$PORT" =~ ^[0-9]+$ ]] && [ "$PORT" -ge 1 ] && [ "$PORT" -le 65535 ] || die "port must be 1–65535 (got $PORT)"
+
+LABEL='com.performancevideo.controlcenter'
+MODULE_ID='pvllc-control-center'
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+is_cc_checkout() {
+  local d="$1"
+  [ -f "$d/server.js" ] && [ -f "$d/package.json" ] || return 1
+  grep -Eq 'rs6-presets|Control Center|Performance Video' "$d/package.json" 2>/dev/null
+}
+
+is_companion_checkout() {
+  local d="$1" pkg="$1/package.json"
+  [ -f "$pkg" ] || return 1
+  grep -q 'start:local' "$pkg" 2>/dev/null
+}
+
+# Resolve this script, following symlinks, so `cc` on PATH still finds the repo.
+script_file() {
+  local s="${BASH_SOURCE[0]}"
+  local d t
+  while [ -L "$s" ]; do
+    d="$(cd "$(dirname "$s")" && pwd)"
+    t="$(readlink "$s")"
+    case "$t" in
+      /*) s="$t" ;;
+      *) s="$d/$t" ;;
+    esac
+  done
+  printf '%s/%s\n' "$(cd "$(dirname "$s")" && pwd)" "$(basename "$s")"
+}
+
+expand_home() {
+  local p="$1"
+  if [ "$p" = '~' ]; then
+    printf '%s\n' "$HOME"
+  elif [ "${p#"~/"}" != "$p" ]; then
+    printf '%s\n' "$HOME/${p#"~/"}"
+  else
+    printf '%s\n' "$p"
+  fi
+}
+
+read_supervisor_path() {
+  local f="$1"
+  [ -f "$f" ] || return 1
+  # Tiny JSON field reader: "path": "..."
+  sed -n 's/.*"path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$f" | head -n 1
+}
+
+SCRIPT_FILE="$(script_file)"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_FILE")" && pwd)"
+SCRIPT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+resolve_cc_home() {
+  local c
+  if [ -n "$CC_DIR_ARG" ]; then
+    c="$(cd "$(expand_home "$CC_DIR_ARG")" && pwd)" || die "Control Center folder not found: $CC_DIR_ARG"
+    is_cc_checkout "$c" || die "$c does not look like a Control Center checkout (no server.js / package.json)"
+    printf '%s\n' "$c"
+    return
+  fi
+  if [ -n "${CC_HOME:-}" ]; then
+    c="$(cd "$(expand_home "$CC_HOME")" && pwd)" || die "CC_HOME not found: $CC_HOME"
+    is_cc_checkout "$c" || die "CC_HOME=$c does not look like a Control Center checkout"
+    printf '%s\n' "$c"
+    return
+  fi
+  if [ -n "${CC_DIR:-}" ]; then
+    c="$(cd "$(expand_home "$CC_DIR")" && pwd)" || die "CC_DIR not found: $CC_DIR"
+    is_cc_checkout "$c" || die "CC_DIR=$c does not look like a Control Center checkout"
+    printf '%s\n' "$c"
+    return
+  fi
+  if is_cc_checkout "$SCRIPT_ROOT"; then
+    printf '%s\n' "$SCRIPT_ROOT"
+    return
+  fi
+  if is_cc_checkout "$HOME/control-center"; then
+    printf '%s\n' "$HOME/control-center"
+    return
+  fi
+  if is_cc_checkout "$PWD"; then
+    pwd
+    return
+  fi
+  die "Could not find Control Center. Clone it to ~/control-center, or pass --dir, or run this from the checkout."
+}
+
+CC_HOME="$(resolve_cc_home)"
+
+data_dir() {
+  if [ -n "${RS6_DATA_DIR:-}" ]; then expand_home "$RS6_DATA_DIR"; return; fi
+  case "$(uname -s)" in
+    Darwin) printf '%s\n' "$HOME/Library/Application Support/RS6 Presets" ;;
+    *) printf '%s\n' "${XDG_CONFIG_HOME:-$HOME/.config}/rs6-presets" ;;
+  esac
+}
+
+DATA_DIR="$(data_dir)"
+LOG_DIR="$HOME/Library/Logs/Control Center"
+PID_FILE="$LOG_DIR/control-center.pid"
+LOG_FILE="$LOG_DIR/control-center.log"
+ERR_FILE="$LOG_DIR/control-center.err.log"
+LAUNCHD_PLIST="$HOME/Library/LaunchAgents/${LABEL}.plist"
+PLIST_TEMPLATE="$SCRIPT_ROOT/tools/launchd/${LABEL}.plist.template"
+DEV_MODULES="$HOME/companion-modules/dev"
+
+resolve_companion() {
+  local c raw
+  if [ -n "$COMPANION_ARG" ]; then
+    c="$(cd "$(expand_home "$COMPANION_ARG")" && pwd)" || die "Companion folder not found: $COMPANION_ARG"
+    is_companion_checkout "$c" || die "$c has no package.json with a start:local script"
+    printf '%s\n' "$c"
+    return
+  fi
+  if [ -n "${CC_COMPANION_PATH:-}" ]; then
+    c="$(cd "$(expand_home "$CC_COMPANION_PATH")" && pwd)" || die "CC_COMPANION_PATH not found: $CC_COMPANION_PATH"
+    is_companion_checkout "$c" || die "CC_COMPANION_PATH=$c has no start:local script"
+    printf '%s\n' "$c"
+    return
+  fi
+  raw="$(read_supervisor_path "$DATA_DIR/companion-supervisor.json" || true)"
+  if [ -n "$raw" ]; then
+    c="$(expand_home "$raw")"
+    if is_companion_checkout "$c"; then
+      printf '%s\n' "$(cd "$c" && pwd)"
+      return
+    fi
+  fi
+  if is_companion_checkout "$HOME/companion"; then
+    printf '%s\n' "$HOME/companion"
+    return
+  fi
+  return 1
+}
+
+resolve_module() {
+  local c candidates=()
+  if [ -n "$MODULE_ARG" ]; then
+    c="$(cd "$(expand_home "$MODULE_ARG")" && pwd)" || die "Module folder not found: $MODULE_ARG"
+    printf '%s\n' "$c"
+    return
+  fi
+  if [ -n "${CC_MODULE_DIR:-}" ]; then
+    c="$(cd "$(expand_home "$CC_MODULE_DIR")" && pwd)" || die "CC_MODULE_DIR not found: $CC_MODULE_DIR"
+    printf '%s\n' "$c"
+    return
+  fi
+  candidates=(
+    "$HOME/companion-module-rs6-presets"
+    "$HOME/companion-module-pvllc-control-center"
+    "$(dirname "$CC_HOME")/companion-module-rs6-presets"
+  )
+  if COMPANION_HOME_TMP="$(resolve_companion 2>/dev/null || true)"; then
+    candidates+=("$(dirname "$COMPANION_HOME_TMP")/companion-module-rs6-presets")
+  fi
+  local p
+  for p in "${candidates[@]}"; do
+    [ -f "$p/package.json" ] || continue
+    if grep -Eq "pvllc-control-center|rs6-presets" "$p/package.json" 2>/dev/null; then
+      printf '%s\n' "$(cd "$p" && pwd)"
+      return
+    fi
+  done
+  return 1
+}
+
+find_node() {
+  if [ -n "${CC_NODE:-}" ] && [ -x "$CC_NODE" ]; then printf '%s\n' "$CC_NODE"; return; fi
+  if command -v node >/dev/null 2>&1; then command -v node; return; fi
+  local c
+  for c in \
+    /opt/homebrew/bin/node \
+    /usr/local/bin/node \
+    /opt/homebrew/opt/node@22/bin/node \
+    /opt/homebrew/opt/node@20/bin/node \
+    /opt/homebrew/opt/node@18/bin/node
+  do
+    if [ -x "$c" ]; then printf '%s\n' "$c"; return; fi
+  done
+  return 1
+}
+
+find_yarn() {
+  if command -v yarn >/dev/null 2>&1; then command -v yarn; return; fi
+  local c
+  for c in /opt/homebrew/bin/yarn /usr/local/bin/yarn "$HOME/.yarn/bin/yarn"; do
+    if [ -x "$c" ]; then printf '%s\n' "$c"; return; fi
+  done
+  if command -v corepack >/dev/null 2>&1; then
+    printf '%s\n' 'corepack yarn'
+    return
+  fi
+  return 1
+}
+
+pkg_version() {
+  local f="$1/package.json"
+  [ -f "$f" ] || return 1
+  sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$f" | head -n 1
+}
+
+# ---------------------------------------------------------------------------
+# Git helpers
+# ---------------------------------------------------------------------------
+require_git_repo() {
+  local dir="$1" name="$2"
+  [ -d "$dir/.git" ] || git -C "$dir" rev-parse --git-dir >/dev/null 2>&1 || die "$name at $dir is not a git checkout"
+}
+
+git_branch() {
+  git -C "$1" rev-parse --abbrev-ref HEAD 2>/dev/null || printf '%s\n' '(unknown)'
+}
+
+git_is_dirty() {
+  # Tracked changes only. Untracked files are reported as a warning, not a block.
+  [ -n "$(git -C "$1" status --porcelain --untracked-files=no 2>/dev/null)" ]
+}
+
+git_untracked() {
+  git -C "$1" ls-files --others --exclude-standard 2>/dev/null
+}
+
+refuse_dirty() {
+  local dir="$1" name="$2"
+  require_git_repo "$dir" "$name"
+  if git_is_dirty "$dir"; then
+    err "$name at $dir has uncommitted changes. Commit, stash, or discard them, then run this again."
+    if [ "$DRY_RUN" -eq 1 ]; then
+      git -C "$dir" status --short --untracked-files=no >&2 || true
+      die "dry-run: would refuse to pull $name with a dirty tree"
+    fi
+    git -C "$dir" status --short --untracked-files=no >&2 || true
+    die "refusing to pull $name so local work is not overwritten"
+  fi
+  local u
+  u="$(git_untracked "$dir" || true)"
+  if [ -n "$u" ]; then
+    warn "$name has untracked files (left alone):"
+    printf '%s\n' "$u" | sed 's/^/  /' >&2
+  fi
+}
+
+git_file_hash() {
+  local dir="$1" file="$2"
+  if [ -f "$dir/$file" ]; then
+    git -C "$dir" hash-object "$file" 2>/dev/null || wc -c < "$dir/$file"
+  else
+    printf '%s\n' 'missing'
+  fi
+}
+
+pull_ff_only() {
+  local dir="$1" name="$2" want="$3" any="$4"
+  require_git_repo "$dir" "$name"
+  refuse_dirty "$dir" "$name"
+  local cur
+  cur="$(git_branch "$dir")"
+  if [ "$any" -eq 0 ] && [ -n "$want" ] && [ "$cur" != "$want" ]; then
+    die "$name is on branch '$cur', not '$want'. Switch with:  git -C $dir checkout $want
+Or pass --any-branch to pull the branch that is already checked out."
+  fi
+  if ! git -C "$dir" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+    die "$name on branch '$cur' has no upstream. Set one (git -C $dir branch -u origin/$cur) or pull by hand."
+  fi
+  local before after
+  before="$(git -C "$dir" rev-parse HEAD)"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ git -C $dir fetch --prune origin"
+    dim "+ git -C $dir merge --ff-only @{u}"
+    say "$name: dry-run, would fast-forward '$cur' from $(git -C "$dir" rev-parse --abbrev-ref '@{u}')"
+    return 0
+  fi
+  say "$name: fetching ($cur at ${before:0:7})"
+  git -C "$dir" fetch --prune origin
+  if git -C "$dir" merge --ff-only '@{u}'; then
+    after="$(git -C "$dir" rev-parse HEAD)"
+    if [ "$before" = "$after" ]; then
+      ok "$name: already up to date ($cur ${after:0:7})"
+    else
+      ok "$name: ${before:0:7} → ${after:0:7} ($cur)"
+    fi
+  else
+    die "$name could not fast-forward (the branch has diverged from its upstream). Resolve that in $dir, then try again."
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Process / launchd / HTTP
+# ---------------------------------------------------------------------------
+uid_num() { id -u; }
+
+darwin() { [ "$(uname -s)" = 'Darwin' ]; }
+
+launchd_domain() { printf 'gui/%s/%s\n' "$(uid_num)" "$LABEL"; }
+
+launchd_loaded() {
+  darwin || return 1
+  command -v launchctl >/dev/null 2>&1 || return 1
+  launchctl print "$(launchd_domain)" >/dev/null 2>&1
+}
+
+launchd_log_path() {
+  if command -v defaults >/dev/null 2>&1 && [ -f "$LAUNCHD_PLIST" ]; then
+    defaults read "$LAUNCHD_PLIST" StandardOutPath 2>/dev/null || true
+  fi
+}
+
+http_code() {
+  local url="$1"
+  if command -v curl >/dev/null 2>&1; then
+    curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 1 --max-time 2 "$url" 2>/dev/null || printf '000'
+  else
+    printf '000'
+  fi
+}
+
+http_get() {
+  local url="$1"
+  curl -sS --connect-timeout 1 --max-time 3 "$url" 2>/dev/null || true
+}
+
+cc_health_url() { printf 'http://127.0.0.1:%s/api/health\n' "$PORT"; }
+cc_version_url() { printf 'http://127.0.0.1:%s/api/version\n' "$PORT"; }
+cc_service_url() { printf 'http://127.0.0.1:%s/api/companion/service\n' "$PORT"; }
+cc_ui_url() { printf 'http://127.0.0.1:%s/\n' "$PORT"; }
+
+cc_is_up() {
+  local code
+  code="$(http_code "$(cc_health_url)")"
+  [ "$code" = '200' ]
+}
+
+# A node server.js started by this script (not launchd).
+background_pid() {
+  if [ -f "$PID_FILE" ]; then
+    local pid
+    pid="$(tr -d ' \n' < "$PID_FILE" || true)"
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      printf '%s\n' "$pid"
+      return 0
+    fi
+  fi
+  return 1
+}
+
+# PIDs whose command line is node .../server.js in this checkout.
+cc_pids() {
+  if command -v pgrep >/dev/null 2>&1; then
+    pgrep -f "$CC_HOME/server.js" 2>/dev/null || true
+  fi
+}
+
+companion_app_running() {
+  darwin || return 1
+  pgrep -f 'Companion.app/Contents/Resources/main.js' >/dev/null 2>&1
+}
+
+quit_companion_app() {
+  if ! companion_app_running; then return 0; fi
+  say "Quitting official Companion.app so it does not fight Control Center over Stream Decks or port 8000."
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ osascript -e 'tell application \"Companion\" to quit'"
+    return 0
+  fi
+  osascript -e 'tell application "Companion" to quit' >/dev/null 2>&1 || true
+  local n
+  n=0
+  while [ "$n" -lt 20 ]; do
+    n=$((n + 1))
+    companion_app_running || break
+    sleep 0.5
+  done
+  if companion_app_running; then
+    warn "Companion.app is still running. Quit it from the dock, then run cc launch again if decks stay busy."
+  fi
+}
+
+wait_for_health() {
+  local tries="${1:-40}" n code
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ wait for $(cc_health_url) (up to ${tries}s)"
+    return 0
+  fi
+  say "Waiting for Control Center at $(cc_health_url)"
+  n=0
+  while [ "$n" -lt "$tries" ]; do
+    n=$((n + 1))
+    code="$(http_code "$(cc_health_url)")"
+    if [ "$code" = '200' ]; then
+      ok "Control Center is up ($(http_get "$(cc_version_url)" | tr -d '\n') )"
+      return 0
+    fi
+    sleep 1
+  done
+  die "Control Center did not answer at $(cc_health_url) after ${tries}s. See:  cc logs"
+}
+
+wait_for_companion() {
+  local tries="${1:-120}" n body state
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ wait for $(cc_service_url) (up to ${tries}s; a first start after git pull can take a minute or two)"
+    return 0
+  fi
+  say "Waiting for Companion (first start after a pull can take a minute or two while it rebuilds its screens)"
+  n=0
+  while [ "$n" -lt "$tries" ]; do
+    n=$((n + 1))
+    body="$(http_get "$(cc_service_url)")"
+    state="$(printf '%s' "$body" | sed -n 's/.*"state"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+    case "$state" in
+      running|adopted)
+        ok "Companion service: $state"
+        return 0
+        ;;
+      not-installed)
+        warn "Companion checkout was not found. Control Center is up; Companion was not started."
+        return 0
+        ;;
+      external)
+        say "Companion is set to run separately (external mode)."
+        return 0
+        ;;
+      error)
+        warn "Companion service reported an error. See the COMPANION tab or: curl -s $(cc_service_url)"
+        return 0
+        ;;
+    esac
+    sleep 1
+  done
+  warn "Companion is still starting after ${tries}s. Open $(cc_ui_url)#companion or run: curl -s $(cc_service_url)"
+  return 0
+}
+
+open_browser() {
+  local url="${1:-$(cc_ui_url)}"
+  if [ "$NO_OPEN" -eq 1 ]; then
+    say "Browser left closed. Open $url"
+    return 0
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ open $url"
+    return 0
+  fi
+  if darwin && command -v open >/dev/null 2>&1; then
+    open "$url" || warn "Could not open the browser. Open $url yourself."
+  else
+    say "Open $url in a browser."
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# update
+# ---------------------------------------------------------------------------
+update_control_center() {
+  hdr "Control Center"
+  say "Folder: $CC_HOME"
+  say "Version: $(pkg_version "$CC_HOME" || echo unknown)"
+  say "Branch:  $(git_branch "$CC_HOME")"
+  local lock_before lock_after
+  lock_before="$(git_file_hash "$CC_HOME" package-lock.json)"
+  pull_ff_only "$CC_HOME" "Control Center" "$WANT_BRANCH" "$ANY_BRANCH"
+  lock_after="$(git_file_hash "$CC_HOME" package-lock.json)"
+  local need_ci=0
+  if [ ! -d "$CC_HOME/node_modules" ]; then
+    need_ci=1
+    say "node_modules is missing; will run npm ci --omit=dev"
+  elif [ "$lock_before" != "$lock_after" ]; then
+    need_ci=1
+    say "package-lock.json changed; will run npm ci --omit=dev"
+  else
+    ok "Lockfile unchanged; skipping npm ci"
+  fi
+  if [ "$need_ci" -eq 1 ]; then
+    if [ "$DRY_RUN" -eq 1 ]; then
+      dim "+ (cd $CC_HOME && npm ci --omit=dev)"
+    else
+      (cd "$CC_HOME" && npm ci --omit=dev) || die "npm ci --omit=dev failed in $CC_HOME. Do not run npm install; that rewrites the lockfile. If node-hid failed to build, install the Xcode command-line tools and use Node 18 or later."
+      ok "npm ci finished"
+    fi
+  fi
+  say "Desk has no build step. USB Stream Decks need the npm ci install above."
+}
+
+update_companion_repo() {
+  hdr "PV Companion"
+  local dir
+  if ! dir="$(resolve_companion)"; then
+    warn "No PV Companion checkout at ~/companion (a folder with package.json and start:local). Skipping."
+    warn "If you use the official Companion.app instead, pass --app to upgrade it via Homebrew."
+    return 0
+  fi
+  say "Folder: $dir"
+  say "Version: $(pkg_version "$dir" || echo unknown)"
+  say "Branch:  $(git_branch "$dir")"
+  local lock_before lock_after
+  lock_before="$(git_file_hash "$dir" yarn.lock)"
+  # Pull whatever branch is already checked out (historically feat/lcars-gui; later work lands on other feat branches).
+  pull_ff_only "$dir" "PV Companion" "" 1
+  lock_after="$(git_file_hash "$dir" yarn.lock)"
+  local need_yarn=0
+  if [ ! -d "$dir/node_modules" ]; then
+    need_yarn=1
+    say "node_modules is missing; will run yarn install"
+  elif [ "$lock_before" != "$lock_after" ]; then
+    need_yarn=1
+    say "yarn.lock changed; will run yarn install"
+  else
+    ok "yarn.lock unchanged; skipping yarn install"
+  fi
+  if [ "$need_yarn" -eq 1 ]; then
+    local yarn
+    if ! yarn="$(find_yarn)"; then
+      die "yarn was not found. Install it (corepack enable, or brew install yarn) and run cc update again."
+    fi
+    if [ "$DRY_RUN" -eq 1 ]; then
+      dim "+ (cd $dir && $yarn install)"
+    else
+      # shellcheck disable=SC2086
+      (cd "$dir" && $yarn install) || die "yarn install failed in $dir"
+      ok "yarn install finished"
+    fi
+  fi
+  say "Companion rebuilds its web UI on the first start after a pull (a minute or two)."
+}
+
+install_module_into_companion() {
+  local pkg="$1/pkg" dest
+  [ -d "$pkg" ] || die "Module package output was not at $pkg (npm run package should write it)"
+  # Built-in copy in the PV Companion fork.
+  local companion
+  if companion="$(resolve_companion 2>/dev/null || true)" && [ -d "$companion/modules/$MODULE_ID" ]; then
+    dest="$companion/modules/$MODULE_ID"
+    say "Updating built-in module at $dest"
+    if [ "$DRY_RUN" -eq 1 ]; then
+      dim "+ rm -rf $dest/{main.js,package.json,LICENSE,companion}"
+      dim "+ cp -R $pkg/. $dest/"
+    else
+      rm -rf "$dest/main.js" "$dest/package.json" "$dest/LICENSE" "$dest/companion"
+      cp -R "$pkg"/. "$dest/"
+      ok "Built-in module updated ($dest)"
+    fi
+  else
+    say "No built-in $MODULE_ID folder in the Companion checkout; skipped that copy."
+  fi
+  # Developer modules path (Companion 3.x, or instead of a package import).
+  dest="$DEV_MODULES/$MODULE_ID"
+  say "Updating developer-modules copy at $dest"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ mkdir -p $DEV_MODULES && rm -rf $dest && cp -R $pkg $dest"
+  else
+    mkdir -p "$DEV_MODULES"
+    rm -rf "$dest"
+    cp -R "$pkg" "$dest"
+    ok "Developer-modules copy updated. In official Companion, set Developer modules path to: $DEV_MODULES"
+  fi
+}
+
+update_module() {
+  hdr "Control Center Companion module"
+  local dir
+  if ! dir="$(resolve_module)"; then
+    warn "No module checkout found (looked for ~/companion-module-rs6-presets). The copy already inside PV Companion was left as-is."
+    return 0
+  fi
+  say "Folder: $dir"
+  say "Version: $(pkg_version "$dir" || echo unknown)"
+  say "Branch:  $(git_branch "$dir" 2>/dev/null || echo '(not a git checkout)')"
+  if git -C "$dir" rev-parse --git-dir >/dev/null 2>&1; then
+    local lock_before lock_after need_ci=0
+    lock_before="$(git_file_hash "$dir" package-lock.json)"
+    pull_ff_only "$dir" "Companion module" "" 1
+    lock_after="$(git_file_hash "$dir" package-lock.json)"
+    if [ ! -d "$dir/node_modules" ]; then need_ci=1; fi
+    if [ "$lock_before" != "$lock_after" ]; then need_ci=1; fi
+    if [ "$need_ci" -eq 1 ]; then
+      if [ "$DRY_RUN" -eq 1 ]; then
+        dim "+ (cd $dir && npm ci)"
+      else
+        (cd "$dir" && npm ci) || die "npm ci failed in $dir"
+      fi
+    else
+      ok "Module lockfile unchanged; skipping npm ci"
+    fi
+  else
+    warn "$dir is not a git checkout; packaging whatever is already there."
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ (cd $dir && npm run package)"
+  else
+    (cd "$dir" && npm run package) || die "npm run package failed in $dir (needs Node 22+ and @companion-module/tools)"
+  fi
+  install_module_into_companion "$dir"
+}
+
+update_official_app() {
+  hdr "Official Companion.app"
+  if ! darwin; then
+    warn "--app is for macOS; skipped."
+    return 0
+  fi
+  if ! command -v brew >/dev/null 2>&1; then
+    warn "Homebrew is not on PATH; cannot upgrade Companion.app automatically."
+    if [ -d /Applications/Companion.app ]; then
+      say "Companion.app is at /Applications/Companion.app. Update it from the app, or install a Homebrew cask if you have one."
+    fi
+    return 0
+  fi
+  local cask=''
+  local cand
+  for cand in companion bitfocus-companion; do
+    if brew list --cask "$cand" >/dev/null 2>&1; then
+      cask="$cand"
+      break
+    fi
+  done
+  if [ -z "$cask" ]; then
+    # brew list --cask can be slow; also grep names in case of a tap.
+    cask="$(brew list --cask 2>/dev/null | grep -Ei '^(companion|bitfocus-companion)$' | head -n 1 || true)"
+  fi
+  if [ -z "$cask" ]; then
+    warn "No Homebrew cask named companion or bitfocus-companion is installed. The official app was left alone."
+    return 0
+  fi
+  say "Upgrading cask $cask"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ brew upgrade --cask $cask"
+  else
+    brew upgrade --cask "$cask" || warn "brew upgrade --cask $cask did not succeed; the app was left as it is."
+  fi
+}
+
+cmd_update() {
+  # Stop first so npm ci is not fighting a running node-hid / hidraw process.
+  if cc_is_up || launchd_loaded || background_pid >/dev/null; then
+    say "Control Center is running; stopping it so the update can replace packages cleanly."
+    cmd_stop
+  fi
+  update_control_center
+  if [ "$NO_COMPANION" -eq 0 ]; then
+    update_companion_repo
+  else
+    say "Skipping the ~/companion checkout (--no-companion)."
+  fi
+  if [ "$NO_MODULE" -eq 0 ]; then
+    update_module
+  else
+    say "Skipping the Companion module (--no-module)."
+  fi
+  if [ "$DO_APP" -eq 1 ]; then
+    update_official_app
+  fi
+  ok "Update finished."
+}
+
+# ---------------------------------------------------------------------------
+# launch / stop
+# ---------------------------------------------------------------------------
+ensure_log_dir() {
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ mkdir -p $LOG_DIR"
+    return 0
+  fi
+  mkdir -p "$LOG_DIR"
+}
+
+start_via_launchd() {
+  local domain
+  domain="$(launchd_domain)"
+  if [ ! -f "$LAUNCHD_PLIST" ]; then
+    return 1
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    if launchd_loaded; then
+      dim "+ launchctl kickstart -k $domain"
+    else
+      dim "+ launchctl bootstrap gui/$(uid_num) $LAUNCHD_PLIST"
+      dim "+ launchctl kickstart -k $domain"
+    fi
+    return 0
+  fi
+  if ! launchd_loaded; then
+    say "Loading launchd service $LABEL"
+    launchctl bootstrap "gui/$(uid_num)" "$LAUNCHD_PLIST"
+  fi
+  say "Restarting $LABEL"
+  launchctl kickstart -k "$domain"
+}
+
+start_background() {
+  local node
+  if ! node="$(find_node)"; then
+    die "node was not found. Install Node 18 or later (https://nodejs.org or brew install node) and put it on PATH, or set CC_NODE."
+  fi
+  say "Starting Control Center with $node (background). Logs: $LOG_FILE"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ $node server.js --host 0.0.0.0 --port $PORT   (cwd $CC_HOME, log $LOG_FILE)"
+    return 0
+  fi
+  ensure_log_dir
+  (
+    cd "$CC_HOME"
+    nohup "$node" server.js --host 0.0.0.0 --port "$PORT" >>"$LOG_FILE" 2>>"$ERR_FILE" &
+    echo $! >"$PID_FILE"
+  )
+  local pid
+  pid="$(tr -d ' \n' < "$PID_FILE")"
+  say "PID $pid"
+}
+
+cmd_launch() {
+  hdr "Launch"
+  say "Control Center: $CC_HOME"
+  say "Port: $PORT   UI: $(cc_ui_url)"
+  if darwin; then
+    quit_companion_app
+  fi
+  if darwin && [ -f "$LAUNCHD_PLIST" ]; then
+    start_via_launchd || start_background
+  elif darwin && launchd_loaded; then
+    # Service is loaded from a plist we did not find at the usual path.
+    say "launchd service $LABEL is loaded; restarting it."
+    if [ "$DRY_RUN" -eq 1 ]; then
+      dim "+ launchctl kickstart -k $(launchd_domain)"
+    else
+      launchctl kickstart -k "$(launchd_domain)"
+    fi
+  else
+    if [ "$(uname -s)" != 'Darwin' ]; then
+      say "Not macOS; starting Control Center in the background (launchd skipped)."
+    fi
+    # If something is already bound, stop our own background process first.
+    if background_pid >/dev/null || cc_is_up; then
+      say "A Control Center is already running; stopping it first so this launch is clean."
+      cmd_stop || true
+      sleep 1
+    fi
+    start_background
+  fi
+  wait_for_health 45
+  wait_for_companion 120
+  open_browser "$(cc_ui_url)"
+  ok "Control Center: $(cc_ui_url)    Companion: $(cc_ui_url)companion/"
+}
+
+cmd_stop() {
+  hdr "Stop"
+  local stopped=0
+  if darwin && launchd_loaded; then
+    say "Unloading launchd service $LABEL (KeepAlive would otherwise start it again)."
+    if [ "$DRY_RUN" -eq 1 ]; then
+      dim "+ launchctl bootout $(launchd_domain)"
+      stopped=1
+    else
+      launchctl bootout "$(launchd_domain)" || warn "launchctl bootout reported a problem; trying to stop the process anyway."
+      stopped=1
+    fi
+  fi
+  local pid
+  if pid="$(background_pid)"; then
+    say "Stopping background Control Center PID $pid"
+    if [ "$DRY_RUN" -eq 1 ]; then
+      dim "+ kill $pid"
+    else
+      kill "$pid" 2>/dev/null || true
+      local n
+      n=0
+      while [ "$n" -lt 15 ]; do
+        n=$((n + 1))
+        kill -0 "$pid" 2>/dev/null || break
+        sleep 0.5
+      done
+      if kill -0 "$pid" 2>/dev/null; then
+        warn "PID $pid is still running; sending SIGKILL"
+        kill -9 "$pid" 2>/dev/null || true
+      fi
+      rm -f "$PID_FILE"
+    fi
+    stopped=1
+  fi
+  # Any leftover node server.js from this checkout.
+  if [ "$DRY_RUN" -eq 0 ]; then
+    local p
+    for p in $(cc_pids); do
+      if [ -n "$p" ] && kill -0 "$p" 2>/dev/null; then
+        say "Stopping leftover process $p"
+        kill "$p" 2>/dev/null || true
+        stopped=1
+      fi
+    done
+  fi
+  if [ "$stopped" -eq 0 ]; then
+    if cc_is_up; then
+      warn "Something is still answering on port $PORT, and it is not the launchd service or this script's PID file."
+      warn "See what holds the port, then stop it by hand."
+    else
+      say "Control Center was not running."
+    fi
+  else
+    # Give the process a moment to release the port and to stop Companion.
+    if [ "$DRY_RUN" -eq 0 ]; then
+      local n
+      n=0
+      while [ "$n" -lt 20 ]; do
+        cc_is_up || break
+        n=$((n + 1))
+        sleep 0.5
+      done
+      if cc_is_up; then
+        warn "Port $PORT is still answering. Wait a few seconds, or find the process with:  lsof -iTCP:$PORT -sTCP:LISTEN"
+      else
+        ok "Control Center is stopped. Companion that it started is stopped with it."
+      fi
+    else
+      ok "dry-run: would stop Control Center (and the Companion it started)."
+    fi
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# status / logs
+# ---------------------------------------------------------------------------
+cmd_status() {
+  hdr "Control Center"
+  say "Folder:  $CC_HOME"
+  if git -C "$CC_HOME" rev-parse --git-dir >/dev/null 2>&1; then
+    local cur dirty
+    cur="$(git_branch "$CC_HOME")"
+    if git_is_dirty "$CC_HOME"; then dirty='dirty (uncommitted changes)'; else dirty='clean'; fi
+    say "Branch:  $cur  ($dirty, $(git -C "$CC_HOME" rev-parse --short HEAD 2>/dev/null || echo '?'))"
+    if [ "$cur" != "$WANT_BRANCH" ]; then
+      warn "Expected branch is $WANT_BRANCH. cc update will refuse until you switch or pass --any-branch."
+    fi
+  fi
+  say "Version: $(pkg_version "$CC_HOME" || echo unknown)"
+  say "Data:    $DATA_DIR"
+  say "Logs:    $LOG_FILE"
+  say "Port:    $PORT"
+  if launchd_loaded; then
+    ok "launchd: loaded ($(launchd_domain))"
+  elif [ -f "$LAUNCHD_PLIST" ]; then
+    say "launchd: plist installed, not loaded   $LAUNCHD_PLIST"
+  else
+    say "launchd: no plist at $LAUNCHD_PLIST  (cc launch will start a background process; cc install-service writes the plist)"
+  fi
+  if pid="$(background_pid)"; then
+    say "Background PID: $pid"
+  fi
+  if cc_is_up; then
+    ok "HTTP:    up  $(cc_health_url)"
+    local ver
+    ver="$(http_get "$(cc_version_url)")"
+    [ -n "$ver" ] && say "         $ver"
+    local svc state
+    svc="$(http_get "$(cc_service_url)")"
+    state="$(printf '%s' "$svc" | sed -n 's/.*"state"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
+    if [ -n "$state" ]; then
+      say "Companion service: $state"
+    fi
+  else
+    say "HTTP:    not answering at $(cc_health_url)"
+  fi
+
+  hdr "PV Companion"
+  local cdir
+  if cdir="$(resolve_companion)"; then
+    say "Folder:  $cdir"
+    if git -C "$cdir" rev-parse --git-dir >/dev/null 2>&1; then
+      local cdirty
+      if git_is_dirty "$cdir"; then cdirty='dirty'; else cdirty='clean'; fi
+      say "Branch:  $(git_branch "$cdir")  ($cdirty, $(git -C "$cdir" rev-parse --short HEAD 2>/dev/null || echo '?'))"
+    fi
+    say "Version: $(pkg_version "$cdir" || echo unknown)"
+  else
+    say "No checkout at ~/companion."
+  fi
+  if [ -d /Applications/Companion.app ]; then
+    local cver=''
+    if command -v defaults >/dev/null 2>&1; then
+      cver="$(defaults read /Applications/Companion.app/Contents/Info.plist CFBundleShortVersionString 2>/dev/null || true)"
+    fi
+    say "Official Companion.app: installed${cver:+ ($cver)}"
+    if companion_app_running; then
+      warn "Companion.app is running. That can fight Control Center over Stream Decks and port 8000. cc launch will quit it."
+    fi
+  else
+    say "Official Companion.app: not installed"
+  fi
+
+  hdr "Companion module"
+  local mdir
+  if mdir="$(resolve_module)"; then
+    say "Folder:  $mdir"
+    say "Version: $(pkg_version "$mdir" || echo unknown)"
+  else
+    say "No module checkout found (optional; PV Companion ships a built-in copy)."
+  fi
+  if [ -d "$DEV_MODULES/$MODULE_ID" ]; then
+    say "Dev modules: $DEV_MODULES/$MODULE_ID  ($(pkg_version "$DEV_MODULES/$MODULE_ID" || echo present))"
+  fi
+  local builtin
+  if cdir="$(resolve_companion 2>/dev/null || true)" && [ -d "$cdir/modules/$MODULE_ID" ]; then
+    builtin="$cdir/modules/$MODULE_ID"
+    say "Built-in:    $builtin  ($(pkg_version "$builtin" || echo present))"
+  fi
+}
+
+cmd_logs() {
+  local file="$LOG_FILE"
+  local from_launchd
+  from_launchd="$(launchd_log_path || true)"
+  if [ -n "$from_launchd" ] && [ -f "$from_launchd" ]; then
+    file="$from_launchd"
+  fi
+  if [ ! -f "$file" ]; then
+    if [ -f "$ERR_FILE" ]; then
+      file="$ERR_FILE"
+    else
+      die "No log file yet at $LOG_FILE. Start Control Center with cc launch, or look in Console.app if a different launchd plist is in use."
+    fi
+  fi
+  say "Log: $file"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    if [ "$LOG_FOLLOW" -eq 1 ]; then dim "+ tail -n $LOG_LINES -f $file"; else dim "+ tail -n $LOG_LINES $file"; fi
+    return 0
+  fi
+  if [ "$LOG_FOLLOW" -eq 1 ]; then
+    tail -n "$LOG_LINES" -f "$file"
+  else
+    tail -n "$LOG_LINES" "$file"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# install / uninstall / install-service
+# ---------------------------------------------------------------------------
+shadow_warning() {
+  local dest="$1"
+  # /usr/bin/cc is the system compiler. A cc earlier on PATH shadows it.
+  if [ "$(basename "$dest")" = 'cc' ]; then
+    warn "Note: /usr/bin/cc is the system C compiler. This link is also named cc."
+    warn "A 'control-center' link is installed next to it; use that name if you compile software in this Terminal."
+  fi
+}
+
+choose_bindir() {
+  if [ -n "${CC_BIN_DIR:-}" ]; then
+    printf '%s\n' "$(expand_home "$CC_BIN_DIR")"
+    return
+  fi
+  # Prefer ~/bin so we do not drop a `cc` into Homebrew's prefix or require sudo.
+  case ":$PATH:" in
+    *:"$HOME/bin":*) printf '%s\n' "$HOME/bin"; return ;;
+  esac
+  if [ -d "$HOME/bin" ]; then
+    printf '%s\n' "$HOME/bin"
+    return
+  fi
+  if [ -d /usr/local/bin ] && [ -w /usr/local/bin ]; then
+    printf '%s\n' /usr/local/bin
+    return
+  fi
+  # Create ~/bin. The user may need to add it to PATH.
+  printf '%s\n' "$HOME/bin"
+}
+
+link_one() {
+  local src="$1" dest="$2"
+  if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+    die "$dest already exists and is not a symlink. Move it aside, then run cc install again."
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ mkdir -p $(dirname "$dest")"
+    dim "+ ln -sfn $src $dest"
+    return 0
+  fi
+  mkdir -p "$(dirname "$dest")"
+  if ln -sfn "$src" "$dest" 2>/dev/null; then
+    ok "Linked $dest → $src"
+    return 0
+  fi
+  if [ "$USE_SUDO" -eq 1 ]; then
+    sudo mkdir -p "$(dirname "$dest")"
+    sudo ln -sfn "$src" "$dest"
+    ok "Linked $dest → $src (with sudo)"
+    return 0
+  fi
+  die "Could not write $dest. Re-run as:  cc install  (it will use ~/bin), or pass --sudo to link into /usr/local/bin."
+}
+
+cmd_install() {
+  hdr "Install CLI"
+  local bindir dest
+  bindir="$(choose_bindir)"
+  say "Script: $SCRIPT_FILE"
+  say "Bin:    $bindir"
+  if [ "$DRY_RUN" -eq 0 ]; then
+    mkdir -p "$bindir"
+  else
+    dim "+ mkdir -p $bindir"
+  fi
+  link_one "$SCRIPT_FILE" "$bindir/cc"
+  link_one "$SCRIPT_FILE" "$bindir/control-center"
+  shadow_warning "$bindir/cc"
+  case ":$PATH:" in
+    *:"$bindir":*)
+      ok "PATH already includes $bindir. Try:  cc status"
+      ;;
+    *)
+      warn "$bindir is not on PATH yet. In Terminal, run this once, then open a new tab:"
+      say "  echo 'export PATH=\"\$HOME/bin:\$PATH\"' >> ~/.zprofile && export PATH=\"\$HOME/bin:\$PATH\""
+      say "Until then, run:  $bindir/cc up"
+      ;;
+  esac
+  say "Then:  cc up"
+}
+
+cmd_uninstall() {
+  hdr "Uninstall CLI"
+  local bindir d
+  bindir="$(choose_bindir)"
+  for d in "$bindir/cc" "$bindir/control-center" /usr/local/bin/cc /usr/local/bin/control-center; do
+    if [ -L "$d" ]; then
+      local target
+      target="$(readlink "$d" || true)"
+      case "$target" in
+        */tools/cc|"$SCRIPT_FILE")
+          if [ "$DRY_RUN" -eq 1 ]; then
+            dim "+ rm -f $d"
+          else
+            rm -f "$d" || {
+              if [ "$USE_SUDO" -eq 1 ]; then sudo rm -f "$d"; else die "Could not remove $d (pass --sudo if it is in /usr/local/bin)"; fi
+            }
+            ok "Removed $d"
+          fi
+          ;;
+      esac
+    fi
+  done
+}
+
+fill_plist() {
+  local node="$1" node_dir app home_dir
+  node_dir="$(cd "$(dirname "$node")" && pwd)"
+  app="$CC_HOME"
+  home_dir="$HOME"
+  [ -f "$PLIST_TEMPLATE" ] || die "Missing plist template: $PLIST_TEMPLATE"
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ write $LAUNCHD_PLIST from template (node=$node, app=$app)"
+    return 0
+  fi
+  mkdir -p "$(dirname "$LAUNCHD_PLIST")" "$LOG_DIR"
+  sed \
+    -e "s|__APP_DIR__|$app|g" \
+    -e "s|__NODE__|$node|g" \
+    -e "s|__NODE_DIR__|$node_dir|g" \
+    -e "s|__HOME__|$home_dir|g" \
+    -e "s|__PORT__|$PORT|g" \
+    "$PLIST_TEMPLATE" > "$LAUNCHD_PLIST"
+  ok "Wrote $LAUNCHD_PLIST"
+}
+
+cmd_install_service() {
+  hdr "Install launchd service"
+  darwin || die "install-service is for macOS."
+  local node
+  if ! node="$(find_node)"; then
+    die "node was not found. Install Node and run this again, or set CC_NODE."
+  fi
+  if [ -f "$LAUNCHD_PLIST" ] && [ "$FORCE" -eq 0 ]; then
+    say "A plist already exists at $LAUNCHD_PLIST (not overwritten). Pass --force to replace it."
+  else
+    fill_plist "$node"
+  fi
+  if [ "$DRY_RUN" -eq 1 ]; then
+    dim "+ launchctl bootout gui/$(uid_num) $LAUNCHD_PLIST   (ok if not loaded)"
+    dim "+ launchctl bootstrap gui/$(uid_num) $LAUNCHD_PLIST"
+    return 0
+  fi
+  launchctl bootout "gui/$(uid_num)" "$LAUNCHD_PLIST" >/dev/null 2>&1 || true
+  launchctl bootstrap "gui/$(uid_num)" "$LAUNCHD_PLIST"
+  ok "Bootstrapped $LABEL"
+  say "Logs: $LOG_DIR/control-center.out.log and control-center.err.log"
+  say "Start or restart with:  cc launch"
+  say "Stop with:              cc stop"
+}
+
+cmd_up() {
+  cmd_update
+  cmd_launch
+}
+
+case "$CMD" in
+  up) cmd_up ;;
+  update) cmd_update ;;
+  launch) cmd_launch ;;
+  stop) cmd_stop ;;
+  status) cmd_status ;;
+  logs) cmd_logs ;;
+  install) cmd_install ;;
+  uninstall) cmd_uninstall ;;
+  install-service) cmd_install_service ;;
+  *) die "unknown command: $CMD" ;;
+esac
