@@ -74,11 +74,11 @@ test('overrides live in one table and unknown parameters stay on the base curve'
   assert.equal(accel.usesVelocity('nope'), false);
 });
 
-test('dial press: under 500 ms toggles the pair, at 500 ms resets', () => {
-  assert.equal(accel.LONG_PRESS_MS, 500);
+test('dial press: under 800 ms toggles the pair, at 800 ms resets', () => {
+  assert.equal(accel.LONG_PRESS_MS, 800);
   assert.equal(accel.pressKind(0), 'toggle');
-  assert.equal(accel.pressKind(499), 'toggle');
-  assert.equal(accel.pressKind(500), 'reset');
+  assert.equal(accel.pressKind(799), 'toggle');
+  assert.equal(accel.pressKind(800), 'reset');
   assert.equal(accel.pressKind(800, 700), 'reset');
   assert.equal(accel.pressKind(600, 700), 'toggle');
 });
