@@ -1,6 +1,6 @@
 'use strict';
 // Step 4: placements go in surface-pages.json, buttons stay in button-library.json,
-// and decks.json is not part of the edit.
+// and decks.json is not part of the edit. Buttons live in surfaces/buttons.json.
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('fs');
@@ -56,7 +56,7 @@ test('assign, refuse a mismatch, save, rename, delete, and clear a slot without 
   assert.equal(lib.page(made.id).surface, 'plusxl');
   assert.equal(lib.page(made.id).keys.length, 2);
 
-  const buttonsOnDisk = JSON.parse(fs.readFileSync(path.join(data, 'button-library.json'), 'utf8'));
+  const buttonsOnDisk = JSON.parse(fs.readFileSync(path.join(data, 'surfaces', 'buttons.json'), 'utf8'));
   const pagesOnDisk = JSON.parse(fs.readFileSync(path.join(data, 'surface-pages.json'), 'utf8'));
   assert.ok(buttonsOnDisk.buttons.some((row) => row.name === 'CUT'));
   assert.equal(buttonsOnDisk.pages, undefined);

@@ -279,7 +279,9 @@ test('migration: old surface-pages.json and button-library.json are stamped vers
   const disk = JSON.parse(fs.readFileSync(path.join(data, 'surface-pages.json'), 'utf8'));
   assert.equal(disk.version, 2);
   assert.ok(disk.pages.every((p) => p.order === undefined));
-  assert.equal(JSON.parse(fs.readFileSync(path.join(data, 'button-library.json'), 'utf8')).version, 2);
+  const shared = JSON.parse(fs.readFileSync(path.join(data, 'surfaces', 'buttons.json'), 'utf8'));
+  assert.equal(shared.schemaVersion, 1);
+  assert.equal(shared.buttons[0].template, 'hot');
   assert.throws(() => lib.createPage({ id: 'order', name: 'x', surface: 'xl' }), (e) => e.status === 400);
   const copy = lib.copyPage('p2', { surface: 'mini' });
   assert.equal(copy.dropped, 0);

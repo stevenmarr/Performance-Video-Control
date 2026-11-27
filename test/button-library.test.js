@@ -53,10 +53,11 @@ test('library round-trips, duplicates, and refuses flex, blank, and a bad surfac
   assert.equal(again.button(copy.id).name, 'CUT copy');
   assert.equal(again.page(page.id).name, 'Show ATEM v2');
   assert.deepEqual(again.page(page.id).keys, []);
-  const onDisk = fs.readFileSync(path.join(data, 'button-library.json'), 'utf8');
+  const onDisk = fs.readFileSync(path.join(data, 'surfaces', 'buttons.json'), 'utf8');
   assert.match(onDisk, /\n/);
-  assert.match(onDisk, /"role": "program"/);
-  assert.doesNotMatch(onDisk, /"role": "flex"/);
+  assert.match(onDisk, /"category": "bus"/);
+  assert.match(onDisk, /"template": "program"/);
+  assert.doesNotMatch(onDisk, /flex/);
   fs.rmSync(data, { recursive: true, force: true });
 });
 
@@ -91,8 +92,8 @@ test('old flex-macro records load as macro, and a flex button is dropped', () =>
   assert.equal(lib.button('bmacro').role, 'macro');
   assert.throws(() => lib.button('bflex'), (e) => e.status === 404);
   assert.deepEqual(lib.page('p1').keys.map((s) => s.buttonId), ['bmacro']);
-  const disk = fs.readFileSync(path.join(data, 'button-library.json'), 'utf8');
-  assert.match(disk, /"role": "macro"/);
+  const disk = fs.readFileSync(path.join(data, 'surfaces', 'buttons.json'), 'utf8');
+  assert.match(disk, /"template": "macro"/);
   assert.doesNotMatch(disk, /flex/);
   fs.rmSync(data, { recursive: true, force: true });
 });
