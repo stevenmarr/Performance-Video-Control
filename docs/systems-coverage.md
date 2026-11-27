@@ -12,7 +12,7 @@ Companion connection types: **1098**. Implemented: **243**. Partial: **0**. Not 
 | Barco Event Master (`e2`) | implemented | 3 | 4 | 3 | official | https://www.barco.com/en/support |
 | PixelHue (`pixelhue`) | implemented | 3 | 4 | 3 | official | https://www.pixelhue.com/ |
 | Blackmagic ATEM (`atem`) | implemented | 32 | 5 | 4 | official | https://www.blackmagicdesign.com/developer |
-| Panasonic PTZ (`ptz`) | implemented | 111 | 6 | 3 | official | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/AW-UE150/HD/HD_OperationManual_English.pdf |
+| Panasonic PTZ (`ptz`) | implemented | 112 | 6 | 3 | official | https://eww.pass.panasonic.co.jp/pro-av/support/content/guide/DEF/AW-UE150/HD/HD_OperationManual_English.pdf |
 | AV Stumpfl Pixera (`pixera`) | implemented | 8 | 4 | 3 | official | https://help.pixera.one/api/ |
 | Millumin (`millumin`) | implemented | 13 | 3 | 2 | official | https://www.millumin.com/documentation/ |
 | Blackmagic Videohub (`videohub`) | implemented | 1 | 4 | 2 | official | https://documents.blackmagicdesign.com/DeveloperManuals/VideohubDeveloperInformation.pdf |

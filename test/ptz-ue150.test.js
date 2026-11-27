@@ -36,9 +36,15 @@ test('UE150 shutter codes (spec v2.94)', () => {
   assert.equal(b('shutterMode', '0').cmd, 'OSJ:03:0'); assert.equal(b('shutterMode', '1').cmd, 'OSJ:03:1'); assert.equal(b('shutterMode', '2').cmd, 'OSJ:03:2'); assert.equal(b('shutterMode', '3').cmd, 'OSJ:03:3');
   assert.equal(b('shutterStep', '60').cmd, 'OSJ:06:003C', 'spec example: 1/60 = OSJ:06:003C');
   assert.equal(b('shutterStep', '10000').cmd, 'OSJ:06:2710', '1/10000 = 2710h (the maximum)');
-  const steps = PC.catalogFor('UE150').ops.find((o) => o.id === 'shutterStep').options.map(([v]) => Number(v));
-  assert.deepEqual(steps, [24, 25, 30, 48, 50, 60, 100, 120, 250, 500, 1000, 2000, 4000, 8000, 10000], 'every step the spec lists for some format, nothing else');
-  assert.ok(!steps.includes(125), 'there is no 1/125 step on the UE150');
+  const steps = PC.catalogFor('UE150', 'AW-UE150').ops.find((o) => o.id === 'shutterStep').options.map(([v]) => Number(v));
+  assert.deepEqual(steps, [60, 100, 120, 250, 500, 1000, 2000, 4000, 8000, 10000], 'house / 59.94 list: no 1/24 or 1/50 on 59.94p');
+  const steps24 = PC.catalogFor('UE150', 'AW-UE150', { format: '22' }).ops.find((o) => o.id === 'shutterStep').options.map(([v]) => Number(v));
+  assert.deepEqual(steps24, [24, 48, 60, 100, 120, 250, 500, 1000, 2000, 4000, 8000, 10000]);
+  const union = [...new Set(['1','2','4','5','7','8','A','10','11','14','15','16','17','18','19','1A','1B','21','22','23'].flatMap((f) =>
+    PC.catalogFor('UE150', 'AW-UE150', { format: f }).ops.find((o) => o.id === 'shutterStep').options.map(([v]) => Number(v))
+  ))].sort((a, b) => a - b);
+  assert.deepEqual(union, [24, 25, 30, 48, 50, 60, 100, 120, 250, 500, 1000, 2000, 4000, 8000, 10000], 'every step the spec lists for some format, nothing else');
+  assert.ok(!union.includes(125), 'there is no 1/125 step on the UE150');
   assert.equal(b('shutterStepUp').cmd, 'OSJ:04:01'); assert.equal(b('shutterStepDown').cmd, 'OSJ:05:01');
   assert.equal(b('synchro', 60).cmd, 'OSJ:09:00258', 'spec example: 60.0 Hz = OSJ:09:00258');
   assert.equal(b('synchroUp').cmd, 'OSJ:07:01'); assert.equal(b('synchroDown').cmd, 'OSJ:08:01');

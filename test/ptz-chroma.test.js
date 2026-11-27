@@ -166,13 +166,14 @@ test('UE150 cameras keep chroma phase OSJ:0B and the -99..+99 chroma range', asy
   } finally { d.close && d.close(); await m.stop(); }
 });
 
-test('Stream Deck: the CHROMA PHASE dial drives chroma phase, not chroma level', () => {
+test('Stream Deck: chroma phase and chroma level stay first-class widgets; matrix knobs live on COLOUR', () => {
   const deck = require('../lib/deck');
   const { GALLERY } = require('../lib/decks/gallery');
-  const dtl = GALLERY.find((g) => g.id === 'ptz-rcp-dtl');
-  const byLabel = Object.fromEntries(dtl.dials.map((x) => [x.label, x.widget]));
-  assert.equal(byLabel['CHROMA LVL'], 'chroma');
-  assert.equal(byLabel['CHROMA PHASE'], 'chromaPhase');
+  const colour = GALLERY.find((g) => g.id === 'ptz-rcp-colour');
+  const byLabel = Object.fromEntries(colour.dials.map((x) => [x.label, x.widget]));
+  assert.equal(byLabel['R-G'], 'matrixRG');
+  assert.equal(deck.WIDGETS.chroma.op, 'chromaLevel');
+  assert.equal(deck.WIDGETS.chromaPhase.op, 'chromaPhase');
   const ue150 = PC.catalogFor('UE150', 'AW-UE150').ops.find((o) => o.id === 'chromaLevel');
   const ue160 = PC.catalogFor('UE150', 'AW-UE160').ops.find((o) => o.id === 'chromaLevel');
   assert.equal(deck.formatValue('chromaLevel', -100, ue150), 'OFF');
