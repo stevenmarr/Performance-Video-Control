@@ -15,7 +15,7 @@
   const base = () => `/api/sys/${familyTarget('preset')}`;
   const isX = () => SYS && SYS.active !== 'rs6';
   const kind = () => (SYS ? kindOf(SYS.active) : 'rs6');
-  const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML', videohub: 'VH', hyperdeck: 'HD', mitti: 'MI' };
+  const MONO = { rs6: 'AW', e2: 'EM', pixelhue: 'PH', atem: 'BM', ptz: 'PTZ', pixera: 'PX', millumin: 'ML', videohub: 'VH', hyperdeck: 'HD', mitti: 'MI', playout: 'PL' };
   const KIND_TABS = { rs6: ['presets', 'inputs', 'backup', 'audio', 'webrcs'], preset: ['xpresets', 'xcues', 'xsources', 'xstills', 'xbackup', 'xprogram'], atem: ['atem', 'arouter', 'aaudio', 'akeys', 'alayout', 'amv', 'amacros'], ptz: ['pctl', 'ptrack', 'pcams'], pixera: ['pxplay', 'pxcues'], millumin: ['mlcol', 'mllayer'], looks: ['looks'], cues: ['cues'], decks: ['decks', 'buttons', 'pages', 'companion'] };
   const HOME_TAB = { rs6: 'presets', preset: 'xpresets', atem: 'atem', ptz: 'pctl', pixera: 'pxplay', millumin: 'mlcol', looks: 'looks', cues: 'cues', decks: 'decks' };
   const TAB_KIND = Object.fromEntries(Object.entries(KIND_TABS).flatMap(([k, tabs]) => tabs.map((t) => [t, k])));
@@ -250,13 +250,13 @@
       ? f('operatorId', 'Operator (multi-op)', 'text', shown.operatorId, 'none', dis, 'inputmode="numeric"') + f('transTime', 'TAKE time (frames)', 'text', shown.transTime, 'device default', dis, 'inputmode="numeric"')
       : s.key === 'pixelhue' ? f('prefix', 'API path prefix', 'text', shown.prefix, '/pixelhue', dis) + f('time', 'TAKE time (ms)', 'text', shown.time, 'device default', dis, 'inputmode="numeric"')
         : f('me', 'M/E driven', 'number', shown.me, '1', dis, 'min="1" max="4"') + '<span></span>';
-    const defPort = { e2: 9999, pixelhue: 8088, atem: 9910, pixera: 1400, millumin: 5000, videohub: 9990, hyperdeck: 9993, mitti: 51000 }[s.key];
-    const hostPh = { e2: 'E2 host unit IP', atem: 'ATEM IP', pixera: 'Pixera IP', millumin: 'Millumin Mac IP', videohub: 'Videohub IP', hyperdeck: 'HyperDeck IP', mitti: 'Mitti Mac IP' }[s.key] || 'switcher IP';
-    const portLbl = s.key === 'atem' ? 'UDP port' : (s.key === 'millumin' || s.key === 'mitti') ? 'OSC port' : s.key === 'pixera' ? 'API port' : 'Port';
+    const defPort = { e2: 9999, pixelhue: 8088, atem: 9910, pixera: 1400, millumin: 5000, videohub: 9990, hyperdeck: 9993, mitti: 51000, playout: 8080 }[s.key];
+    const hostPh = { e2: 'E2 host unit IP', atem: 'ATEM IP', pixera: 'Pixera IP', millumin: 'Millumin Mac IP', videohub: 'Videohub IP', hyperdeck: 'HyperDeck IP', mitti: 'Mitti Mac IP', playout: 'Playout Mac IP' }[s.key] || 'switcher IP';
+    const portLbl = s.key === 'atem' ? 'UDP port' : (s.key === 'millumin' || s.key === 'mitti') ? 'OSC port' : (s.key === 'pixera' || s.key === 'playout') ? 'API port' : 'Port';
     return `<form class="form conn-form" data-sys="${esc(id)}">
       ${f('name', 'Name on the desk', 'text', (instances().find((i) => i.id === id) || {}).name || s.short || '', 'Name', '', 'maxlength="40"')}
       <div class="row2">${f('host', 'IP address', 'text', shown.host, hostPh, dis, 'autocomplete="off" spellcheck="false"')}${f('port', portLbl, 'number', shown.port, String(defPort), dis, 'min="1" max="65535"')}</div>
-      ${s.key === 'atem' ? `<div class="row2">${extra}</div>` : (s.key === 'pixera' || s.key === 'millumin' || s.key === 'videohub' || s.key === 'hyperdeck' || s.key === 'mitti') ? '' : `<div class="row2">${extra}</div>`}
+      ${s.key === 'atem' ? `<div class="row2">${extra}</div>` : (s.key === 'pixera' || s.key === 'millumin' || s.key === 'videohub' || s.key === 'hyperdeck' || s.key === 'mitti' || s.key === 'playout') ? '' : `<div class="row2">${extra}</div>`}
       ${s.key === 'pixelhue' ? `<label class="chk"><input type="checkbox" name="swap" ${shown.swap ? 'checked' : ''} ${dis}> Swap on TAKE / CUT (Program goes back to Preview)</label>` : ''}
       ${foot(id)}
     </form>`;
@@ -270,7 +270,8 @@
             : s.kind === 'router' ? [['OUTPUTS', n.outputs], ['INPUTS', n.inputs]]
               : s.kind === 'hyperdeck' ? [['TRANSPORT', n.transport ? 1 : 0], ['TIMECODE', n.timecode ? 1 : 0], ['CLIP', n.clipName || null], ['LEFT', n.remaining || null]]
                 : s.kind === 'mitti' ? [['MODE', n.mode ? 1 : 0], ['CUE', n.cueName || (n.cue == null ? 0 : n.cue)], ['LEFT', n.remaining || null]]
-                  : [['PRESETS', n.presets], ['DESTINATIONS', n.destinations], ['SOURCES', n.sources]].concat(s.key === 'e2' ? [['CUES', n.cues]] : []);
+                  : s.kind === 'playout' ? [['CLIP', n.clip || '—'], ['TRANSPORT', n.transport || '—'], ['ELAPSED', n.elapsed || '—'], ['REMAINING', n.remaining || '—'], ['STANDBY', n.standby || '—']]
+                    : [['PRESETS', n.presets], ['DESTINATIONS', n.destinations], ['SOURCES', n.sources]].concat(s.key === 'e2' ? [['CUES', n.cues]] : []);
     return rows.map(([k, v]) => `<div class="stat"><b>${v ?? '—'}</b><span>${k}</span></div>`).join('');
   }
   function liveLine(s) {
@@ -281,7 +282,24 @@
     if (s.kind === 'millumin' && n.column) return `<div class="live-line"><span class="lg ${n.running ? 'pgm' : 'pvw'}">${n.running ? 'RUN' : 'STOP'}</span> ${esc(String(n.column))}</div>`;
     if (s.kind === 'hyperdeck' && (n.clipName || n.remaining)) return `<div class="live-line"><span class="lg ${n.transport === 'record' || n.transport === 'play' ? 'pgm' : 'pvw'}">${esc(String(n.transport || 'stop').toUpperCase())}</span> ${esc(n.clipName || '')}${n.remaining ? ` · ${esc(n.remaining)} left` : ''}</div>`;
     if (s.kind === 'mitti' && (n.cueName || n.remaining)) return `<div class="live-line"><span class="lg ${n.mode === 'play' ? 'pgm' : 'pvw'}">${esc(String(n.mode || 'stop').toUpperCase())}</span> ${esc(n.cueName || (n.cue == null ? '' : String(n.cue)))}${n.remaining ? ` · ${esc(n.remaining)} left` : ''}</div>`;
+    if (s.kind === 'playout') return playoutCard(s);
     return '';
+  }
+  function playoutCard(s) {
+    const n = s.counts || {};
+    const id = s.id || s.key;
+    const transport = String(n.transport || 'stopped');
+    const clips = Array.isArray(n.clips) ? n.clips : [];
+    const cmd = (name, label) => `<button type="button" class="btn mini" data-playout="${esc(id)}" data-cmd="${name}">${label}</button>`;
+    const list = clips.length
+      ? `<div class="sys-acts playout-clips">${clips.map((name) => `<button type="button" class="btn mini${name === n.clip ? ' primary' : ''}" data-playout="${esc(id)}" data-cmd="cue" data-cue="${esc(name)}">${esc(name)}${name === n.clip ? ' · NOW' : ''}${name === n.standby && name !== n.clip ? ' · STBY' : ''}</button>`).join('')}</div>`
+      : '<div class="note small">No clips yet. Connect to read the playlist.</div>';
+    return `<div class="playout-card" data-playout-card="${esc(id)}">
+      <div class="live-line"><span class="lg ${transport === 'playing' ? 'pgm' : 'pvw'}">${esc(transport.toUpperCase())}</span> ${esc(n.clip || 'no clip')}${n.standby ? ` <span class="lg pvw">STBY</span> ${esc(n.standby)}` : ''}</div>
+      <div class="live-line"><span>ELAPSED ${esc(n.elapsed || '—')}</span><span>REMAINING ${esc(n.remaining || '—')}</span></div>
+      <div class="sys-acts">${cmd('play', 'PLAY')}${cmd('pause', 'PAUSE')}${cmd('stop', 'STOP')}${cmd('next', 'NEXT')}</div>
+      ${list}
+    </div>`;
   }
   const openDet = new Set(JSON.parse(localStorage.getItem('cc.conn') || '[]'));
   function renderDash() {
@@ -302,7 +320,7 @@
     const instRow = (s) => {
       const st = statusOf(s); const active = SYS.active === s.id; const info = (s.status && s.status.info) || {};
       const type = s.type || s.key;
-      const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : s.kind === 'router' ? 'ROUTER' : s.kind === 'hyperdeck' ? 'TRANSPORT' : s.kind === 'mitti' ? 'PLAYBACK' : 'PRESETS';
+      const open = s.kind === 'atem' ? 'SWITCHER' : s.kind === 'ptz' ? 'PTZ CONTROL' : s.kind === 'pixera' ? 'TIMELINES' : s.kind === 'millumin' ? 'COLUMNS' : s.kind === 'router' ? 'ROUTER' : s.kind === 'hyperdeck' ? 'TRANSPORT' : s.kind === 'mitti' ? 'PLAYBACK' : s.kind === 'playout' ? 'PLAYOUT' : 'PRESETS';
       const addr = (s.connection && (s.connection.host || s.connection.mock))
         ? (s.connection.mock ? 'simulator' : `${s.connection.host || ''}${s.connection.port ? `:${s.connection.port}` : ''}`)
         : (s.kind === 'ptz' ? `${((s.connection && s.connection.cameras) || []).length} cameras` : 'no address');
@@ -367,6 +385,10 @@
   $('#sysCards').addEventListener('click', (ev) => {
     if (M() && M().onClick(ev)) return;
     const b = ev.target.closest('button'); if (!b) return;
+    if (b.dataset.playout && b.dataset.cmd) {
+      const body = b.dataset.cue ? { value: b.dataset.cue } : {};
+      return run(api('POST', `/api/sys/${b.dataset.playout}/cmd/${b.dataset.cmd}`, body).then(() => refetch()).then(() => toast(b.dataset.cue ? `Cued ${b.dataset.cue}` : b.dataset.cmd.toUpperCase())));
+    }
     if (b.dataset.armoff) return run(api('POST', '/api/sys/armed', { system: b.dataset.armoff, on: false }).then((st) => { onSys(st); const r = (st.instances || []).find((i) => i.id === b.dataset.armoff); toast(`${(r && r.name) || b.dataset.armoff} left the desk`); }).catch((e) => toast(e.message, true)));
     if (b.dataset.link) {
       const hold = b.dataset.hold === '1';
