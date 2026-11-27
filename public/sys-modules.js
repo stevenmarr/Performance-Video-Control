@@ -131,6 +131,9 @@
     const flags = (row && row.flags) || {};
     const vars = (row && row.vars) || {};
     const buttons = full.buttons || [];
+    const declared = new Set((full.variables || []).map((v) => v.id));
+    const extraIds = Object.keys(vars).filter((id) => !declared.has(id)).sort();
+    const varRows = (full.variables || []).map((v) => `<tr><td><code>$(${esc(full.id)}:${esc(v.id)})</code><div class="note small">${esc(v.label)}</div></td><td>${esc(vars[v.id] == null ? '' : vars[v.id])}</td></tr>`).concat(extraIds.map((id) => `<tr><td><code>$(${esc(full.id)}:${esc(id)})</code><div class="note small">Control</div></td><td>${esc(vars[id] == null ? '' : vars[id])}</td></tr>`)).join('') || '<tr><td colspan="2" class="note small">None.</td></tr>';
     const sig = JSON.stringify([sysId, instId, theme, flags, vars]);
     if (host.dataset.sig === sig) return;
     host.dataset.sig = sig;
@@ -138,7 +141,7 @@
       <div class="section-title">BUTTONS <small>Tap to send. They also appear as Companion presets.</small></div>
       <div class="mod-keys ${theme}">${buttons.map((b, n) => `<button type="button" class="mod-key" data-modkey="${n}"><span class="art"></span><span>${esc(b.name)}</span></button>`).join('') || '<p class="note small">No buttons.</p>'}</div>
       <div class="section-title">VARIABLES</div>
-      <table class="mod-table"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody>${(full.variables || []).map((v) => `<tr><td><code>$(${esc(full.id)}:${esc(v.id)})</code><div class="note small">${esc(v.label)}</div></td><td>${esc(vars[v.id] == null ? '' : vars[v.id])}</td></tr>`).join('') || '<tr><td colspan="2" class="note small">None.</td></tr>'}</tbody></table>
+      <table class="mod-table"><thead><tr><th>Variable</th><th>Value</th></tr></thead><tbody>${varRows}</tbody></table>
       <div class="section-title">FEEDBACKS</div>
       <table class="mod-table"><thead><tr><th>Feedback</th><th>State</th></tr></thead><tbody>${(full.feedbacks || []).map((f) => `<tr><td>${esc(f.label)}<div class="note small">${esc(f.variable)} ${esc(f.op)} ${esc(f.value)}</div></td><td class="${flags[f.id] ? 'mod-on' : 'mod-off'}">${row ? (flags[f.id] ? 'ON' : 'OFF') : '—'}</td></tr>`).join('') || '<tr><td colspan="2" class="note small">None.</td></tr>'}</tbody></table>`;
     await Promise.all(buttons.map(async (b, n) => {
