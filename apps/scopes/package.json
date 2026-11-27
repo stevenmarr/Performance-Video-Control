@@ -1,6 +1,6 @@
 {
   "name": "pvllc-scopes",
-  "version": "0.37.0",
+  "version": "0.37.1",
   "private": true,
   "description": "Standalone video scopes for a Mac with Blackmagic Desktop Video.",
   "engines": { "node": ">=16" },
