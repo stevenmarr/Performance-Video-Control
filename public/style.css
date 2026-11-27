@@ -1471,6 +1471,18 @@ nav.tabs{padding:0 6px}
 .ak-dvechip{font:800 10px/1 ui-monospace,Menlo,monospace;color:#ffd35c;border:1px solid #6b5520;border-radius:6px;padding:3px 6px}
 .ak-dvefull{font:700 10px/1 -apple-system,sans-serif;color:var(--dim);border:1px dashed #39424e;border-radius:6px;padding:3px 6px;cursor:help}
 
+/* PTZ UHD crop panel and one-click setup card */
+.rcp-crop .crop-frame{position:relative;aspect-ratio:16/9;width:100%;background:#111;border:1px solid var(--line,#333);overflow:hidden;margin:8px 0}
+.rcp-crop .crop-win{position:absolute;box-sizing:border-box;border:2px solid;pointer-events:none}
+.rcp-crop .crop-win.yl{border-color:#e6c200;background:rgba(230,194,0,.12)}
+.rcp-crop .crop-win.g{border-color:#2ecc40;background:rgba(46,204,64,.08)}
+.rcp-crop .crop-win.mg{border-color:#e040fb;background:rgba(224,64,251,.08)}
+.rcp-crop .crop-meta,.provision .prov-steps{font:600 11px/1.4 ui-monospace,Menlo,monospace}
+.provision{margin:0 0 16px;padding:12px;border:1px solid var(--line,#333);border-radius:8px}
+.provision .prov-steps{display:flex;flex-wrap:wrap;gap:8px 16px;margin:8px 0;padding:0;list-style:decimal inside}
+.provision .prov-steps li.on{color:var(--accent,#6cf);font-weight:700}
+#ptzCropCtl.dim{opacity:.45;pointer-events:none}
+
 /* SURFACES tab — Page Builder (designer Phase B) */
 .surfaces-sub { display: flex; gap: 4px; margin: 8px 0 12px; flex-wrap: wrap; }
 .surfaces-sub .subtab { background: #1a1a1a; color: #ccc; border: 1px solid #333; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
@@ -1511,3 +1523,4 @@ nav.tabs{padding:0 6px}
 .help-body{flex:1;overflow:auto;padding:12px;font-size:13px}
 .help-tip{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#4da3ff;color:#fff;border:0;font-size:11px;line-height:16px;padding:0;cursor:help}
 .tour-card button{margin-right:6px;padding:4px 10px}
+

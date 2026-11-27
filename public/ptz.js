@@ -381,6 +381,33 @@
   $('#ptzGrid').addEventListener('error', (ev) => { if (ev.target.tagName === 'IMG') ev.target.closest('.thumb').classList.add('noimg'); }, true);
   $('#ptzGrid').addEventListener('load', (ev) => { if (ev.target.tagName === 'IMG') ev.target.closest('.thumb').classList.remove('noimg'); }, true);
 
+
+  function renderCrop(c) {
+    const na = $('#ptzCropNa'); const hint = $('#ptzCropHint'); const frame = $('#ptzCropFrame');
+    if (!na || !c) return;
+    const format = (c.values && (c.values.format || c.values.systemFormat)) || c.format || '';
+    const legal = /2160/.test(String(format)) || !format; // hide only when we know it is not 2160
+    const blocked = format && !/2160/.test(String(format));
+    na.hidden = !blocked; na.textContent = blocked ? `Crop needs 2160 (this camera is ${format}). The house profile uses 2160/59.94p so crop stays live.` : '';
+    $('#ptzCropCtl').classList.toggle('dim', !!blocked);
+    hint.textContent = blocked ? 'unavailable' : 'UHD crop, live · default 1080, centered';
+    document.querySelectorAll('#ptzCropCtl [data-crop-mode]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cropMode === String((c.crop && c.crop.mode) || '1080'))));
+    const pos = (c.crop && c.crop.pos) || null;
+    const meta = $('#ptzCropMeta');
+    if (meta) meta.textContent = pos ? `${pos.w}×${pos.h} at ${pos.x},${pos.y}` : 'Centered 1080 crop on the UHD frame';
+    if (frame && pos && pos.frame) {
+      const win = frame.querySelector('.crop-win.yl');
+      if (win) { win.style.left = `${(pos.x / pos.frame.w) * 100}%`; win.style.top = `${(pos.y / pos.frame.h) * 100}%`; win.style.width = `${(pos.w / pos.frame.w) * 100}%`; win.style.height = `${(pos.h / pos.frame.h) * 100}%`; }
+    }
+  }
+  $('#ptzCropCtl') && $('#ptzCropCtl').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-crop-mode]'); const c = sel(); if (!b || !c) return;
+    const mode = b.dataset.cropMode;
+    run(api('POST', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c.id)}/crop`, { mode: mode === 'off' ? 'off' : Number(mode), live: mode !== 'off' ? false : false }).then((r) => { toast(mode === 'off' ? 'Crop off' : `Crop ${mode} applied`); return r; }).finally(S.refetch));
+  });
+  const _renderCtl = renderCtl;
+  // wrap extras: renderCrop is called from renderCtl via a hook after renderExtras
+
   function renderCtl() {
     if (!V) return;
     strip();
@@ -398,6 +425,7 @@
     update(c, k);
     renderPresets(c, k);
     renderExtras(c, k);
+    renderCrop(c);
   }
   // ---------- preview, info, notes, lock, paint memories ----------
   const info = {}; let snapCam = null; let snapBusy = false;
@@ -493,15 +521,15 @@
     S.set($('#ptzCamList'), 'ptz-cams', (V.cameras || []).map((c) => `<div class="row cam-line ${c.connected ? '' : 'off'}" data-cam="${esc(c.id)}">
       <span class="led ${c.connected ? 'ok' : 'off'}"></span><span class="lbl">${esc(c.name)}<small>${esc(c.model || 'unknown model')} · series ${esc(c.series)}${c.title ? ` · ${esc(c.title)}` : ''} · ${esc(c.host)}:${esc(c.port)}${c.sim ? ' · simulator' : ''}${c.connected ? '' : ` · ${esc(c.error || 'offline')}`}</small></span>
       <span class="chip">${c.power ? esc(c.power.toUpperCase()) : '—'}</span>${c.tally ? '<span class="chip pgmc">TALLY</span>' : ''}${c.sim ? '<span class="chip">SIM</span>' : ''}<span class="spacer"></span>
-      <span class="chip login ${c.authError ? 'bad' : ''}" title="${c.authError ? 'The camera refused the login' : c.authScheme ? `The camera asked for a login (HTTP ${c.authScheme})` : 'Sent only if the camera asks for a login'}">${c.authError ? 'LOGIN REFUSED' : `LOGIN ${esc(c.user || 'admin')}${c.loginDefault ? ' · FACTORY' : ''}`}</span>
+      <span class="chip login ${c.authError ? 'bad' : ''}" title="${c.authError ? 'The camera refused the login' : c.authScheme ? `The camera asked for a login (HTTP ${c.authScheme})` : 'Sent only if the camera asks for a login'}">${c.authError ? 'LOGIN REFUSED' : `LOGIN ${esc(c.user || (c.loginSource === 'none' ? '—' : ''))}${c.loginSource === 'vault' ? ' · VAULT' : c.loginSource === 'none' ? ' · NEEDED' : ''}`}</span>
       <label class="ctl-sel mini" title="Camera type used for the command set. Auto uses the model the camera reports."><select data-camera-type="${esc(c.id)}" aria-label="Camera type">${modelOptions(c.cameraType || '')}</select></label>
       <label class="ctl-sel mini" title="Model series used for the command set ('auto' = from the camera's model)"><select data-series="${esc(c.id)}"><option value="">series: auto</option>${(V.seriesList || []).map((s) => `<option value="${esc(s)}" ${c.series === s && c.seriesOverride ? 'selected' : ''}>${esc(s)}</option>`).join('')}</select></label>
       <button class="btn mini ${c.id === V.selected ? 'primary' : ''}" data-selcam="${esc(c.id)}" type="button">${c.id === V.selected ? 'SELECTED' : 'SELECT'}</button>
-      <button class="btn mini" data-edit="${esc(c.id)}" type="button">EDIT</button><button class="btn mini" data-login="${esc(c.id)}" type="button" title="User / password the camera asks for (factory: admin / 12345)">LOGIN</button><button class="btn mini" data-camsim="${esc(c.id)}" data-on="${c.sim ? '0' : '1'}" type="button">${c.sim ? 'USE SAVED ADDRESS' : 'ASSIGN AS SIM'}</button><button class="btn mini danger" data-rm="${esc(c.id)}" type="button">REMOVE</button></div>`).join('') || '<div class="note">No cameras yet. Add one below.</div>');
+      <button class="btn mini" data-edit="${esc(c.id)}" type="button">EDIT</button><button class="btn mini" data-login="${esc(c.id)}" type="button" title="User / password the camera asks for (shared admin is in the vault)">LOGIN</button><button class="btn mini" data-camsim="${esc(c.id)}" data-on="${c.sim ? '0' : '1'}" type="button">${c.sim ? 'USE SAVED ADDRESS' : 'ASSIGN AS SIM'}</button><button class="btn mini danger" data-rm="${esc(c.id)}" type="button">REMOVE</button></div>`).join('') || '<div class="note">No cameras yet. Add one below.</div>');
   }
   S.onRender((v, tab) => {
     V = v; if (!V || V.kind !== 'ptz') { releaseAll(); return; }
-    if (tab === 'pctl') renderCtl(); else if (tab === 'pcams') { fillAddModel(); renderCams(); }
+    if (tab === 'pctl') renderCtl(); else if (tab === 'pcams') { fillAddModel(); renderCams(); renderProvision(); }
   });
   // fast readouts for the camera being driven: every 500 ms while moving, every 2 s otherwise
   let lastRead = 0; let reading = false;
@@ -540,7 +568,7 @@
     if (d.login) { // 0.11.1 camera login dialog
       const dlg = $('#dlgPtzLogin'); const fm = $('#formPtzLogin'); fm.dataset.cam = c; fm.elements.user.value = cam.user || 'admin'; fm.elements.pass.value = '';
       $('#ptzLoginCam').textContent = `${cam.name} · ${cam.host}`;
-      $('#ptzLoginState').textContent = cam.authError ? 'The camera refused the current login.' : cam.loginDefault ? 'Using the factory default login.' : 'Using a login saved on this install.';
+      $('#ptzLoginState').textContent = cam.authError ? 'The camera refused the current login.' : cam.loginSource === 'vault' ? 'Using the shared admin account in the vault.' : cam.loginSource === 'camera' ? 'Using a login saved on this install.' : 'No login set. User authentication will fail until the vault or a per-camera login is set.';
       dlg.showModal(); return undefined;
     }
     if (d.camsim) { const on = d.on !== '0'; return run(api('POST', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(c)}/sim`, { on }).then(() => toast(on ? 'Camera assigned as a simulator' : 'Camera using its saved address')).finally(S.refetch)); }
@@ -551,10 +579,10 @@
   });
   $('#dlgPtzLogin').addEventListener('close', () => {
     const dlg = $('#dlgPtzLogin'); const fm = $('#formPtzLogin'); const id = fm.dataset.cam; const pass = fm.elements.pass.value; fm.elements.pass.value = '';
-    if (!id || !['save', 'factory'].includes(dlg.returnValue)) return;
+    if (!id || !['save', 'clear'].includes(dlg.returnValue)) return;
     const user = fm.elements.user.value.trim();
-    const body = dlg.returnValue === 'factory' ? { user: null, pass: null } : { user: user && user !== 'admin' ? user : null, ...(pass ? { pass } : {}) };
-    run(api('POST', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(id)}`, body).then(() => toast(dlg.returnValue === 'factory' ? 'Camera login back to the factory default' : 'Camera login saved')).finally(S.refetch));
+    const body = dlg.returnValue === 'clear' ? { user: null, pass: null } : { user: user || null, ...(pass ? { pass } : {}) };
+    run(api('POST', `/api/sys/${ptzId()}/cameras/${encodeURIComponent(id)}`, body).then(() => toast(dlg.returnValue === 'clear' ? 'Camera login back to the shared admin in the vault' : 'Camera login saved')).finally(S.refetch));
   });
   $('#ptzAdd').addEventListener('submit', (ev) => {
     ev.preventDefault(); const fm = ev.target; const body = { name: fm.elements.name.value.trim(), host: fm.elements.host.value.trim(), port: Number(fm.elements.port.value) || 80, ...(fm.elements.model && fm.elements.model.value ? { model: fm.elements.model.value } : {}) };
@@ -569,12 +597,12 @@
   const rcp = $('#pane-pctl .rcp');
   const P = (id, x, y, w, h) => ({ id, x, y, w, h });
   const DOCK_DEFAULTS = {
-    xl: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 4, 17), P('iris', 8, 0, 4, 17), P('paint', 12, 0, 12, 17), P('presets', 0, 17, 12, 15), P('view', 12, 17, 5, 15), P('sys', 17, 17, 7, 15)],
-    lg: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 4, 17), P('iris', 8, 0, 4, 17), P('paint', 12, 0, 12, 17), P('presets', 0, 17, 12, 15), P('view', 12, 17, 5, 15), P('sys', 17, 17, 7, 15)],
-    md: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 5, 17), P('paint', 0, 17, 12, 17), P('presets', 0, 34, 12, 12), P('view', 0, 46, 5, 16), P('sys', 5, 46, 7, 16)],
-    sm: [P('joy', 0, 0, 2, 16), P('lens', 0, 16, 1, 17), P('iris', 1, 16, 1, 17), P('paint', 0, 33, 2, 20), P('presets', 0, 53, 2, 12), P('view', 0, 65, 1, 17), P('sys', 1, 65, 1, 17)],
+    xl: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 4, 17), P('iris', 8, 0, 4, 17), P('paint', 12, 0, 12, 17), P('presets', 0, 17, 8, 15), P('view', 8, 17, 5, 15), P('crop', 13, 17, 5, 15), P('sys', 18, 17, 6, 15)],
+    lg: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 4, 17), P('iris', 8, 0, 4, 17), P('paint', 12, 0, 12, 17), P('presets', 0, 17, 8, 15), P('view', 8, 17, 5, 15), P('crop', 13, 17, 5, 15), P('sys', 18, 17, 6, 15)],
+    md: [P('joy', 0, 0, 4, 17), P('lens', 4, 0, 3, 17), P('iris', 7, 0, 5, 17), P('paint', 0, 17, 12, 17), P('presets', 0, 34, 12, 12), P('view', 0, 46, 4, 16), P('crop', 4, 46, 4, 16), P('sys', 8, 46, 4, 16)],
+    sm: [P('joy', 0, 0, 2, 16), P('lens', 0, 16, 1, 17), P('iris', 1, 16, 1, 17), P('paint', 0, 33, 2, 20), P('presets', 0, 53, 2, 12), P('view', 0, 65, 1, 17), P('crop', 0, 82, 1, 16), P('sys', 1, 65, 1, 17)],
   };
-  const DOCK_PANELS = [['joy', 'PAN / TILT', 3, 8], ['lens', 'ZOOM · FOCUS', 2, 8], ['iris', 'IRIS · EXPOSURE', 3, 8], ['paint', 'PAINT', 4, 6], ['presets', 'PRESETS', 4, 6], ['view', 'PREVIEW', 3, 6], ['sys', 'CAMERA', 4, 6]]
+  const DOCK_PANELS = [['joy', 'PAN / TILT', 3, 8], ['lens', 'ZOOM · FOCUS', 2, 8], ['iris', 'IRIS · EXPOSURE', 3, 8], ['paint', 'PAINT', 4, 6], ['presets', 'PRESETS', 4, 6], ['view', 'PREVIEW', 3, 6], ['crop', 'CROP', 3, 6], ['sys', 'CAMERA', 4, 6]]
     .map(([id, title, minW, minH]) => ({ id, title, minW, minH, selector: `:scope > .panel.rcp-${id}` }));
   // the 0.11.0 grip-swap order is retired: forget it so it does not linger in the install's preferences
   if (window.CCPREFS) window.CCPREFS.ready.then(() => { if (window.CCPREFS.get('ptz.panelOrder', null)) window.CCPREFS.set('ptz.panelOrder', null); });
@@ -582,7 +610,31 @@
   // vertically when the grid is taller than the window, instead of shrinking every panel to fit.
   // Fitting the row to clientHeight fought the dock (which always writes --dk-row: 30px on render)
   // and retriggered layout on every resize, which felt jumpy.
-  const dock = window.CCDOCK.create(rcp, { key: 'ptz', panels: DOCK_PANELS, defaults: DOCK_DEFAULTS, bar: $('#ptzDock'), toast: (m, e) => toast(m, e), canArrange: () => !anyHeld() });
+
+  async function renderProvision() {
+    const el = $('#ptzProvision'); if (!el) return;
+    try {
+      const v = await api('GET', `/api/sys/${ptzId()}/provision`);
+      const rec = v.lastNetworkTest && v.lastNetworkTest.recommendation;
+      const steps = (v.steps || []).map((s) => `<li class="${s.id === v.step ? 'on' : ''}">${esc(s.label)}</li>`).join('');
+      const cap = v.easyIp && v.easyIp.captureRequired && !v.easyIp.bench;
+      el.innerHTML = `<div class="section-title">ONE-CLICK SETUP <small>house plan · ${esc((v.plan && v.plan.first && v.plan.first.name) || 'PTZ1')} gets the first house address</small></div>
+        <ol class="prov-steps">${steps}</ol>
+        <p class="note small">${esc((v.help && v.help.why) || '')}</p>
+        <p class="note small">${esc((v.help && v.help.fail) || '')}</p>
+        <div class="row">${cap ? '<span class="note small">Easy IP writes wait on a bench capture of EasyIPSetupToolPlus (UE150 and UE160).</span>' : ''}
+          <button class="btn mini" type="button" data-prov="test">NETWORK TEST</button>
+          ${rec ? `<span class="note small">Recommended: ${esc(rec.label)} — not applied yet.</span>` : '<span class="note small">Until a test is run, the profile uses H.264 1080/59.94p at 20 Mbps.</span>'}</div>`;
+    } catch (e) { el.innerHTML = `<div class="note small">Setup wizard: ${esc(e.message)}</div>`; }
+  }
+  $('#ptzProvision') && $('#ptzProvision').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-prov]'); if (!b) return;
+    if (b.dataset.prov === 'test') run(api('POST', `/api/sys/${ptzId()}/provision/network-test`, {}).then((r) => { toast((r.recommendation && r.recommendation.label) || 'Network test finished'); renderProvision(); }));
+  });
+
+  if (window.CC.getTab && window.CC.getTab() === "pcams") renderProvision();
+  const _tab = window.CC.onTab; if (window.CC && !window.CC._ptzProvTab) { window.CC._ptzProvTab = true; }
+    const dock = window.CCDOCK.create(rcp, { key: 'ptz', panels: DOCK_PANELS, defaults: DOCK_DEFAULTS, bar: $('#ptzDock'), toast: (m, e) => toast(m, e), canArrange: () => !anyHeld() });
   window.CCPTZ = { releaseAll, held: () => ({ ...held }) };
   window.CCPTZ.dock = dock;
 })();

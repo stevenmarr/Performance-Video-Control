@@ -482,6 +482,24 @@
         <div class="kv" id="ptzInfo"></div>
         <label class="notes"><span class="lbl">NOTES <small id="ptzNotesSt"></small></span><textarea id="ptzNotes" rows="3" maxlength="2000" placeholder="Notes for this camera (lens, position, operator …)"></textarea></label>
       </div>
+
+      <div class="panel rcp-crop">
+        <div class="section-title">CROP <small id="ptzCropHint">UHD crop, live</small></div>
+        <div id="ptzCropNa" class="note small" hidden></div>
+        <div id="ptzCropCtl">
+          <div class="modes" role="group" aria-label="UHD crop mode">
+            <button class="mode" type="button" data-crop-mode="off">OFF</button>
+            <button class="mode" type="button" data-crop-mode="1080">1080</button>
+            <button class="mode" type="button" data-crop-mode="720">720</button>
+          </div>
+          <div class="crop-frame" id="ptzCropFrame" aria-label="UHD frame with crop windows">
+            <div class="crop-win yl" data-win="yl"></div>
+            <div class="crop-win g" data-win="g"></div>
+            <div class="crop-win mg" data-win="mg"></div>
+          </div>
+          <div class="crop-meta" id="ptzCropMeta"></div>
+        </div>
+      </div>
       <div class="panel rcp-sys">
         <div class="section-title">CAMERA</div>
         <div class="sys-cols">
@@ -509,6 +527,7 @@
   </section>
   <section class="grid-wrap pane" id="pane-pcams" hidden>
     <div class="section-title">PTZ CAMERAS <small>every camera under this system · add, edit, remove · status polled every 3 s</small></div>
+    <div id="ptzProvision" class="provision"></div>
     <div id="ptzCamList" class="rows"></div>
     <form id="ptzAdd" class="row add-cam"><span class="lbl">Add a camera<small>Panasonic AW-UE / AW-HE, HTTP (CGI) control</small></span>
       <input name="name" placeholder="Name" maxlength="40"><input name="host" placeholder="IP address" autocomplete="off" spellcheck="false"><input name="port" type="number" min="1" max="65535" placeholder="80" class="slot-in">
@@ -738,14 +757,14 @@
 <dialog id="dlgPtzLogin">
   <form method="dialog" id="formPtzLogin" class="form">
     <h2>Camera login <small id="ptzLoginCam"></small></h2>
-    <div class="note small">Sent as HTTP Digest or Basic authentication, only when the camera asks for it. Factory default on the AW-UE150: user <b>admin</b>, password <b>12345</b>. A password you set here is kept only in this install's data folder (never in show files).</div>
+    <div class="note small">Sent as HTTP Digest or Basic authentication, only when the camera asks for it. There is no factory password. The shared admin account lives in this install's vault (never in a profile or a show file). A password you set here is a per-camera override, also kept only in this install's data folder.</div>
     <div class="row2">
-      <label>User <input name="user" maxlength="64" autocomplete="off" spellcheck="false" placeholder="admin"></label>
+      <label>User <input name="user" maxlength="64" autocomplete="off" spellcheck="false" placeholder="shared admin"></label>
       <label>Password <input name="pass" type="password" maxlength="128" autocomplete="new-password" placeholder="unchanged"></label>
     </div>
     <div class="note small" id="ptzLoginState"></div>
     <div class="actions">
-      <button value="factory" class="btn ghost" formnovalidate title="Forget the saved login and use admin / 12345">FACTORY DEFAULT</button>
+      <button value="clear" class="btn ghost" formnovalidate title="Forget the per-camera login and use the shared admin account in the vault">USE SHARED ADMIN</button>
       <span class="spacer"></span>
       <button value="cancel" class="btn ghost" formnovalidate>Cancel</button>
       <button value="save" class="btn primary">Save</button>

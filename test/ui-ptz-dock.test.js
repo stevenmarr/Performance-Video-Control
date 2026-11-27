@@ -44,7 +44,7 @@ test('PTZ 0.11.1 dock: move, resize, collapse / tray / float, keyboard, touch, b
 
   // ---- default layout (xl, 24 columns)
   assert.equal(await page.evaluate(() => window.CCPTZ.dock.bp()), 'xl');
-  assert.equal(await page.locator('.rcp > .dk-panel').count(), 7);
+  assert.equal(await page.locator('.rcp > .dk-panel').count(), 8);
   assert.deepEqual(await box('joy'), [0, 0, 4, 17]); assert.deepEqual(await box('paint'), [12, 0, 12, 17]); assert.deepEqual(await box('view'), [12, 17, 5, 15]);
   assert.equal((await page.locator('.rcp-paint').boundingBox()).width > 900, true, 'paint fills the rest of the top row');
   assert.equal(await page.locator('.dk-lay-n').textContent(), 'LAYOUT');
