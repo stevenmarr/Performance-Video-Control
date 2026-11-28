@@ -408,12 +408,18 @@
     </div>
     <div class="rcp-read" id="ptzRead"></div>
     <div class="panel" id="tbxPanel">
-      <div class="section-title">TOURBOX NEO <small>Control Center talks to the TourBox directly over USB serial on this Raspberry Pi 5. Quit TourBox Console during a show. The TourBox follows the camera selected on the Stream Deck</small></div>
+      <div class="section-title">TOURBOX <small>Control Center talks to the TourBox over USB serial. Quit TourBox Console during a show. If the box shows up as a CP2104 UART (common when it is on a Stream Deck USB pass-through), pick that port, click Use this port, then CLAIM. The TourBox follows the camera selected on the Stream Deck.</small></div>
       <label class="chk"><input type="checkbox" id="tbxEnabled"> Enable TourBox</label>
       <span class="chip" id="tbxLive" hidden>LIVE</span>
       <div class="note small" id="tbxState">…</div>
       <div class="note small" id="tbxTouch"></div>
-      <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px">
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center">
+        <label class="chk" for="tbxPort">Port
+          <select id="tbxPort" aria-label="TourBox serial port">
+            <option value="">Auto</option>
+          </select>
+        </label>
+        <button type="button" class="btn mini ghost" id="tbxUsePort">Use this port</button>
         <button type="button" class="btn mini" id="tbxClaim">CLAIM</button>
         <button type="button" class="btn mini ghost" id="tbxRelease">RELEASE</button>
         <label class="chk"><input type="checkbox" id="tbxLearn"> Learn mode (does not fire the show)</label>

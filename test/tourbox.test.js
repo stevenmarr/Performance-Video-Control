@@ -12,7 +12,7 @@ const { MockSerialPort, mockSerial } = require('../lib/surfaces/tourbox/mock-ser
 const { TourBoxDevice } = require('../lib/surfaces/tourbox/device');
 const { TourBoxScanner } = require('../lib/surfaces/tourbox/scanner');
 const { TourBoxHost } = require('../lib/surfaces/tourbox/host');
-const { TourBoxService } = require('../lib/surfaces/tourbox/service');
+const { TourBoxService, cleanCfg, cleanPort } = require('../lib/surfaces/tourbox/service');
 const mapping = require('../lib/surfaces/tourbox/mapping');
 const serial = require('../lib/surfaces/tourbox/serial');
 const { DeskSelection } = require('../lib/surfaces/desk-selection');
@@ -97,6 +97,15 @@ test('TourBox serial helpers: stty args, ioreg parse, Linux VID/PID walk', () =>
   assert.equal(P.isTourBoxUsb({ vendorId: 0xC251, productId: 0x2005 }), true);
   assert.equal(P.isTourBoxUsb({ vendorId: 0x1A86, productId: 0x7523 }), false);
   assert.equal(P.isTourBoxUsb({ vendorId: 0x0403, productId: 0x6001, product: 'TourBox custom' }), true);
+  assert.equal(P.isTourBoxUsb({ vendorId: 0x10C4, productId: 0xEA60 }), false);
+  assert.equal(P.isTourBoxCandidate({ vendorId: 0x10C4, productId: 0xEA60 }), true);
+  assert.equal(P.isTourBoxCandidate({ vendorId: 0x2E3C, productId: 0x5740 }), false);
+  assert.equal(cleanPort('/dev/tty.usbserial-01BBEB67'), '/dev/cu.usbserial-01BBEB67');
+  assert.equal(cleanPort('/dev/cu.usbserial-01BBEB67'), '/dev/cu.usbserial-01BBEB67');
+  assert.equal(cleanPort(''), '');
+  assert.equal(cleanPort('/tmp/evil'), '');
+  assert.equal(cleanPort('/dev/../etc/passwd'), '');
+  assert.equal(cleanCfg({ port: '/dev/cu.usbserial-01BBEB67' }).port, '/dev/cu.usbserial-01BBEB67');
 });
 
 // Realistic macOS ioreg: VID/PID live on the parent IOUSBHostDevice, the cu.*
@@ -234,6 +243,133 @@ test('TourBox macOS discovery walks the ioreg tree and names Elite as well as Ne
   assert.match(hit.error, /Ports seen: \/dev\/cu\.usbserial-FT0, \/dev\/cu\.Bluetooth-Incoming-Port/);
   assert.match(hit.error, /quit TourBox Console/);
   assert.match(hit.error, /2E3C:5740/);
+});
+
+// Steven's Mac (PV-M2-1577): TourBox on the Stream Deck + XL USB pass-through
+// enumerates as a stock Silicon Labs CP2104 (10C4:EA60), not a TourBox-named device.
+const STREAMDECK_HUB_IOREG = `
++-o GenesysLogic USB2.1 Hub@00100000  <class IOUSBHostDevice, id 0x100000200, registered, matched, active, busy 0, retain 12>
+  {
+    "idVendor" = 1507
+    "idProduct" = 1552
+    "USB Product Name" = "USB2.1 Hub"
+    "USB Vendor Name" = "GenesysLogic"
+  }
+  +-o Stream Deck + XL@00110000  <class IOUSBHostDevice, id 0x100000210, registered, matched, active, busy 0, retain 10>
+    {
+      "idVendor" = 4057
+      "idProduct" = 198
+      "USB Product Name" = "Stream Deck + XL"
+      "USB Vendor Name" = "Elgato Systems"
+    }
+  +-o CP2104 USB to UART Bridge Controller@00120000  <class IOUSBHostDevice, id 0x100000220, registered, matched, active, busy 0, retain 10>
+    {
+      "idVendor" = 4292
+      "idProduct" = 60000
+      "USB Product Name" = "CP2104 USB to UART Bridge Controller"
+      "USB Vendor Name" = "Silicon Labs"
+    }
+    +-o AppleUSBSLCOM  <class AppleUSBSLCOM, id 0x100000221, registered, matched, active, busy 0, retain 6>
+      {
+        "IOTTYBaseName" = "usbserial"
+      }
+      +-o IOSerialBSDClient  <class IOSerialBSDClient, id 0x100000222, registered, matched, active, busy 0, retain 5>
+        {
+          "IODialinDevice" = "/dev/tty.usbserial-01BBEB67"
+          "IOCalloutDevice" = "/dev/cu.usbserial-01BBEB67"
+        }
+`;
+
+test('TourBox on a Stream Deck pass-through is a CP2104 candidate and can be claimed by port', async () => {
+  const survey = serial.parseIoregSurvey(STREAMDECK_HUB_IOREG);
+  assert.deepEqual(survey.matches, []);
+  assert.equal(survey.candidates.length, 1);
+  assert.equal(survey.candidates[0].path, '/dev/cu.usbserial-01BBEB67');
+  assert.equal(survey.candidates[0].vendorId, 0x10C4);
+  assert.equal(survey.candidates[0].productId, 0xEA60);
+  assert.equal(survey.candidates[0].kind, 'candidate');
+  assert.match(survey.candidates[0].product, /CP2104/);
+  assert.equal(survey.other.length, 0);
+
+  const rows = await serial.listPorts({
+    platform: 'darwin',
+    serialport: null,
+    io: { readdirSync: () => ['cu.usbserial-01BBEB67'] },
+    exec: (_cmd, _args, _opts, cb) => cb(null, STREAMDECK_HUB_IOREG),
+  });
+  assert.deepEqual(rows, []);
+  const listed = await serial.listPortSurvey({
+    platform: 'darwin',
+    serialport: null,
+    io: { readdirSync: () => ['cu.usbserial-01BBEB67'] },
+    exec: (_cmd, _args, _opts, cb) => cb(null, STREAMDECK_HUB_IOREG),
+  });
+  assert.equal(listed.candidates[0].path, '/dev/cu.usbserial-01BBEB67');
+
+  const box = new MockSerialPort();
+  box.path = '/dev/cu.usbserial-01BBEB67';
+  const api = mockSerial([box]);
+  const candidate = {
+    path: '/dev/cu.usbserial-01BBEB67',
+    vendorId: 0x10C4,
+    productId: 0xEA60,
+    product: 'CP2104 USB to UART Bridge Controller',
+    kind: 'candidate',
+  };
+  const listPorts = async () => [];
+  listPorts.survey = async () => ({ matches: [], candidates: [candidate], other: [] });
+
+  const opened = [];
+  const searching = [];
+  const auto = new TourBoxScanner({
+    listPorts,
+    openPort: async (p) => { opened.push(p); return api.open(p); },
+    send: (m) => searching.push(m),
+    scanMs: 30,
+    retryMs: 30,
+  });
+  auto.start();
+  await until(() => searching.some((m) => m.state === 'searching' && m.error), 2000, 'possible TourBox');
+  await auto.stop();
+  assert.deepEqual(opened, []);
+  const hint = searching.find((m) => m.state === 'searching');
+  assert.match(hint.error, /possible TourBox/);
+  assert.match(hint.error, /cu\.usbserial-01BBEB67/);
+  assert.match(hint.error, /Use this port/);
+
+  const claimed = [];
+  const claim = new TourBoxScanner({
+    listPorts,
+    openPort: (p) => { opened.push(p); return api.open(p); },
+    send: (m) => claimed.push(m),
+    scanMs: 30,
+    retryMs: 30,
+    preferredPort: '/dev/cu.usbserial-01BBEB67',
+  });
+  claim.start();
+  await until(() => claim.state === 'connected', 2000, 'claimed CP2104');
+  await claim.stop();
+  assert.ok(opened.includes('/dev/cu.usbserial-01BBEB67'));
+  assert.ok(box.handshook);
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tbx-port-'));
+  const box2 = new MockSerialPort();
+  box2.path = '/dev/cu.usbserial-01BBEB67';
+  const api2 = mockSerial([box2]);
+  const list2 = async () => [];
+  list2.survey = async () => ({ matches: [], candidates: [candidate], other: [] });
+  const host = new TourBoxHost({
+    inProcess: { listPorts: list2, openPort: (p) => api2.open(p), scanMs: 30, retryMs: 30 },
+  });
+  const live = new TourBoxService({ dataDir: dir, host, env: {} });
+  live.listPorts = async () => ({ matches: [], candidates: [candidate], other: [] });
+  live.start();
+  const adopted = await live.configure({ enabled: true });
+  assert.equal(adopted.port, '/dev/cu.usbserial-01BBEB67');
+  await until(() => live.hw.state === 'connected', 2000, 'service adopted lone CP2104');
+  const saved = JSON.parse(fs.readFileSync(path.join(dir, 'tourbox.json'), 'utf8'));
+  assert.equal(saved.port, '/dev/cu.usbserial-01BBEB67');
+  await live.stop();
 });
 
 // ---------- ingest ----------
@@ -513,9 +649,12 @@ test('DeskSelection shares the camera, and /api/surfaces/tourbox serves status',
     assert.equal(st.model, 'TBG_H');
     assert.equal(st.longPressMs, 800);
     assert.equal(st.profile, 'ptz-rcp');
-    const set = (await call('POST', '/api/surfaces/tourbox', { enabled: false, learn: true, profile: 'ptz-msu' })).json;
+    assert.equal(st.port, '');
+    assert.ok(Array.isArray(st.ports));
+    const set = (await call('POST', '/api/surfaces/tourbox', { enabled: false, learn: true, profile: 'ptz-msu', port: '/dev/cu.usbserial-01BBEB67' })).json;
     assert.equal(set.learn, true);
     assert.equal(set.profile, 'ptz-msu');
+    assert.equal(set.port, '/dev/cu.usbserial-01BBEB67');
     await systems.ptz('select', { cam: 'cam1' });
     await wait(30);
     assert.equal(server.deskSelection.camera, 'cam1');
@@ -548,9 +687,16 @@ test('TourBox worker mock path starts and the udev rule is shipped', () => {
   assert.match(rules, /5740/);
   assert.match(rules, /c251/);
   assert.match(rules, /2005/);
+  assert.match(rules, /10c4/);
+  assert.match(rules, /ea60/);
   const html = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
   assert.match(html, /tbxPanel/);
   assert.match(html, /tourbox\.js/);
+  assert.match(html, /tbxPort/);
+  assert.match(html, /tbxUsePort/);
+  assert.match(html, /Use this port/);
   const page = fs.readFileSync(path.join(__dirname, '../public/tourbox.js'), 'utf8');
   assert.match(page, /\/api\/surfaces\/tourbox/);
+  assert.match(page, /tbxUsePort/);
+  assert.match(page, /possible TourBox/);
 });

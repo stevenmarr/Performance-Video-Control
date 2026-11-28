@@ -1,7 +1,12 @@
-# Control Center opens a TourBox (USB CDC serial, /dev/ttyACM* or /dev/ttyUSB*)
+# Control Center opens a TourBox (USB serial, /dev/ttyACM* or /dev/ttyUSB*)
 # on the Raspberry Pi 5. Known IDs:
 #   Neo          vendor 2e3c, product 5740 (Artery AT32 CDC, model TBG_H)
 #   Elite / Plus vendor c251, product 2005 (TourBoxTech via the Keil VID)
+#   CP2104       vendor 10c4, product ea60 (stock Silicon Labs UART). Official
+#                TourBox Console ships the CP210x VCP driver; older and some
+#                wired units enumerate with this generic identity. This ID is
+#                also used by other CP2104 gadgets, so Control Center only
+#                opens it when the operator claims that port.
 # TourBox Console must stay quit during a show — the two programs cannot share the port.
 #
 # Install this file as /etc/udev/rules.d/99-control-center-tourbox.rules
@@ -16,3 +21,5 @@ KERNEL=="ttyACM*", ATTRS{idVendor}=="2e3c", ATTRS{idProduct}=="5740", MODE="0660
 KERNEL=="ttyUSB*", ATTRS{idVendor}=="2e3c", ATTRS{idProduct}=="5740", MODE="0660", GROUP="plugdev", TAG+="uaccess"
 KERNEL=="ttyACM*", ATTRS{idVendor}=="c251", ATTRS{idProduct}=="2005", MODE="0660", GROUP="plugdev", TAG+="uaccess"
 KERNEL=="ttyUSB*", ATTRS{idVendor}=="c251", ATTRS{idProduct}=="2005", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+KERNEL=="ttyUSB*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+KERNEL=="ttyACM*", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", MODE="0660", GROUP="plugdev", TAG+="uaccess"
