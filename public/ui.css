@@ -97,3 +97,12 @@ summary:focus-visible,
   border: var(--cc-live-width) solid var(--cc-pvw);
   background: var(--cc-pvw-bg);
 }
+
+.tbx-map-wrap { overflow: auto; max-height: 28em; margin-top: 8px; border: 1px solid var(--line, #2a2a2e); border-radius: 6px; }
+.tbx-map { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbx-map th, .tbx-map td { padding: 4px 6px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line, #2a2a2e); }
+.tbx-map th { position: sticky; top: 0; background: var(--panel, #161618); z-index: 1; }
+.tbx-map tr.tbx-learn { background: #3a2a10; }
+.tbx-map select, .tbx-map .tbx-extra { max-width: 11em; }
+.tbx-map .tbx-extra { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.tbx-map .tbx-ctrl { font-weight: 600; text-transform: uppercase; }

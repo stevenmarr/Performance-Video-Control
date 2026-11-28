@@ -131,7 +131,8 @@ test('keys: USK type, fill / key, luma, chroma, pattern, mask, DVE, fly key fram
     // overhaul P1d: Control Center refuses the third DVE itself and says which keys hold the two
     assert.throws(() => d.uskType(0, 1, 'dve'), /No DVE free for M\/E 1 KEY 2: the switcher has 2, in use by M\/E 1 KEY 1, M\/E 2 KEY 3/);
     assert.throws(() => d.uskType(0, 1, undefined, true), /No DVE free/, 'a fly key needs a DVE too');
-    assert.throws(() => d.style('DVE', 0), /No DVE free for the M\/E 1 DVE transition/);
+    // Transition style DVE stays selectable when the model has DVE, even if keys are holding the processors.
+    assert.doesNotThrow(() => d.style('DVE', 0));
     assert.equal(d.view().mixEffects[0].keyers[1].type, 'luma');
     assert.equal(d.view().dves.count, 2); assert.equal(d.view().dves.inUse, 2);
     assert.deepEqual(d.view().dves.perMe.map((x) => [x.used, x.free]), [[2, 0], [2, 0]], 'one shared budget: both M/Es see it full');
