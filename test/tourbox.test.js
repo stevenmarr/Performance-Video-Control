@@ -92,6 +92,148 @@ test('TourBox serial helpers: stty args, ioreg parse, Linux VID/PID walk', () =>
   assert.equal(rows[0].path, '/dev/cu.usbmodemTB01');
   assert.equal(rows[0].vendorId, 0x2E3C);
   assert.equal(rows[0].productId, 0x5740);
+  assert.equal(P.preferCalloutPath('/dev/tty.usbmodemTB01'), '/dev/cu.usbmodemTB01');
+  assert.ok(P.USB_IDS.some((r) => r.vendorId === 0xC251 && r.productId === 0x2005));
+  assert.equal(P.isTourBoxUsb({ vendorId: 0xC251, productId: 0x2005 }), true);
+  assert.equal(P.isTourBoxUsb({ vendorId: 0x1A86, productId: 0x7523 }), false);
+  assert.equal(P.isTourBoxUsb({ vendorId: 0x0403, productId: 0x6001, product: 'TourBox custom' }), true);
+});
+
+// Realistic macOS ioreg: VID/PID live on the parent IOUSBHostDevice, the cu.*
+// path lives on a child IOSerialBSDClient. A dump rooted at IOSerialBSDClient
+// (the old listDarwin command) has no idVendor and must not invent a match.
+const DARWIN_IOREG = `
++-o Root  <class IORegistryEntry, id 0x100000100, !registered, !matched, active, busy 0, retain 22>
+  +-o USB-Serial Controller@00100000  <class IOUSBHostDevice, id 0x100000210, registered, matched, active, busy 0, retain 10>
+    {
+      "idVendor" = 1027
+      "idProduct" = 24577
+      "USB Product Name" = "FT232R USB UART"
+      "USB Vendor Name" = "FTDI"
+    }
+    +-o IOSerialBSDClient  <class IOSerialBSDClient, id 0x100000211, registered, matched, active, busy 0, retain 5>
+      {
+        "IODialinDevice" = "/dev/tty.usbserial-FT0"
+        "IOCalloutDevice" = "/dev/cu.usbserial-FT0"
+      }
+  +-o USB2.0-Serial@00110000  <class IOUSBHostDevice, id 0x100000220, registered, matched, active, busy 0, retain 8>
+    {
+      "idVendor" = 6790
+      "idProduct" = 29987
+      "USB Product Name" = "USB Serial"
+      "USB Vendor Name" = "QinHeng"
+    }
+    +-o IOSerialBSDClient  <class IOSerialBSDClient, id 0x100000221, registered, matched, active, busy 0, retain 5>
+      {
+        "IOCalloutDevice" = "/dev/cu.wchusbserial1410"
+      }
+  +-o TourBox NEO@00200000  <class IOUSBHostDevice, id 0x100000300, registered, matched, active, busy 0, retain 14>
+    {
+      "idVendor" = 11836
+      "idProduct" = 22336
+      "USB Product Name" = "TourBox NEO"
+      "USB Vendor Name" = "ARTERY Technology"
+      "USB Serial Number" = "ABC"
+    }
+    +-o AppleUSBACMData  <class AppleUSBACMData, id 0x100000301, registered, matched, active, busy 0, retain 8>
+      {
+        "IOTTYBaseName" = "usbmodem"
+      }
+      +-o IOSerialBSDClient  <class IOSerialBSDClient, id 0x100000302, registered, matched, active, busy 0, retain 5>
+        {
+          "IODialinDevice" = "/dev/tty.usbmodemTB01"
+          "IOCalloutDevice" = "/dev/cu.usbmodemTB01"
+          "IOTTYDevice" = "usbmodemTB01"
+        }
+  +-o TourBox Elite Plus@00300000  <class IOUSBHostDevice, id 0x100000400, registered, matched, active, busy 0, retain 14>
+    {
+      "idVendor" = 49745
+      "idProduct" = 8197
+      "USB Product Name" = "TourBox Elite Plus"
+      "USB Vendor Name" = "TourBoxTech"
+      "USB Serial Number" = "ELITE1"
+    }
+    +-o IOSerialBSDClient  <class IOSerialBSDClient, id 0x100000401, registered, matched, active, busy 0, retain 5>
+      {
+        "IODialinDevice" = "/dev/tty.usbmodemELITE1"
+        "IOCalloutDevice" = "/dev/cu.usbmodemELITE1"
+      }
+  +-o AT32 Virtual ComPort@00400000  <class IOUSBHostDevice, id 0x100000500, registered, matched, active, busy 0, retain 10>
+    {
+      "idVendor" = 11836
+      "idProduct" = 22336
+      "USB Product Name" = "AT32 Virtual ComPort in FS Mode"
+      "USB Vendor Name" = "ArteryTek"
+      "USB Serial Number" = "NEO2"
+    }
+    +-o IOSerialBSDClient  <class IOSerialBSDClient, id 0x100000501, registered, matched, active, busy 0, retain 5>
+      {
+        "IOCalloutDevice" = "/dev/cu.usbmodemNEO2"
+      }
++-o Bluetooth-Incoming-Port  <class IOSerialBSDClient, id 0x100000600, registered, matched, active, busy 0, retain 5>
+  {
+    "IOCalloutDevice" = "/dev/cu.Bluetooth-Incoming-Port"
+  }
+`;
+
+const SERIAL_CLIENT_ONLY = `
++-o IOSerialBSDClient  <class IOSerialBSDClient, id 0x100000302, registered, matched, active, busy 0, retain 5>
+  {
+    "IODialinDevice" = "/dev/tty.usbmodemTB01"
+    "IOCalloutDevice" = "/dev/cu.usbmodemTB01"
+    "IOTTYDevice" = "usbmodemTB01"
+  }
+`;
+
+test('TourBox macOS discovery walks the ioreg tree and names Elite as well as Neo', async () => {
+  const survey = serial.parseIoregSurvey(DARWIN_IOREG);
+  const paths = survey.matches.map((r) => r.path).sort();
+  assert.deepEqual(paths, ['/dev/cu.usbmodemELITE1', '/dev/cu.usbmodemNEO2', '/dev/cu.usbmodemTB01']);
+  const neo = survey.matches.find((r) => r.path === '/dev/cu.usbmodemTB01');
+  assert.equal(neo.vendorId, 0x2E3C);
+  assert.equal(neo.productId, 0x5740);
+  assert.equal(neo.serialNumber, 'ABC');
+  const elite = survey.matches.find((r) => r.path === '/dev/cu.usbmodemELITE1');
+  assert.equal(elite.vendorId, 0xC251);
+  assert.equal(elite.productId, 0x2005);
+  const artery = survey.matches.find((r) => r.path === '/dev/cu.usbmodemNEO2');
+  assert.equal(artery.product, 'AT32 Virtual ComPort in FS Mode');
+  const otherPaths = survey.other.map((r) => r.path).sort();
+  assert.ok(otherPaths.includes('/dev/cu.usbserial-FT0'));
+  assert.ok(otherPaths.includes('/dev/cu.wchusbserial1410'));
+  assert.ok(otherPaths.includes('/dev/cu.Bluetooth-Incoming-Port'));
+  assert.equal(serial.parseIoreg(SERIAL_CLIENT_ONLY).length, 0);
+  const clientSurvey = serial.parseIoregSurvey(SERIAL_CLIENT_ONLY);
+  assert.equal(clientSurvey.matches.length, 0);
+  assert.deepEqual(clientSurvey.other.map((r) => r.path), ['/dev/cu.usbmodemTB01']);
+
+  let argv;
+  const rows = await serial.listPorts({
+    platform: 'darwin',
+    serialport: null,
+    io: { readdirSync: () => ['cu.usbserial-FT0', 'cu.Bluetooth-Incoming-Port'] },
+    exec: (cmd, args, _opts, cb) => { argv = [cmd, ...args]; cb(null, DARWIN_IOREG); },
+  });
+  assert.deepEqual(argv, ['ioreg', '-l', '-w0']);
+  assert.deepEqual(rows.map((r) => r.path).sort(), ['/dev/cu.usbmodemELITE1', '/dev/cu.usbmodemNEO2', '/dev/cu.usbmodemTB01']);
+
+  const empty = [];
+  const listPorts = async () => [];
+  listPorts.survey = async () => ({ matches: [], other: [{ path: '/dev/cu.usbserial-FT0' }, { path: '/dev/cu.Bluetooth-Incoming-Port' }] });
+  const scanner = new TourBoxScanner({
+    listPorts,
+    openPort: async () => { throw new Error('should not open'); },
+    send: (m) => empty.push(m),
+    scanMs: 30,
+    retryMs: 30,
+  });
+  scanner.start();
+  await until(() => empty.some((m) => m.state === 'searching' && m.error), 2000, 'searching reason');
+  await scanner.stop();
+  const hit = empty.find((m) => m.state === 'searching');
+  assert.match(hit.error, /Ports seen: \/dev\/cu\.usbserial-FT0, \/dev\/cu\.Bluetooth-Incoming-Port/);
+  assert.match(hit.error, /quit TourBox Console/);
+  assert.match(hit.error, /2E3C:5740/);
 });
 
 // ---------- ingest ----------
@@ -404,6 +546,8 @@ test('TourBox worker mock path starts and the udev rule is shipped', () => {
   const rules = fs.readFileSync(path.join(__dirname, '../tools/udev/50-control-center-tourbox.rules'), 'utf8');
   assert.match(rules, /2e3c/);
   assert.match(rules, /5740/);
+  assert.match(rules, /c251/);
+  assert.match(rules, /2005/);
   const html = fs.readFileSync(path.join(__dirname, '../public/index.html'), 'utf8');
   assert.match(html, /tbxPanel/);
   assert.match(html, /tourbox\.js/);
