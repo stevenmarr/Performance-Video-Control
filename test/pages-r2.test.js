@@ -44,7 +44,8 @@ test('one camera: the PTZ camera row has that camera only, no sample green / red
     assert.ok(!keys.some((k) => /^CAM ?[2-8]$/.test(String(k.label))), `${p.title}: no CAM 2..8 keys`);
     assert.ok(!keys.some((k) => k.tone === 'pvw' || (k.tone === 'stop' && !k.cam && /CAM/.test(String(k.label)))), `${p.title}: no fixed preview / program tone`);
     assert.ok(!keys.some((k) => k.label === '◂ CAM' || k.label === 'CAM ▸'), `${p.title}: no camera stepping with one camera`);
-    assert.ok(!keys.some((k) => k.label === 'CAMS'), `${p.title}: no camera bank key`);
+    const cams = keys.filter((k) => k.label === 'CAMS');
+    assert.ok(cams.every((k) => k.nav === 'page'), `${p.title}: CAMS is a page jump, not a 7–12 camera bank`);
   }
   const msu = pages[0];
   const r0 = row(msu.face, 0);

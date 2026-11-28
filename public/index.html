@@ -545,17 +545,17 @@
       <button type="button" class="subtab active" data-surfaces="pages" title="Lay out a page. Edits go to the deck immediately.">PAGES</button>
       <button type="button" class="subtab" data-surfaces="buttons" title="Design a library button. Colour still means the job.">BUTTONS</button>
       <button type="button" class="subtab" data-surfaces="devices" title="USB Stream Decks. Quit the Elgato app so this app can open the deck.">DEVICES</button>
-      <button type="button" class="subtab" data-surfaces="tourbox" title="TourBox. Not connected in this build.">TOURBOX</button>
-      <button type="button" class="subtab" data-surfaces="selftest" title="Paint a known pattern on the Stream Deck and check Companion page tags.">SELF-TEST</button>
+      <button type="button" class="subtab" data-surfaces="tourbox" title="TourBox NEO: enable it, Learn mode, and the event log.">TOURBOX</button>
+      <button type="button" class="subtab" data-surfaces="selftest" title="Check every deck page key and knob Companion can place. Nothing is pressed.">SELF-TEST</button>
     </nav>
     <div id="surfacesPages" class="surfaces-pane"></div>
     <div id="surfacesButtons" class="surfaces-pane" hidden></div>
     <div id="surfacesDevices" class="surfaces-pane" hidden></div>
     <div id="surfacesTourbox" class="surfaces-pane" hidden>
-      <p class="note">TourBox integration is planned. No TourBox is connected in this build.</p>
+      <p class="note">The TourBox NEO card moves here when the page loads (public/surfaces.js).</p>
     </div>
     <div id="surfacesSelftest" class="surfaces-pane" hidden>
-      <p class="note">Self-test paints a known pattern on the USB Stream Deck + XL and reports Companion page tags. Run from the Page Builder LIVE ON DECK pill.</p>
+      <p class="note">Self-test checks every Stream Deck + XL page key and knob that Companion can place: does it have a function, and does that function reach a handler? Nothing is pressed. (WHAT CHANGED / LIVE ON DECK apply to the PAGES editor's push.)</p>
     </div>
   </section>
 <section class="grid-wrap pane" id="pane-decks" hidden>

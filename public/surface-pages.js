@@ -578,5 +578,7 @@
   });
 
   window.addEventListener('cc:tab', (ev) => { if (ev.detail === 'pages') run(load().catch((e) => toast(e.message || 'Could not load pages'))); });
+  // 0.39.1: PAGES is a SURFACES sub-tab now; public/surfaces.js says when it is shown
+  window.addEventListener('cc:surfaces', (ev) => { if (ev.detail === 'pages') run(load().catch((e) => toast(e.message || 'Could not load pages'))); });
   if (window.CC.getTab && window.CC.getTab() === 'pages') run(load());
 })();
