@@ -699,4 +699,93 @@ test('TourBox worker mock path starts and the udev rule is shipped', () => {
   assert.match(page, /\/api\/surfaces\/tourbox/);
   assert.match(page, /tbxUsePort/);
   assert.match(page, /possible TourBox/);
+  assert.match(html, /id="tbxMap"/);
+  assert.match(html, /id="tbxResetMap"/);
+  assert.match(html, /id="tbxProfile"/);
+  assert.match(page, /tbxMap/);
+  assert.match(page, /tbxResetMap/);
+  assert.match(page, /resetMap/);
+  assert.match(page, /bindingFromRow|binding:/);
+  assert.match(page, /tbx-learn/);
+});
+
+test('TourBox setBinding replaces a row so clearing a slot sticks, and maps save with the show', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-tbx-map-'));
+  const svc = new TourBoxService({
+    systems: { ptzView: () => ({ cameras: [], selected: null }) },
+    dataDir: dir,
+    env: { ...process.env, CC_TOURBOX: '0' },
+  });
+  try {
+    const st0 = svc.status();
+    assert.ok(st0.catalog && st0.catalog.actions.some((a) => a.id === 'ptz.step'));
+    assert.ok(Array.isArray(st0.bindings) && st0.bindings.length > 0);
+    const iris = st0.bindings.find((b) => b.control === 'knob' && !(b.held || []).length);
+    assert.equal(iris.turn.action, 'ptz.step');
+    assert.equal(iris.turn.op, 'iris');
+
+    await svc.configure({
+      binding: {
+        control: 'knob',
+        held: [],
+        turn: { action: 'ptz.step', op: 'gain', target: 'selected' },
+        press: iris.press,
+        long: iris.long,
+      },
+    });
+    const after = svc.status().bindings.find((b) => b.control === 'knob' && !(b.held || []).length);
+    assert.equal(after.turn.op, 'gain');
+
+    await svc.configure({
+      binding: { control: 'knob', held: [], press: after.press, long: after.long },
+    });
+    const cleared = svc.status().bindings.find((b) => b.control === 'knob' && !(b.held || []).length);
+    assert.equal(cleared.turn, undefined, 'clearing Turn must not keep the old iris step');
+
+    await svc.configure({
+      binding: { control: 'c1', held: [], press: { action: 'ptz.stopAll' } },
+    });
+    const c1 = svc.status().bindings.find((b) => b.control === 'c1');
+    assert.equal(c1.press.action, 'ptz.stopAll');
+
+    const part = svc.showPart();
+    assert.equal(part.profile, 'ptz-rcp');
+    assert.ok(part.maps['ptz-rcp'].bindings.find((b) => b.control === 'c1' && b.press && b.press.action === 'ptz.stopAll'));
+
+    svc.applyShowPart(null);
+    assert.equal(svc.status().bindings.find((b) => b.control === 'c1'), undefined, 'factory reset drops the custom C1');
+    const factoryKnob = svc.status().bindings.find((b) => b.control === 'knob' && !(b.held || []).length);
+    assert.equal(factoryKnob.turn.op, 'iris');
+
+    svc.applyShowPart(part);
+    const restored = svc.status().bindings.find((b) => b.control === 'c1');
+    assert.equal(restored.press.action, 'ptz.stopAll');
+    const restoredKnob = svc.status().bindings.find((b) => b.control === 'knob' && !(b.held || []).length);
+    assert.equal(restoredKnob.turn, undefined);
+
+    await svc.configure({ resetMap: true });
+    assert.equal(svc.status().bindings.find((b) => b.control === 'c1'), undefined);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('TourBox Learn records the held modifiers so the map can highlight that row', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cc-tbx-learn-'));
+  const svc = new TourBoxService({
+    systems: { ptzView: () => ({ cameras: [], selected: null }) },
+    dataDir: dir,
+    env: { ...process.env, CC_TOURBOX: '0' },
+  });
+  try {
+    await svc.configure({ learn: true });
+    await svc.onEvent({ control: 'side', event: 'press', held: ['side'] });
+    await svc.onEvent({ control: 'knob', event: 'turn', ticks: 1, held: ['side'] });
+    const t = svc.status().lastTouched;
+    assert.equal(t.learn, true);
+    assert.equal(t.control, 'knob');
+    assert.deepEqual(t.held, ['side']);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
