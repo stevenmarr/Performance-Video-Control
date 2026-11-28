@@ -49,20 +49,27 @@ test('RCP knobs are wired to the control their label names (no more blank placeh
 
 test('shader-order RCP banks: EXP, BLACK, WHITE, TONE, DETAIL, COLOUR; matrix stays on the deck', () => {
   const ids = GALLERY.filter((g) => g.kind === 'ptz').map((g) => g.id);
-  for (const id of ['ptz-rcp-exp', 'ptz-rcp-black', 'ptz-rcp-white', 'ptz-rcp-tone', 'ptz-rcp-detail', 'ptz-rcp-colour', 'ptz-msu']) {
+  for (const id of ['ptz-rcp-exp', 'ptz-rcp-black', 'ptz-rcp-white', 'ptz-rcp-tone', 'ptz-rcp-detail', 'ptz-rcp-colour', 'ptz-msu', 'ptz-msu-cams']) {
     assert.ok(ids.includes(id), id);
   }
   const desk = { armed: ['ptz'], byKey: { ptz: { cameras: [{ id: 'cam1', name: 'Wide' }], selected: 'cam1' } } };
   const face = show(SURFACES.plusxl, desk, { system: 'ptz', page: 1 });
   assert.equal(face.designId, 'ptz-rcp-exp');
-  for (const label of ['EXP', 'BLACK', 'WHITE', 'TONE', 'DETAIL', 'COLOUR']) {
+  // v0.39.1: page 1 is the v0.38.0 EXP page (classic bank row). The #76 banks are on the later pages.
+  for (const label of ['EXP', 'WHITE', 'DTL', 'GAMMA', 'MATRIX']) {
     assert.ok(face.keys.some((k) => k.label === label), label);
   }
-  assert.ok(face.keys.filter((k) => k.tone !== 'blank').every((k) => k.job), 'every drawn key names its job (colour = job)');
+  const black = show(SURFACES.plusxl, desk, { system: 'ptz', page: 10 });
+  assert.equal(black.designId, 'ptz-rcp-black');
+  for (const label of ['EXP', 'BLACK', 'WHITE', 'TONE', 'DETAIL', 'COLOUR']) {
+    assert.ok(black.keys.some((k) => k.label === label), label);
+  }
+  assert.ok(black.keys.filter((k) => k.tone !== 'blank').every((k) => k.job), 'every drawn key names its job (colour = job)');
 });
 
 test('MSU knobs each target that camera, not the selected camera\'s mixed controls', () => {
-  const msu = page('ptz-msu');
+  // v0.39.1: the per-camera knobs live on ptz-msu-cams so ptz.0 can keep the v0.38.0 selected-camera knobs.
+  const msu = page('ptz-msu-cams');
   assert.equal(msu.dials.length, 6);
   msu.dials.forEach((d, i) => {
     assert.equal(d.widget, 'msuCam');

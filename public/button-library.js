@@ -365,5 +365,7 @@
   }
 
   window.addEventListener('cc:tab', (ev) => { if (ev.detail === 'buttons') run(load()); });
+  // 0.39.1: BUTTONS is a SURFACES sub-tab now; public/surfaces.js says when it is shown
+  window.addEventListener('cc:surfaces', (ev) => { if (ev.detail === 'buttons') run(load()); });
   if (window.CC.getTab && window.CC.getTab() === 'buttons') run(load());
 })();
